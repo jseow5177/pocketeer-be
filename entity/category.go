@@ -1,7 +1,20 @@
 package entity
 
-type Category struct{}
+type Category struct {
+	CategoryID   *uint64
+	CategoryName *string
+}
 
-type CreateCategoryRequest struct{}
+func (c *Category) GetCategoryID() uint64 {
+	if c != nil && c.CategoryID != nil {
+		return *c.CategoryID
+	}
+	return 0
+}
 
-type CreateCategoryResponse struct{}
+func (c *Category) GetCategoryName() string {
+	if c != nil && c.CategoryName != nil {
+		return *c.CategoryName
+	}
+	return ""
+}

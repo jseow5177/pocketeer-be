@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 build_service() {
-    echo "Build Pocketeer BE service"
+    echo "Building Pocketeer BE service..."
     go build -v -o ./bin/service ./cmd/service
     echo "Done. Here is target information"
     ls -lah -d ./bin/service
