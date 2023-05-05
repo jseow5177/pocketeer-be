@@ -14,8 +14,8 @@ import (
 	"github.com/jseow5177/pockteer-be/api/handler/budget"
 	"github.com/jseow5177/pockteer-be/api/handler/category"
 	"github.com/jseow5177/pockteer-be/api/middleware"
+	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
-	"github.com/jseow5177/pockteer-be/model"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/jseow5177/pockteer-be/pkg/router"
 	"github.com/jseow5177/pockteer-be/pkg/service"
@@ -85,13 +85,15 @@ func (s *server) registerRoutes() http.Handler {
 		Router: mux.NewRouter(),
 	}
 
+	// ========== Healthcheck ========== //
+
 	// healthcheck
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathHealthCheck,
 		Method: http.MethodGet,
 		Handler: router.Handler{
-			Req:       new(model.HealthCheckRequest),
-			Res:       new(model.HealthCheckResponse),
+			Req:       new(presenter.HealthCheckRequest),
+			Res:       new(presenter.HealthCheckResponse),
 			Validator: nil,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return nil
@@ -99,30 +101,38 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// ========== Category ========== //
+
+	catHandler := category.NewCategoryHandler()
+
 	// create category
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathCreateCategory,
 		Method: http.MethodPost,
 		Handler: router.Handler{
-			Req:       new(model.CreateCategoryRequest),
-			Res:       new(model.CreateCategoryResponse),
+			Req:       new(presenter.CreateCategoryRequest),
+			Res:       new(presenter.CreateCategoryResponse),
 			Validator: category.CreateCategoryValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return category.CreateCategory(ctx, req.(*model.CreateCategoryRequest), res.(*model.CreateCategoryResponse))
+				return catHandler.CreateCategory(ctx, req.(*presenter.CreateCategoryRequest), res.(*presenter.CreateCategoryResponse))
 			},
 		},
 	})
+
+	// ========== Budget ========== //
+
+	budgetHandler := budget.NewBudgetHandler()
 
 	// create budget
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathCreateBudget,
 		Method: http.MethodPost,
 		Handler: router.Handler{
-			Req:       new(model.CreateBudgetRequest),
-			Res:       new(model.CreateCategoryResponse),
+			Req:       new(presenter.CreateBudgetRequest),
+			Res:       new(presenter.CreateCategoryResponse),
 			Validator: budget.CreateBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budget.CreateBudget(ctx, req.(*model.CreateBudgetRequest), res.(*model.CreateBudgetResponse))
+				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
 			},
 		},
 	})

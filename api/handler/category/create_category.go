@@ -3,12 +3,16 @@ package category
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/model"
+	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 )
 
-var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{})
+var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
+	"cat_name": &validator.String{
+		Optional: false,
+	},
+})
 
-func CreateCategory(ctx context.Context, req *model.CreateCategoryRequest, res *model.CreateCategoryResponse) error {
+func (h *CategoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
 	return nil
 }
