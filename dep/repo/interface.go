@@ -16,6 +16,6 @@ type CategoryRepo interface {
 	Get(ctx context.Context, f *entity.CategoryFilter) (*entity.Category, error)
 	GetMany(ctx context.Context, f *entity.CategoryFilter) ([]*entity.Category, error)
 
-	Create(ctx context.Context, c *entity.Category) error
+	Create(ctx context.Context, c *entity.Category) (string, error)
 	Update(ctx context.Context, c *entity.Category) error
 }

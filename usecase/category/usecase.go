@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/rs/zerolog/log"
 )
 
 type CategoryUseCase struct {
@@ -25,7 +26,15 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, c *entity.Categor
 	c.CreateTime = goutil.Uint64(uint64(now))
 	c.UpdateTime = goutil.Uint64(uint64(now))
 
-	return uc.categoryRepo.Create(ctx, c)
+	id, err := uc.categoryRepo.Create(ctx, c)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save category to repo, err: %v", err)
+		return err
+	}
+
+	c.CatID = goutil.String(id)
+
+	return nil
 }
 
 func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, c *entity.Category) error {
@@ -37,5 +46,11 @@ func (uc *CategoryUseCase) GetCategory(ctx context.Context, f *entity.CategoryFi
 }
 
 func (uc *CategoryUseCase) GetCategories(ctx context.Context, f *entity.CategoryFilter) ([]*entity.Category, error) {
-	return nil, nil
+	ecs, err := uc.categoryRepo.GetMany(ctx, f)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
+		return nil, err
+	}
+
+	return ecs, nil
 }

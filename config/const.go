@@ -5,4 +5,5 @@ const (
 
 	PathHealthCheck    = "/"
 	PathCreateCategory = PathV1Prefix + "/category/create"
+	PathGetCategories  = PathV1Prefix + "/category/list"
 )

@@ -32,7 +32,7 @@ func (h *CategoryHandler) CreateCategory(ctx context.Context, req *presenter.Cre
 		return err
 	}
 
-	res.ToCategoryPresenter(c)
+	res.SetCategory(c)
 
 	return nil
 }

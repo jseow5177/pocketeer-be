@@ -45,6 +45,16 @@ func (m *Category) GetUpdateTime() uint64 {
 	return 0
 }
 
+func ToCategoryPresenter(c *entity.Category) *Category {
+	return &Category{
+		CatID:      c.CatID,
+		CatName:    c.CatName,
+		CatType:    c.CatType,
+		CreateTime: c.CreateTime,
+		UpdateTime: c.UpdateTime,
+	}
+}
+
 type CreateCategoryRequest struct {
 	CatName *string `json:"cat_name,omitempty"`
 	CatType *uint32 `json:"cat_type,omitempty"`
@@ -82,12 +92,42 @@ func (m *CreateCategoryResponse) GetCategory() *Category {
 	return nil
 }
 
-func (m *CreateCategoryResponse) ToCategoryPresenter(c *entity.Category) {
-	m.Category = &Category{
-		CatID:      c.CatID,
-		CatName:    c.CatName,
-		CatType:    c.CatType,
-		CreateTime: c.CreateTime,
-		UpdateTime: c.UpdateTime,
+func (m *CreateCategoryResponse) SetCategory(c *entity.Category) {
+	m.Category = ToCategoryPresenter(c)
+}
+
+type GetCategoriesRequest struct {
+	CatType *uint32 `json:"cat_type"`
+}
+
+func (m *GetCategoriesRequest) GetCatType() uint32 {
+	if m != nil && m.CatType != nil {
+		return *m.CatType
 	}
+	return 0
+}
+
+func (m *GetCategoriesRequest) ToCategoryFilter() *entity.CategoryFilter {
+	return &entity.CategoryFilter{
+		CatType: m.CatType,
+	}
+}
+
+type GetCategoriesResponse struct {
+	Categories []*Category `json:"categories"`
+}
+
+func (m *GetCategoriesResponse) GetCategories() []*Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+func (m *GetCategoriesResponse) SetCategories(ecs []*entity.Category) {
+	cs := make([]*Category, 0)
+	for _, ec := range ecs {
+		cs = append(cs, ToCategoryPresenter(ec))
+	}
+	m.Categories = cs
 }

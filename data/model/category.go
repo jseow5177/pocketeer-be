@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/jseow5177/pockteer-be/data/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -22,6 +23,16 @@ func ToCategoryModel(c *entity.Category) *Category {
 
 	return &Category{
 		CatID:      objID,
+		CatName:    c.CatName,
+		CatType:    c.CatType,
+		CreateTime: c.CreateTime,
+		UpdateTime: c.UpdateTime,
+	}
+}
+
+func ToCategoryEntity(c *Category) *entity.Category {
+	return &entity.Category{
+		CatID:      goutil.String(c.CatID.Hex()),
 		CatName:    c.CatName,
 		CatType:    c.CatType,
 		CreateTime: c.CreateTime,

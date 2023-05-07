@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"reflect"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -82,5 +84,26 @@ func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error
 	}
 
 	id := r.InsertedID.(primitive.ObjectID)
+
 	return id.Hex(), nil
+}
+
+func (mc *MongoColl) getMany(ctx context.Context, bsonM bson.M, model interface{}) ([]interface{}, error) {
+	cursor, err := mc.coll.Find(ctx, bsonM)
+	if err != nil {
+		return nil, err
+	}
+
+	t := reflect.TypeOf(model).Elem()
+
+	res := make([]interface{}, 0)
+	for cursor.Next(ctx) {
+		m := reflect.New(t).Interface()
+		if err = cursor.Decode(m); err != nil {
+			return nil, err
+		}
+		res = append(res, m)
+	}
+
+	return res, nil
 }

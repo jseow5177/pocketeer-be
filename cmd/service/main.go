@@ -55,8 +55,12 @@ func (s *server) Start() error {
 
 	// init mongo
 	s.mongo, err = mongo.NewMongo(s.ctx, s.cfg.Mongo)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init mongo client, err: %v", err)
+		return err
+	}
 	defer func() {
-		if s.mongo != nil && err != nil {
+		if err != nil {
 			_ = s.mongo.Close(s.ctx)
 		}
 	}()
@@ -131,6 +135,20 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: category.CreateCategoryValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return catHandler.CreateCategory(ctx, req.(*presenter.CreateCategoryRequest), res.(*presenter.CreateCategoryResponse))
+			},
+		},
+	})
+
+	// get categories
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategories,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoriesRequest),
+			Res:       new(presenter.GetCategoriesResponse),
+			Validator: category.GetCategoriesValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return catHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
 			},
 		},
 	})
