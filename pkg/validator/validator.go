@@ -284,6 +284,60 @@ func (uv *Uint64) Validate(value interface{}) error {
 	return nil
 }
 
+// ========== Uint32 Field Validator ========== //
+
+type Uint32Func func(uint32) error
+
+type Uint32 struct {
+	Optional   bool
+	UnsetZero  bool
+	Min        *uint32
+	Max        *uint32
+	Validators []Uint32Func
+}
+
+func (uv *Uint32) Validate(value interface{}) error {
+	if value == nil {
+		if uv.Optional {
+			return nil
+		}
+		return errors.New("uint32 field is required")
+	}
+
+	ui, ok := value.(uint32)
+	if !ok {
+		return errors.New("unexpected non-uint32 type")
+	}
+
+	if ui == 0 {
+		if uv.Optional {
+			if uv.UnsetZero {
+				return &unsetValue{}
+			}
+			return nil
+		}
+		return errors.New("uint32 field cannot be zero")
+	}
+
+	if uv.Min != nil && ui < *uv.Min {
+		return fmt.Errorf("must be greater than or equal to %v", *uv.Min)
+	}
+
+	if uv.Max != nil && ui > *uv.Max {
+		return fmt.Errorf("must be lesser than or equal to %v", *uv.Max)
+	}
+
+	for _, v := range uv.Validators {
+		if v != nil {
+			if err := v(ui); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func getFieldName(structField reflect.StructField) string {
 	jsonTag := structField.Tag.Get("json")
 	switch jsonTag {

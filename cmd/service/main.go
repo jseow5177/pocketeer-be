@@ -11,18 +11,23 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 
-	"github.com/jseow5177/pockteer-be/api/handler/budget"
 	"github.com/jseow5177/pockteer-be/api/handler/category"
 	"github.com/jseow5177/pockteer-be/api/middleware"
-	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/data/presenter"
+	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/jseow5177/pockteer-be/pkg/router"
 	"github.com/jseow5177/pockteer-be/pkg/service"
 )
 
 type server struct {
-	cfg *config.Config
+	ctx   context.Context
+	cfg   *config.Config
+	mongo *mongo.Mongo
+
+	categoryRepo repo.CategoryRepo
 }
 
 func main() {
@@ -40,19 +45,24 @@ func (s *server) Init() error {
 }
 
 func (s *server) Start() error {
-	ctx := context.Background()
+	var err error
 
 	// init logger
-	ctx = logger.InitZeroLog(ctx, s.cfg.Server.LogLevel)
+	s.ctx = logger.InitZeroLog(context.Background(), s.cfg.Server.LogLevel)
 
 	// init rate limiter
 	limiter := middleware.NewRateLimiter(s.cfg.Server.RateLimits)
 
-	// TODO: init Firestore
+	// init mongo
+	s.mongo, err = mongo.NewMongo(s.ctx, s.cfg.Mongo)
+	defer func() {
+		if s.mongo != nil && err != nil {
+			_ = s.mongo.Close(s.ctx)
+		}
+	}()
 
-	// TODO: init repositories
-
-	// TODO: init use cases
+	// init repos
+	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -61,10 +71,10 @@ func (s *server) Start() error {
 
 		httpServer := &http.Server{
 			BaseContext: func(_ net.Listener) context.Context {
-				return ctx
+				return s.ctx
 			},
 			Addr:    addr,
-			Handler: middleware.RateLimit(ctx, limiter, middleware.Log(s.registerRoutes())),
+			Handler: middleware.RateLimit(s.ctx, limiter, middleware.Log(s.registerRoutes())),
 		}
 		err := httpServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
@@ -76,7 +86,13 @@ func (s *server) Start() error {
 }
 
 func (s *server) Stop() error {
-	// close dependencies
+	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
+	defer cancel()
+
+	if err := s.mongo.Close(ctx); err != nil {
+		log.Ctx(ctx).Error().Msgf("close mongo fail, err: %v", err)
+	}
+
 	return nil
 }
 
@@ -103,7 +119,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Category ========== //
 
-	catHandler := category.NewCategoryHandler()
+	catHandler := category.NewCategoryHandler(s.categoryRepo)
 
 	// create category
 	r.RegisterHttpRoute(&router.HttpRoute{
@@ -115,24 +131,6 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: category.CreateCategoryValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return catHandler.CreateCategory(ctx, req.(*presenter.CreateCategoryRequest), res.(*presenter.CreateCategoryResponse))
-			},
-		},
-	})
-
-	// ========== Budget ========== //
-
-	budgetHandler := budget.NewBudgetHandler()
-
-	// create budget
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathCreateBudget,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.CreateBudgetRequest),
-			Res:       new(presenter.CreateCategoryResponse),
-			Validator: budget.CreateBudgetValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
 			},
 		},
 	})

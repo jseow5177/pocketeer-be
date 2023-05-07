@@ -1,8 +1,10 @@
 package config
 
+import "fmt"
+
 type Config struct {
-	Server    *Server    `json:"server"`
-	Firestore *FireStore `json:"firestore"`
+	Server *Server `json:"server"`
+	Mongo  *Mongo  `json:"mongo"`
 }
 
 type RateLimit struct {
@@ -16,7 +18,17 @@ type Server struct {
 	RateLimits map[string]*RateLimit `json:"rate_limits"`
 }
 
-type FireStore struct{}
+type Mongo struct {
+	Username string `json:"username"`
+	Password string `json:"passowrd"`
+	Host     string `json:"host"`
+	DBName   string `json:"db_name"`
+}
+
+func (m *Mongo) String() string {
+	uri := "mongodb+srv://%s:%s@%s/"
+	return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
+}
 
 func NewConfig() *Config {
 	return &Config{
@@ -25,6 +37,11 @@ func NewConfig() *Config {
 			Port:       9090,
 			RateLimits: make(map[string]*RateLimit),
 		},
-		Firestore: &FireStore{},
+		Mongo: &Mongo{
+			Username: "pocketeer-test",
+			Password: "eTSvssKfSWCzRylk",
+			Host:     "mongodb-test.djhnkbj.mongodb.net",
+			DBName:   "pocketeer",
+		},
 	}
 }

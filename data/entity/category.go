@@ -7,16 +7,21 @@ const (
 	CatTypeIncome  CatType = 2
 )
 
+var CatTypes = map[uint32]string{
+	uint32(CatTypeExpense): "expense",
+	uint32(CatTypeIncome):  "income",
+}
+
 type CategoryFilter struct {
-	CatID   *uint64
+	CatID   *string
 	CatType *uint32
 }
 
-func (f *CategoryFilter) GetCatID() uint64 {
+func (f *CategoryFilter) GetCatID() string {
 	if f != nil && f.CatID != nil {
 		return *f.CatID
 	}
-	return 0
+	return ""
 }
 
 func (f *CategoryFilter) GetCatType() uint32 {
@@ -27,18 +32,18 @@ func (f *CategoryFilter) GetCatType() uint32 {
 }
 
 type Category struct {
-	CatID      *uint64
+	CatID      *string
 	CatName    *string
 	CatType    *uint32
 	CreateTime *uint64
 	UpdateTime *uint64
 }
 
-func (c *Category) GetCatID() uint64 {
+func (c *Category) GetCatID() string {
 	if c != nil && c.CatID != nil {
 		return *c.CatID
 	}
-	return 0
+	return ""
 }
 
 func (c *Category) GetCatName() string {
