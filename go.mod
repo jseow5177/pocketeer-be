@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/gorilla/mux v1.8.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/rs/zerolog v1.29.1
 	go.mongodb.org/mongo-driver v1.11.6
 	golang.org/x/time v0.3.0
@@ -12,7 +13,6 @@ require (
 require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
