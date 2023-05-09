@@ -7,6 +7,7 @@ import (
 )
 
 type Category struct {
+	UserID     *string            `bson:"user_id"`
 	CatID      primitive.ObjectID `bson:"_id,omitempty"`
 	CatName    *string            `bson:"cat_name,omitempty"`
 	CatType    *uint32            `bson:"cat_type,omitempty"`
@@ -22,6 +23,7 @@ func ToCategoryModel(c *entity.Category) *Category {
 	}
 
 	return &Category{
+		UserID:     c.UserID,
 		CatID:      objID,
 		CatName:    c.CatName,
 		CatType:    c.CatType,
@@ -32,6 +34,7 @@ func ToCategoryModel(c *entity.Category) *Category {
 
 func ToCategoryEntity(c *Category) *entity.Category {
 	return &entity.Category{
+		UserID:     c.UserID,
 		CatID:      goutil.String(c.CatID.Hex()),
 		CatName:    c.CatName,
 		CatType:    c.CatType,

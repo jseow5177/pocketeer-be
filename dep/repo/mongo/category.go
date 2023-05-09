@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/data/model"
+	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
@@ -35,7 +36,7 @@ func (m *CategoryMongo) Update(ctx context.Context, c *entity.Category) error {
 	return nil
 }
 
-func (m *CategoryMongo) Get(ctx context.Context, cf *entity.CategoryFilter) (*entity.Category, error) {
+func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
 	f := mongoutil.BuildFilter(cf)
 
 	c := new(model.Category)
@@ -46,7 +47,7 @@ func (m *CategoryMongo) Get(ctx context.Context, cf *entity.CategoryFilter) (*en
 	return model.ToCategoryEntity(c), nil
 }
 
-func (m *CategoryMongo) GetMany(ctx context.Context, cf *entity.CategoryFilter) ([]*entity.Category, error) {
+func (m *CategoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
 	f := mongoutil.BuildFilter(cf)
 
 	res, err := m.mColl.getMany(ctx, f, new(model.Category))

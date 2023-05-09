@@ -1,6 +1,10 @@
 package presenter
 
-import "github.com/jseow5177/pockteer-be/data/entity"
+import (
+	"github.com/jseow5177/pockteer-be/data/entity"
+	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
 
 type Category struct {
 	CatID      *string `json:"cat_id,omitempty"`
@@ -74,8 +78,9 @@ func (m *CreateCategoryRequest) GetCatType() uint32 {
 	return 0
 }
 
-func (m *CreateCategoryRequest) ToCategoryEntity() *entity.Category {
+func (m *CreateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
 	return &entity.Category{
+		UserID:  goutil.String(userID),
 		CatName: m.CatName,
 		CatType: m.CatType,
 	}
@@ -107,8 +112,9 @@ func (m *GetCategoriesRequest) GetCatType() uint32 {
 	return 0
 }
 
-func (m *GetCategoriesRequest) ToCategoryFilter() *entity.CategoryFilter {
-	return &entity.CategoryFilter{
+func (m *GetCategoriesRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:  goutil.String(userID),
 		CatType: m.CatType,
 	}
 }
@@ -151,8 +157,9 @@ func (m *UpdateCategoryRequest) GetCatName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
+func (m *UpdateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
 	return &entity.Category{
+		UserID:  goutil.String(userID),
 		CatID:   m.CatID,
 		CatName: m.CatName,
 	}
@@ -184,9 +191,10 @@ func (m *GetCategoryRequest) GetCatID() string {
 	return ""
 }
 
-func (m *GetCategoryRequest) ToCategoryFilter() *entity.CategoryFilter {
-	return &entity.CategoryFilter{
-		CatID: m.CatID,
+func (m *GetCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID: goutil.String(userID),
+		CatID:  m.CatID,
 	}
 }
 

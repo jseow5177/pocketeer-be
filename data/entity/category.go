@@ -12,31 +12,20 @@ var CatTypes = map[uint32]string{
 	uint32(CatTypeIncome):  "income",
 }
 
-type CategoryFilter struct {
-	CatID   *string `filter:"_id"`
-	CatType *uint32 `filter:"cat_type"`
-}
-
-func (f *CategoryFilter) GetCatID() string {
-	if f != nil && f.CatID != nil {
-		return *f.CatID
-	}
-	return ""
-}
-
-func (f *CategoryFilter) GetCatType() uint32 {
-	if f != nil && f.CatType != nil {
-		return *f.CatType
-	}
-	return 0
-}
-
 type Category struct {
+	UserID     *string
 	CatID      *string
 	CatName    *string
 	CatType    *uint32
 	CreateTime *uint64
 	UpdateTime *uint64
+}
+
+func (c *Category) GetUserID() string {
+	if c != nil && c.UserID != nil {
+		return *c.UserID
+	}
+	return ""
 }
 
 func (c *Category) GetCatID() string {

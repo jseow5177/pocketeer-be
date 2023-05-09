@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/data/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
@@ -23,11 +24,12 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 
 func (h *CategoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
 	var (
-		uc = category.NewCategoryUseCase(h.categoryRepo)
-		c  = req.ToCategoryEntity()
+		userID = middleware.GetUserIDFromCtx(ctx)
+		uc     = category.NewCategoryUseCase(h.categoryRepo)
 	)
 
-	if err := uc.CreateCategory(ctx, c); err != nil {
+	c, err := uc.CreateCategory(ctx, userID, req)
+	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create category, err: %v", err)
 		return err
 	}
