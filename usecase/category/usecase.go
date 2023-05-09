@@ -6,6 +6,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
@@ -28,7 +29,7 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, c *entity.Categor
 
 	id, err := uc.categoryRepo.Create(ctx, c)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save category to repo, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return err
 	}
 
@@ -38,11 +39,24 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, c *entity.Categor
 }
 
 func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, c *entity.Category) error {
+	now := time.Now().Unix()
+
+	c.UpdateTime = goutil.Uint64(uint64(now))
+
 	return nil
 }
 
 func (uc *CategoryUseCase) GetCategory(ctx context.Context, f *entity.CategoryFilter) (*entity.Category, error) {
-	return nil, nil
+	ec, err := uc.categoryRepo.Get(ctx, f)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		if err == errutil.ErrNotFound {
+			return nil, errutil.NotFoundError(err)
+		}
+		return nil, err
+	}
+
+	return ec, nil
 }
 
 func (uc *CategoryUseCase) GetCategories(ctx context.Context, f *entity.CategoryFilter) ([]*entity.Category, error) {

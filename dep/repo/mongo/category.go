@@ -36,7 +36,14 @@ func (m *CategoryMongo) Update(ctx context.Context, c *entity.Category) error {
 }
 
 func (m *CategoryMongo) Get(ctx context.Context, cf *entity.CategoryFilter) (*entity.Category, error) {
-	return nil, nil
+	f := mongoutil.BuildFilter(cf)
+
+	c := new(model.Category)
+	if err := m.mColl.get(ctx, f, &c); err != nil {
+		return nil, err
+	}
+
+	return model.ToCategoryEntity(c), nil
 }
 
 func (m *CategoryMongo) GetMany(ctx context.Context, cf *entity.CategoryFilter) ([]*entity.Category, error) {

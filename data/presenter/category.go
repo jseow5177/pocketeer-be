@@ -131,3 +131,76 @@ func (m *GetCategoriesResponse) SetCategories(ecs []*entity.Category) {
 	}
 	m.Categories = cs
 }
+
+type UpdateCategoryRequest struct {
+	CatID   *string `json:"cat_id,omitempty"`
+	CatName *string `json:"cat_name,omitempty"`
+}
+
+func (m *UpdateCategoryRequest) GetCatID() string {
+	if m != nil && m.CatID != nil {
+		return *m.CatID
+	}
+	return ""
+}
+
+func (m *UpdateCategoryRequest) GetCatName() string {
+	if m != nil && m.CatName != nil {
+		return *m.CatName
+	}
+	return ""
+}
+
+func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
+	return &entity.Category{
+		CatID:   m.CatID,
+		CatName: m.CatName,
+	}
+}
+
+type UpdateCategoryResponse struct {
+	Category *Category `json:"category,omitempty"`
+}
+
+func (m *UpdateCategoryResponse) GetCategory() *Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
+}
+
+func (m *UpdateCategoryResponse) SetCategory(c *entity.Category) {
+	m.Category = ToCategoryPresenter(c)
+}
+
+type GetCategoryRequest struct {
+	CatID *string `json:"cat_id"`
+}
+
+func (m *GetCategoryRequest) GetCatID() string {
+	if m != nil && m.CatID != nil {
+		return *m.CatID
+	}
+	return ""
+}
+
+func (m *GetCategoryRequest) ToCategoryFilter() *entity.CategoryFilter {
+	return &entity.CategoryFilter{
+		CatID: m.CatID,
+	}
+}
+
+type GetCategoryResponse struct {
+	Category *Category `json:"category,omitempty"`
+}
+
+func (m *GetCategoryResponse) GetCategory() *Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
+}
+
+func (m *GetCategoryResponse) SetCategory(c *entity.Category) {
+	m.Category = ToCategoryPresenter(c)
+}

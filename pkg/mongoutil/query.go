@@ -7,9 +7,13 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const filterTag = "filter"
+
 const (
+	_id = "_id"
 	sep = "__"
 	eq  = "eq"
 	ne  = "ne"
@@ -49,9 +53,9 @@ func BuildFilter(filter interface{}) bson.M {
 
 	conds := make(bson.M)
 	for i := 0; i < val.NumField(); i++ {
-		fn := val.Type().Field(i).Name       // filter name
-		fv := reflect.Indirect(val.Field(i)) // filter value
-		fk := fv.Kind()                      // filter type
+		fn := val.Type().Field(i).Tag.Get(filterTag) // filter name
+		fv := reflect.Indirect(val.Field(i))         // filter value
+		fk := fv.Kind()                              // filter type
 
 		// handle nil pointer
 		if fk == reflect.Invalid {
@@ -83,7 +87,17 @@ func BuildFilter(filter interface{}) bson.M {
 		cond := make(bson.M)
 		cond[op] = fv.Interface()
 
-		conds[strcase.ToSnake(parts[0])] = cond
+		// handle _id field
+		f := strcase.ToSnake(parts[0])
+		if f == _id {
+			id := fmt.Sprint(cond[op])
+			if primitive.IsValidObjectID(id) {
+				objID, _ := primitive.ObjectIDFromHex(id)
+				cond[op] = objID
+			}
+		}
+
+		conds[f] = cond
 	}
 
 	return conds

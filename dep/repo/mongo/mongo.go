@@ -8,8 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
 type Mongo struct {
@@ -20,6 +22,10 @@ type Mongo struct {
 func NewMongo(ctx context.Context, cfg *config.Mongo) (*Mongo, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.String()))
 	if err != nil {
+		return nil, err
+	}
+
+	if err = client.Ping(ctx, readpref.Primary()); err != nil {
 		return nil, err
 	}
 
@@ -86,6 +92,17 @@ func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error
 	id := r.InsertedID.(primitive.ObjectID)
 
 	return id.Hex(), nil
+}
+
+func (mc *MongoColl) get(ctx context.Context, bsonM bson.M, model interface{}) error {
+	if err := mc.coll.FindOne(ctx, bsonM).Decode(model); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return errutil.ErrNotFound
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (mc *MongoColl) getMany(ctx context.Context, bsonM bson.M, model interface{}) ([]interface{}, error) {

@@ -13,8 +13,8 @@ var CatTypes = map[uint32]string{
 }
 
 type CategoryFilter struct {
-	CatID   *string
-	CatType *uint32
+	CatID   *string `filter:"_id"`
+	CatType *uint32 `filter:"cat_type"`
 }
 
 func (f *CategoryFilter) GetCatID() string {

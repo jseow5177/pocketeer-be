@@ -139,6 +139,34 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// update category
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateCategory,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateCategoryRequest),
+			Res:       new(presenter.UpdateCategoryResponse),
+			Validator: category.UpdateCategoryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return catHandler.UpdateCategory(ctx, req.(*presenter.UpdateCategoryRequest), res.(*presenter.UpdateCategoryResponse))
+			},
+		},
+	})
+
+	// get category
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategory,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoryRequest),
+			Res:       new(presenter.GetCategoryResponse),
+			Validator: category.GetCategoryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return catHandler.GetCategory(ctx, req.(*presenter.GetCategoryRequest), res.(*presenter.GetCategoryResponse))
+			},
+		},
+	})
+
 	// get categories
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetCategories,
