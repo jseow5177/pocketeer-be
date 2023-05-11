@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/data/model"
 	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
 const categoryCollName = "category"
@@ -32,15 +31,18 @@ func (m *CategoryMongo) Create(ctx context.Context, c *entity.Category) (string,
 	return id, nil
 }
 
-func (m *CategoryMongo) Update(ctx context.Context, c *entity.Category) error {
+func (m *CategoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
+	mc := model.ToCategoryModel(c)
+	if err := m.mColl.update(ctx, cf, mc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
-	f := mongoutil.BuildFilter(cf)
-
 	c := new(model.Category)
-	if err := m.mColl.get(ctx, f, &c); err != nil {
+	if err := m.mColl.get(ctx, cf, &c); err != nil {
 		return nil, err
 	}
 
@@ -48,9 +50,7 @@ func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*enti
 }
 
 func (m *CategoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
-	f := mongoutil.BuildFilter(cf)
-
-	res, err := m.mColl.getMany(ctx, f, new(model.Category))
+	res, err := m.mColl.getMany(ctx, cf, new(model.Category))
 	if err != nil {
 		return nil, err
 	}

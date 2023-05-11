@@ -157,10 +157,14 @@ func (m *UpdateCategoryRequest) GetCatName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
+func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		CatID: m.CatID,
+	}
+}
+
+func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
 	return &entity.Category{
-		UserID:  goutil.String(userID),
-		CatID:   m.CatID,
 		CatName: m.CatName,
 	}
 }
@@ -191,10 +195,9 @@ func (m *GetCategoryRequest) GetCatID() string {
 	return ""
 }
 
-func (m *GetCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
+func (m *GetCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID: goutil.String(userID),
-		CatID:  m.CatID,
+		CatID: m.CatID,
 	}
 }
 

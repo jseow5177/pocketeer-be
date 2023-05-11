@@ -10,9 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const filterTag = "filter"
-
 const (
+	filterTag = "filter"
+
 	_id = "_id"
 	sep = "__"
 	eq  = "eq"

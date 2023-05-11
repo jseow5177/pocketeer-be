@@ -7,7 +7,7 @@ import (
 )
 
 type Category struct {
-	UserID     *string            `bson:"user_id"`
+	UserID     *string            `bson:"user_id,omitempty"`
 	CatID      primitive.ObjectID `bson:"_id,omitempty"`
 	CatName    *string            `bson:"cat_name,omitempty"`
 	CatType    *uint32            `bson:"cat_type,omitempty"`
@@ -16,8 +16,7 @@ type Category struct {
 }
 
 func ToCategoryModel(c *entity.Category) *Category {
-	objID := primitive.NewObjectID()
-
+	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(c.GetCatID()) {
 		objID, _ = primitive.ObjectIDFromHex(c.GetCatID())
 	}

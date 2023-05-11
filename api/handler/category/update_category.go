@@ -5,7 +5,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/data/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/usecase/category"
@@ -21,12 +20,9 @@ var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *CategoryHandler) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest, res *presenter.UpdateCategoryResponse) error {
-	var (
-		userID = middleware.GetUserIDFromCtx(ctx)
-		uc     = category.NewCategoryUseCase(h.categoryRepo)
-	)
+	uc := category.NewCategoryUseCase(h.categoryRepo)
 
-	c, err := uc.UpdateCategory(ctx, userID, req)
+	c, err := uc.UpdateCategory(ctx, req)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to update category, err: %v", err)
 		return err

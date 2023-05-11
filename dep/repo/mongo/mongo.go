@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
 type Mongo struct {
@@ -94,8 +94,24 @@ func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error
 	return id.Hex(), nil
 }
 
-func (mc *MongoColl) get(ctx context.Context, bsonM bson.M, model interface{}) error {
-	if err := mc.coll.FindOne(ctx, bsonM).Decode(model); err != nil {
+func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) error {
+	var (
+		f = mongoutil.BuildFilter(filter)
+		u = mongoutil.BuildUpdate(update)
+	)
+
+	_, err := mc.coll.UpdateOne(ctx, f, u)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interface{}) error {
+	f := mongoutil.BuildFilter(filter)
+
+	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return errutil.ErrNotFound
 		}
@@ -105,8 +121,10 @@ func (mc *MongoColl) get(ctx context.Context, bsonM bson.M, model interface{}) e
 	return nil
 }
 
-func (mc *MongoColl) getMany(ctx context.Context, bsonM bson.M, model interface{}) ([]interface{}, error) {
-	cursor, err := mc.coll.Find(ctx, bsonM)
+func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, model interface{}) ([]interface{}, error) {
+	f := mongoutil.BuildFilter(filter)
+
+	cursor, err := mc.coll.Find(ctx, f)
 	if err != nil {
 		return nil, err
 	}
