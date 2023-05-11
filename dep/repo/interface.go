@@ -14,10 +14,10 @@ type TxMgr interface {
 // An abstraction for Transaction storage
 type TransactionRepo interface {
 	Get(ctx context.Context, tf *TransactionFilter) (*entity.Transaction, error)
-	//GetMany(ctx context.Context, tf *TransactionFilter) ([]*entity.Transaction, error)
+	GetMany(ctx context.Context, tf *TransactionFilter) ([]*entity.Transaction, error)
 
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
-	//Update(ctx context.Context, tf *TransactionFilter, t *entity.Transaction) error
+	Update(ctx context.Context, tf *TransactionFilter, t *entity.Transaction) error
 }
 
 type TransactionFilter struct {
