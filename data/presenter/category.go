@@ -164,6 +164,12 @@ func (m *UpdateCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFi
 	}
 }
 
+func (m *UpdateCategoryRequest) ToGetCategoryRequest() *GetCategoryRequest {
+	return &GetCategoryRequest{
+		CatID: m.CatID,
+	}
+}
+
 func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
 	return &entity.Category{
 		CatName: m.CatName,

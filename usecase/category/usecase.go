@@ -43,9 +43,7 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, re
 }
 
 func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, userID string, req *presenter.UpdateCategoryRequest) (*entity.Category, error) {
-	cf := req.ToCategoryFilter(userID)
-
-	c, err := uc.categoryRepo.Get(ctx, cf)
+	c, err := uc.GetCategory(ctx, userID, req.ToGetCategoryRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +55,7 @@ func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, userID string, re
 		return c, nil
 	}
 
+	cf := req.ToCategoryFilter(userID)
 	if err = uc.categoryRepo.Update(ctx, cf, nc); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save category updates to repo, err: %v", err)
 		return nil, err

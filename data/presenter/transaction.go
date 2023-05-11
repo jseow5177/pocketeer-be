@@ -131,6 +131,12 @@ func (m *CreateTransactionRequest) ToTransactionEntity(userID string) *entity.Tr
 	}
 }
 
+func (m *CreateTransactionRequest) ToGetCategoryRequest() *GetCategoryRequest {
+	return &GetCategoryRequest{
+		CatID: m.CatID,
+	}
+}
+
 type CreateTransactionResponse struct {
 	Transaction *Transaction `json:"transaction,omitempty"`
 }

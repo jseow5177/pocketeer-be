@@ -37,10 +37,7 @@ func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID stri
 		now = uint64(time.Now().Unix())
 	)
 
-	gcReq := &presenter.GetCategoryRequest{
-		CatID: req.CatID,
-	}
-	if _, err := uc.categoryRepo.GetCategory(ctx, userID, gcReq); err != nil {
+	if _, err := uc.categoryRepo.GetCategory(ctx, userID, req.ToGetCategoryRequest()); err != nil {
 		return nil, err
 	}
 
