@@ -11,6 +11,42 @@ type TxMgr interface {
 	WithTx(ctx context.Context, txFn func(txCtx context.Context) error) error
 }
 
+// An abstraction for Transaction storage
+type TransactionRepo interface {
+	Get(ctx context.Context, tf *TransactionFilter) (*entity.Transaction, error)
+	//GetMany(ctx context.Context, tf *TransactionFilter) ([]*entity.Transaction, error)
+
+	Create(ctx context.Context, t *entity.Transaction) (string, error)
+	//Update(ctx context.Context, tf *TransactionFilter, t *entity.Transaction) error
+}
+
+type TransactionFilter struct {
+	UserID          *string `filter:"user_id"`
+	TransactionID   *string `filter:"_id"`
+	TransactionType *uint32 `filter:"transaction_type"`
+}
+
+func (f *TransactionFilter) GetUserID() string {
+	if f != nil && f.UserID != nil {
+		return *f.UserID
+	}
+	return ""
+}
+
+func (f *TransactionFilter) GetTransactionID() string {
+	if f != nil && f.TransactionID != nil {
+		return *f.TransactionID
+	}
+	return ""
+}
+
+func (f *TransactionFilter) GetTransactionType() uint32 {
+	if f != nil && f.TransactionType != nil {
+		return *f.TransactionType
+	}
+	return 0
+}
+
 // An abstraction for Category storage
 type CategoryRepo interface {
 	Get(ctx context.Context, cf *CategoryFilter) (*entity.Category, error)

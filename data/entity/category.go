@@ -1,17 +1,5 @@
 package entity
 
-type CatType uint32
-
-const (
-	CatTypeExpense CatType = 1
-	CatTypeIncome  CatType = 2
-)
-
-var CatTypes = map[uint32]string{
-	uint32(CatTypeExpense): "expense",
-	uint32(CatTypeIncome):  "income",
-}
-
 type Category struct {
 	UserID     *string
 	CatID      *string

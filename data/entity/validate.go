@@ -3,12 +3,12 @@ package entity
 import "errors"
 
 var (
-	ErrInvalidCatType = errors.New("invalid cat type")
+	ErrTransactionType = errors.New("invalid transaction type")
 )
 
-func CheckCatType(catType uint32) error {
-	if _, ok := CatTypes[catType]; ok {
+func CheckTransactionType(transactionType uint32) error {
+	if _, ok := TransactionTypes[transactionType]; ok {
 		return nil
 	}
-	return ErrInvalidCatType
+	return ErrTransactionType
 }

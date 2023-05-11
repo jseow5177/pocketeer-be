@@ -15,7 +15,7 @@ var GetCategoriesValidator = validator.MustForm(map[string]validator.Validator{
 	"cat_type": &validator.Uint32{
 		Optional:   true,
 		UnsetZero:  true,
-		Validators: []validator.Uint32Func{entity.CheckCatType},
+		Validators: []validator.Uint32Func{entity.CheckTransactionType},
 	},
 })
 

@@ -87,8 +87,8 @@ func (uc *CategoryUseCase) getCategoryUpdates(old, changes *entity.Category) *en
 	return nc
 }
 
-func (uc *CategoryUseCase) GetCategory(ctx context.Context, req *presenter.GetCategoryRequest) (*entity.Category, error) {
-	cf := req.ToCategoryFilter()
+func (uc *CategoryUseCase) GetCategory(ctx context.Context, userID string, req *presenter.GetCategoryRequest) (*entity.Category, error) {
+	cf := req.ToCategoryFilter(userID)
 
 	c, err := uc.categoryRepo.Get(ctx, cf)
 	if err != nil {

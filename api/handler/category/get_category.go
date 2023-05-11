@@ -3,6 +3,7 @@ package category
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/data/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/usecase/category"
@@ -16,9 +17,12 @@ var GetCategoryValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *CategoryHandler) GetCategory(ctx context.Context, req *presenter.GetCategoryRequest, res *presenter.GetCategoryResponse) error {
-	uc := category.NewCategoryUseCase(h.categoryRepo)
+	var (
+		userID = middleware.GetUserIDFromCtx(ctx)
+		uc     = category.NewCategoryUseCase(h.categoryRepo)
+	)
 
-	c, err := uc.GetCategory(ctx, req)
+	c, err := uc.GetCategory(ctx, userID, req)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category, err: %v", err)
 		return err

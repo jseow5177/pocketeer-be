@@ -32,8 +32,8 @@ func (m *CategoryMongo) Create(ctx context.Context, c *entity.Category) (string,
 }
 
 func (m *CategoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
-	mc := model.ToCategoryModel(c)
-	if err := m.mColl.update(ctx, cf, mc); err != nil {
+	cm := model.ToCategoryModel(c)
+	if err := m.mColl.update(ctx, cf, cm); err != nil {
 		return err
 	}
 

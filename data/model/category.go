@@ -33,8 +33,8 @@ func ToCategoryModel(c *entity.Category) *Category {
 
 func ToCategoryEntity(c *Category) *entity.Category {
 	return &entity.Category{
-		UserID:     c.UserID,
 		CatID:      goutil.String(c.CatID.Hex()),
+		UserID:     c.UserID,
 		CatName:    c.CatName,
 		CatType:    c.CatType,
 		CreateTime: c.CreateTime,
@@ -42,37 +42,37 @@ func ToCategoryEntity(c *Category) *entity.Category {
 	}
 }
 
-func (m *Category) GetCatID() string {
-	if m != nil {
-		return m.CatID.Hex()
+func (c *Category) GetCatID() string {
+	if c != nil {
+		return c.CatID.Hex()
 	}
 	return ""
 }
 
-func (m *Category) GetCatName() string {
-	if m != nil && m.CatName != nil {
-		return *m.CatName
+func (c *Category) GetCatName() string {
+	if c != nil && c.CatName != nil {
+		return *c.CatName
 	}
 	return ""
 }
 
-func (m *Category) GetCatType() uint32 {
-	if m != nil && m.CatType != nil {
-		return *m.CatType
+func (c *Category) GetCatType() uint32 {
+	if c != nil && c.CatType != nil {
+		return *c.CatType
 	}
 	return 0
 }
 
-func (m *Category) GetCreateTime() uint64 {
-	if m != nil && m.CreateTime != nil {
-		return *m.CreateTime
+func (c *Category) GetCreateTime() uint64 {
+	if c != nil && c.CreateTime != nil {
+		return *c.CreateTime
 	}
 	return 0
 }
 
-func (m *Category) GetUpdateTime() uint64 {
-	if m != nil && m.UpdateTime != nil {
-		return *m.UpdateTime
+func (c *Category) GetUpdateTime() uint64 {
+	if c != nil && c.UpdateTime != nil {
+		return *c.UpdateTime
 	}
 	return 0
 }

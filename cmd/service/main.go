@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/jseow5177/pockteer-be/api/handler/category"
+	"github.com/jseow5177/pockteer-be/api/handler/transaction"
 	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/data/presenter"
@@ -27,7 +28,8 @@ type server struct {
 	cfg   *config.Config
 	mongo *mongo.Mongo
 
-	categoryRepo repo.CategoryRepo
+	categoryRepo    repo.CategoryRepo
+	transactionRepo repo.TransactionRepo
 }
 
 func main() {
@@ -67,6 +69,7 @@ func (s *server) Start() error {
 
 	// init repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
+	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -92,6 +95,8 @@ func (s *server) Start() error {
 func (s *server) Stop() error {
 	ctx, cancel := context.WithTimeout(s.ctx, 30*time.Second)
 	defer cancel()
+
+	// TODO: Handle inflight requests
 
 	if err := s.mongo.Close(ctx); err != nil {
 		log.Ctx(ctx).Error().Msgf("close mongo fail, err: %v", err)
@@ -177,6 +182,38 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: category.GetCategoriesValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return catHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
+			},
+		},
+	})
+
+	// ========== Transaction ========== //
+
+	transactionHandler := transaction.NewTransactionHandler(s.categoryRepo, s.transactionRepo)
+
+	// create transaction
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateTransaction,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateTransactionRequest),
+			Res:       new(presenter.CreateTransactionResponse),
+			Validator: transaction.CreateTransactionValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.CreateTransaction(ctx, req.(*presenter.CreateTransactionRequest), res.(*presenter.CreateTransactionResponse))
+			},
+		},
+	})
+
+	// get transaction
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransaction,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionRequest),
+			Res:       new(presenter.GetTransactionResponse),
+			Validator: transaction.GetTransactionValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransaction(ctx, req.(*presenter.GetTransactionRequest), res.(*presenter.GetTransactionResponse))
 			},
 		},
 	})

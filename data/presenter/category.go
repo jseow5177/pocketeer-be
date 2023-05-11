@@ -14,37 +14,37 @@ type Category struct {
 	UpdateTime *uint64 `json:"update_time,omitempty"`
 }
 
-func (m *Category) GetCatID() string {
-	if m != nil && m.CatID != nil {
-		return *m.CatID
+func (c *Category) GetCatID() string {
+	if c != nil && c.CatID != nil {
+		return *c.CatID
 	}
 	return ""
 }
 
-func (m *Category) GetCatName() string {
-	if m != nil && m.CatName != nil {
-		return *m.CatName
+func (c *Category) GetCatName() string {
+	if c != nil && c.CatName != nil {
+		return *c.CatName
 	}
 	return ""
 }
 
-func (m *Category) GetCatType() uint32 {
-	if m != nil && m.CatType != nil {
-		return *m.CatType
+func (c *Category) GetCatType() uint32 {
+	if c != nil && c.CatType != nil {
+		return *c.CatType
 	}
 	return 0
 }
 
-func (m *Category) GetCreateTime() uint64 {
-	if m != nil && m.CreateTime != nil {
-		return *m.CreateTime
+func (c *Category) GetCreateTime() uint64 {
+	if c != nil && c.CreateTime != nil {
+		return *c.CreateTime
 	}
 	return 0
 }
 
-func (m *Category) GetUpdateTime() uint64 {
-	if m != nil && m.UpdateTime != nil {
-		return *m.UpdateTime
+func (c *Category) GetUpdateTime() uint64 {
+	if c != nil && c.UpdateTime != nil {
+		return *c.UpdateTime
 	}
 	return 0
 }
@@ -195,9 +195,10 @@ func (m *GetCategoryRequest) GetCatID() string {
 	return ""
 }
 
-func (m *GetCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
+func (m *GetCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		CatID: m.CatID,
+		UserID: goutil.String(userID),
+		CatID:  m.CatID,
 	}
 }
 

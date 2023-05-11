@@ -18,7 +18,7 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 	},
 	"cat_type": &validator.Uint32{
 		Optional:   false,
-		Validators: []validator.Uint32Func{entity.CheckCatType},
+		Validators: []validator.Uint32Func{entity.CheckTransactionType},
 	},
 })
 
