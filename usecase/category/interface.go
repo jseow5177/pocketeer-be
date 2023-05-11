@@ -12,5 +12,5 @@ type UseCase interface {
 	GetCategories(ctx context.Context, userID string, req *presenter.GetCategoriesRequest) ([]*entity.Category, error)
 
 	CreateCategory(ctx context.Context, userID string, req *presenter.CreateCategoryRequest) (*entity.Category, error)
-	UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest) (*entity.Category, error)
+	UpdateCategory(ctx context.Context, userID string, req *presenter.UpdateCategoryRequest) (*entity.Category, error)
 }

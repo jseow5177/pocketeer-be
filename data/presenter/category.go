@@ -157,9 +157,10 @@ func (m *UpdateCategoryRequest) GetCatName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
+func (m *UpdateCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		CatID: m.CatID,
+		UserID: goutil.String(userID),
+		CatID:  m.CatID,
 	}
 }
 

@@ -25,11 +25,11 @@ func NewCategoryUseCase(categoryRepo repo.CategoryRepo) UseCase {
 func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, req *presenter.CreateCategoryRequest) (*entity.Category, error) {
 	var (
 		c   = req.ToCategoryEntity(userID)
-		now = time.Now().Unix()
+		now = uint64(time.Now().Unix())
 	)
 
-	c.CreateTime = goutil.Uint64(uint64(now))
-	c.UpdateTime = goutil.Uint64(uint64(now))
+	c.CreateTime = goutil.Uint64(now)
+	c.UpdateTime = goutil.Uint64(now)
 
 	id, err := uc.categoryRepo.Create(ctx, c)
 	if err != nil {
@@ -42,8 +42,8 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, re
 	return c, nil
 }
 
-func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest) (*entity.Category, error) {
-	cf := req.ToCategoryFilter()
+func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, userID string, req *presenter.UpdateCategoryRequest) (*entity.Category, error) {
+	cf := req.ToCategoryFilter(userID)
 
 	c, err := uc.categoryRepo.Get(ctx, cf)
 	if err != nil {

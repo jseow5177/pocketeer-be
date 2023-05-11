@@ -11,3 +11,7 @@ const (
 	PathCreateTransaction = PathV1Prefix + "create_transaction"
 	PathGetTransaction    = PathV1Prefix + "get_transaction"
 )
+
+const (
+	AmountDecimalPlaces = 2
+)

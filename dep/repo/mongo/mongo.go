@@ -83,10 +83,17 @@ func NewMongoColl(m *Mongo, collName string) *MongoColl {
 	}
 }
 
+func (mc *MongoColl) wrapError(err error) error {
+	if err == mongo.ErrNoDocuments {
+		return errutil.ErrNotFound
+	}
+	return err
+}
+
 func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error) {
 	r, err := mc.coll.InsertOne(ctx, doc)
 	if err != nil {
-		return "", err
+		return "", mc.wrapError(err)
 	}
 
 	id := r.InsertedID.(primitive.ObjectID)
@@ -102,7 +109,7 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 
 	_, err := mc.coll.UpdateOne(ctx, f, u)
 	if err != nil {
-		return err
+		return mc.wrapError(err)
 	}
 
 	return nil
@@ -112,10 +119,7 @@ func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interfac
 	f := mongoutil.BuildFilter(filter)
 
 	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return errutil.ErrNotFound
-		}
-		return err
+		return mc.wrapError(err)
 	}
 
 	return nil
@@ -126,7 +130,7 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, model inte
 
 	cursor, err := mc.coll.Find(ctx, f)
 	if err != nil {
-		return nil, err
+		return nil, mc.wrapError(err)
 	}
 
 	t := reflect.TypeOf(model).Elem()
@@ -135,7 +139,7 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, model inte
 	for cursor.Next(ctx) {
 		m := reflect.New(t).Interface()
 		if err = cursor.Decode(m); err != nil {
-			return nil, err
+			return nil, mc.wrapError(err)
 		}
 		res = append(res, m)
 	}

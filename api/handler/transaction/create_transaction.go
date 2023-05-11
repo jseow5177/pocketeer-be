@@ -12,11 +12,12 @@ import (
 )
 
 var CreateTransactionValidator = validator.MustForm(map[string]validator.Validator{
-	"cat_id": &validator.Uint64{
+	"cat_id": &validator.String{
 		Optional: false,
 	},
 	"amount": &validator.String{
-		Optional: false,
+		Optional:   false,
+		Validators: []validator.StringFunc{entity.CheckAmount},
 	},
 	"transaction_type": &validator.Uint32{
 		Optional:   false,
@@ -30,7 +31,7 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 func (h *TransactionHandler) CreateTransaction(ctx context.Context, req *presenter.CreateTransactionRequest, res *presenter.CreateTransactionResponse) error {
 	var (
 		userID = middleware.GetUserIDFromCtx(ctx)
-		uc     = transaction.NewTransactionUseCase(h.categoryRepo, h.transactionRepo)
+		uc     = transaction.NewTransactionUseCase(h.categoryUseCase, h.transactionRepo)
 	)
 
 	t, err := uc.CreateTransaction(ctx, userID, req)
