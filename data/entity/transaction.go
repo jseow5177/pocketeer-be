@@ -1,5 +1,11 @@
 package entity
 
+import (
+	"strconv"
+
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
+
 type TransactionType uint32
 
 const (
@@ -21,6 +27,15 @@ type Transaction struct {
 	TransactionTime *uint64
 	CreateTime      *uint64
 	UpdateTime      *uint64
+}
+
+func (t *Transaction) StandardizeAmount(decimalPlaces int) error {
+	af, err := strconv.ParseFloat(t.GetAmount(), 64)
+	if err != nil {
+		return err
+	}
+	t.Amount = goutil.String(goutil.FormatFloat(af, decimalPlaces))
+	return nil
 }
 
 func (t *Transaction) GetTransactionID() string {

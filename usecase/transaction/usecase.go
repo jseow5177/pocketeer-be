@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
@@ -28,7 +27,18 @@ func NewTransactionUseCase(categoryUseCase category.UseCase, transactionRepo rep
 }
 
 func (uc *TransactionUseCase) GetTransaction(ctx context.Context, userID string, req *presenter.GetTransactionRequest) (*entity.Transaction, error) {
-	return nil, nil
+	tf := req.ToTransactionFilter(userID)
+
+	t, err := uc.transactionRepo.Get(ctx, tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
+		if err == errutil.ErrNotFound {
+			return nil, errutil.NotFoundError(err)
+		}
+		return nil, err
+	}
+
+	return t, nil
 }
 
 func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID string, req *presenter.CreateTransactionRequest) (*entity.Transaction, error) {
@@ -45,12 +55,10 @@ func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID stri
 	t.UpdateTime = goutil.Uint64(now)
 
 	// Standardize amount to two decimal places
-	af, err := strconv.ParseFloat(t.GetAmount(), 64)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("invalid amount, amount: %v, err: %v", af, err)
+	if err := t.StandardizeAmount(config.AmountDecimalPlaces); err != nil {
+		log.Ctx(ctx).Error().Msgf("invalid amount, amount: %v, err: %v", t.GetAmount(), err)
 		return nil, errutil.BadRequestError(err)
 	}
-	t.Amount = goutil.String(goutil.FormatFloat(af, config.AmountDecimalPlaces))
 
 	id, err := uc.transactionRepo.Create(ctx, t)
 	if err != nil {
