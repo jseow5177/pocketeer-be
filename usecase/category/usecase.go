@@ -37,7 +37,7 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, re
 		return nil, err
 	}
 
-	c.CatID = goutil.String(id)
+	c.CategoryID = goutil.String(id)
 
 	return c, nil
 }
@@ -74,9 +74,9 @@ func (uc *CategoryUseCase) getCategoryUpdates(old, changes *entity.Category) *en
 		UpdateTime: goutil.Uint64(uint64(time.Now().Unix())),
 	}
 
-	if changes.CatName != nil && changes.GetCatName() != old.GetCatName() {
+	if changes.CategoryName != nil && changes.GetCategoryName() != old.GetCategoryName() {
 		hasUpdates = true
-		nc.CatName = changes.CatName
+		nc.CategoryName = changes.CategoryName
 	}
 
 	if !hasUpdates {

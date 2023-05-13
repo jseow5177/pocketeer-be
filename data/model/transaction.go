@@ -9,7 +9,7 @@ import (
 type Transaction struct {
 	TransactionID   primitive.ObjectID `bson:"_id,omitempty"`
 	UserID          *string            `bson:"user_id,omitempty"`
-	CatID           *string            `bson:"cat_id,omitempty"`
+	CategoryID      *string            `bson:"category_id,omitempty"`
 	Amount          *string            `bson:"amount,omitempty"`
 	TransactionType *uint32            `bson:"transaction_type,omitempty"`
 	TransactionTime *uint64            `bson:"transaction_time,omitempty"`
@@ -26,7 +26,7 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 	return &Transaction{
 		TransactionID:   objID,
 		UserID:          t.UserID,
-		CatID:           t.CatID,
+		CategoryID:      t.CategoryID,
 		Amount:          t.Amount,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
@@ -39,7 +39,7 @@ func ToTransactionEntity(t *Transaction) *entity.Transaction {
 	return &entity.Transaction{
 		TransactionID:   goutil.String(t.TransactionID.Hex()),
 		UserID:          t.UserID,
-		CatID:           t.CatID,
+		CategoryID:      t.CategoryID,
 		Amount:          t.Amount,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
@@ -62,9 +62,9 @@ func (t *Transaction) GetUserID() string {
 	return ""
 }
 
-func (t *Transaction) GetCatID() string {
-	if t != nil && t.CatID != nil {
-		return *t.CatID
+func (t *Transaction) GetCategoryID() string {
+	if t != nil && t.CategoryID != nil {
+		return *t.CategoryID
 	}
 	return ""
 }

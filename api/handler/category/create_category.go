@@ -12,10 +12,10 @@ import (
 )
 
 var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
-	"cat_name": &validator.String{
+	"category_name": &validator.String{
 		Optional: false,
 	},
-	"cat_type": &validator.Uint32{
+	"category_type": &validator.Uint32{
 		Optional:   false,
 		Validators: []validator.Uint32Func{entity.CheckCategoryType},
 	},

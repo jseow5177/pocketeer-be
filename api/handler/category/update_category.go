@@ -11,10 +11,10 @@ import (
 )
 
 var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
-	"cat_id": &validator.String{
+	"category_id": &validator.String{
 		Optional: false,
 	},
-	"cat_name": &validator.String{
+	"category_name": &validator.String{
 		Optional: true,
 	},
 })

@@ -6,6 +6,52 @@ import (
 	"github.com/jseow5177/pockteer-be/data/entity"
 )
 
+type Sort struct {
+	Field *string
+	Order *string
+}
+
+func (s *Sort) GetField() *string {
+	if s != nil && s.Field != nil {
+		return s.Field
+	}
+	return nil
+}
+
+func (s *Sort) GetOrder() *string {
+	if s != nil && s.Order != nil {
+		return s.Order
+	}
+	return nil
+}
+
+type Paging struct {
+	Limit *int
+	Page  *int
+	Sorts []Sort
+}
+
+func (p *Paging) GetLimit() *int {
+	if p != nil && p.Limit != nil {
+		return p.Limit
+	}
+	return nil
+}
+
+func (p *Paging) GetPage() *int {
+	if p != nil && p.Page != nil {
+		return p.Page
+	}
+	return nil
+}
+
+func (p *Paging) GetSorts() []Sort {
+	if p != nil && p.Sorts != nil {
+		return p.Sorts
+	}
+	return nil
+}
+
 // An abstraction for a storage that supports transactions
 type TxMgr interface {
 	WithTx(ctx context.Context, txFn func(txCtx context.Context) error) error
@@ -21,9 +67,12 @@ type TransactionRepo interface {
 }
 
 type TransactionFilter struct {
-	UserID          *string `filter:"user_id"`
-	TransactionID   *string `filter:"_id"`
-	TransactionType *uint32 `filter:"transaction_type"`
+	UserID             *string `filter:"user_id"`
+	TransactionID      *string `filter:"_id"`
+	TransactionType    *uint32 `filter:"transaction_type"`
+	TransactionTimeGte *uint64 `filter:"transaction_time__gte"`
+	TransactionTimeLte *uint64 `filter:"transaction_time__lte"`
+	Paging             *Paging
 }
 
 func (f *TransactionFilter) GetUserID() string {
@@ -47,6 +96,27 @@ func (f *TransactionFilter) GetTransactionType() uint32 {
 	return 0
 }
 
+func (f *TransactionFilter) GetTransactionTimeGte() uint64 {
+	if f != nil && f.TransactionTimeGte != nil {
+		return *f.TransactionTimeGte
+	}
+	return 0
+}
+
+func (f *TransactionFilter) GetTransactionTimeLte() uint64 {
+	if f != nil && f.TransactionTimeLte != nil {
+		return *f.TransactionTimeLte
+	}
+	return 0
+}
+
+func (f *TransactionFilter) GetPaging() *Paging {
+	if f != nil && f.Paging != nil {
+		return f.Paging
+	}
+	return nil
+}
+
 // An abstraction for Category storage
 type CategoryRepo interface {
 	Get(ctx context.Context, cf *CategoryFilter) (*entity.Category, error)
@@ -57,9 +127,9 @@ type CategoryRepo interface {
 }
 
 type CategoryFilter struct {
-	UserID  *string `filter:"user_id"`
-	CatID   *string `filter:"_id"`
-	CatType *uint32 `filter:"cat_type"`
+	UserID       *string `filter:"user_id"`
+	CategoryID   *string `filter:"_id"`
+	CategoryType *uint32 `filter:"category_type"`
 }
 
 func (f *CategoryFilter) GetUserID() string {
@@ -69,16 +139,16 @@ func (f *CategoryFilter) GetUserID() string {
 	return ""
 }
 
-func (f *CategoryFilter) GetCatID() string {
-	if f != nil && f.CatID != nil {
-		return *f.CatID
+func (f *CategoryFilter) GetCategoryID() string {
+	if f != nil && f.CategoryID != nil {
+		return *f.CategoryID
 	}
 	return ""
 }
 
-func (f *CategoryFilter) GetCatType() uint32 {
-	if f != nil && f.CatType != nil {
-		return *f.CatType
+func (f *CategoryFilter) GetCategoryType() uint32 {
+	if f != nil && f.CategoryType != nil {
+		return *f.CategoryType
 	}
 	return 0
 }

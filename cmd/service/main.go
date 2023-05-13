@@ -229,5 +229,19 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// get transactions
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransactions,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionsRequest),
+			Res:       new(presenter.GetTransactionsResponse),
+			Validator: th.GetTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransactions(ctx, req.(*presenter.GetTransactionsRequest), res.(*presenter.GetTransactionsResponse))
+			},
+		},
+	})
+
 	return r
 }

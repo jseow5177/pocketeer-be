@@ -10,7 +10,7 @@ import (
 )
 
 var GetCategoryValidator = validator.MustForm(map[string]validator.Validator{
-	"cat_id": &validator.String{
+	"category_id": &validator.String{
 		Optional: false,
 	},
 })

@@ -41,6 +41,10 @@ func (uc *TransactionUseCase) GetTransaction(ctx context.Context, userID string,
 	return t, nil
 }
 
+func (uc *TransactionUseCase) GetTransactions(ctx context.Context, userID string, req *presenter.GetTransactionsRequest) ([]*entity.Transaction, error) {
+	return nil, nil
+}
+
 func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID string, req *presenter.CreateTransactionRequest) (*entity.Transaction, error) {
 	var (
 		t   = req.ToTransactionEntity(userID)

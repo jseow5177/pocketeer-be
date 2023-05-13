@@ -7,58 +7,58 @@ import (
 )
 
 type Category struct {
-	UserID     *string            `bson:"user_id,omitempty"`
-	CatID      primitive.ObjectID `bson:"_id,omitempty"`
-	CatName    *string            `bson:"cat_name,omitempty"`
-	CatType    *uint32            `bson:"cat_type,omitempty"`
-	CreateTime *uint64            `bson:"create_time,omitempty"`
-	UpdateTime *uint64            `bson:"update_time,omitempty"`
+	UserID       *string            `bson:"user_id,omitempty"`
+	CategoryID   primitive.ObjectID `bson:"_id,omitempty"`
+	CategoryName *string            `bson:"category_name,omitempty"`
+	CategoryType *uint32            `bson:"category_type,omitempty"`
+	CreateTime   *uint64            `bson:"create_time,omitempty"`
+	UpdateTime   *uint64            `bson:"update_time,omitempty"`
 }
 
 func ToCategoryModel(c *entity.Category) *Category {
 	objID := primitive.NilObjectID
-	if primitive.IsValidObjectID(c.GetCatID()) {
-		objID, _ = primitive.ObjectIDFromHex(c.GetCatID())
+	if primitive.IsValidObjectID(c.GetCategoryID()) {
+		objID, _ = primitive.ObjectIDFromHex(c.GetCategoryID())
 	}
 
 	return &Category{
-		UserID:     c.UserID,
-		CatID:      objID,
-		CatName:    c.CatName,
-		CatType:    c.CatType,
-		CreateTime: c.CreateTime,
-		UpdateTime: c.UpdateTime,
+		UserID:       c.UserID,
+		CategoryID:   objID,
+		CategoryName: c.CategoryName,
+		CategoryType: c.CategoryType,
+		CreateTime:   c.CreateTime,
+		UpdateTime:   c.UpdateTime,
 	}
 }
 
 func ToCategoryEntity(c *Category) *entity.Category {
 	return &entity.Category{
-		CatID:      goutil.String(c.CatID.Hex()),
-		UserID:     c.UserID,
-		CatName:    c.CatName,
-		CatType:    c.CatType,
-		CreateTime: c.CreateTime,
-		UpdateTime: c.UpdateTime,
+		CategoryID:   goutil.String(c.CategoryID.Hex()),
+		UserID:       c.UserID,
+		CategoryName: c.CategoryName,
+		CategoryType: c.CategoryType,
+		CreateTime:   c.CreateTime,
+		UpdateTime:   c.UpdateTime,
 	}
 }
 
-func (c *Category) GetCatID() string {
+func (c *Category) GetCategoryID() string {
 	if c != nil {
-		return c.CatID.Hex()
+		return c.CategoryID.Hex()
 	}
 	return ""
 }
 
-func (c *Category) GetCatName() string {
-	if c != nil && c.CatName != nil {
-		return *c.CatName
+func (c *Category) GetCategoryName() string {
+	if c != nil && c.CategoryName != nil {
+		return *c.CategoryName
 	}
 	return ""
 }
 
-func (c *Category) GetCatType() uint32 {
-	if c != nil && c.CatType != nil {
-		return *c.CatType
+func (c *Category) GetCategoryType() uint32 {
+	if c != nil && c.CategoryType != nil {
+		return *c.CategoryType
 	}
 	return 0
 }

@@ -8,8 +8,7 @@ import (
 
 type Transaction struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
-	UserID          *string `json:"user_id,omitempty"`
-	CatID           *string `json:"cat_id,omitempty"`
+	CategoryID      *string `json:"category_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
@@ -24,16 +23,9 @@ func (t *Transaction) GetTransactionID() string {
 	return ""
 }
 
-func (t *Transaction) GetUserID() string {
-	if t != nil && t.UserID != nil {
-		return *t.UserID
-	}
-	return ""
-}
-
-func (t *Transaction) GetCatID() string {
-	if t != nil && t.CatID != nil {
-		return *t.CatID
+func (t *Transaction) GetCategoryID() string {
+	if t != nil && t.CategoryID != nil {
+		return *t.CategoryID
 	}
 	return ""
 }
@@ -76,8 +68,7 @@ func (t *Transaction) GetUpdateTime() uint64 {
 func ToTransactionPresenter(t *entity.Transaction) *Transaction {
 	return &Transaction{
 		TransactionID:   t.TransactionID,
-		UserID:          t.UserID,
-		CatID:           t.CatID,
+		CategoryID:      t.CategoryID,
 		Amount:          t.Amount,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
@@ -87,15 +78,15 @@ func ToTransactionPresenter(t *entity.Transaction) *Transaction {
 }
 
 type CreateTransactionRequest struct {
-	CatID           *string `json:"cat_id,omitempty"`
+	CategoryID      *string `json:"category_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
 }
 
-func (m *CreateTransactionRequest) GetCatID() string {
-	if m != nil && m.CatID != nil {
-		return *m.CatID
+func (m *CreateTransactionRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
 	}
 	return ""
 }
@@ -124,7 +115,7 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 func (m *CreateTransactionRequest) ToTransactionEntity(userID string) *entity.Transaction {
 	return &entity.Transaction{
 		UserID:          goutil.String(userID),
-		CatID:           m.CatID,
+		CategoryID:      m.CategoryID,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
@@ -133,7 +124,7 @@ func (m *CreateTransactionRequest) ToTransactionEntity(userID string) *entity.Tr
 
 func (m *CreateTransactionRequest) ToGetCategoryRequest() *GetCategoryRequest {
 	return &GetCategoryRequest{
-		CatID: m.CatID,
+		CategoryID: m.CategoryID,
 	}
 }
 
@@ -183,4 +174,18 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 
 func (m *GetTransactionResponse) SetTransaction(t *entity.Transaction) {
 	m.Transaction = ToTransactionPresenter(t)
+}
+
+type GetTransactionsRequest struct{}
+
+type GetTransactionsResponse struct {
+	Transactions []*Transaction `json:"transactions"`
+}
+
+func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {
+	ts := make([]*Transaction, 0)
+	for _, et := range ets {
+		ts = append(ts, ToTransactionPresenter(et))
+	}
+	m.Transactions = ts
 }

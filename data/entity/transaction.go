@@ -21,7 +21,7 @@ var TransactionTypes = map[uint32]string{
 type Transaction struct {
 	TransactionID   *string
 	UserID          *string
-	CatID           *string
+	CategoryID      *string
 	Amount          *string
 	TransactionType *uint32
 	TransactionTime *uint64
@@ -52,9 +52,9 @@ func (t *Transaction) GetUserID() string {
 	return ""
 }
 
-func (t *Transaction) GetCatID() string {
-	if t != nil && t.CatID != nil {
-		return *t.CatID
+func (t *Transaction) GetCategoryID() string {
+	if t != nil && t.CategoryID != nil {
+		return *t.CategoryID
 	}
 	return ""
 }

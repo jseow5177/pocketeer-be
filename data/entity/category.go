@@ -1,12 +1,12 @@
 package entity
 
 type Category struct {
-	UserID     *string
-	CatID      *string
-	CatName    *string
-	CatType    *uint32
-	CreateTime *uint64
-	UpdateTime *uint64
+	UserID       *string
+	CategoryID   *string
+	CategoryName *string
+	CategoryType *uint32
+	CreateTime   *uint64
+	UpdateTime   *uint64
 }
 
 func (c *Category) GetUserID() string {
@@ -16,23 +16,23 @@ func (c *Category) GetUserID() string {
 	return ""
 }
 
-func (c *Category) GetCatID() string {
-	if c != nil && c.CatID != nil {
-		return *c.CatID
+func (c *Category) GetCategoryID() string {
+	if c != nil && c.CategoryID != nil {
+		return *c.CategoryID
 	}
 	return ""
 }
 
-func (c *Category) GetCatName() string {
-	if c != nil && c.CatName != nil {
-		return *c.CatName
+func (c *Category) GetCategoryName() string {
+	if c != nil && c.CategoryName != nil {
+		return *c.CategoryName
 	}
 	return ""
 }
 
 func (f *Category) GetCatType() uint32 {
-	if f != nil && f.CatType != nil {
-		return *f.CatType
+	if f != nil && f.CategoryType != nil {
+		return *f.CategoryType
 	}
 	return 0
 }
