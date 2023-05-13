@@ -8,12 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-const (
-	bsonTag = "bson"
-
-	set = "set"
-)
-
 func BuildUpdate(update interface{}) bson.D {
 	if update == nil {
 		return nil

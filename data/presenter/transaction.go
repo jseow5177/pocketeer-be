@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -136,7 +137,7 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
-	return nil
+	return new(Transaction)
 }
 
 func (m *CreateTransactionResponse) SetTransaction(t *entity.Transaction) {
@@ -169,17 +170,80 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
-	return nil
+	return new(Transaction)
 }
 
 func (m *GetTransactionResponse) SetTransaction(t *entity.Transaction) {
 	m.Transaction = ToTransactionPresenter(t)
 }
 
-type GetTransactionsRequest struct{}
+type GetTransactionsRequest struct {
+	CategoryID      *string       `json:"category_id,omitempty"`
+	TransactionType *uint32       `json:"transaction_type,omitempty"`
+	TransactionTime *UInt64Filter `json:"transaction_time,omitempty"`
+	Paging          *Paging       `json:"paging,omitempty"`
+}
+
+func (m *GetTransactionsRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetTransactionsRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
+func (m *GetTransactionsRequest) GetTransactionTime() *UInt64Filter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return new(UInt64Filter)
+}
+
+func (m *GetTransactionsRequest) GetPaging() *Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
+	}
+	return new(Paging)
+}
+
+func (m *GetTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:             goutil.String(userID),
+		CategoryID:         m.CategoryID,
+		TransactionType:    m.TransactionType,
+		TransactionTimeGte: m.GetTransactionTime().Gte,
+		TransactionTimeLte: m.GetTransactionTime().Lte,
+		Paging: &repo.Paging{
+			Limit: m.GetPaging().Limit,
+			Sorts: []*repo.Sort{
+				{
+					Field: goutil.String("transaction_time"),
+					Order: goutil.String(config.OrderDesc),
+				},
+				{
+					Field: goutil.String("create_time"),
+					Order: goutil.String(config.OrderDesc),
+				},
+			},
+		},
+	}
+}
 
 type GetTransactionsResponse struct {
 	Transactions []*Transaction `json:"transactions"`
+}
+
+func (m *GetTransactionsResponse) GetTransactions() []*Transaction {
+	if m != nil && m.Transactions != nil {
+		return m.Transactions
+	}
+	return make([]*Transaction, 0)
 }
 
 func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {

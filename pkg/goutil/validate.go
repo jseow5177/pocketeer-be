@@ -24,7 +24,7 @@ func IsFloat(str string, maxDecimalPoints int) error {
 	}
 
 	if _, err := strconv.ParseFloat(str, 64); err != nil {
-		return ErrInvalidFloat
+		return err
 	}
 
 	return nil

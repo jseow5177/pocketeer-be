@@ -230,19 +230,19 @@ func (stv *String) Validate(value interface{}) error {
 	return nil
 }
 
-// ========== Uint64 Field Validator ========== //
+// ========== UInt64 Field Validator ========== //
 
-type Uint64Func func(uint64) error
+type UInt64Func func(uint64) error
 
-type Uint64 struct {
+type UInt64 struct {
 	Optional   bool
 	UnsetZero  bool
 	Min        *uint64
 	Max        *uint64
-	Validators []Uint64Func
+	Validators []UInt64Func
 }
 
-func (uv *Uint64) Validate(value interface{}) error {
+func (uv *UInt64) Validate(value interface{}) error {
 	if value == nil {
 		if uv.Optional {
 			return nil

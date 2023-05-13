@@ -11,39 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const (
-	filterTag = "filter"
-
-	_id  = "_id"
-	sep  = "__"
-	eq   = "eq"
-	ne   = "ne"
-	gt   = "gt"
-	gte  = "gte"
-	lt   = "lt"
-	lte  = "lte"
-	in   = "in"
-	nin  = "nin"
-	asc  = "asc"
-	desc = "desc"
-)
-
-var supportedOps = map[string]string{
-	eq:  "equal",
-	ne:  "not equal",
-	gt:  "greater than",
-	gte: "greater than equal",
-	lt:  "less than",
-	lte: "less than equal",
-	in:  "in",
-	nin: "not in",
-}
-
-var sortOrders = map[string]int{
-	asc:  1,
-	desc: -1,
-}
-
 func getOp(op string) string {
 	return fmt.Sprintf("$%s", op)
 }
@@ -122,6 +89,10 @@ func BuildFilter(filter interface{}) bson.M {
 		fn := val.Type().Field(i).Tag.Get(filterTag) // filter name
 		fv := reflect.Indirect(val.Field(i))         // filter value
 		fk := fv.Kind()                              // filter type
+
+		if fn == ignore {
+			continue
+		}
 
 		// handle nil pointer
 		if fk == reflect.Invalid {

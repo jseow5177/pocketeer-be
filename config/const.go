@@ -15,4 +15,7 @@ const (
 
 const (
 	AmountDecimalPlaces = 2
+
+	OrderAsc  = "asc"
+	OrderDesc = "desc"
 )

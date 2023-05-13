@@ -28,7 +28,7 @@ func (s *Sort) GetOrder() *string {
 type Paging struct {
 	Limit *int
 	Page  *int
-	Sorts []Sort
+	Sorts []*Sort
 }
 
 func (p *Paging) GetLimit() *int {
@@ -45,7 +45,7 @@ func (p *Paging) GetPage() *int {
 	return nil
 }
 
-func (p *Paging) GetSorts() []Sort {
+func (p *Paging) GetSorts() []*Sort {
 	if p != nil && p.Sorts != nil {
 		return p.Sorts
 	}
@@ -69,10 +69,11 @@ type TransactionRepo interface {
 type TransactionFilter struct {
 	UserID             *string `filter:"user_id"`
 	TransactionID      *string `filter:"_id"`
+	CategoryID         *string `filter:"category_id"`
 	TransactionType    *uint32 `filter:"transaction_type"`
 	TransactionTimeGte *uint64 `filter:"transaction_time__gte"`
 	TransactionTimeLte *uint64 `filter:"transaction_time__lte"`
-	Paging             *Paging
+	Paging             *Paging `filter:"-"`
 }
 
 func (f *TransactionFilter) GetUserID() string {
@@ -85,6 +86,13 @@ func (f *TransactionFilter) GetUserID() string {
 func (f *TransactionFilter) GetTransactionID() string {
 	if f != nil && f.TransactionID != nil {
 		return *f.TransactionID
+	}
+	return ""
+}
+
+func (f *TransactionFilter) GetCategoryID() string {
+	if f != nil && f.CategoryID != nil {
+		return *f.CategoryID
 	}
 	return ""
 }
@@ -114,7 +122,7 @@ func (f *TransactionFilter) GetPaging() *Paging {
 	if f != nil && f.Paging != nil {
 		return f.Paging
 	}
-	return nil
+	return new(Paging)
 }
 
 // An abstraction for Category storage

@@ -23,7 +23,7 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 		Optional:   false,
 		Validators: []validator.Uint32Func{entity.CheckTransactionType},
 	},
-	"transaction_time": &validator.Uint64{
+	"transaction_time": &validator.UInt64{
 		Optional: false,
 	},
 })
