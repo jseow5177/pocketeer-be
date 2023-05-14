@@ -18,7 +18,7 @@ func FormatFloat(f float64, decimalPlaces int) string {
 }
 
 func IsFloat(str string, maxDecimalPoints int) error {
-	regex := regexp.MustCompile(`^\d+\.\d{0,` + strconv.Itoa(maxDecimalPoints) + `}$`)
+	regex := regexp.MustCompile(`^\d+(\.\d{0,` + strconv.Itoa(maxDecimalPoints) + `})?$`)
 	if !regex.MatchString(str) {
 		return ErrInvalidFloat
 	}

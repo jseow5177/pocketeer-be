@@ -9,6 +9,7 @@ const (
 	PathGetCategory       = PathV1Prefix + "get_category"
 	PathGetCategories     = PathV1Prefix + "get_categories"
 	PathCreateTransaction = PathV1Prefix + "create_transaction"
+	PathUpdateTransaction = PathV1Prefix + "update_transaction"
 	PathGetTransaction    = PathV1Prefix + "get_transaction"
 	PathGetTransactions   = PathV1Prefix + "get_transactions"
 )

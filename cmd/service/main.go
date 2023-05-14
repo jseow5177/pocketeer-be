@@ -215,6 +215,20 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// update transaction
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateTransaction,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateTransactionRequest),
+			Res:       new(presenter.UpdateTransactionResponse),
+			Validator: th.UpdateTransactionValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.UpdateTransaction(ctx, req.(*presenter.UpdateTransactionRequest), res.(*presenter.UpdateTransactionResponse))
+			},
+		},
+	})
+
 	// get transaction
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetTransaction,

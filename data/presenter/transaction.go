@@ -115,13 +115,18 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 }
 
 func (m *CreateTransactionRequest) ToTransactionEntity(userID string) *entity.Transaction {
-	return &entity.Transaction{
+	t := &entity.Transaction{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 	}
+
+	// set to two decimal places, ignore error
+	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
+
+	return t
 }
 
 func (m *CreateTransactionRequest) ToGetCategoryRequest() *GetCategoryRequest {
@@ -275,4 +280,89 @@ func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {
 
 func (m *GetTransactionsResponse) SetPaging(paging *Paging) {
 	m.Paging = paging
+}
+
+type UpdateTransactionRequest struct {
+	TransactionID   *string `json:"transaction_id,omitempty"`
+	CategoryID      *string `json:"category_id,omitempty"`
+	Amount          *string `json:"amount,omitempty"`
+	TransactionType *uint32 `json:"transaction_type,omitempty"`
+	TransactionTime *uint64 `json:"transaction_time,omitempty"`
+}
+
+func (t *UpdateTransactionRequest) GetTransactionID() string {
+	if t != nil && t.TransactionID != nil {
+		return *t.TransactionID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetCategoryID() string {
+	if t != nil && t.CategoryID != nil {
+		return *t.CategoryID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetAmount() string {
+	if t != nil && t.Amount != nil {
+		return *t.Amount
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetTransactionType() uint32 {
+	if t != nil && t.TransactionType != nil {
+		return *t.TransactionType
+	}
+	return 0
+}
+
+func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
+	if t != nil && t.TransactionTime != nil {
+		return *t.TransactionTime
+	}
+	return 0
+}
+
+func (m *UpdateTransactionRequest) ToTransactionEntity() *entity.Transaction {
+	t := &entity.Transaction{
+		CategoryID:      m.CategoryID,
+		Amount:          m.Amount,
+		TransactionType: m.TransactionType,
+		TransactionTime: m.TransactionTime,
+	}
+
+	// set to two decimal places, ignore error
+	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
+
+	return t
+}
+
+func (m *UpdateTransactionRequest) ToGetTransactionRequest() *GetTransactionRequest {
+	return &GetTransactionRequest{
+		TransactionID: m.TransactionID,
+	}
+}
+
+func (m *UpdateTransactionRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:        goutil.String(userID),
+		TransactionID: m.TransactionID,
+	}
+}
+
+type UpdateTransactionResponse struct {
+	Transaction *Transaction `json:"transaction,omitempty"`
+}
+
+func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
+	if m != nil && m.Transaction != nil {
+		return m.Transaction
+	}
+	return nil
+}
+
+func (m *UpdateTransactionResponse) SetTransaction(t *entity.Transaction) {
+	m.Transaction = ToTransactionPresenter(t)
 }

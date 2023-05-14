@@ -12,4 +12,5 @@ type UseCase interface {
 	GetTransactions(ctx context.Context, userID string, req *presenter.GetTransactionsRequest) ([]*entity.Transaction, error)
 
 	CreateTransaction(ctx context.Context, userID string, req *presenter.CreateTransactionRequest) (*entity.Transaction, error)
+	UpdateTransaction(ctx context.Context, userID string, req *presenter.UpdateTransactionRequest) (*entity.Transaction, error)
 }
