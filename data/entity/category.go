@@ -30,7 +30,7 @@ func (c *Category) GetCategoryName() string {
 	return ""
 }
 
-func (f *Category) GetCatType() uint32 {
+func (f *Category) GetCategoryType() uint32 {
 	if f != nil && f.CategoryType != nil {
 		return *f.CategoryType
 	}

@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,18 +17,7 @@ func getOp(op string) string {
 	return fmt.Sprintf("$%s", op)
 }
 
-type Sort interface {
-	GetField() *string
-	GetOrder() *string
-}
-
-type FilterOptions interface {
-	GetLimit() *int
-	GetPage() *int
-	GetSorts() []Sort
-}
-
-func BuildFilterOptions(filterOptions FilterOptions) *options.FindOptions {
+func BuildFilterOptions(filterOptions filter.FilterOptions) *options.FindOptions {
 	if filterOptions == nil {
 		return nil
 	}
@@ -86,7 +77,7 @@ func BuildFilter(filter interface{}) bson.M {
 
 	conds := make(bson.M)
 	for i := 0; i < val.NumField(); i++ {
-		fn := val.Type().Field(i).Tag.Get(filterTag) // filter name
+		fn := val.Type().Field(i).Tag.Get(tagFilter) // filter name
 		fv := reflect.Indirect(val.Field(i))         // filter value
 		fk := fv.Kind()                              // filter type
 

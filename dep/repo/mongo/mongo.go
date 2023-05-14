@@ -11,6 +11,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
@@ -125,10 +126,11 @@ func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interfac
 	return nil
 }
 
-func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, model interface{}) ([]interface{}, error) {
+func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts filter.FilterOptions, model interface{}) ([]interface{}, error) {
 	f := mongoutil.BuildFilter(filter)
+	opts := mongoutil.BuildFilterOptions(filterOpts)
 
-	cursor, err := mc.coll.Find(ctx, f)
+	cursor, err := mc.coll.Find(ctx, f, opts)
 	if err != nil {
 		return nil, mc.wrapError(err)
 	}

@@ -1,8 +1,9 @@
 package mongoutil
 
 const (
-	bsonTag   = "bson"
-	filterTag = "filter"
+	tagBson   = "bson"
+	tagFilter = "filter"
+	tagPaging = "paging"
 )
 
 const (

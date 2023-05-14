@@ -50,7 +50,7 @@ func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*enti
 }
 
 func (m *CategoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
-	res, err := m.mColl.getMany(ctx, cf, new(model.Category))
+	res, err := m.mColl.getMany(ctx, cf, nil, new(model.Category))
 	if err != nil {
 		return nil, err
 	}

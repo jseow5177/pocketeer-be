@@ -2,6 +2,7 @@ package category
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/data/entity"
@@ -10,6 +11,10 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	ErrCategoryNotFound = errors.New("category not found")
 )
 
 type CategoryUseCase struct {
@@ -93,7 +98,7 @@ func (uc *CategoryUseCase) GetCategory(ctx context.Context, userID string, req *
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 		if err == errutil.ErrNotFound {
-			return nil, errutil.NotFoundError(err)
+			return nil, errutil.NotFoundError(ErrCategoryNotFound)
 		}
 		return nil, err
 	}

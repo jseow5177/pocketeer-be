@@ -50,7 +50,7 @@ func (m *TransactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) 
 }
 
 func (m *TransactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilter) ([]*entity.Transaction, error) {
-	res, err := m.mColl.getMany(ctx, tf, new(model.Transaction))
+	res, err := m.mColl.getMany(ctx, tf, tf.Paging, new(model.Transaction))
 	if err != nil {
 		return nil, err
 	}

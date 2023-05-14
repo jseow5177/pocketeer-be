@@ -18,4 +18,9 @@ const (
 
 	OrderAsc  = "asc"
 	OrderDesc = "desc"
+
+	DefaultPagingLimit = 100
+	MaxPagingLimit     = 500
+
+	MinPagingPage = 1
 )

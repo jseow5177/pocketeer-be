@@ -4,6 +4,7 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
@@ -137,7 +138,7 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
-	return new(Transaction)
+	return nil
 }
 
 func (m *CreateTransactionResponse) SetTransaction(t *entity.Transaction) {
@@ -170,7 +171,7 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
-	return new(Transaction)
+	return nil
 }
 
 func (m *GetTransactionResponse) SetTransaction(t *entity.Transaction) {
@@ -202,31 +203,48 @@ func (m *GetTransactionsRequest) GetTransactionTime() *UInt64Filter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
-	return new(UInt64Filter)
+	return nil
 }
 
 func (m *GetTransactionsRequest) GetPaging() *Paging {
 	if m != nil && m.Paging != nil {
 		return m.Paging
 	}
-	return new(Paging)
+	return nil
+}
+
+func (m *GetTransactionsRequest) ToGetCategoryRequest() *GetCategoryRequest {
+	return &GetCategoryRequest{
+		CategoryID: m.CategoryID,
+	}
 }
 
 func (m *GetTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
+	tt := new(UInt64Filter)
+	if m.TransactionTime != nil {
+		tt = m.TransactionTime
+	}
+
+	paging := new(Paging)
+	if m.Paging != nil {
+		paging = m.Paging
+	}
+
 	return &repo.TransactionFilter{
 		UserID:             goutil.String(userID),
 		CategoryID:         m.CategoryID,
 		TransactionType:    m.TransactionType,
-		TransactionTimeGte: m.GetTransactionTime().Gte,
-		TransactionTimeLte: m.GetTransactionTime().Lte,
+		TransactionTimeGte: tt.Gte,
+		TransactionTimeLte: tt.Lte,
 		Paging: &repo.Paging{
-			Limit: m.GetPaging().Limit,
-			Sorts: []*repo.Sort{
-				{
+			Limit: paging.Limit,
+			Page:  paging.Page,
+			Sorts: []filter.Sort{
+				&repo.Sort{
 					Field: goutil.String("transaction_time"),
 					Order: goutil.String(config.OrderDesc),
 				},
-				{
+				&repo.Sort{
 					Field: goutil.String("create_time"),
 					Order: goutil.String(config.OrderDesc),
 				},
@@ -237,13 +255,14 @@ func (m *GetTransactionsRequest) ToTransactionFilter(userID string) *repo.Transa
 
 type GetTransactionsResponse struct {
 	Transactions []*Transaction `json:"transactions"`
+	Paging       *Paging        `json:"paging"`
 }
 
 func (m *GetTransactionsResponse) GetTransactions() []*Transaction {
 	if m != nil && m.Transactions != nil {
 		return m.Transactions
 	}
-	return make([]*Transaction, 0)
+	return nil
 }
 
 func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {
@@ -252,4 +271,8 @@ func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {
 		ts = append(ts, ToTransactionPresenter(et))
 	}
 	m.Transactions = ts
+}
+
+func (m *GetTransactionsResponse) SetPaging(paging *Paging) {
+	m.Paging = paging
 }

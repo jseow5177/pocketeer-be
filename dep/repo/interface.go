@@ -4,53 +4,8 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/data/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 )
-
-type Sort struct {
-	Field *string
-	Order *string
-}
-
-func (s *Sort) GetField() *string {
-	if s != nil && s.Field != nil {
-		return s.Field
-	}
-	return nil
-}
-
-func (s *Sort) GetOrder() *string {
-	if s != nil && s.Order != nil {
-		return s.Order
-	}
-	return nil
-}
-
-type Paging struct {
-	Limit *int
-	Page  *int
-	Sorts []*Sort
-}
-
-func (p *Paging) GetLimit() *int {
-	if p != nil && p.Limit != nil {
-		return p.Limit
-	}
-	return nil
-}
-
-func (p *Paging) GetPage() *int {
-	if p != nil && p.Page != nil {
-		return p.Page
-	}
-	return nil
-}
-
-func (p *Paging) GetSorts() []*Sort {
-	if p != nil && p.Sorts != nil {
-		return p.Sorts
-	}
-	return nil
-}
 
 // An abstraction for a storage that supports transactions
 type TxMgr interface {
@@ -159,4 +114,50 @@ func (f *CategoryFilter) GetCategoryType() uint32 {
 		return *f.CategoryType
 	}
 	return 0
+}
+
+type Sort struct {
+	Field *string
+	Order *string
+}
+
+func (s *Sort) GetField() *string {
+	if s != nil && s.Field != nil {
+		return s.Field
+	}
+	return nil
+}
+
+func (s *Sort) GetOrder() *string {
+	if s != nil && s.Order != nil {
+		return s.Order
+	}
+	return nil
+}
+
+type Paging struct {
+	Limit *uint32
+	Page  *uint32
+	Sorts []filter.Sort
+}
+
+func (p *Paging) GetLimit() *uint32 {
+	if p != nil && p.Limit != nil {
+		return p.Limit
+	}
+	return nil
+}
+
+func (p *Paging) GetPage() *uint32 {
+	if p != nil && p.Page != nil {
+		return p.Page
+	}
+	return nil
+}
+
+func (p *Paging) GetSorts() []filter.Sort {
+	if p != nil && p.Sorts != nil {
+		return p.Sorts
+	}
+	return nil
 }

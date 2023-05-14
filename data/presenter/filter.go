@@ -1,18 +1,18 @@
 package presenter
 
 type Paging struct {
-	Limit *int `json:"limit"`
-	Page  *int `json:"page"`
+	Limit *uint32 `json:"limit"`
+	Page  *uint32 `json:"page"`
 }
 
-func (p *Paging) GetLimit() int {
+func (p *Paging) GetLimit() uint32 {
 	if p != nil && p.Limit != nil {
 		return *p.Limit
 	}
 	return 0
 }
 
-func (p *Paging) GetPage() int {
+func (p *Paging) GetPage() uint32 {
 	if p != nil && p.Page != nil {
 		return *p.Page
 	}

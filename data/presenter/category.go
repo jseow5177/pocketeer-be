@@ -94,7 +94,7 @@ func (m *CreateCategoryResponse) GetCategory() *Category {
 	if m != nil && m.Category != nil {
 		return m.Category
 	}
-	return new(Category)
+	return nil
 }
 
 func (m *CreateCategoryResponse) SetCategory(c *entity.Category) {
@@ -127,7 +127,7 @@ func (m *GetCategoriesResponse) GetCategories() []*Category {
 	if m != nil && m.Categories != nil {
 		return m.Categories
 	}
-	return make([]*Category, 0)
+	return nil
 }
 
 func (m *GetCategoriesResponse) SetCategories(ecs []*entity.Category) {
@@ -184,7 +184,7 @@ func (m *UpdateCategoryResponse) GetCategory() *Category {
 	if m != nil && m.Category != nil {
 		return m.Category
 	}
-	return new(Category)
+	return nil
 }
 
 func (m *UpdateCategoryResponse) SetCategory(c *entity.Category) {
@@ -217,7 +217,7 @@ func (m *GetCategoryResponse) GetCategory() *Category {
 	if m != nil && m.Category != nil {
 		return m.Category
 	}
-	return new(Category)
+	return nil
 }
 
 func (m *GetCategoryResponse) SetCategory(c *entity.Category) {

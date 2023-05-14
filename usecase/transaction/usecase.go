@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
@@ -14,14 +15,19 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrTransactionNotFound     = errors.New("transaction not found")
+	ErrMismatchTransactionType = errors.New("mismatch transaction type")
+)
+
 type TransactionUseCase struct {
-	categoryRepo    category.UseCase
+	categoryUseCase category.UseCase
 	transactionRepo repo.TransactionRepo
 }
 
 func NewTransactionUseCase(categoryUseCase category.UseCase, transactionRepo repo.TransactionRepo) UseCase {
 	return &TransactionUseCase{
-		categoryRepo:    categoryUseCase,
+		categoryUseCase: categoryUseCase,
 		transactionRepo: transactionRepo,
 	}
 }
@@ -33,7 +39,7 @@ func (uc *TransactionUseCase) GetTransaction(ctx context.Context, userID string,
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
 		if err == errutil.ErrNotFound {
-			return nil, errutil.NotFoundError(err)
+			return nil, errutil.NotFoundError(ErrTransactionNotFound)
 		}
 		return nil, err
 	}
@@ -42,7 +48,19 @@ func (uc *TransactionUseCase) GetTransaction(ctx context.Context, userID string,
 }
 
 func (uc *TransactionUseCase) GetTransactions(ctx context.Context, userID string, req *presenter.GetTransactionsRequest) ([]*entity.Transaction, error) {
-	return nil, nil
+	tf := req.ToTransactionFilter(userID)
+
+	if _, err := uc.categoryUseCase.GetCategory(ctx, userID, req.ToGetCategoryRequest()); err != nil {
+		return nil, err
+	}
+
+	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
+		return nil, err
+	}
+
+	return ts, nil
 }
 
 func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID string, req *presenter.CreateTransactionRequest) (*entity.Transaction, error) {
@@ -51,8 +69,13 @@ func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID stri
 		now = uint64(time.Now().Unix())
 	)
 
-	if _, err := uc.categoryRepo.GetCategory(ctx, userID, req.ToGetCategoryRequest()); err != nil {
+	c, err := uc.categoryUseCase.GetCategory(ctx, userID, req.ToGetCategoryRequest())
+	if err != nil {
 		return nil, err
+	}
+
+	if c.GetCategoryType() != req.GetTransactionType() {
+		return nil, errutil.ValidationError(ErrMismatchTransactionType)
 	}
 
 	t.CreateTime = goutil.Uint64(now)

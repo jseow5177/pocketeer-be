@@ -14,10 +14,16 @@ type Validator interface {
 
 // ========== Used to unset zero values ========== //
 
-type unsetValue struct{}
+type defaultValue struct {
+	value interface{}
+}
 
-func (uv *unsetValue) Error() string {
+func (uv *defaultValue) Error() string {
 	return ""
+}
+
+func (v *defaultValue) GetValue() interface{} {
+	return v.value
 }
 
 // ========== Form Field Validator ========== //
@@ -54,41 +60,67 @@ func (f *Form) Validate(form interface{}) error {
 	}
 
 	// form must be a struct
-	fv := reflect.Indirect(reflect.ValueOf(form))
-	if fv.Kind() != reflect.Struct {
+	sv := reflect.Indirect(reflect.ValueOf(form))
+	if sv.Kind() != reflect.Struct {
 		return errors.New("form must be a struct")
 	}
 
 	// validate each struct field
-	for i := 0; i < fv.NumField(); i++ {
-		fieldVal := fv.Field(i)
-		fieldName := getFieldName(fv.Type().Field(i))
+	for i := 0; i < sv.NumField(); i++ {
+		fv := sv.Field(i)
+		fn := getFieldName(sv.Type().Field(i))
 
-		if v, ok := f.Validators[fieldName]; ok && v != nil {
+		if validator, ok := f.Validators[fn]; ok && validator != nil {
 			var err error
 
-			if !fieldVal.CanInterface() {
-				return errors.New("unsupported field value")
-			}
+			kind := fv.Kind()
+			for {
+				if kind == reflect.Ptr {
+					if fv.IsNil() {
+						err = validator.Validate(nil)
+						break
+					}
 
-			kind := fieldVal.Kind()
-			if kind == reflect.Ptr {
-				if fieldVal.IsNil() {
-					err = v.Validate(nil)
-				} else {
-					err = v.Validate(reflect.Indirect(fieldVal).Interface())
+					// nested struct
+					if fv.Elem().Kind() == reflect.Struct {
+						err = validator.Validate(fv.Interface())
+						break
+					}
+
+					// scalar types
+					err = validator.Validate(reflect.Indirect(fv).Interface())
+					if val, ok := err.(*defaultValue); ok {
+						if val.GetValue() == nil {
+							fv.Set(reflect.Zero(fv.Type()))
+						} else {
+							reflect.Indirect(fv).Set(reflect.ValueOf(val.GetValue()))
+						}
+						err = nil
+					}
+					break
 				}
-			} else {
-				err = v.Validate(fieldVal.Interface())
-			}
 
-			if _, ok := err.(*unsetValue); ok {
-				fieldVal.Set(reflect.Zero(fieldVal.Type()))
-				err = nil
-			}
+				if kind == reflect.Slice {
+					if fv.IsNil() {
+						err = validator.Validate(nil)
+						break
+					}
 
+					err = validator.Validate(fv.Interface())
+					break
+				}
+
+				// unknown kind
+				if fv.CanInterface() {
+					err = validator.Validate(fv.Interface())
+					break
+				}
+
+				err = fmt.Errorf("unsupported kind or value: %v", fv)
+				break
+			}
 			if err != nil {
-				return fmt.Errorf("%s: %v", fieldName, err)
+				return fmt.Errorf("%s: %v", fn, err)
 			}
 		}
 	}
@@ -195,7 +227,7 @@ func (stv *String) Validate(value interface{}) error {
 	if str == "" {
 		if stv.Optional {
 			if stv.UnsetZero {
-				return &unsetValue{}
+				return &defaultValue{}
 			}
 			return nil
 		}
@@ -258,7 +290,7 @@ func (uv *UInt64) Validate(value interface{}) error {
 	if ui == 0 {
 		if uv.Optional {
 			if uv.UnsetZero {
-				return &unsetValue{}
+				return &defaultValue{}
 			}
 			return nil
 		}
@@ -284,19 +316,20 @@ func (uv *UInt64) Validate(value interface{}) error {
 	return nil
 }
 
-// ========== Uint32 Field Validator ========== //
+// ========== UInt32 Field Validator ========== //
 
-type Uint32Func func(uint32) error
+type UInt32Func func(uint32) error
 
-type Uint32 struct {
+type UInt32 struct {
 	Optional   bool
 	UnsetZero  bool
+	Default    uint32
 	Min        *uint32
 	Max        *uint32
-	Validators []Uint32Func
+	Validators []UInt32Func
 }
 
-func (uv *Uint32) Validate(value interface{}) error {
+func (uv *UInt32) Validate(value interface{}) error {
 	if value == nil {
 		if uv.Optional {
 			return nil
@@ -312,7 +345,7 @@ func (uv *Uint32) Validate(value interface{}) error {
 	if ui == 0 {
 		if uv.Optional {
 			if uv.UnsetZero {
-				return &unsetValue{}
+				return &defaultValue{}
 			}
 			return nil
 		}

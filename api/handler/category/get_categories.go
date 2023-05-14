@@ -11,10 +11,10 @@ import (
 )
 
 var GetCategoriesValidator = validator.MustForm(map[string]validator.Validator{
-	"category_type": &validator.Uint32{
+	"category_type": &validator.UInt32{
 		Optional:   true,
 		UnsetZero:  true,
-		Validators: []validator.Uint32Func{entity.CheckCategoryType},
+		Validators: []validator.UInt32Func{entity.CheckCategoryType},
 	},
 })
 
