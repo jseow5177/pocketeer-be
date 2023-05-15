@@ -91,7 +91,7 @@ type CategoryRepo interface {
 
 type CategoryFilter struct {
 	UserID       *string `filter:"user_id"`
-	CategoryID   *string `filter:"_id"`
+	CategoryID   *string `filter:"Category_id"`
 	CategoryType *uint32 `filter:"category_type"`
 }
 

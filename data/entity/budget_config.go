@@ -94,9 +94,9 @@ func (e *BudgetConfig) GetBudget(
 ) *Budget {
 	return &Budget{
 		CatID:           goutil.String(e.GetCatID()),
-		CatName:         goutil.String(cat.GetCatName()),
+		CatName:         goutil.String(cat.GetCategoryName()),
 		BudgetType:      goutil.Uint32(e.GetBudgetType()),
-		TransactionType: goutil.Uint32(cat.GetCatType()),
+		TransactionType: goutil.Uint32(cat.GetCategoryType()),
 		Year:            goutil.Uint32(year),
 		Month:           goutil.Uint32(month),
 		BudgetAmount:    goutil.Int64(e.calculateBudgetAmount(year, month)),
@@ -109,9 +109,9 @@ func (e *BudgetConfig) GetDefaultBudget(
 ) *Budget {
 	return &Budget{
 		CatID:           goutil.String(e.GetCatID()),
-		CatName:         goutil.String(cat.GetCatName()),
+		CatName:         goutil.String(cat.GetCategoryName()),
 		BudgetType:      goutil.Uint32(e.GetBudgetType()),
-		TransactionType: goutil.Uint32(cat.GetCatType()),
+		TransactionType: goutil.Uint32(cat.GetCategoryType()),
 		Year:            goutil.Uint32(year),
 		BudgetAmount:    goutil.Int64(e.calculateDefaultAmount(year, uint32(util.Constant_DEC))), // we get the latest month
 	}

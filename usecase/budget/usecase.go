@@ -114,7 +114,7 @@ func (uc *budgetUseCase) GetFullYearBudget(
 	if budgetConfig == nil {
 		budgetConfig = entity.NewDefaultBudgetConfig(
 			userID,
-			cat.GetCatID(),
+			cat.GetCategoryID(),
 		)
 	}
 

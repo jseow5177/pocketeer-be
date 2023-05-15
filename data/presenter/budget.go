@@ -99,7 +99,7 @@ func (m *GetFullYearBudgetRequest) ToBudgetConfigFilter(userID string) *repo.Bud
 func (m *GetFullYearBudgetRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
 		UserID: goutil.String(userID),
-		CatID:  goutil.String(m.GetCatID()),
+		CategoryID:  goutil.String(m.GetCatID()),
 	}
 }
 
@@ -120,7 +120,7 @@ func (m *GetFullYearBudgetRequest) GetYear() uint32 {
 func (m *SetBudgetRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
 		UserID: goutil.String(userID),
-		CatID:  goutil.String(m.GetCatID()),
+		CategoryID:  goutil.String(m.GetCatID()),
 	}
 }
 

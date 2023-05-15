@@ -12,10 +12,10 @@ import (
 )
 
 var GetMonthBudgetsValidator = validator.MustForm(map[string]validator.Validator{
-	"year": &validator.Uint32{
+	"year": &validator.UInt32{
 		Optional: false,
 	},
-	"month": &validator.Uint32{
+	"month": &validator.UInt32{
 		Optional: false,
 	},
 })

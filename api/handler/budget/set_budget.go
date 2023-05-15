@@ -13,13 +13,13 @@ var SetBudgetValidator = validator.MustForm(map[string]validator.Validator{
 	"cat_id": &validator.String{
 		Optional: false,
 	},
-	"budget_type": &validator.Uint32{
+	"budget_type": &validator.UInt32{
 		Optional: false,
 	},
-	"curr_year": &validator.Uint32{
+	"curr_year": &validator.UInt32{
 		Optional: false,
 	},
-	"curr_month": &validator.Uint32{
+	"curr_month": &validator.UInt32{
 		Optional: false,
 	},
 })

@@ -12,7 +12,7 @@ import (
 )
 
 var GetFullYearBudgetValidator = validator.MustForm(map[string]validator.Validator{
-	"year": &validator.Uint32{
+	"year": &validator.UInt32{
 		Optional: false,
 	},
 	"cat_id": &validator.String{
