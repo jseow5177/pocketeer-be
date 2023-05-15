@@ -9,82 +9,82 @@ import (
 )
 
 type Category struct {
-	CatID      *string `json:"cat_id,omitempty"`
-	CatName    *string `json:"cat_name,omitempty"`
-	CatType    *uint32 `json:"cat_type,omitempty"`
-	CreateTime *uint64 `json:"create_time,omitempty"`
-	UpdateTime *uint64 `json:"update_time,omitempty"`
+	CategoryID   *string `json:"category_id,omitempty"`
+	CategoryName *string `json:"category_name,omitempty"`
+	CategoryType *uint32 `json:"category_type,omitempty"`
+	CreateTime   *uint64 `json:"create_time,omitempty"`
+	UpdateTime   *uint64 `json:"update_time,omitempty"`
 }
 
-func (m *Category) GetCatID() string {
-	if m != nil && m.CatID != nil {
-		return *m.CatID
+func (c *Category) GetCategoryID() string {
+	if c != nil && c.CategoryID != nil {
+		return *c.CategoryID
 	}
 	return ""
 }
 
-func (m *Category) GetCatName() string {
-	if m != nil && m.CatName != nil {
-		return *m.CatName
+func (c *Category) GetCategoryName() string {
+	if c != nil && c.CategoryName != nil {
+		return *c.CategoryName
 	}
 	return ""
 }
 
-func (m *Category) GetCatType() uint32 {
-	if m != nil && m.CatType != nil {
-		return *m.CatType
+func (c *Category) GetCategoryType() uint32 {
+	if c != nil && c.CategoryType != nil {
+		return *c.CategoryType
 	}
 	return 0
 }
 
-func (m *Category) GetCreateTime() uint64 {
-	if m != nil && m.CreateTime != nil {
-		return *m.CreateTime
+func (c *Category) GetCreateTime() uint64 {
+	if c != nil && c.CreateTime != nil {
+		return *c.CreateTime
 	}
 	return 0
 }
 
-func (m *Category) GetUpdateTime() uint64 {
-	if m != nil && m.UpdateTime != nil {
-		return *m.UpdateTime
+func (c *Category) GetUpdateTime() uint64 {
+	if c != nil && c.UpdateTime != nil {
+		return *c.UpdateTime
 	}
 	return 0
 }
 
 func ToCategoryPresenter(c *entity.Category) *Category {
 	return &Category{
-		CatID:      c.CatID,
-		CatName:    c.CatName,
-		CatType:    c.CatType,
-		CreateTime: c.CreateTime,
-		UpdateTime: c.UpdateTime,
+		CategoryID:   c.CategoryID,
+		CategoryName: c.CategoryName,
+		CategoryType: c.CategoryType,
+		CreateTime:   c.CreateTime,
+		UpdateTime:   c.UpdateTime,
 	}
 }
 
 type CreateCategoryRequest struct {
-	CatName *string `json:"cat_name,omitempty"`
-	CatType *uint32 `json:"cat_type,omitempty"`
+	CategoryName *string `json:"category_name,omitempty"`
+	CategoryType *uint32 `json:"category_type,omitempty"`
 }
 
-func (m *CreateCategoryRequest) GetCatName() string {
-	if m != nil && m.CatName != nil {
-		return *m.CatName
+func (m *CreateCategoryRequest) GetCategoryName() string {
+	if m != nil && m.CategoryName != nil {
+		return *m.CategoryName
 	}
 	return ""
 }
 
-func (m *CreateCategoryRequest) GetCatType() uint32 {
-	if m != nil && m.CatType != nil {
-		return *m.CatType
+func (m *CreateCategoryRequest) GetCategoryType() uint32 {
+	if m != nil && m.CategoryType != nil {
+		return *m.CategoryType
 	}
 	return 0
 }
 
 func (m *CreateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
 	return &entity.Category{
-		UserID:  goutil.String(userID),
-		CatName: m.CatName,
-		CatType: m.CatType,
+		UserID:       goutil.String(userID),
+		CategoryName: m.CategoryName,
+		CategoryType: m.CategoryType,
 	}
 }
 
@@ -104,20 +104,20 @@ func (m *CreateCategoryResponse) SetCategory(c *entity.Category) {
 }
 
 type GetCategoriesRequest struct {
-	CatType *uint32 `json:"cat_type"`
+	CategoryType *uint32 `json:"category_type"`
 }
 
-func (m *GetCategoriesRequest) GetCatType() uint32 {
-	if m != nil && m.CatType != nil {
-		return *m.CatType
+func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
+	if m != nil && m.CategoryType != nil {
+		return *m.CategoryType
 	}
 	return 0
 }
 
 func (m *GetCategoriesRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID:  goutil.String(userID),
-		CatType: m.CatType,
+		UserID:       goutil.String(userID),
+		CategoryType: m.CategoryType,
 	}
 }
 
@@ -141,29 +141,40 @@ func (m *GetCategoriesResponse) SetCategories(ecs []*entity.Category) {
 }
 
 type UpdateCategoryRequest struct {
-	CatID   *string `json:"cat_id,omitempty"`
-	CatName *string `json:"cat_name,omitempty"`
+	CategoryID   *string `json:"category_id,omitempty"`
+	CategoryName *string `json:"category_name,omitempty"`
 }
 
-func (m *UpdateCategoryRequest) GetCatID() string {
-	if m != nil && m.CatID != nil {
-		return *m.CatID
+func (m *UpdateCategoryRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
 	}
 	return ""
 }
 
-func (m *UpdateCategoryRequest) GetCatName() string {
-	if m != nil && m.CatName != nil {
-		return *m.CatName
+func (m *UpdateCategoryRequest) GetCategoryName() string {
+	if m != nil && m.CategoryName != nil {
+		return *m.CategoryName
 	}
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
+func (m *UpdateCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+	}
+}
+
+func (m *UpdateCategoryRequest) ToGetCategoryRequest() *GetCategoryRequest {
+	return &GetCategoryRequest{
+		CategoryID: m.CategoryID,
+	}
+}
+
+func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
 	return &entity.Category{
-		UserID:  goutil.String(userID),
-		CatID:   m.CatID,
-		CatName: m.CatName,
+		CategoryName: m.CategoryName,
 	}
 }
 
@@ -183,20 +194,20 @@ func (m *UpdateCategoryResponse) SetCategory(c *entity.Category) {
 }
 
 type GetCategoryRequest struct {
-	CatID *string `json:"cat_id"`
+	CategoryID *string `json:"category_id"`
 }
 
 func (m *GetCategoryRequest) GetCatID() string {
-	if m != nil && m.CatID != nil {
-		return *m.CatID
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
 	}
 	return ""
 }
 
 func (m *GetCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID: goutil.String(userID),
-		CatID:  m.CatID,
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
 	}
 }
 

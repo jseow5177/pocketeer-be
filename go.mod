@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gorilla/mux v1.8.0
 	github.com/iancoleman/strcase v0.2.0
+	github.com/imdario/mergo v0.3.15
 	github.com/rs/zerolog v1.29.1
 	go.mongodb.org/mongo-driver v1.11.6
 	golang.org/x/time v0.3.0
