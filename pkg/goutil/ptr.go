@@ -12,6 +12,10 @@ func Uint64(ui uint64) *uint64 {
 	return &ui
 }
 
+func Int64(i int64) *int64 {
+	return &i
+}
+
 func Int(i int) *int {
 	return &i
 }

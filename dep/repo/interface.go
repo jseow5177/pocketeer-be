@@ -46,3 +46,15 @@ func (f *CategoryFilter) GetCatType() uint32 {
 	}
 	return 0
 }
+
+type BudgetConfigFilter struct {
+	UserID          *string  `filter:"user_id"`
+	TransactionType *uint32  `filter:"transaction_type"`
+	CatIDs          []string `filter:"cat_ids"`
+}
+
+type BudgetConfigRepo interface {
+	Get(ctx context.Context, filter *BudgetConfigFilter) (*entity.BudgetConfig, error)
+	GetMany(ctx context.Context, filter *BudgetConfigFilter) ([]*entity.BudgetConfig, error)
+	Update(ctx context.Context, budgetConfig *entity.BudgetConfig) (*entity.BudgetConfig, error)
+}

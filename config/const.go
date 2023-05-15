@@ -1,11 +1,14 @@
 package config
 
 const (
-	PathV1Prefix = "/api/v1"
+	pathPrefix = "/api/v1"
 
-	PathHealthCheck    = "/"
-	PathCreateCategory = PathV1Prefix + "/category/create"
-	PathUpdateCategory = PathV1Prefix + "/category/update"
-	PathGetCategory    = PathV1Prefix + "/category/get"
-	PathGetCategories  = PathV1Prefix + "/category/list"
+	PathHealthCheck        = "/"
+	PathCreateCategory     = pathPrefix + "/category/create"
+	PathUpdateCategory     = pathPrefix + "/category/update"
+	PathGetCategory        = pathPrefix + "/category/get"
+	PathGetCategories      = pathPrefix + "/category/list"
+	PathGetBudgets         = pathPrefix + "/budget/list"
+	PathGetBudgetBreakdown = pathPrefix + "/budget/get_breakdown"
+	PathSetBudget          = pathPrefix + "/budget/set"
 )
