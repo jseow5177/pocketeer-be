@@ -12,9 +12,9 @@ const (
 	PathUpdateTransaction = PathV1Prefix + "update_transaction"
 	PathGetTransaction    = PathV1Prefix + "get_transaction"
 	PathGetTransactions   = PathV1Prefix + "get_transactions"
-	PathGetMonthBudgets         = PathV1Prefix + "get_month_budgets"
+	PathGetMonthBudgets   = PathV1Prefix + "get_month_budgets"
 	PathGetFullYearBudget = PathV1Prefix + "get_full_year_budget"
-	PathSetBudget          = PathV1Prefix + "set_budget"
+	PathSetBudget         = PathV1Prefix + "set_budget"
 )
 
 const (

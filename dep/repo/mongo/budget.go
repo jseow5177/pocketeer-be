@@ -13,29 +13,16 @@ type budgetMongo struct {
 	mColl *MongoColl
 }
 
-func NewBudgetMongo(mongo *Mongo) repo.BudgetConfigRepo {
+func NewBudgetMongo(mongo *Mongo) repo.BudgetRepo {
 	return &budgetMongo{
 		mColl: NewMongoColl(mongo, budgetCollName),
 	}
 }
 
-func (m *budgetMongo) Get(
-	ctx context.Context,
-	filter *repo.BudgetConfigFilter,
-) (*entity.BudgetConfig, error) {
+func (r *budgetMongo) GetMany(ctx context.Context, req *repo.BudgetFilter) ([]*entity.Budget, error) {
 	return nil, nil
 }
 
-func (m *budgetMongo) GetMany(
-	ctx context.Context,
-	filter *repo.BudgetConfigFilter,
-) ([]*entity.BudgetConfig, error) {
-	return nil, nil
-}
-
-func (m *budgetMongo) Update(
-	ctx context.Context,
-	budgetConfig *entity.BudgetConfig,
-) (*entity.BudgetConfig, error) {
-	return nil, nil
+func (r *budgetMongo) Set(ctx context.Context, budgets []*entity.Budget) error {
+	return nil
 }

@@ -8,17 +8,17 @@ import (
 )
 
 type UseCase interface {
-	GetMonthBudgets(
+	GetCategoryBudgetsByMonth(
 		ctx context.Context,
 		userID string,
-		req *presenter.GetMonthBudgetsRequest,
+		req *presenter.GetCategoryBudgetsByMonthRequest,
 	) ([]*entity.Budget, error)
 
-	GetFullYearBudget(
+	GetBudgetBreakdownByYear(
 		ctx context.Context,
 		userID string,
-		req *presenter.GetFullYearBudgetRequest,
-	) (defaultBudget *entity.Budget, monthlyBudgets []*entity.Budget, err error)
+		req *presenter.GetBudgetBreakdownByYearRequest,
+	) (budgetBreakdown *entity.YearBudgetBreakdown, err error)
 
 	SetBudget(
 		ctx context.Context,

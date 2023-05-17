@@ -6,122 +6,67 @@ import (
 	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/data/presenter"
 	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/util"
 )
 
 type budgetUseCase struct {
-	bcRepo  repo.BudgetConfigRepo
-	catRepo repo.CategoryRepo
+	budgetRepo repo.BudgetRepo
+	catRepo    repo.CategoryRepo
 }
 
 func NewBudgetUseCase(
-	budgetConfigRepo repo.BudgetConfigRepo,
+	budgetRepo repo.BudgetRepo,
 	catRepo repo.CategoryRepo,
 ) UseCase {
 	return &budgetUseCase{
-		bcRepo:  budgetConfigRepo,
-		catRepo: catRepo,
+		budgetRepo: budgetRepo,
+		catRepo:    catRepo,
 	}
 }
 
-func (uc *budgetUseCase) GetMonthBudgets(
+func (uc *budgetUseCase) GetCategoryBudgetsByMonth(
 	ctx context.Context,
 	userID string,
-	req *presenter.GetMonthBudgetsRequest,
-) (budgets []*entity.Budget, err error) {
+	req *presenter.GetCategoryBudgetsByMonthRequest,
+) ([]*entity.Budget, error) {
 	categories, err := uc.catRepo.GetMany(ctx, req.ToCategoryFilter(userID))
 	if err != nil {
 		return nil, err
 	}
 
-	catIDs := util.GetCatIDs(categories)
-	budgetConfigs, err := uc.bcRepo.GetMany(
-		ctx,
-		&repo.BudgetConfigFilter{
-			UserID: goutil.String(userID),
-			CatIDs: catIDs,
-		},
-	)
+	monthBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToBudgetFilter(userID))
 	if err != nil {
 		return nil, err
 	}
 
-	catIDToBudgetConfig := uc.getCatIDToConfigWithDefault(
-		userID,
-		catIDs,
-		budgetConfigs,
-	)
-
-	catIDToCatMap := util.GetCatIDToCategoryMap(categories)
-	budgets = make([]*entity.Budget, 0)
-	for _, cfg := range catIDToBudgetConfig {
-		budgets = append(
-			budgets,
-			cfg.GetBudget(
-				req.GetYear(),
-				req.GetMonth(),
-				catIDToCatMap[cfg.GetCatID()],
-			),
-		)
-	}
-
-	return budgets, nil
-}
-
-func (uc *budgetUseCase) getCatIDToConfigWithDefault(
-	userID string,
-	catIDs []string,
-	budgetConfigs []*entity.BudgetConfig,
-) map[string]*entity.BudgetConfig {
-	catIDToBudgetConfig := make(map[string]*entity.BudgetConfig)
-	for _, cfg := range budgetConfigs {
-		catIDToBudgetConfig[cfg.GetCatID()] = cfg
-	}
-
-	for _, catID := range catIDs {
-		if _, ok := catIDToBudgetConfig[catID]; !ok {
-			catIDToBudgetConfig[catID] = entity.NewDefaultBudgetConfig(
-				userID,
-				catID,
-			)
+	categoryIDToBudget := getCategoryIDToBudgetMap(monthBudgets)
+	for _, category := range categories {
+		_, budgetSet := categoryIDToBudget[category.GetCategoryID()]
+		if !budgetSet {
+			categoryIDToBudget[category.GetCategoryID()] = nil
 		}
 	}
 
-	return catIDToBudgetConfig
+	return nil, nil
 }
 
-func (uc *budgetUseCase) GetFullYearBudget(
+func (uc *budgetUseCase) GetBudgetBreakdownByYear(
 	ctx context.Context,
 	userID string,
-	req *presenter.GetFullYearBudgetRequest,
-) (defaultBudget *entity.Budget, monthlyBudgets []*entity.Budget, err error) {
-	cat, err := uc.catRepo.Get(
-		ctx,
-		req.ToCategoryFilter(userID),
-	)
+	req *presenter.GetBudgetBreakdownByYearRequest,
+) (budgetBreakdown *entity.YearBudgetBreakdown, err error) {
+	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	budgetConfig, err := uc.bcRepo.Get(
-		ctx, req.ToBudgetConfigFilter(userID),
-	)
-	if err != nil {
-		return nil, nil, err
+	budgetNotSet := len(fullYearBudgets) == 0
+	if budgetNotSet {
+		return nil, nil
 	}
 
-	if budgetConfig == nil {
-		budgetConfig = entity.NewDefaultBudgetConfig(
-			userID,
-			cat.GetCategoryID(),
-		)
-	}
+	budgetBreakdown = entity.NewYearBudgetBreakdown(fullYearBudgets)
 
-	defaultBudget = budgetConfig.GetDefaultBudget(req.GetYear(), cat)
-	monthlyBudgets = budgetConfig.GetMonthlyBudgets(req.GetYear(), cat)
-
-	return defaultBudget, monthlyBudgets, nil
+	return budgetBreakdown, nil
 }
 
 func (uc *budgetUseCase) SetBudget(
@@ -129,32 +74,49 @@ func (uc *budgetUseCase) SetBudget(
 	userID string,
 	req *presenter.SetBudgetRequest,
 ) error {
-	budgetConfig, err := uc.bcRepo.Get(ctx, req.ToBudgetConfigFilter(userID))
+	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	if budgetConfig == nil {
-		budgetConfig = entity.NewDefaultBudgetConfig(userID, req.GetCatID())
-		budgetConfig.SetBudgetType(req.GetBudgetType())
-	}
-
-	if budgetConfig.HasDefaultBudgetChanged(req.GetCurrYear(), req.GetCurrMonth(), req.GetDefaultBudget()) {
-		budgetConfig.SetNewDefaultBudget(req.GetCurrYear(), req.GetCurrMonth(), req.GetDefaultBudget())
-	}
-
-	for _, customBudget := range req.GetCustomBudgets() {
-		budgetConfig.SetNewCustomBudget(
-			customBudget.GetYear(),
-			customBudget.GetMonth(),
-			customBudget.GetAmount(),
+	var budgetBreakdown *entity.YearBudgetBreakdown
+	if len(fullYearBudgets) == 0 {
+		budgetBreakdown = entity.DefaultYearBudgetBreakdown(
+			userID,
+			req.GetCategoryID(),
+			req.GetYear(),
 		)
+	} else {
+		budgetBreakdown = entity.NewYearBudgetBreakdown(fullYearBudgets)
 	}
 
-	_, err = uc.bcRepo.Update(ctx, budgetConfig)
+	if req.BudgetType != nil {
+		budgetBreakdown.SetBudgetType(req.GetBudgetType())
+	}
+
+	if req.BudgetAmount != nil {
+		if req.IsDefault != nil {
+			budgetBreakdown.SetDefaultBudget(req.GetBudgetAmount())
+		} else {
+			budgetBreakdown.SetMonthlyBudget(req.GetBudgetAmount())
+		}
+	}
+
+	err = uc.budgetRepo.Set(ctx, budgetBreakdown.ToBudgets())
 	if err != nil {
 		return err
 	}
 
-	return err
+	return nil
+}
+
+func getCategoryIDToBudgetMap(
+	budgets []*entity.Budget,
+) map[string]*entity.Budget {
+	_map := make(map[string]*entity.Budget)
+	for _, budget := range budgets {
+		_map[budget.GetCategoryID()] = budget
+	}
+
+	return _map
 }
