@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
+	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type BudgetRepo interface {
@@ -13,6 +13,7 @@ type BudgetRepo interface {
 
 type BudgetFilter struct {
 	UserID      *string
+	CategoryID  *string
 	CategoryIDs []string
 	Year        *uint32
 	Month       *uint32

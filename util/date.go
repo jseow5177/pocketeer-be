@@ -1,9 +1,11 @@
 package util
 
+import "time"
+
 type MonthType uint32
 
 const (
-	Constant_JAN MonthType = iota
+	Constant_JAN MonthType = iota + 1
 	Constant_FEB
 	Constant_MAR
 	Constant_APR
@@ -30,4 +32,12 @@ var MonthTypes = map[uint32]string{
 	uint32(Constant_OCT): "OCT",
 	uint32(Constant_NOV): "NOV",
 	uint32(Constant_DEC): "DEC",
+}
+
+// Range: 1-12
+func GetCurrMonth() uint32 {
+	now := time.Now()
+	month := now.Month()
+
+	return uint32(month)
 }

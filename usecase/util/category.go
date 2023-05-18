@@ -1,6 +1,6 @@
 package util
 
-import "github.com/jseow5177/pockteer-be/data/entity"
+import "github.com/jseow5177/pockteer-be/entity"
 
 func GetCatIDs(categories []*entity.Category) []string {
 	ids := make([]string, len(categories))
@@ -10,11 +10,24 @@ func GetCatIDs(categories []*entity.Category) []string {
 	return ids
 }
 
-func GetCatIDToCategoryMap(categories []*entity.Category) map[string]*entity.Category {
-	_map := make(map[string]*entity.Category)
+func GetIDToCategoryMap(categories []*entity.Category) map[string]*entity.Category {
+	idToCategoryMap := make(map[string]*entity.Category)
 
 	for _, cat := range categories {
-		_map[cat.GetCategoryID()] = cat
+		idToCategoryMap[cat.GetCategoryID()] = cat
 	}
-	return _map
+
+	return idToCategoryMap
+}
+
+func GetCategoryIDToBudgetMap(
+	budgets []*entity.Budget,
+) map[string]*entity.Budget {
+	categoryIDToBudgetMap := make(map[string]*entity.Budget)
+
+	for _, budget := range budgets {
+		categoryIDToBudgetMap[budget.GetCategoryID()] = budget
+	}
+
+	return categoryIDToBudgetMap
 }

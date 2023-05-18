@@ -3,8 +3,8 @@ package presenter
 //go:generate easytags $GOFILE
 
 import (
-	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 

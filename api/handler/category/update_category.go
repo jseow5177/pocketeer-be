@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/jseow5177/pockteer-be/api/middleware"
-	"github.com/jseow5177/pockteer-be/data/presenter"
+	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 )
 

@@ -1,0 +1,43 @@
+package repo
+
+import (
+	"context"
+
+	"github.com/jseow5177/pockteer-be/entity"
+)
+
+type CategoryRepo interface {
+	Get(ctx context.Context, cf *CategoryFilter) (*entity.Category, error)
+	GetMany(ctx context.Context, cf *CategoryFilter) ([]*entity.Category, error)
+
+	Create(ctx context.Context, c *entity.Category) (string, error)
+	Update(ctx context.Context, cf *CategoryFilter, c *entity.Category) error
+}
+
+type CategoryFilter struct {
+	UserID       *string  `filter:"user_id"`
+	CategoryID   *string  `filter:"category_id"`
+	CategoryIDs  []string `filter:"category_id__in"`
+	CategoryType *uint32  `filter:"category_type"`
+}
+
+func (f *CategoryFilter) GetUserID() string {
+	if f != nil && f.UserID != nil {
+		return *f.UserID
+	}
+	return ""
+}
+
+func (f *CategoryFilter) GetCategoryID() string {
+	if f != nil && f.CategoryID != nil {
+		return *f.CategoryID
+	}
+	return ""
+}
+
+func (f *CategoryFilter) GetCategoryType() uint32 {
+	if f != nil && f.CategoryType != nil {
+		return *f.CategoryType
+	}
+	return 0
+}

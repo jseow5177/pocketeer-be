@@ -3,8 +3,8 @@ package budget
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
-	"github.com/jseow5177/pockteer-be/data/presenter"
+	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type UseCase interface {
@@ -12,17 +12,34 @@ type UseCase interface {
 		ctx context.Context,
 		userID string,
 		req *presenter.GetCategoryBudgetsByMonthRequest,
-	) ([]*entity.Budget, error)
+	) (*GetCategoryBudgetsByMonthResponse, error)
 
-	GetBudgetBreakdownByYear(
+	GetAnnualBudgetBreakdown(
 		ctx context.Context,
 		userID string,
-		req *presenter.GetBudgetBreakdownByYearRequest,
-	) (budgetBreakdown *entity.YearBudgetBreakdown, err error)
+		req *presenter.GetAnnualBudgetBreakdownRequest,
+	) (*GetAnnualBudgetBreakdownResponse, error)
 
 	SetBudget(
 		ctx context.Context,
 		userID string,
 		req *presenter.SetBudgetRequest,
-	) error
+	) (*SetBudgetResponse, error)
+}
+
+type CategoryBudget struct {
+	CategoryName string
+	Budget       *entity.Budget
+}
+
+type GetCategoryBudgetsByMonthResponse struct {
+	CategoryBudgets []*CategoryBudget
+}
+
+type GetAnnualBudgetBreakdownResponse struct {
+	AnnualBudgetBreakdown *entity.AnnualBudgetBreakdown
+}
+
+type SetBudgetResponse struct {
+	AnnualBudgetBreakdown *entity.AnnualBudgetBreakdown
 }

@@ -46,12 +46,12 @@ type GetCategoryBudgetsByMonthResponse struct {
 	Budgets []*Budget `json:"budgets"`
 }
 
-type GetBudgetBreakdownByYearRequest struct {
+type GetAnnualBudgetBreakdownRequest struct {
 	CategoryID *string `json:"category_id"`
 	Year       *uint32 `json:"year"`
 }
 
-type GetBudgetBreakdownByYearResponse struct {
+type GetAnnualBudgetBreakdownResponse struct {
 	FullYearBudget *FullYearBudget `json:"full_year_budget"`
 }
 
@@ -123,6 +123,7 @@ func (m *Budget) GetUsed() int64 {
 	return 0
 }
 
+// *****************
 func (m *BasicBudget) GetYear() uint32 {
 	if m != nil && m.Year != nil {
 		return *m.Year
@@ -144,6 +145,7 @@ func (m *BasicBudget) GetAmount() int64 {
 	return 0
 }
 
+// *****************
 func (m *FullYearBudget) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
@@ -186,6 +188,7 @@ func (m *FullYearBudget) GetMonthlyBudgets() []*BasicBudget {
 	return []*BasicBudget{}
 }
 
+// *****************
 func (m *GetCategoryBudgetsByMonthRequest) GetYear() uint32 {
 	if m != nil && m.Year != nil {
 		return *m.Year
@@ -213,7 +216,8 @@ func (m *GetCategoryBudgetsByMonthRequest) GetIncludeUsedAmount() bool {
 
 func (m *GetCategoryBudgetsByMonthRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID: goutil.String(userID),
+		UserID:      goutil.String(userID),
+		CategoryIDs: m.GetCategoryIDs(),
 	}
 }
 
@@ -226,20 +230,29 @@ func (m *GetCategoryBudgetsByMonthRequest) ToBudgetFilter(userID string) *repo.B
 	}
 }
 
-func (m *GetBudgetBreakdownByYearRequest) GetCategoryID() string {
+func (m *GetAnnualBudgetBreakdownRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
 	}
 	return ""
 }
 
-func (m *GetBudgetBreakdownByYearRequest) GetYear() uint32 {
+func (m *GetAnnualBudgetBreakdownRequest) GetYear() uint32 {
 	if m != nil && m.Year != nil {
 		return *m.Year
 	}
 	return 0
 }
 
+func (m *GetAnnualBudgetBreakdownRequest) ToFullBudgetFilter(userID string) *repo.BudgetFilter {
+	return &repo.BudgetFilter{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+		Year:       m.Year,
+	}
+}
+
+// *****************
 func (m *SetBudgetRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
@@ -282,9 +295,10 @@ func (m *SetBudgetRequest) GetBudgetAmount() int64 {
 	return 0
 }
 
-func (m *SetBudgetRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
+func (m *SetBudgetRequest) ToFullBudgetFilter(userID string) *repo.BudgetFilter {
+	return &repo.BudgetFilter{
 		UserID:     goutil.String(userID),
-		CategoryID: goutil.String(m.GetCategoryID()),
+		CategoryID: m.CategoryID,
+		Year:       m.Year,
 	}
 }

@@ -3,8 +3,8 @@ package transaction
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
-	"github.com/jseow5177/pockteer-be/data/presenter"
+	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type UseCase interface {

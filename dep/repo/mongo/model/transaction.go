@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/jseow5177/pockteer-be/data/entity"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

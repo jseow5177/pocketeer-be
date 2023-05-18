@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
-	"github.com/jseow5177/pockteer-be/data/presenter"
+	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"

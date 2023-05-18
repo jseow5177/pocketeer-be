@@ -3,8 +3,8 @@ package mongo
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 )
 
 const budgetCollName = "budget"

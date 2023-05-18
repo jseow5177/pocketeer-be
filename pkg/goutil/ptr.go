@@ -26,6 +26,10 @@ func Int(i int) *int {
 	return &i
 }
 
+func Bool(b bool) *bool {
+	return &b
+}
+
 type ptrTransformer struct{}
 
 func (t ptrTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {

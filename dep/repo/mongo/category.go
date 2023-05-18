@@ -3,24 +3,24 @@ package mongo
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/data/entity"
-	"github.com/jseow5177/pockteer-be/data/model"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
+	"github.com/jseow5177/pockteer-be/entity"
 )
 
 const categoryCollName = "category"
 
-type CategoryMongo struct {
+type categoryMongo struct {
 	mColl *MongoColl
 }
 
-func NewCategoryMongo(mongo *Mongo) *CategoryMongo {
-	return &CategoryMongo{
+func NewCategoryMongo(mongo *Mongo) repo.CategoryRepo {
+	return &categoryMongo{
 		mColl: NewMongoColl(mongo, categoryCollName),
 	}
 }
 
-func (m *CategoryMongo) Create(ctx context.Context, c *entity.Category) (string, error) {
+func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string, error) {
 	cm := model.ToCategoryModel(c)
 
 	id, err := m.mColl.create(ctx, cm)
@@ -31,7 +31,7 @@ func (m *CategoryMongo) Create(ctx context.Context, c *entity.Category) (string,
 	return id, nil
 }
 
-func (m *CategoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
+func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
 	cm := model.ToCategoryModel(c)
 	if err := m.mColl.update(ctx, cf, cm); err != nil {
 		return err
@@ -40,7 +40,7 @@ func (m *CategoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *
 	return nil
 }
 
-func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
+func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
 	c := new(model.Category)
 	if err := m.mColl.get(ctx, cf, &c); err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (m *CategoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*enti
 	return model.ToCategoryEntity(c), nil
 }
 
-func (m *CategoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
+func (m *categoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
 	res, err := m.mColl.getMany(ctx, cf, nil, new(model.Category))
 	if err != nil {
 		return nil, err
