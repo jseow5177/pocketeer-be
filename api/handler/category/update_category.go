@@ -19,7 +19,7 @@ var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 	},
 })
 
-func (h *CategoryHandler) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest, res *presenter.UpdateCategoryResponse) error {
+func (h *categoryHandler) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest, res *presenter.UpdateCategoryResponse) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 
 	c, err := h.categoryUseCase.UpdateCategory(ctx, userID, req)

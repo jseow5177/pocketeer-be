@@ -27,7 +27,7 @@ var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator
 	"paging":           entity.PagingValidator(true),
 })
 
-func (h *TransactionHandler) GetTransactions(ctx context.Context, req *presenter.GetTransactionsRequest, res *presenter.GetTransactionsResponse) error {
+func (h *transactionHandler) GetTransactions(ctx context.Context, req *presenter.GetTransactionsRequest, res *presenter.GetTransactionsResponse) error {
 	var (
 		userID = middleware.GetUserIDFromCtx(ctx)
 		uc     = transaction.NewTransactionUseCase(h.categoryUseCase, h.transactionRepo)

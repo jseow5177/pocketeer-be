@@ -16,7 +16,7 @@ var GetTransactionValidator = validator.MustForm(map[string]validator.Validator{
 	},
 })
 
-func (h *TransactionHandler) GetTransaction(ctx context.Context, req *presenter.GetTransactionRequest, res *presenter.GetTransactionResponse) error {
+func (h *transactionHandler) GetTransaction(ctx context.Context, req *presenter.GetTransactionRequest, res *presenter.GetTransactionResponse) error {
 	var (
 		userID = middleware.GetUserIDFromCtx(ctx)
 		uc     = transaction.NewTransactionUseCase(h.categoryUseCase, h.transactionRepo)

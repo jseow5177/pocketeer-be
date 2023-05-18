@@ -21,7 +21,7 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 	},
 })
 
-func (h *CategoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
+func (h *categoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 
 	c, err := h.categoryUseCase.CreateCategory(ctx, userID, req)

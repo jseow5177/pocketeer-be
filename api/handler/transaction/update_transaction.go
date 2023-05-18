@@ -35,7 +35,7 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 	},
 })
 
-func (h *TransactionHandler) UpdateTransaction(ctx context.Context, req *presenter.UpdateTransactionRequest, res *presenter.UpdateTransactionResponse) error {
+func (h *transactionHandler) UpdateTransaction(ctx context.Context, req *presenter.UpdateTransactionRequest, res *presenter.UpdateTransactionResponse) error {
 	var (
 		userID = middleware.GetUserIDFromCtx(ctx)
 		uc     = transaction.NewTransactionUseCase(h.categoryUseCase, h.transactionRepo)
