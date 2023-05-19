@@ -52,13 +52,25 @@ type GetAnnualBudgetBreakdownResponse struct {
 }
 
 type SetBudgetRequest struct {
-	UserID       *string
-	CategoryID   *string
-	Year         *uint32
-	Month        *uint32
-	IsDefault    *bool
+	UserID        *string
+	CategoryID    *string
+	Year          *uint32
+	DefaultBudget *DefaultBudgetSetting
+	MonthlyBudget *MonthlyBudgetSetting
+	BudgetConfig  *BudgetConfigSetting
+}
+
+type DefaultBudgetSetting struct {
 	BudgetAmount *int64
-	BudgetType   *uint32
+}
+
+type MonthlyBudgetSetting struct {
+	Month        *uint32
+	BudgetAmount *int64
+}
+
+type BudgetConfigSetting struct {
+	BudgetType *uint32
 }
 
 type SetBudgetResponse struct {
@@ -190,28 +202,49 @@ func (u *SetBudgetRequest) GetYear() uint32 {
 	return 0
 }
 
-func (u *SetBudgetRequest) GetMonth() uint32 {
-	if u != nil && u.Month != nil {
-		return *u.Month
+func (u *SetBudgetRequest) GetDefaultBudget() *DefaultBudgetSetting {
+	if u != nil && u.DefaultBudget != nil {
+		return u.DefaultBudget
 	}
-	return 0
+	return nil
 }
 
-func (u *SetBudgetRequest) GetIsDefault() bool {
-	if u != nil && u.IsDefault != nil {
-		return *u.IsDefault
+func (u *SetBudgetRequest) GetMonthlyBudget() *MonthlyBudgetSetting {
+	if u != nil && u.MonthlyBudget != nil {
+		return u.MonthlyBudget
 	}
-	return false
+	return nil
 }
 
-func (u *SetBudgetRequest) GetBudgetAmount() int64 {
+func (u *SetBudgetRequest) GetBudgetConfig() *BudgetConfigSetting {
+	if u != nil && u.BudgetConfig != nil {
+		return u.BudgetConfig
+	}
+	return nil
+}
+
+func (u *DefaultBudgetSetting) GetBudgetAmount() int64 {
 	if u != nil && u.BudgetAmount != nil {
 		return *u.BudgetAmount
 	}
 	return 0
 }
 
-func (u *SetBudgetRequest) GetBudgetType() uint32 {
+func (u *MonthlyBudgetSetting) GetMonth() uint32 {
+	if u != nil && u.Month != nil {
+		return *u.Month
+	}
+	return 0
+}
+
+func (u *MonthlyBudgetSetting) GetBudgetAmount() int64 {
+	if u != nil && u.BudgetAmount != nil {
+		return *u.BudgetAmount
+	}
+	return 0
+}
+
+func (u *BudgetConfigSetting) GetBudgetType() uint32 {
 	if u != nil && u.BudgetType != nil {
 		return *u.BudgetType
 	}

@@ -60,12 +60,24 @@ type GetAnnualBudgetBreakdownResponse struct {
 }
 
 type SetBudgetRequest struct {
-	CategoryID   *string `json:"category_id"`
-	Year         *uint32 `json:"year"`
+	CategoryID    *string               `json:"category_id"`
+	Year          *uint32               `json:"year"`
+	DefaultBudget *DefaultBudgetSetting `json:"default_budget"`
+	MonthlyBudget *MonthlyBudgetSetting `json:"monthly_budget"`
+	BudgetConfig  *BudgetConfigSetting  `json:"budget_config"`
+}
+
+type DefaultBudgetSetting struct {
+	BudgetAmount *int64 `json:"budget_amount"`
+}
+
+type MonthlyBudgetSetting struct {
 	Month        *uint32 `json:"month"`
-	IsDefault    *bool   `json:"is_default"`
 	BudgetAmount *int64  `json:"budget_amount"`
-	BudgetType   *uint32 `json:"budget_type"`
+}
+
+type BudgetConfigSetting struct {
+	BudgetType *uint32 `json:"budget_type"`
 }
 
 type SetBudgetResponse struct {
@@ -296,30 +308,51 @@ func (m *SetBudgetRequest) GetYear() uint32 {
 	return 0
 }
 
-func (m *SetBudgetRequest) GetMonth() uint32 {
+func (m *SetBudgetRequest) GetDefaultBudget() *DefaultBudgetSetting {
+	if m != nil && m.DefaultBudget != nil {
+		return m.DefaultBudget
+	}
+	return nil
+}
+
+func (m *SetBudgetRequest) GetMonthlyBudget() *MonthlyBudgetSetting {
+	if m != nil && m.MonthlyBudget != nil {
+		return m.MonthlyBudget
+	}
+	return nil
+}
+
+func (m *SetBudgetRequest) GetBudgetConfig() *BudgetConfigSetting {
+	if m != nil && m.BudgetConfig != nil {
+		return m.BudgetConfig
+	}
+	return nil
+}
+
+func (m *DefaultBudgetSetting) GetBudgetAmount() int64 {
+	if m != nil && m.BudgetAmount != nil {
+		return *m.BudgetAmount
+	}
+	return 0
+}
+
+func (m *MonthlyBudgetSetting) GetMonth() uint32 {
 	if m != nil && m.Month != nil {
 		return *m.Month
 	}
 	return 0
 }
 
-func (m *SetBudgetRequest) GetIsDefault() bool {
-	if m != nil && m.IsDefault != nil {
-		return *m.IsDefault
-	}
-	return false
-}
-
-func (m *SetBudgetRequest) GetBudgetType() uint32 {
-	if m != nil && m.BudgetType != nil {
-		return *m.BudgetType
+func (m *MonthlyBudgetSetting) GetBudgetAmount() int64 {
+	if m != nil && m.BudgetAmount != nil {
+		return *m.BudgetAmount
 	}
 	return 0
 }
 
-func (m *SetBudgetRequest) GetBudgetAmount() int64 {
-	if m != nil && m.BudgetAmount != nil {
-		return *m.BudgetAmount
+func (m *BudgetConfigSetting) GetBudgetType() uint32 {
+	if m != nil && m.BudgetType != nil {
+		return *m.BudgetType
 	}
 	return 0
 }
@@ -333,15 +366,32 @@ func (m *SetBudgetRequest) ToFullBudgetFilter(userID string) *repo.BudgetFilter 
 }
 
 func (m *SetBudgetRequest) ToUseCaseReq(userID string) *budget.SetBudgetRequest {
-	return &budget.SetBudgetRequest{
-		UserID:       goutil.String(userID),
-		CategoryID:   m.CategoryID,
-		Year:         m.Year,
-		Month:        m.Month,
-		IsDefault:    m.IsDefault,
-		BudgetAmount: m.BudgetAmount,
-		BudgetType:   m.BudgetType,
+	req := &budget.SetBudgetRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+		Year:       m.Year,
 	}
+
+	if m.DefaultBudget != nil {
+		req.DefaultBudget = &budget.DefaultBudgetSetting{
+			BudgetAmount: m.GetDefaultBudget().BudgetAmount,
+		}
+	}
+
+	if m.MonthlyBudget != nil {
+		req.MonthlyBudget = &budget.MonthlyBudgetSetting{
+			Month:        m.GetMonthlyBudget().Month,
+			BudgetAmount: m.GetMonthlyBudget().BudgetAmount,
+		}
+	}
+
+	if m.BudgetConfig != nil {
+		req.BudgetConfig = &budget.BudgetConfigSetting{
+			BudgetType: m.GetBudgetConfig().BudgetType,
+		}
+	}
+
+	return req
 }
 
 func (m *SetBudgetResponse) Set(useCaseRes *budget.SetBudgetResponse) {

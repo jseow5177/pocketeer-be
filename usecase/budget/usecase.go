@@ -130,19 +130,22 @@ func (uc *budgetUseCase) SetBudget(
 		}
 	}
 
-	if req.BudgetType != nil {
-		budgetBreakdown.SetBudgetType(req.GetBudgetType())
+	if req.DefaultBudget != nil {
+		budgetBreakdown.SetDefaultBudget(req.GetDefaultBudget().GetBudgetAmount())
 	}
 
-	if req.BudgetAmount != nil {
-		if req.IsDefault != nil {
-			budgetBreakdown.SetDefaultBudget(req.GetBudgetAmount())
-		} else {
-			err = budgetBreakdown.SetMonthlyBudget(req.GetMonth(), req.GetBudgetAmount())
-			if err != nil {
-				return nil, err
-			}
+	if req.MonthlyBudget != nil {
+		err = budgetBreakdown.SetMonthlyBudget(
+			req.GetMonthlyBudget().GetMonth(),
+			req.GetMonthlyBudget().GetBudgetAmount(),
+		)
+		if err != nil {
+			return nil, err
 		}
+	}
+
+	if req.BudgetConfig != nil {
+		budgetBreakdown.SetBudgetType(req.GetBudgetConfig().GetBudgetType())
 	}
 
 	err = uc.budgetRepo.Set(ctx, budgetBreakdown.ToBudgets())
