@@ -9,14 +9,13 @@ import (
 
 // ***************** Common structs
 type Budget struct {
-	CategoryID      *string `json:"category_id"`
-	CategoryName    *string `json:"category_name"`
-	BudgetType      *uint32 `json:"budget_type"`
-	TransactionType *uint32 `json:"transaction_type"`
-	Year            *uint32 `json:"year"`
-	Month           *uint32 `json:"month"`
-	BudgetAmount    *int64  `json:"budget_amount"`
-	Used            *int64  `json:"used"`
+	CategoryID   *string `json:"category_id"`
+	CategoryName *string `json:"category_name"`
+	BudgetType   *uint32 `json:"budget_type"`
+	Year         *uint32 `json:"year"`
+	Month        *uint32 `json:"month"`
+	BudgetAmount *int64  `json:"budget_amount"`
+	Used         *int64  `json:"used"`
 }
 
 type BasicBudget struct {
@@ -84,13 +83,6 @@ func (m *Budget) GetCategoryName() string {
 func (m *Budget) GetBudgetType() uint32 {
 	if m != nil && m.BudgetType != nil {
 		return *m.BudgetType
-	}
-	return 0
-}
-
-func (m *Budget) GetTransactionType() uint32 {
-	if m != nil && m.TransactionType != nil {
-		return *m.TransactionType
 	}
 	return 0
 }
