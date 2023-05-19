@@ -20,9 +20,11 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/router"
 	"github.com/jseow5177/pockteer-be/pkg/service"
 
+	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 
+	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
 )
@@ -34,9 +36,11 @@ type server struct {
 
 	categoryRepo    repo.CategoryRepo
 	transactionRepo repo.TransactionRepo
+	budgetRepo      repo.BudgetRepo
 
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
+	budgetUseCase      buc.UseCase
 }
 
 func main() {
@@ -77,10 +81,12 @@ func (s *server) Start() error {
 	// init repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
+	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
+	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -253,6 +259,52 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: th.GetTransactionsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return transactionHandler.GetTransactions(ctx, req.(*presenter.GetTransactionsRequest), res.(*presenter.GetTransactionsResponse))
+			},
+		},
+	})
+
+	// ========== Category ========== //
+
+	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
+
+	// get category budgets by month
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategoryBudgetsByMonth,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoryBudgetsByMonthRequest),
+			Res:       new(presenter.GetCategoryBudgetsByMonthResponse),
+			Validator: bh.GetCategoryBudgetsByMonthValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.GetCategoryBudgetsByMonth(ctx, req.(*presenter.GetCategoryBudgetsByMonthRequest), res.(*presenter.GetCategoryBudgetsByMonthResponse))
+			},
+		},
+	})
+
+	// get annual budget breakdown
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAnnualBudgetBreakdown,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAnnualBudgetBreakdownRequest),
+			Res:       new(presenter.GetAnnualBudgetBreakdownResponse),
+			Validator: bh.GetAnnualBudgetBreakdownValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.GetAnnualBudgetBreakdown(ctx, req.(*presenter.GetAnnualBudgetBreakdownRequest), res.(*presenter.GetAnnualBudgetBreakdownResponse))
+			},
+		},
+	})
+
+	// set budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSetBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SetBudgetRequest),
+			Res:       new(presenter.SetBudgetResponse),
+			Validator: bh.SetBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.SetBudget(ctx, req.(*presenter.SetBudgetRequest), res.(*presenter.SetBudgetResponse))
 			},
 		},
 	})

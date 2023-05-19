@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -116,6 +117,38 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
+func (mc *MongoColl) upsertMany(ctx context.Context, uniqueKey string, docs []interface{}) (ids []string, err error) {
+	var bulkWrites []mongo.WriteModel
+
+	for _, doc := range docs {
+		keyValue := getUniqueKeyValue(doc, uniqueKey)
+
+		filter := bson.M{uniqueKey: keyValue}
+		update := bson.M{"$set": removeUniqueKeyField(doc, uniqueKey)}
+
+		upsert := mongo.NewUpdateOneModel()
+		upsert.SetFilter(filter)
+		upsert.SetUpdate(update)
+		upsert.SetUpsert(true)
+
+		bulkWrites = append(bulkWrites, upsert)
+	}
+
+	opts := options.BulkWrite().SetOrdered(false)
+	result, err := mc.coll.BulkWrite(ctx, bulkWrites, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	ids = make([]string, 0)
+	for _, id := range result.UpsertedIDs {
+		objID := id.(primitive.ObjectID)
+		ids = append(ids, objID.Hex())
+	}
+
+	return ids, nil
+}
+
 func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interface{}) error {
 	f := mongoutil.BuildFilter(filter)
 
@@ -147,4 +180,22 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 	}
 
 	return res, nil
+}
+
+func getUniqueKeyValue(doc interface{}, uniqueKey string) interface{} {
+	value := bson.M{}
+	bsonBytes, _ := bson.Marshal(doc)
+	_ = bson.Unmarshal(bsonBytes, &value)
+
+	return value[uniqueKey]
+}
+
+func removeUniqueKeyField(doc interface{}, uniqueKey string) interface{} {
+	value := bson.M{}
+	bsonBytes, _ := bson.Marshal(doc)
+	_ = bson.Unmarshal(bsonBytes, &value)
+
+	delete(value, uniqueKey)
+
+	return value
 }

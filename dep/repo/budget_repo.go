@@ -12,10 +12,10 @@ type BudgetRepo interface {
 }
 
 type BudgetFilter struct {
-	UserID      *string
-	CategoryID  *string
-	CategoryIDs []string
-	Year        *uint32
-	Month       *uint32
-	BudgetType  *uint32
+	UserID      *string  `filter:"user_id"`
+	CategoryID  *string  `filter:"category_id"`
+	CategoryIDs []string `filter:"category_id__in"`
+	Year        *uint32  `filter:"year"`
+	Month       *uint32  `filter:"month"`
+	BudgetType  *uint32  `filter:"budget_type"`
 }

@@ -9,6 +9,10 @@ import (
 func toAnnualBudgetBreakdown(
 	annualBreakdown *entity.AnnualBudgetBreakdown,
 ) *AnnualBudgetBreakdown {
+	if annualBreakdown == nil {
+		return nil
+	}
+
 	return &AnnualBudgetBreakdown{
 		CategoryID:     goutil.String(annualBreakdown.GetDefaultBudget().GetCategoryID()),
 		BudgetType:     goutil.Uint32(annualBreakdown.GetBudgetType()),
@@ -31,6 +35,10 @@ func toBasicBudgets(
 func toBasicBudget(
 	entBudget *entity.Budget,
 ) *BasicBudget {
+	if entBudget == nil {
+		return nil
+	}
+
 	return &BasicBudget{
 		Year:   goutil.Uint32(entBudget.GetYear()),
 		Month:  goutil.Uint32(entBudget.GetMonth()),
@@ -38,37 +46,58 @@ func toBasicBudget(
 	}
 }
 
-func cbToBudgets(
+func toCategoryBudgets(
 	categoryBudgets []*budget.CategoryBudget,
-) []*Budget {
-	budgets := make([]*Budget, len(categoryBudgets))
+) []*CategoryBudget {
+	cbs := make([]*CategoryBudget, len(categoryBudgets))
 	for idx, cb := range categoryBudgets {
-		budgets[idx] = cbToBudget(cb)
+		cbs[idx] = toCategoryBudget(cb)
 	}
-	return budgets
+	return cbs
 }
 
-func cbToBudget(
+func toCategoryBudget(
 	categoryBudget *budget.CategoryBudget,
-) *Budget {
-	return &Budget{
-		BudgetID:     goutil.String(categoryBudget.GetBudget().GetBudgetID()),
-		BudgetType:   goutil.Uint32(categoryBudget.GetBudget().GetBudgetType()),
-		Year:         goutil.Uint32(categoryBudget.GetBudget().GetYear()),
-		Month:        goutil.Uint32(categoryBudget.GetBudget().GetMonth()),
-		BudgetAmount: goutil.Int64(categoryBudget.GetBudget().GetBudgetAmount()),
-		Category:     toCategory(categoryBudget.GetCategory()),
+) *CategoryBudget {
+	if categoryBudget == nil {
+		return nil
+	}
+
+	return &CategoryBudget{
+		Budget:   toBudget(categoryBudget.Budget),
+		Category: toCategory(categoryBudget.Category),
 	}
 }
 
 func toCategory(
 	category *entity.Category,
 ) *Category {
+	if category == nil {
+		return nil
+	}
+
 	return &Category{
 		CategoryID:   goutil.String(category.GetCategoryID()),
 		CategoryName: goutil.String(category.GetCategoryName()),
 		CategoryType: goutil.Uint32(category.GetCategoryType()),
 		CreateTime:   goutil.Uint64(category.GetCreateTime()),
 		UpdateTime:   goutil.Uint64(category.GetUpdateTime()),
+	}
+}
+
+func toBudget(
+	budget *entity.Budget,
+) *Budget {
+	if budget == nil {
+		return nil
+	}
+
+	return &Budget{
+		BudgetID:     goutil.String(budget.GetBudgetID()),
+		CategoryID:   goutil.String(budget.GetCategoryID()),
+		BudgetType:   goutil.Uint32(budget.GetBudgetType()),
+		Year:         goutil.Uint32(budget.GetYear()),
+		Month:        goutil.Uint32(budget.GetMonth()),
+		BudgetAmount: goutil.Int64(budget.GetBudgetAmount()),
 	}
 }

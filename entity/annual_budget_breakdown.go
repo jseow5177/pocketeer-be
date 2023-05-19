@@ -2,6 +2,7 @@ package entity
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/util"
@@ -40,10 +41,13 @@ func NewAnnualBudgetBreakdown(
 		)
 	}
 
-	return &AnnualBudgetBreakdown{
+	breakdown := &AnnualBudgetBreakdown{
 		DefaultBudget:  defaultBudget,
 		MonthlyBudgets: monthlyBudgets,
-	}, nil
+	}
+	breakdown.sort()
+
+	return breakdown, nil
 }
 
 func DefaultAnnualBudgetBreakdown(
@@ -73,10 +77,13 @@ func DefaultAnnualBudgetBreakdown(
 		monthlyBudgets = append(monthlyBudgets, monthlyBudget)
 	}
 
-	return &AnnualBudgetBreakdown{
+	breakdown := &AnnualBudgetBreakdown{
 		DefaultBudget:  defaultBudget,
 		MonthlyBudgets: monthlyBudgets,
 	}
+	breakdown.sort()
+
+	return breakdown
 }
 
 // ****************** Getters
@@ -158,4 +165,10 @@ func (e *AnnualBudgetBreakdown) setFutureBudgetsToDefault() {
 			budget.SetBudgetAmount(e.GetDefaultBudget().GetBudgetAmount())
 		}
 	}
+}
+
+func (e *AnnualBudgetBreakdown) sort() {
+	sort.Slice(e.MonthlyBudgets, func(i, j int) bool {
+		return e.MonthlyBudgets[i].GetMonth() < e.MonthlyBudgets[j].GetMonth()
+	})
 }

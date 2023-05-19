@@ -9,14 +9,19 @@ import (
 //go:generate easytags $GOFILE
 
 // ***************** Common structs
+type CategoryBudget struct {
+	Budget   *Budget   `json:"budget"`
+	Category *Category `json:"category"`
+}
+
 type Budget struct {
-	BudgetID     *string   `json:"budget_id"`
-	BudgetType   *uint32   `json:"budget_type"`
-	Year         *uint32   `json:"year"`
-	Month        *uint32   `json:"month"`
-	BudgetAmount *int64    `json:"budget_amount"`
-	Used         *int64    `json:"used"`
-	Category     *Category `json:"category"`
+	BudgetID     *string `json:"budget_id"`
+	CategoryID   *string `json:"category_id"`
+	BudgetType   *uint32 `json:"budget_type"`
+	Year         *uint32 `json:"year"`
+	Month        *uint32 `json:"month"`
+	BudgetAmount *int64  `json:"budget_amount"`
+	Used         *int64  `json:"used"`
 }
 
 type BasicBudget struct {
@@ -42,7 +47,7 @@ type GetCategoryBudgetsByMonthRequest struct {
 }
 
 type GetCategoryBudgetsByMonthResponse struct {
-	Budgets []*Budget `json:"budgets"`
+	CategoryBudgets []*CategoryBudget `json:"category_budgets"`
 }
 
 type GetAnnualBudgetBreakdownRequest struct {
@@ -71,6 +76,13 @@ type SetBudgetResponse struct {
 func (m *Budget) GetBudgetID() string {
 	if m != nil && m.BudgetID != nil {
 		return *m.BudgetID
+	}
+	return ""
+}
+
+func (m *Budget) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
 	}
 	return ""
 }
@@ -110,8 +122,13 @@ func (m *Budget) GetUsed() int64 {
 	return 0
 }
 
-func (m *Budget) GetCategory() *Category {
+// *****************
+func (m *CategoryBudget) GetCategory() *Category {
 	return m.Category
+}
+
+func (m *CategoryBudget) GetBudget() *Budget {
+	return m.Budget
 }
 
 // *****************
@@ -225,7 +242,7 @@ func (m *GetCategoryBudgetsByMonthRequest) ToUseCaseReq(userID string) *budget.G
 }
 
 func (m *GetCategoryBudgetsByMonthResponse) Set(useCaseRes *budget.GetCategoryBudgetsByMonthResponse) {
-	m.Budgets = cbToBudgets(useCaseRes.GetCategoryBudgets())
+	m.CategoryBudgets = toCategoryBudgets(useCaseRes.GetCategoryBudgets())
 }
 
 // *****************

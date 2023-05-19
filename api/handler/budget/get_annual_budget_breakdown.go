@@ -7,7 +7,17 @@ import (
 	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
+	"github.com/jseow5177/pockteer-be/pkg/validator"
 )
+
+var GetAnnualBudgetBreakdownValidator = validator.MustForm(map[string]validator.Validator{
+	"year": &validator.UInt32{
+		Optional: false,
+	},
+	"category_id": &validator.String{
+		Optional: false,
+	},
+})
 
 func (h *budgetHandler) GetAnnualBudgetBreakdown(
 	ctx context.Context,

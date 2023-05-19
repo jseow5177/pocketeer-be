@@ -7,7 +7,17 @@ import (
 	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
+	"github.com/jseow5177/pockteer-be/pkg/validator"
 )
+
+var SetBudgetValidator = validator.MustForm(map[string]validator.Validator{
+	"category_id": &validator.String{
+		Optional: false,
+	},
+	"year": &validator.UInt32{
+		Optional: false,
+	},
+})
 
 func (h *budgetHandler) SetBudget(
 	ctx context.Context,
