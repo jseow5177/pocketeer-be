@@ -9,10 +9,10 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
-func (h *budgetHandler) GetCategoryBudgetsByMonth(
+func (h *budgetHandler) GetAnnualBudgetBreakdown(
 	ctx context.Context,
-	req *presenter.GetCategoryBudgetsByMonthRequest,
-	res *presenter.GetCategoryBudgetsByMonthResponse,
+	req *presenter.GetAnnualBudgetBreakdownRequest,
+	res *presenter.GetAnnualBudgetBreakdownResponse,
 ) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 	if userID == "" {
@@ -21,9 +21,9 @@ func (h *budgetHandler) GetCategoryBudgetsByMonth(
 		)
 	}
 
-	usecaseRes, err := h.budgetUseCase.GetCategoryBudgetsByMonth(
+	usecaseRes, err := h.budgetUseCase.GetAnnualBudgetBreakdown(
 		ctx,
-		req.ToUseCaseReq(userID),
+		req.ToUseCaseRes(userID),
 	)
 	if err != nil {
 		return err

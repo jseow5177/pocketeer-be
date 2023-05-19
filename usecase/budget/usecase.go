@@ -3,7 +3,6 @@ package budget
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/usecase/util"
@@ -26,15 +25,14 @@ func NewBudgetUseCase(
 
 func (uc *budgetUseCase) GetCategoryBudgetsByMonth(
 	ctx context.Context,
-	userID string,
-	req *presenter.GetCategoryBudgetsByMonthRequest,
+	req *GetCategoryBudgetsByMonthRequest,
 ) (*GetCategoryBudgetsByMonthResponse, error) {
-	categories, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(userID))
+	categories, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	monthBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToBudgetFilter(userID))
+	monthBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToBudgetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -44,64 +42,86 @@ func (uc *budgetUseCase) GetCategoryBudgetsByMonth(
 		return nil, err
 	}
 
-	return &GetCategoryBudgetsByMonthResponse{CategoryBudgets: categoryBudgets}, nil
+	return &GetCategoryBudgetsByMonthResponse{
+		CategoryBudgets: categoryBudgets,
+	}, nil
 }
 
 func (uc *budgetUseCase) mergeCategoryAndBudget(
 	categories []*entity.Category,
 	monthBudgets []*entity.Budget,
 ) ([]*CategoryBudget, error) {
-	categoryIDToBudget := util.GetCategoryIDToBudgetMap(monthBudgets)
+	catIDToBudget := util.GetCategoryIDToBudgetMap(monthBudgets)
+	catIDToCategoryBudget := make(map[string]*CategoryBudget)
 
 	for _, category := range categories {
-		_, isBudgetSet := categoryIDToBudget[category.GetCategoryID()]
-		if !isBudgetSet {
-			categoryIDToBudget[category.GetCategoryID()] = nil
+		budget, _ := catIDToBudget[category.GetCategoryID()]
+
+		catIDToCategoryBudget[category.GetCategoryID()] = &CategoryBudget{
+			Category: category,
+			Budget:   budget,
 		}
 	}
 
-	return toCategoryBudgets(categoryIDToBudget, categories)
+	categoryBudgets := make([]*CategoryBudget, 0)
+	for _, categoryBudget := range catIDToCategoryBudget {
+		categoryBudgets = append(categoryBudgets, categoryBudget)
+	}
+
+	return categoryBudgets, nil
 }
 
 func (uc *budgetUseCase) GetAnnualBudgetBreakdown(
 	ctx context.Context,
-	userID string,
-	req *presenter.GetAnnualBudgetBreakdownRequest,
+	req *GetAnnualBudgetBreakdownRequest,
 ) (*GetAnnualBudgetBreakdownResponse, error) {
-	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToFullBudgetFilter(userID))
+	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToFullBudgetFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	budgetNotSet := len(fullYearBudgets) == 0
+	var (
+		budgetNotSet    = len(fullYearBudgets) == 0
+		budgetBreakdown *entity.AnnualBudgetBreakdown
+	)
+
 	if budgetNotSet {
-		return nil, nil
+		budgetBreakdown = entity.DefaultAnnualBudgetBreakdown(
+			req.GetUserID(),
+			req.GetCategoryID(),
+			req.GetYear(),
+		)
+	} else {
+		budgetBreakdown, err = entity.NewAnnualBudgetBreakdown(fullYearBudgets)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	budgetBreakdown, err := entity.NewAnnualBudgetBreakdown(fullYearBudgets)
-	if err != nil {
-		return nil, err
-	}
-
-	return &GetAnnualBudgetBreakdownResponse{AnnualBudgetBreakdown: budgetBreakdown}, nil
+	return &GetAnnualBudgetBreakdownResponse{
+		AnnualBudgetBreakdown: budgetBreakdown,
+	}, nil
 }
 
 func (uc *budgetUseCase) SetBudget(
 	ctx context.Context,
-	userID string,
-	req *presenter.SetBudgetRequest,
+	req *SetBudgetRequest,
 ) (*SetBudgetResponse, error) {
-	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToFullBudgetFilter(userID))
+	fullYearBudgets, err := uc.budgetRepo.GetMany(ctx, req.ToFullBudgetFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	var budgetBreakdown *entity.AnnualBudgetBreakdown
-	budgetNotSet := len(fullYearBudgets) == 0
+	var (
+		budgetNotSet    = len(fullYearBudgets) == 0
+		budgetBreakdown *entity.AnnualBudgetBreakdown
+	)
 
 	if budgetNotSet {
 		budgetBreakdown = entity.DefaultAnnualBudgetBreakdown(
-			userID, req.GetCategoryID(), req.GetYear(),
+			req.GetUserID(),
+			req.GetCategoryID(),
+			req.GetYear(),
 		)
 	} else {
 		budgetBreakdown, err = entity.NewAnnualBudgetBreakdown(fullYearBudgets)

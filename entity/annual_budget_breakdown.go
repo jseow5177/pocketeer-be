@@ -51,11 +51,25 @@ func DefaultAnnualBudgetBreakdown(
 	categoryID string,
 	year uint32,
 ) *AnnualBudgetBreakdown {
-	defaultBudget := NewBudget(userID, categoryID, year, defaultBudgetMonth, true, defaultBudgetAmount)
+	defaultBudget := NewBudget(
+		userID,
+		categoryID,
+		year,
+		defaultBudgetMonth,
+		true,
+		defaultBudgetAmount,
+	)
 
 	monthlyBudgets := make([]*Budget, 0)
 	for month := range util.MonthTypes {
-		monthlyBudget := NewBudget(userID, categoryID, year, month, false, defaultBudgetAmount)
+		monthlyBudget := NewBudget(
+			userID,
+			categoryID,
+			year,
+			month,
+			false,
+			defaultBudgetAmount,
+		)
 		monthlyBudgets = append(monthlyBudgets, monthlyBudget)
 	}
 

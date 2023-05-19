@@ -3,19 +3,20 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/budget"
 )
 
 //go:generate easytags $GOFILE
 
 // ***************** Common structs
 type Budget struct {
-	CategoryID   *string `json:"category_id"`
-	CategoryName *string `json:"category_name"`
-	BudgetType   *uint32 `json:"budget_type"`
-	Year         *uint32 `json:"year"`
-	Month        *uint32 `json:"month"`
-	BudgetAmount *int64  `json:"budget_amount"`
-	Used         *int64  `json:"used"`
+	BudgetID     *string   `json:"budget_id"`
+	BudgetType   *uint32   `json:"budget_type"`
+	Year         *uint32   `json:"year"`
+	Month        *uint32   `json:"month"`
+	BudgetAmount *int64    `json:"budget_amount"`
+	Used         *int64    `json:"used"`
+	Category     *Category `json:"category"`
 }
 
 type BasicBudget struct {
@@ -24,13 +25,12 @@ type BasicBudget struct {
 	Amount *int64  `json:"amount"`
 }
 
-type FullYearBudget struct {
-	CategoryID      *string        `json:"category_id"`
-	BudgetType      *uint32        `json:"budget_type"`
-	TransactionType *uint32        `json:"transaction_type"`
-	Year            *uint32        `json:"year"`
-	DefaultBudget   *int64         `json:"default_budget"`
-	MonthlyBudgets  []*BasicBudget `json:"monthly_budgets"`
+type AnnualBudgetBreakdown struct {
+	CategoryID     *string        `json:"category_id"`
+	BudgetType     *uint32        `json:"budget_type"`
+	Year           *uint32        `json:"year"`
+	DefaultBudget  *int64         `json:"default_budget"`
+	MonthlyBudgets []*BasicBudget `json:"monthly_budgets"`
 }
 
 // ***************** Request | Response
@@ -51,7 +51,7 @@ type GetAnnualBudgetBreakdownRequest struct {
 }
 
 type GetAnnualBudgetBreakdownResponse struct {
-	FullYearBudget *FullYearBudget `json:"full_year_budget"`
+	AnnualBudgetBreakdown *AnnualBudgetBreakdown `json:"annual_budget_breakdown"`
 }
 
 type SetBudgetRequest struct {
@@ -63,19 +63,14 @@ type SetBudgetRequest struct {
 	BudgetType   *uint32 `json:"budget_type"`
 }
 
-type SetBudgetResponse struct{}
-
-// ***************** Funcs
-func (m *Budget) GetCategoryID() string {
-	if m != nil && m.CategoryID != nil {
-		return *m.CategoryID
-	}
-	return ""
+type SetBudgetResponse struct {
+	AnnualBudgetBreakdown *AnnualBudgetBreakdown
 }
 
-func (m *Budget) GetCategoryName() string {
-	if m != nil && m.CategoryName != nil {
-		return *m.CategoryName
+// ***************** Funcs
+func (m *Budget) GetBudgetID() string {
+	if m != nil && m.BudgetID != nil {
+		return *m.BudgetID
 	}
 	return ""
 }
@@ -115,6 +110,10 @@ func (m *Budget) GetUsed() int64 {
 	return 0
 }
 
+func (m *Budget) GetCategory() *Category {
+	return m.Category
+}
+
 // *****************
 func (m *BasicBudget) GetYear() uint32 {
 	if m != nil && m.Year != nil {
@@ -138,42 +137,35 @@ func (m *BasicBudget) GetAmount() int64 {
 }
 
 // *****************
-func (m *FullYearBudget) GetCategoryID() string {
+func (m *AnnualBudgetBreakdown) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
 	}
 	return ""
 }
 
-func (m *FullYearBudget) GetBudgetType() uint32 {
+func (m *AnnualBudgetBreakdown) GetBudgetType() uint32 {
 	if m != nil && m.BudgetType != nil {
 		return *m.BudgetType
 	}
 	return 0
 }
 
-func (m *FullYearBudget) GetTransactionType() uint32 {
-	if m != nil && m.TransactionType != nil {
-		return *m.TransactionType
-	}
-	return 0
-}
-
-func (m *FullYearBudget) GetYear() uint32 {
+func (m *AnnualBudgetBreakdown) GetYear() uint32 {
 	if m != nil && m.Year != nil {
 		return *m.Year
 	}
 	return 0
 }
 
-func (m *FullYearBudget) GetDefaultBudget() int64 {
+func (m *AnnualBudgetBreakdown) GetDefaultBudget() int64 {
 	if m != nil && m.DefaultBudget != nil {
 		return *m.DefaultBudget
 	}
 	return 0
 }
 
-func (m *FullYearBudget) GetMonthlyBudgets() []*BasicBudget {
+func (m *AnnualBudgetBreakdown) GetMonthlyBudgets() []*BasicBudget {
 	if m != nil && m.MonthlyBudgets != nil {
 		return m.MonthlyBudgets
 	}
@@ -222,6 +214,22 @@ func (m *GetCategoryBudgetsByMonthRequest) ToBudgetFilter(userID string) *repo.B
 	}
 }
 
+func (m *GetCategoryBudgetsByMonthRequest) ToUseCaseReq(userID string) *budget.GetCategoryBudgetsByMonthRequest {
+	return &budget.GetCategoryBudgetsByMonthRequest{
+		UserID:         goutil.String(userID),
+		Year:           m.Year,
+		Month:          m.Month,
+		CategoryIDs:    m.CategoryIDs,
+		IncludedAmount: m.IncludeUsedAmount,
+	}
+}
+
+func (m *GetCategoryBudgetsByMonthResponse) Set(useCaseRes *budget.GetCategoryBudgetsByMonthResponse) {
+	m.Budgets = cbToBudgets(useCaseRes.GetCategoryBudgets())
+}
+
+// *****************
+
 func (m *GetAnnualBudgetBreakdownRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
@@ -236,12 +244,24 @@ func (m *GetAnnualBudgetBreakdownRequest) GetYear() uint32 {
 	return 0
 }
 
+func (m *GetAnnualBudgetBreakdownRequest) ToUseCaseRes(userID string) *budget.GetAnnualBudgetBreakdownRequest {
+	return &budget.GetAnnualBudgetBreakdownRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+		Year:       m.Year,
+	}
+}
+
 func (m *GetAnnualBudgetBreakdownRequest) ToFullBudgetFilter(userID string) *repo.BudgetFilter {
 	return &repo.BudgetFilter{
 		UserID:     goutil.String(userID),
 		CategoryID: m.CategoryID,
 		Year:       m.Year,
 	}
+}
+
+func (m *GetAnnualBudgetBreakdownResponse) Set(useCaseRes *budget.GetAnnualBudgetBreakdownResponse) {
+	m.AnnualBudgetBreakdown = toAnnualBudgetBreakdown(useCaseRes.GetAnnualBudgetBreakdown())
 }
 
 // *****************
@@ -293,4 +313,20 @@ func (m *SetBudgetRequest) ToFullBudgetFilter(userID string) *repo.BudgetFilter 
 		CategoryID: m.CategoryID,
 		Year:       m.Year,
 	}
+}
+
+func (m *SetBudgetRequest) ToUseCaseReq(userID string) *budget.SetBudgetRequest {
+	return &budget.SetBudgetRequest{
+		UserID:       goutil.String(userID),
+		CategoryID:   m.CategoryID,
+		Year:         m.Year,
+		Month:        m.Month,
+		IsDefault:    m.IsDefault,
+		BudgetAmount: m.BudgetAmount,
+		BudgetType:   m.BudgetType,
+	}
+}
+
+func (m *SetBudgetResponse) Set(useCaseRes *budget.SetBudgetResponse) {
+	m.AnnualBudgetBreakdown = toAnnualBudgetBreakdown(useCaseRes.GetAnnualBudgetBreakdown())
 }
