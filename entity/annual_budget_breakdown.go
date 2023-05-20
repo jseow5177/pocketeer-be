@@ -109,7 +109,7 @@ func (e *AnnualBudgetBreakdown) IsMonthlyBudget() bool {
 }
 
 func (e *AnnualBudgetBreakdown) SetBudgetType(budgetType uint32) {
-	e.SetBudgetType(budgetType)
+	e.setBudgetType(budgetType)
 
 	if budgetType == uint32(BudgetTypeYearly) {
 		e.setMonthlyBudgetsToDefault()
@@ -131,7 +131,9 @@ func (e *AnnualBudgetBreakdown) SetMonthlyBudget(
 	budgetAmount int64,
 ) error {
 	if e.IsYearlyBudget() {
-		return errutil.BadRequestError(fmt.Errorf("budget type is yearly, cannot update monthly budget"))
+		return errutil.BadRequestError(
+			fmt.Errorf("budget type is yearly, cannot update monthly budget"),
+		)
 	}
 
 	for _, budget := range e.MonthlyBudgets {
@@ -164,6 +166,14 @@ func (e *AnnualBudgetBreakdown) setFutureBudgetsToDefault() {
 		if budget.GetMonth() > currMonth {
 			budget.SetBudgetAmount(e.GetDefaultBudget().GetBudgetAmount())
 		}
+	}
+}
+
+func (e *AnnualBudgetBreakdown) setBudgetType(budgetType uint32) {
+	e.GetDefaultBudget().SetBudgetType(budgetType)
+
+	for _, monthlyBudget := range e.GetMonthlyBudgets() {
+		monthlyBudget.SetBudgetType(budgetType)
 	}
 }
 

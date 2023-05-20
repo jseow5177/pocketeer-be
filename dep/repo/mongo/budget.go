@@ -45,7 +45,7 @@ func (m *budgetMongo) Set(ctx context.Context, budgets []*entity.Budget) error {
 		interfaces[idx] = *model
 	}
 
-	_, err := m.mColl.upsertMany(ctx, "_id", interfaces)
+	_, err := m.mColl.upsertMany(ctx, idBsonField, interfaces)
 	if err != nil {
 		return err
 	}
