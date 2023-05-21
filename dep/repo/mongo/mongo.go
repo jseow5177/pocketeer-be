@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/jseow5177/pockteer-be/config"
-	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
@@ -85,17 +84,10 @@ func NewMongoColl(m *Mongo, collName string) *MongoColl {
 	}
 }
 
-func (mc *MongoColl) wrapError(err error) error {
-	if err == mongo.ErrNoDocuments {
-		return errutil.ErrNotFound
-	}
-	return err
-}
-
 func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error) {
 	r, err := mc.coll.InsertOne(ctx, doc)
 	if err != nil {
-		return "", mc.wrapError(err)
+		return "", err
 	}
 
 	id := r.InsertedID.(primitive.ObjectID)
@@ -111,7 +103,7 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 
 	_, err := mc.coll.UpdateOne(ctx, f, u)
 	if err != nil {
-		return mc.wrapError(err)
+		return err
 	}
 
 	return nil
@@ -153,7 +145,7 @@ func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interfac
 	f := mongoutil.BuildFilter(filter)
 
 	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
-		return mc.wrapError(err)
+		return err
 	}
 
 	return nil
@@ -165,7 +157,7 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 
 	cursor, err := mc.coll.Find(ctx, f, opts)
 	if err != nil {
-		return nil, mc.wrapError(err)
+		return nil, err
 	}
 
 	t := reflect.TypeOf(model).Elem()
@@ -174,7 +166,7 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 	for cursor.Next(ctx) {
 		m := reflect.New(t).Interface()
 		if err = cursor.Decode(m); err != nil {
-			return nil, mc.wrapError(err)
+			return nil, err
 		}
 		res = append(res, m)
 	}

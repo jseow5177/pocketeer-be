@@ -4,6 +4,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 func toAnnualBudgetBreakdown(
@@ -99,5 +100,24 @@ func toBudget(
 		Year:         goutil.Uint32(budget.GetYear()),
 		Month:        goutil.Uint32(budget.GetMonth()),
 		BudgetAmount: goutil.Int64(budget.GetBudgetAmount()),
+	}
+}
+
+func toTransaction(transaction *entity.Transaction, category *entity.Category) *Transaction {
+	return &Transaction{
+		TransactionID:   goutil.String(transaction.GetTransactionID()),
+		Category:        toCategory(category),
+		Amount:          goutil.String(transaction.GetAmount()),
+		TransactionType: goutil.Uint32(transaction.GetTransactionType()),
+		TransactionTime: goutil.Uint64(transaction.GetTransactionTime()),
+		CreateTime:      goutil.Uint64(transaction.GetCreateTime()),
+		UpdateTime:      goutil.Uint64(transaction.GetUpdateTime()),
+	}
+}
+
+func toPaging(paging *common.Paging) *Paging {
+	return &Paging{
+		Limit: goutil.Uint32(paging.GetLimit()),
+		Page:  goutil.Uint32(paging.GetPage()),
 	}
 }

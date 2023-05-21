@@ -2,8 +2,13 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+)
+
+var (
+	ErrCategoryNotFound = errors.New("category not found")
 )
 
 type CategoryRepo interface {
@@ -16,8 +21,8 @@ type CategoryRepo interface {
 
 type CategoryFilter struct {
 	UserID       *string  `filter:"user_id"`
-	CategoryID   *string  `filter:"category_id"`
-	CategoryIDs  []string `filter:"category_id__in"`
+	CategoryID   *string  `filter:"_id"`
+	CategoryIDs  []string `filter:"_id__in"`
 	CategoryType *uint32  `filter:"category_type"`
 }
 

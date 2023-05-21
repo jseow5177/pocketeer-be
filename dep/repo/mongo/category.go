@@ -2,10 +2,13 @@ package mongo
 
 import (
 	"context"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const categoryCollName = "category"
@@ -21,8 +24,12 @@ func NewCategoryMongo(mongo *Mongo) repo.CategoryRepo {
 }
 
 func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string, error) {
-	cm := model.ToCategoryModel(c)
+	now := uint64(time.Now().Unix())
 
+	c.UpdateTime = goutil.Uint64(now)
+	c.UpdateTime = goutil.Uint64(now)
+
+	cm := model.ToCategoryModel(c)
 	id, err := m.mColl.create(ctx, cm)
 	if err != nil {
 		return "", err
@@ -32,6 +39,8 @@ func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string,
 }
 
 func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
+	c.UpdateTime = goutil.Uint64(uint64(time.Now().Unix()))
+
 	cm := model.ToCategoryModel(c)
 	if err := m.mColl.update(ctx, cf, cm); err != nil {
 		return err
@@ -43,6 +52,9 @@ func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *
 func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
 	c := new(model.Category)
 	if err := m.mColl.get(ctx, cf, &c); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, repo.ErrCategoryNotFound
+		}
 		return nil, err
 	}
 

@@ -1,18 +1,15 @@
 package transaction
 
 import (
-	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/usecase/category"
+	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 type transactionHandler struct {
-	categoryUseCase category.UseCase
-	transactionRepo repo.TransactionRepo
+	transactionUseCase transaction.UseCase
 }
 
-func NewTransactionHandler(categoryUseCase category.UseCase, transactionRepo repo.TransactionRepo) *transactionHandler {
+func NewTransactionHandler(transactionUseCase transaction.UseCase) *transactionHandler {
 	return &transactionHandler{
-		categoryUseCase: categoryUseCase,
-		transactionRepo: transactionRepo,
+		transactionUseCase: transactionUseCase,
 	}
 }

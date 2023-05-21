@@ -2,10 +2,13 @@ package mongo
 
 import (
 	"context"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const transactionCollName = "transaction"
@@ -21,8 +24,12 @@ func NewTransactionMongo(mongo *Mongo) repo.TransactionRepo {
 }
 
 func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (string, error) {
-	tm := model.ToTransactionModel(t)
+	now := uint64(time.Now().Unix())
 
+	t.UpdateTime = goutil.Uint64(now)
+	t.UpdateTime = goutil.Uint64(now)
+
+	tm := model.ToTransactionModel(t)
 	id, err := m.mColl.create(ctx, tm)
 	if err != nil {
 		return "", err
@@ -32,6 +39,8 @@ func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (s
 }
 
 func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, t *entity.Transaction) error {
+	t.UpdateTime = goutil.Uint64(uint64(time.Now().Unix()))
+
 	tm := model.ToTransactionModel(t)
 	if err := m.mColl.update(ctx, tf, tm); err != nil {
 		return err
@@ -43,6 +52,9 @@ func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilte
 func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) (*entity.Transaction, error) {
 	t := new(model.Transaction)
 	if err := m.mColl.get(ctx, tf, &t); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, repo.ErrTransactionNotFound
+		}
 		return nil, err
 	}
 

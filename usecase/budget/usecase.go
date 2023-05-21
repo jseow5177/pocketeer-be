@@ -5,7 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/usecase/util"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 type budgetUseCase struct {
@@ -51,7 +51,7 @@ func (uc *budgetUseCase) mergeCategoryAndBudget(
 	categories []*entity.Category,
 	monthBudgets []*entity.Budget,
 ) ([]*CategoryBudget, error) {
-	catIDToBudget := util.GetCategoryIDToBudgetMap(monthBudgets)
+	catIDToBudget := common.GetCategoryIDToBudgetMap(monthBudgets)
 	catIDToCategoryBudget := make(map[string]*CategoryBudget)
 
 	for _, category := range categories {

@@ -1,4 +1,4 @@
-package util
+package common
 
 import "github.com/jseow5177/pockteer-be/entity"
 

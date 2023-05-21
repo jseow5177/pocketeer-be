@@ -205,7 +205,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Transaction ========== //
 
-	transactionHandler := th.NewTransactionHandler(s.categoryUseCase, s.transactionRepo)
+	transactionHandler := th.NewTransactionHandler(s.transactionUseCase)
 
 	// create transaction
 	r.RegisterHttpRoute(&router.HttpRoute{
@@ -263,7 +263,7 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
-	// ========== Category ========== //
+	// ========== Budget ========== //
 
 	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
 

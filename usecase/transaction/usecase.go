@@ -3,82 +3,120 @@ package transaction
 import (
 	"context"
 	"errors"
-	"time"
 
-	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/category"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	ErrTransactionNotFound     = errors.New("transaction not found")
 	ErrMismatchTransactionType = errors.New("mismatch transaction type")
 )
 
-type TransactionUseCase struct {
+type transactionUseCase struct {
 	categoryUseCase category.UseCase
 	transactionRepo repo.TransactionRepo
 }
 
 func NewTransactionUseCase(categoryUseCase category.UseCase, transactionRepo repo.TransactionRepo) UseCase {
-	return &TransactionUseCase{
+	return &transactionUseCase{
 		categoryUseCase: categoryUseCase,
 		transactionRepo: transactionRepo,
 	}
 }
 
-func (uc *TransactionUseCase) GetTransaction(ctx context.Context, userID string, req *presenter.GetTransactionRequest) (*entity.Transaction, error) {
-	tf := req.ToTransactionFilter(userID)
-
-	t, err := uc.transactionRepo.Get(ctx, tf)
+func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransactionRequest) (*GetTransactionResponse, error) {
+	t, err := uc.transactionRepo.Get(ctx, req.ToTransactionFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
-		if err == errutil.ErrNotFound {
-			return nil, errutil.NotFoundError(ErrTransactionNotFound)
+		if err == repo.ErrTransactionNotFound {
+			return nil, errutil.NotFoundError(err)
 		}
 		return nil, err
 	}
 
-	return t, nil
-}
-
-func (uc *TransactionUseCase) GetTransactions(ctx context.Context, userID string, req *presenter.GetTransactionsRequest) ([]*entity.Transaction, error) {
-	tf := req.ToTransactionFilter(userID)
-
-	if _, err := uc.categoryUseCase.GetCategory(ctx, userID, req.ToGetCategoryRequest()); err != nil {
+	cRes, err := uc.categoryUseCase.GetCategory(ctx, req.ToGetCategoryRequest(t.GetCategoryID()))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 		return nil, err
 	}
 
+	return &GetTransactionResponse{
+		TransactionWithCategory: &TransactionWithCategory{
+			Transaction: t,
+			Category:    cRes.Category,
+		},
+	}, nil
+}
+
+func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
+	var c *entity.Category
+	if req.CategoryID != nil {
+		cRes, err := uc.categoryUseCase.GetCategory(ctx, req.ToGetCategoryRequest())
+		if err != nil {
+			return nil, err
+		}
+		c = cRes.Category
+	}
+
+	tf := req.ToTransactionFilter()
 	ts, err := uc.transactionRepo.GetMany(ctx, tf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
 	}
 
-	return ts, nil
+	tswc := make([]*TransactionWithCategory, len(ts))
+	if c != nil {
+		for i, t := range ts {
+			tswc[i] = &TransactionWithCategory{
+				Transaction: t,
+				Category:    c,
+			}
+		}
+	} else {
+		if err := util.ParallelizeWork(ctx, len(ts), 50, func(ctx context.Context, i int) error {
+			t := ts[i]
+			c, err := uc.categoryUseCase.GetCategory(ctx, &category.GetCategoryRequest{
+				UserID:     req.UserID,
+				CategoryID: t.CategoryID,
+			})
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get category of transaction, transactionID: %v, err: %v",
+					t.GetTransactionID(), err)
+				return err
+			}
+			tswc[i] = &TransactionWithCategory{
+				Transaction: t,
+				Category:    c.Category,
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return &GetTransactionsResponse{
+		TransactionsWithCategory: tswc,
+		Paging:                   req.Paging,
+	}, nil
 }
 
-func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID string, req *presenter.CreateTransactionRequest) (*entity.Transaction, error) {
-	var (
-		t   = req.ToTransactionEntity(userID)
-		now = uint64(time.Now().Unix())
-	)
+func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error) {
+	t := req.ToTransactionEntity()
 
-	c, err := uc.categoryUseCase.GetCategory(ctx, userID, req.ToGetCategoryRequest())
+	cRes, err := uc.categoryUseCase.GetCategory(ctx, req.ToGetCategoryRequest())
 	if err != nil {
 		return nil, err
 	}
 
-	if c.GetCategoryType() != req.GetTransactionType() {
+	if cRes.Category.GetCategoryType() != req.GetTransactionType() {
 		return nil, errutil.ValidationError(ErrMismatchTransactionType)
 	}
-
-	t.CreateTime = goutil.Uint64(now)
-	t.UpdateTime = goutil.Uint64(now)
 
 	id, err := uc.transactionRepo.Create(ctx, t)
 	if err != nil {
@@ -88,40 +126,57 @@ func (uc *TransactionUseCase) CreateTransaction(ctx context.Context, userID stri
 
 	t.TransactionID = goutil.String(id)
 
-	return t, nil
+	return &CreateTransactionResponse{
+		TransactionWithCategory: &TransactionWithCategory{
+			Transaction: t,
+			Category:    cRes.Category,
+		},
+	}, nil
 }
 
-func (uc *TransactionUseCase) UpdateTransaction(ctx context.Context, userID string, req *presenter.UpdateTransactionRequest) (*entity.Transaction, error) {
-	t, err := uc.GetTransaction(ctx, userID, req.ToGetTransactionRequest())
+func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error) {
+	tRes, err := uc.GetTransaction(ctx, req.ToGetTransactionRequest())
 	if err != nil {
 		return nil, err
 	}
+	twc := tRes.TransactionWithCategory
 
-	nt := uc.getTransactionUpdates(t, req.ToTransactionEntity())
+	nt := uc.getTransactionUpdates(tRes.Transaction, req.ToTransactionEntity())
 	if nt == nil {
 		// no updates
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
-		return t, nil
+		return &UpdateTransactionResponse{
+			twc,
+		}, nil
 	}
 
-	tf := req.ToTransactionFilter(userID)
+	// check if category exists
+	if nt.CategoryID != nil {
+		cRes, err := uc.categoryUseCase.GetCategory(ctx, req.ToGetCategoryRequest())
+		if err != nil {
+			return nil, err
+		}
+		twc.Category = cRes.Category
+	}
+
+	tf := req.ToTransactionFilter()
 	if err = uc.transactionRepo.Update(ctx, tf, nt); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save transaction updates to repo, err: %v", err)
 		return nil, err
 	}
 
 	// merge
-	goutil.MergeWithPtrFields(t, nt)
+	goutil.MergeWithPtrFields(twc.Transaction, nt)
 
-	return t, nil
+	return &UpdateTransactionResponse{
+		twc,
+	}, nil
 }
 
-func (uc *TransactionUseCase) getTransactionUpdates(old, changes *entity.Transaction) *entity.Transaction {
+func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transaction) *entity.Transaction {
 	var hasUpdates bool
 
-	nt := &entity.Transaction{
-		UpdateTime: goutil.Uint64(uint64(time.Now().Unix())),
-	}
+	nt := new(entity.Transaction)
 
 	if changes.CategoryID != nil && changes.GetCategoryID() != old.GetCategoryID() {
 		hasUpdates = true

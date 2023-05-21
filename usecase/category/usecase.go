@@ -2,10 +2,7 @@ package category
 
 import (
 	"context"
-	"errors"
-	"time"
 
-	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
@@ -13,28 +10,33 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	ErrCategoryNotFound = errors.New("category not found")
-)
-
-type CategoryUseCase struct {
+type categoryUseCase struct {
 	categoryRepo repo.CategoryRepo
 }
 
 func NewCategoryUseCase(categoryRepo repo.CategoryRepo) UseCase {
-	return &CategoryUseCase{
+	return &categoryUseCase{
 		categoryRepo: categoryRepo,
 	}
 }
 
-func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, req *presenter.CreateCategoryRequest) (*entity.Category, error) {
-	var (
-		c   = req.ToCategoryEntity(userID)
-		now = uint64(time.Now().Unix())
-	)
+func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequest) (*GetCategoryResponse, error) {
+	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		if err == repo.ErrCategoryNotFound {
+			return nil, errutil.NotFoundError(err)
+		}
+		return nil, err
+	}
 
-	c.CreateTime = goutil.Uint64(now)
-	c.UpdateTime = goutil.Uint64(now)
+	return &GetCategoryResponse{
+		Category: c,
+	}, nil
+}
+
+func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error) {
+	c := req.ToCategoryEntity()
 
 	id, err := uc.categoryRepo.Create(ctx, c)
 	if err != nil {
@@ -44,40 +46,56 @@ func (uc *CategoryUseCase) CreateCategory(ctx context.Context, userID string, re
 
 	c.CategoryID = goutil.String(id)
 
-	return c, nil
+	return &CreateCategoryResponse{
+		Category: c,
+	}, nil
 }
 
-func (uc *CategoryUseCase) UpdateCategory(ctx context.Context, userID string, req *presenter.UpdateCategoryRequest) (*entity.Category, error) {
-	c, err := uc.GetCategory(ctx, userID, req.ToGetCategoryRequest())
+func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error) {
+	c, err := uc.GetCategory(ctx, req.ToGetCategoryRequest())
 	if err != nil {
 		return nil, err
 	}
+	category := c.Category
 
-	nc := uc.getCategoryUpdates(c, req.ToCategoryEntity())
+	nc := uc.getCategoryUpdates(category, req.ToCategoryEntity())
 	if nc == nil {
 		// no updates
 		log.Ctx(ctx).Info().Msg("category has no updates")
-		return c, nil
+		return &UpdateCategoryResponse{
+			Category: category,
+		}, nil
 	}
 
-	cf := req.ToCategoryFilter(userID)
-	if err = uc.categoryRepo.Update(ctx, cf, nc); err != nil {
+	if err = uc.categoryRepo.Update(ctx, req.ToCategoryFilter(), nc); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save category updates to repo, err: %v", err)
 		return nil, err
 	}
 
 	// merge
-	goutil.MergeWithPtrFields(c, nc)
+	goutil.MergeWithPtrFields(category, nc)
 
-	return c, nil
+	return &UpdateCategoryResponse{
+		Category: category,
+	}, nil
 }
 
-func (uc *CategoryUseCase) getCategoryUpdates(old, changes *entity.Category) *entity.Category {
+func (uc *categoryUseCase) GetCategories(ctx context.Context, req *GetCategoriesRequest) (*GetCategoriesResponse, error) {
+	cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
+		return nil, err
+	}
+
+	return &GetCategoriesResponse{
+		Categories: cs,
+	}, nil
+}
+
+func (uc *categoryUseCase) getCategoryUpdates(old, changes *entity.Category) *entity.Category {
 	var hasUpdates bool
 
-	nc := &entity.Category{
-		UpdateTime: goutil.Uint64(uint64(time.Now().Unix())),
-	}
+	nc := new(entity.Category)
 
 	if changes.CategoryName != nil && changes.GetCategoryName() != old.GetCategoryName() {
 		hasUpdates = true
@@ -89,31 +107,4 @@ func (uc *CategoryUseCase) getCategoryUpdates(old, changes *entity.Category) *en
 	}
 
 	return nc
-}
-
-func (uc *CategoryUseCase) GetCategory(ctx context.Context, userID string, req *presenter.GetCategoryRequest) (*entity.Category, error) {
-	cf := req.ToCategoryFilter(userID)
-
-	c, err := uc.categoryRepo.Get(ctx, cf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-		if err == errutil.ErrNotFound {
-			return nil, errutil.NotFoundError(ErrCategoryNotFound)
-		}
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func (uc *CategoryUseCase) GetCategories(ctx context.Context, userID string, req *presenter.GetCategoriesRequest) ([]*entity.Category, error) {
-	cf := req.ToCategoryFilter(userID)
-
-	cs, err := uc.categoryRepo.GetMany(ctx, cf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
-		return nil, err
-	}
-
-	return cs, nil
 }

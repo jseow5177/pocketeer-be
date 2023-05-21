@@ -3,9 +3,8 @@ package presenter
 //go:generate easytags $GOFILE
 
 import (
-	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/category"
 )
 
 type Category struct {
@@ -51,16 +50,6 @@ func (c *Category) GetUpdateTime() uint64 {
 	return 0
 }
 
-func ToCategoryPresenter(c *entity.Category) *Category {
-	return &Category{
-		CategoryID:   c.CategoryID,
-		CategoryName: c.CategoryName,
-		CategoryType: c.CategoryType,
-		CreateTime:   c.CreateTime,
-		UpdateTime:   c.UpdateTime,
-	}
-}
-
 type CreateCategoryRequest struct {
 	CategoryName *string `json:"category_name,omitempty"`
 	CategoryType *uint32 `json:"category_type,omitempty"`
@@ -80,8 +69,8 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 	return 0
 }
 
-func (m *CreateCategoryRequest) ToCategoryEntity(userID string) *entity.Category {
-	return &entity.Category{
+func (m *CreateCategoryRequest) ToUseCaseReq(userID string) *category.CreateCategoryRequest {
+	return &category.CreateCategoryRequest{
 		UserID:       goutil.String(userID),
 		CategoryName: m.CategoryName,
 		CategoryType: m.CategoryType,
@@ -99,8 +88,8 @@ func (m *CreateCategoryResponse) GetCategory() *Category {
 	return nil
 }
 
-func (m *CreateCategoryResponse) SetCategory(c *entity.Category) {
-	m.Category = ToCategoryPresenter(c)
+func (m *CreateCategoryResponse) Set(useCaseRes *category.CreateCategoryResponse) {
+	m.Category = toCategory(useCaseRes.Category)
 }
 
 type GetCategoriesRequest struct {
@@ -114,8 +103,8 @@ func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
 	return 0
 }
 
-func (m *GetCategoriesRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
+func (m *GetCategoriesRequest) ToUseCaseReq(userID string) *category.GetCategoriesRequest {
+	return &category.GetCategoriesRequest{
 		UserID:       goutil.String(userID),
 		CategoryType: m.CategoryType,
 	}
@@ -132,10 +121,10 @@ func (m *GetCategoriesResponse) GetCategories() []*Category {
 	return nil
 }
 
-func (m *GetCategoriesResponse) SetCategories(ecs []*entity.Category) {
+func (m *GetCategoriesResponse) Set(useCaseRes *category.GetCategoriesResponse) {
 	cs := make([]*Category, 0)
-	for _, ec := range ecs {
-		cs = append(cs, ToCategoryPresenter(ec))
+	for _, c := range useCaseRes.Categories {
+		cs = append(cs, toCategory(c))
 	}
 	m.Categories = cs
 }
@@ -159,21 +148,9 @@ func (m *UpdateCategoryRequest) GetCategoryName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:     goutil.String(userID),
-		CategoryID: m.CategoryID,
-	}
-}
-
-func (m *UpdateCategoryRequest) ToGetCategoryRequest() *GetCategoryRequest {
-	return &GetCategoryRequest{
-		CategoryID: m.CategoryID,
-	}
-}
-
-func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
-	return &entity.Category{
+func (m *UpdateCategoryRequest) ToUseCaseReq(userID string) *category.UpdateCategoryRequest {
+	return &category.UpdateCategoryRequest{
+		UserID:       goutil.String(userID),
 		CategoryName: m.CategoryName,
 	}
 }
@@ -189,8 +166,8 @@ func (m *UpdateCategoryResponse) GetCategory() *Category {
 	return nil
 }
 
-func (m *UpdateCategoryResponse) SetCategory(c *entity.Category) {
-	m.Category = ToCategoryPresenter(c)
+func (m *UpdateCategoryResponse) Set(useCaseRes *category.UpdateCategoryResponse) {
+	m.Category = toCategory(useCaseRes.Category)
 }
 
 type GetCategoryRequest struct {
@@ -204,8 +181,8 @@ func (m *GetCategoryRequest) GetCatID() string {
 	return ""
 }
 
-func (m *GetCategoryRequest) ToCategoryFilter(userID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
+func (m *GetCategoryRequest) ToUseCaseReq(userID string) *category.GetCategoryRequest {
+	return &category.GetCategoryRequest{
 		UserID:     goutil.String(userID),
 		CategoryID: m.CategoryID,
 	}
@@ -222,6 +199,6 @@ func (m *GetCategoryResponse) GetCategory() *Category {
 	return nil
 }
 
-func (m *GetCategoryResponse) SetCategory(c *entity.Category) {
-	m.Category = ToCategoryPresenter(c)
+func (m *GetCategoryResponse) Set(useCaseRes *category.GetCategoryResponse) {
+	m.Category = toCategory(useCaseRes.Category)
 }

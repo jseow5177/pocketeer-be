@@ -33,7 +33,7 @@ func (h *budgetHandler) GetAnnualBudgetBreakdown(
 
 	usecaseRes, err := h.budgetUseCase.GetAnnualBudgetBreakdown(
 		ctx,
-		req.ToUseCaseRes(userID),
+		req.ToUseCaseReq(userID),
 	)
 	if err != nil {
 		return err

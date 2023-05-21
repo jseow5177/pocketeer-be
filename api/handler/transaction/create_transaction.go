@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/usecase/transaction"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,18 +28,15 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 })
 
 func (h *transactionHandler) CreateTransaction(ctx context.Context, req *presenter.CreateTransactionRequest, res *presenter.CreateTransactionResponse) error {
-	var (
-		userID = middleware.GetUserIDFromCtx(ctx)
-		uc     = transaction.NewTransactionUseCase(h.categoryUseCase, h.transactionRepo)
-	)
+	userID := middleware.GetUserIDFromCtx(ctx)
 
-	t, err := uc.CreateTransaction(ctx, userID, req)
+	useCaseRes, err := h.transactionUseCase.CreateTransaction(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create transaction, err: %v", err)
 		return err
 	}
 
-	res.SetTransaction(t)
+	res.Set(useCaseRes)
 
 	return nil
 }

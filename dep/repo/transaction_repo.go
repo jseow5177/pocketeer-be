@@ -2,8 +2,13 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+)
+
+var (
+	ErrTransactionNotFound = errors.New("transaction not found")
 )
 
 type TransactionRepo interface {

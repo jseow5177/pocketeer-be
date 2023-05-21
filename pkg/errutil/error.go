@@ -1,12 +1,7 @@
 package errutil
 
 import (
-	"errors"
 	"net/http"
-)
-
-var (
-	ErrNotFound = errors.New("entity not found")
 )
 
 type HttpError struct {

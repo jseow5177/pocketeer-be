@@ -22,13 +22,13 @@ var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 func (h *categoryHandler) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest, res *presenter.UpdateCategoryResponse) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 
-	c, err := h.categoryUseCase.UpdateCategory(ctx, userID, req)
+	useCaseRes, err := h.categoryUseCase.UpdateCategory(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to update category, err: %v", err)
 		return err
 	}
 
-	res.SetCategory(c)
+	res.Set(useCaseRes)
 
 	return nil
 }

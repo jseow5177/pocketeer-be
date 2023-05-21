@@ -2,20 +2,19 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/config"
-	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/common"
+	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 type Transaction struct {
-	TransactionID   *string `json:"transaction_id,omitempty"`
-	CategoryID      *string `json:"category_id,omitempty"`
-	Amount          *string `json:"amount,omitempty"`
-	TransactionType *uint32 `json:"transaction_type,omitempty"`
-	TransactionTime *uint64 `json:"transaction_time,omitempty"`
-	CreateTime      *uint64 `json:"create_time,omitempty"`
-	UpdateTime      *uint64 `json:"update_time,omitempty"`
+	TransactionID   *string   `json:"transaction_id,omitempty"`
+	Category        *Category `json:"category,omitempty"`
+	Amount          *string   `json:"amount,omitempty"`
+	TransactionType *uint32   `json:"transaction_type,omitempty"`
+	TransactionTime *uint64   `json:"transaction_time,omitempty"`
+	CreateTime      *uint64   `json:"create_time,omitempty"`
+	UpdateTime      *uint64   `json:"update_time,omitempty"`
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -25,11 +24,11 @@ func (t *Transaction) GetTransactionID() string {
 	return ""
 }
 
-func (t *Transaction) GetCategoryID() string {
-	if t != nil && t.CategoryID != nil {
-		return *t.CategoryID
+func (t *Transaction) GetCategory() *Category {
+	if t != nil && t.Category != nil {
+		return t.Category
 	}
-	return ""
+	return nil
 }
 
 func (t *Transaction) GetAmount() string {
@@ -67,18 +66,6 @@ func (t *Transaction) GetUpdateTime() uint64 {
 	return 0
 }
 
-func ToTransactionPresenter(t *entity.Transaction) *Transaction {
-	return &Transaction{
-		TransactionID:   t.TransactionID,
-		CategoryID:      t.CategoryID,
-		Amount:          t.Amount,
-		TransactionType: t.TransactionType,
-		TransactionTime: t.TransactionTime,
-		CreateTime:      t.CreateTime,
-		UpdateTime:      t.UpdateTime,
-	}
-}
-
 type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
@@ -114,24 +101,13 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *CreateTransactionRequest) ToTransactionEntity(userID string) *entity.Transaction {
-	t := &entity.Transaction{
+func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.CreateTransactionRequest {
+	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
-	}
-
-	// set to two decimal places, ignore error
-	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
-
-	return t
-}
-
-func (m *CreateTransactionRequest) ToGetCategoryRequest() *GetCategoryRequest {
-	return &GetCategoryRequest{
-		CategoryID: m.CategoryID,
 	}
 }
 
@@ -146,8 +122,8 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *CreateTransactionResponse) SetTransaction(t *entity.Transaction) {
-	m.Transaction = ToTransactionPresenter(t)
+func (m *CreateTransactionResponse) Set(useCaseReq *transaction.CreateTransactionResponse) {
+	m.Transaction = toTransaction(useCaseReq.Transaction, useCaseReq.Category)
 }
 
 type GetTransactionRequest struct {
@@ -161,8 +137,8 @@ func (m *GetTransactionRequest) GetTransactionID() string {
 	return ""
 }
 
-func (m *GetTransactionRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
-	return &repo.TransactionFilter{
+func (m *GetTransactionRequest) ToUseCaseReq(userID string) *transaction.GetTransactionRequest {
+	return &transaction.GetTransactionRequest{
 		UserID:        goutil.String(userID),
 		TransactionID: m.TransactionID,
 	}
@@ -179,8 +155,8 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *GetTransactionResponse) SetTransaction(t *entity.Transaction) {
-	m.Transaction = ToTransactionPresenter(t)
+func (m *GetTransactionResponse) Set(useCaseReq *transaction.GetTransactionResponse) {
+	m.Transaction = toTransaction(useCaseReq.Transaction, useCaseReq.Category)
 }
 
 type GetTransactionsRequest struct {
@@ -218,42 +194,36 @@ func (m *GetTransactionsRequest) GetPaging() *Paging {
 	return nil
 }
 
-func (m *GetTransactionsRequest) ToGetCategoryRequest() *GetCategoryRequest {
-	return &GetCategoryRequest{
-		CategoryID: m.CategoryID,
-	}
-}
-
-func (m *GetTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
-	tt := new(UInt64Filter)
-	if m.TransactionTime != nil {
-		tt = m.TransactionTime
+func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTransactionsRequest {
+	paging := m.Paging
+	if paging == nil {
+		paging = new(Paging)
 	}
 
-	paging := new(Paging)
-	if m.Paging != nil {
-		paging = m.Paging
+	if paging.Limit == nil {
+		paging.Limit = goutil.Uint32(config.DefaultPagingLimit)
 	}
 
-	return &repo.TransactionFilter{
-		UserID:             goutil.String(userID),
-		CategoryID:         m.CategoryID,
-		TransactionType:    m.TransactionType,
-		TransactionTimeGte: tt.Gte,
-		TransactionTimeLte: tt.Lte,
-		Paging: &repo.Paging{
+	if paging.Page == nil {
+		paging.Page = goutil.Uint32(config.MinPagingPage)
+	}
+
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(UInt64Filter)
+	}
+
+	return &transaction.GetTransactionsRequest{
+		UserID:          goutil.String(userID),
+		CategoryID:      m.CategoryID,
+		TransactionType: m.TransactionType,
+		Paging: &common.Paging{
 			Limit: paging.Limit,
 			Page:  paging.Page,
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("transaction_time"),
-					Order: goutil.String(config.OrderDesc),
-				},
-				&repo.Sort{
-					Field: goutil.String("create_time"),
-					Order: goutil.String(config.OrderDesc),
-				},
-			},
+		},
+		TransactionTime: &common.UInt64Filter{
+			Gte: tt.Gte,
+			Lte: tt.Lte,
 		},
 	}
 }
@@ -270,16 +240,20 @@ func (m *GetTransactionsResponse) GetTransactions() []*Transaction {
 	return nil
 }
 
-func (m *GetTransactionsResponse) SetTransactions(ets []*entity.Transaction) {
-	ts := make([]*Transaction, 0)
-	for _, et := range ets {
-		ts = append(ts, ToTransactionPresenter(et))
+func (m *GetTransactionsResponse) GetPaging() *Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
 	}
-	m.Transactions = ts
+	return nil
 }
 
-func (m *GetTransactionsResponse) SetPaging(paging *Paging) {
-	m.Paging = paging
+func (m *GetTransactionsResponse) Set(useCaseRes *transaction.GetTransactionsResponse) {
+	ts := make([]*Transaction, 0)
+	for _, twc := range useCaseRes.TransactionsWithCategory {
+		ts = append(ts, toTransaction(twc.Transaction, twc.Category))
+	}
+	m.Transactions = ts
+	m.Paging = toPaging(useCaseRes.Paging)
 }
 
 type UpdateTransactionRequest struct {
@@ -325,30 +299,14 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *UpdateTransactionRequest) ToTransactionEntity() *entity.Transaction {
-	t := &entity.Transaction{
+func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.UpdateTransactionRequest {
+	return &transaction.UpdateTransactionRequest{
+		UserID:          goutil.String(userID),
+		TransactionID:   m.TransactionID,
 		CategoryID:      m.CategoryID,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
-	}
-
-	// set to two decimal places, ignore error
-	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
-
-	return t
-}
-
-func (m *UpdateTransactionRequest) ToGetTransactionRequest() *GetTransactionRequest {
-	return &GetTransactionRequest{
-		TransactionID: m.TransactionID,
-	}
-}
-
-func (m *UpdateTransactionRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:        goutil.String(userID),
-		TransactionID: m.TransactionID,
 	}
 }
 
@@ -363,6 +321,6 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *UpdateTransactionResponse) SetTransaction(t *entity.Transaction) {
-	m.Transaction = ToTransactionPresenter(t)
+func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
 }

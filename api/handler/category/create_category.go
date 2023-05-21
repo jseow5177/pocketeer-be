@@ -24,13 +24,13 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 func (h *categoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 
-	c, err := h.categoryUseCase.CreateCategory(ctx, userID, req)
+	useCaseRes, err := h.categoryUseCase.CreateCategory(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create category, err: %v", err)
 		return err
 	}
 
-	res.SetCategory(c)
+	res.Set(useCaseRes)
 
 	return nil
 }

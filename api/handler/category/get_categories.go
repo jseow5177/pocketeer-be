@@ -21,13 +21,13 @@ var GetCategoriesValidator = validator.MustForm(map[string]validator.Validator{
 func (h *categoryHandler) GetCategories(ctx context.Context, req *presenter.GetCategoriesRequest, res *presenter.GetCategoriesResponse) error {
 	userID := middleware.GetUserIDFromCtx(ctx)
 
-	cs, err := h.categoryUseCase.GetCategories(ctx, userID, req)
+	useCaseRes, err := h.categoryUseCase.GetCategories(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get categories, err: %v", err)
 		return err
 	}
 
-	res.SetCategories(cs)
+	res.Set(useCaseRes)
 
 	return nil
 }

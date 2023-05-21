@@ -273,7 +273,7 @@ func (m *GetAnnualBudgetBreakdownRequest) GetYear() uint32 {
 	return 0
 }
 
-func (m *GetAnnualBudgetBreakdownRequest) ToUseCaseRes(userID string) *budget.GetAnnualBudgetBreakdownRequest {
+func (m *GetAnnualBudgetBreakdownRequest) ToUseCaseReq(userID string) *budget.GetAnnualBudgetBreakdownRequest {
 	return &budget.GetAnnualBudgetBreakdownRequest{
 		UserID:     goutil.String(userID),
 		CategoryID: m.CategoryID,
