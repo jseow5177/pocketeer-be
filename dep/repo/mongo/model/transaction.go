@@ -11,6 +11,7 @@ type Transaction struct {
 	UserID          *string            `bson:"user_id,omitempty"`
 	CategoryID      *string            `bson:"category_id,omitempty"`
 	Amount          *string            `bson:"amount,omitempty"`
+	Note            *string            `bson:"note,omitempty"`
 	TransactionType *uint32            `bson:"transaction_type,omitempty"`
 	TransactionTime *uint64            `bson:"transaction_time,omitempty"`
 	CreateTime      *uint64            `bson:"create_time,omitempty"`
@@ -28,6 +29,7 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
 		Amount:          t.Amount,
+		Note:            t.Note,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
 		CreateTime:      t.CreateTime,
@@ -41,6 +43,7 @@ func ToTransactionEntity(t *Transaction) *entity.Transaction {
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
 		Amount:          t.Amount,
+		Note:            t.Note,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
 		CreateTime:      t.CreateTime,

@@ -73,6 +73,7 @@ type CreateTransactionRequest struct {
 	UserID          *string
 	CategoryID      *string
 	Amount          *string
+	Note            *string
 	TransactionType *uint32
 	TransactionTime *uint64
 }
@@ -98,6 +99,13 @@ func (m *CreateTransactionRequest) GetAmount() string {
 	return ""
 }
 
+func (m *CreateTransactionRequest) GetNote() string {
+	if m != nil && m.Note != nil {
+		return *m.Note
+	}
+	return ""
+}
+
 func (m *CreateTransactionRequest) GetTransactionType() uint32 {
 	if m != nil && m.TransactionType != nil {
 		return *m.TransactionType
@@ -116,6 +124,7 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 	t := &entity.Transaction{
 		UserID:          m.UserID,
 		CategoryID:      m.CategoryID,
+		Note:            m.Note,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
@@ -251,6 +260,7 @@ type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
 	CategoryID      *string
+	Note            *string
 	Amount          *string
 	TransactionType *uint32
 	TransactionTime *uint64
@@ -280,6 +290,13 @@ func (t *UpdateTransactionRequest) GetCategoryID() string {
 func (t *UpdateTransactionRequest) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetNote() string {
+	if t != nil && t.Note != nil {
+		return *t.Note
 	}
 	return ""
 }

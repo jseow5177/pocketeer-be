@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/rs/zerolog/log"
@@ -24,6 +25,10 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 	},
 	"transaction_time": &validator.UInt64{
 		Optional: false,
+	},
+	"note": &validator.String{
+		Optional: true,
+		MaxLen:   uint32(config.MaxTransactionNoteLength),
 	},
 })
 

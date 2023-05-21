@@ -11,6 +11,7 @@ type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
 	Amount          *string   `json:"amount,omitempty"`
+	Note            *string   `json:"note,omitempty"`
 	TransactionType *uint32   `json:"transaction_type,omitempty"`
 	TransactionTime *uint64   `json:"transaction_time,omitempty"`
 	CreateTime      *uint64   `json:"create_time,omitempty"`
@@ -34,6 +35,13 @@ func (t *Transaction) GetCategory() *Category {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetNote() string {
+	if t != nil && t.Note != nil {
+		return *t.Note
 	}
 	return ""
 }
@@ -71,6 +79,7 @@ type CreateTransactionRequest struct {
 	Amount          *string `json:"amount,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
+	Note            *string `json:"note,omitempty"`
 }
 
 func (m *CreateTransactionRequest) GetCategoryID() string {
@@ -101,6 +110,13 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
+func (m *CreateTransactionRequest) GetNote() string {
+	if m != nil && m.Note != nil {
+		return *m.Note
+	}
+	return ""
+}
+
 func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.CreateTransactionRequest {
 	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
@@ -108,6 +124,7 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
+		Note:            m.Note,
 	}
 }
 
@@ -260,6 +277,7 @@ type UpdateTransactionRequest struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
 	CategoryID      *string `json:"category_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
+	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
 }
@@ -285,6 +303,13 @@ func (t *UpdateTransactionRequest) GetAmount() string {
 	return ""
 }
 
+func (t *UpdateTransactionRequest) GetNote() string {
+	if t != nil && t.Note != nil {
+		return *t.Note
+	}
+	return ""
+}
+
 func (t *UpdateTransactionRequest) GetTransactionType() uint32 {
 	if t != nil && t.TransactionType != nil {
 		return *t.TransactionType
@@ -304,6 +329,7 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 		UserID:          goutil.String(userID),
 		TransactionID:   m.TransactionID,
 		CategoryID:      m.CategoryID,
+		Note:            m.Note,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,

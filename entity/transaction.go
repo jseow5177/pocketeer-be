@@ -23,6 +23,7 @@ type Transaction struct {
 	UserID          *string
 	CategoryID      *string
 	Amount          *string
+	Note            *string
 	TransactionType *uint32
 	TransactionTime *uint64
 	CreateTime      *uint64
@@ -62,6 +63,13 @@ func (t *Transaction) GetCategoryID() string {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetNote() string {
+	if t != nil && t.Note != nil {
+		return *t.Note
 	}
 	return ""
 }

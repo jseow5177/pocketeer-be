@@ -30,4 +30,6 @@ const (
 	MaxPagingLimit     = 500
 
 	MinPagingPage = 1
+
+	MaxTransactionNoteLength = 120
 )

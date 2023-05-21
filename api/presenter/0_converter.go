@@ -108,6 +108,7 @@ func toTransaction(transaction *entity.Transaction, category *entity.Category) *
 		TransactionID:   goutil.String(transaction.GetTransactionID()),
 		Category:        toCategory(category),
 		Amount:          goutil.String(transaction.GetAmount()),
+		Note:            goutil.String(transaction.GetNote()),
 		TransactionType: goutil.Uint32(transaction.GetTransactionType()),
 		TransactionTime: goutil.Uint64(transaction.GetTransactionTime()),
 		CreateTime:      goutil.Uint64(transaction.GetCreateTime()),
