@@ -26,7 +26,7 @@ func NewTransactionMongo(mongo *Mongo) repo.TransactionRepo {
 func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (string, error) {
 	now := uint64(time.Now().Unix())
 
-	t.UpdateTime = goutil.Uint64(now)
+	t.CreateTime = goutil.Uint64(now)
 	t.UpdateTime = goutil.Uint64(now)
 
 	tm := model.ToTransactionModel(t)
