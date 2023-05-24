@@ -23,6 +23,8 @@ const (
 
 	asc  = "asc"
 	desc = "desc"
+
+	and = "and"
 )
 
 var supportedOps = map[string]string{

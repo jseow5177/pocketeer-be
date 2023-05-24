@@ -64,7 +64,7 @@ func BuildFilterOptions(filterOptions filter.FilterOptions) *options.FindOptions
 	return opts
 }
 
-func BuildFilter(filter interface{}) bson.M {
+func BuildFilter(filter interface{}) bson.D {
 	if filter == nil {
 		return nil
 	}
@@ -75,13 +75,13 @@ func BuildFilter(filter interface{}) bson.M {
 	}
 	val = val.Elem()
 
-	conds := make(bson.M)
+	conds := make(bson.A, 0)
 	for i := 0; i < val.NumField(); i++ {
-		fn := val.Type().Field(i).Tag.Get(tagFilter) // filter name
+		ft := val.Type().Field(i).Tag.Get(tagFilter) // filter tag
 		fv := reflect.Indirect(val.Field(i))         // filter value
 		fk := fv.Kind()                              // filter type
 
-		if fn == ignore {
+		if ft == ignore {
 			continue
 		}
 
@@ -96,7 +96,7 @@ func BuildFilter(filter interface{}) bson.M {
 		}
 
 		// field and operator
-		parts := strings.SplitN(fn, sep, 2)
+		parts := strings.SplitN(ft, sep, 2)
 
 		// operator
 		var op string
@@ -111,22 +111,21 @@ func BuildFilter(filter interface{}) bson.M {
 		}
 		op = getOp(op)
 
-		// one condition
-		cond := make(bson.M)
-		cond[op] = fv.Interface()
+		// filter value
+		v := fv.Interface()
 
 		// handle _id field
-		f := strcase.ToSnake(parts[0])
-		if f == _id {
-			id := fmt.Sprint(cond[op])
+		fn := strcase.ToSnake(parts[0])
+		if fn == _id {
+			id := fmt.Sprint(v)
 			if primitive.IsValidObjectID(id) {
-				objID, _ := primitive.ObjectIDFromHex(id)
-				cond[op] = objID
+				v, _ = primitive.ObjectIDFromHex(id)
 			}
 		}
 
-		conds[f] = cond
+		cond := bson.D{{Key: fn, Value: bson.D{{Key: op, Value: v}}}}
+		conds = append(conds, cond)
 	}
 
-	return conds
+	return bson.D{{Key: getOp(and), Value: conds}}
 }
