@@ -321,6 +321,7 @@ func (m *UpdateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
+		Note:            m.Note,
 	}
 
 	// set to two decimal places, ignore error

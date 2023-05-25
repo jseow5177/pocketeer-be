@@ -200,7 +200,7 @@ func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transac
 
 	if changes.Note != nil && changes.GetNote() != old.GetNote() {
 		hasUpdates = true
-		nt.TransactionTime = changes.TransactionTime
+		nt.Note = changes.Note
 	}
 
 	if !hasUpdates {
