@@ -13,6 +13,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var sortOrders = map[string]int{
+	"asc":  1,
+	"desc": -1,
+}
+
+var supportedOps = map[string]string{
+	"eq":  "equal",
+	"ne":  "not equal",
+	"gt":  "greater than",
+	"gte": "greater than equal",
+	"lt":  "less than",
+	"lte": "less than equal",
+	"in":  "in",
+	"nin": "not in",
+}
+
 func getOp(op string) string {
 	return fmt.Sprintf("$%s", op)
 }
@@ -44,7 +60,7 @@ func BuildFilterOptions(filterOptions filter.FilterOptions) *options.FindOptions
 			field := *sort.GetField()
 
 			// default asc
-			o := sortOrders[asc]
+			o := sortOrders["asc"]
 			if sort.GetOrder() != nil {
 				order := *sort.GetOrder()
 
@@ -77,11 +93,11 @@ func BuildFilter(filter interface{}) bson.D {
 
 	conds := make(bson.A, 0)
 	for i := 0; i < val.NumField(); i++ {
-		ft := val.Type().Field(i).Tag.Get(tagFilter) // filter tag
-		fv := reflect.Indirect(val.Field(i))         // filter value
-		fk := fv.Kind()                              // filter type
+		ft := val.Type().Field(i).Tag.Get("filter") // filter tag
+		fv := reflect.Indirect(val.Field(i))        // filter value
+		fk := fv.Kind()                             // filter type
 
-		if ft == ignore {
+		if ft == "-" {
 			continue
 		}
 
@@ -96,7 +112,7 @@ func BuildFilter(filter interface{}) bson.D {
 		}
 
 		// field and operator
-		parts := strings.SplitN(ft, sep, 2)
+		parts := strings.SplitN(ft, "__", 2)
 
 		// operator
 		var op string
@@ -107,7 +123,7 @@ func BuildFilter(filter interface{}) bson.D {
 			}
 		} else {
 			// default to eq
-			op = eq
+			op = "eq"
 		}
 		op = getOp(op)
 
@@ -116,7 +132,7 @@ func BuildFilter(filter interface{}) bson.D {
 
 		// handle _id field
 		fn := strcase.ToSnake(parts[0])
-		if fn == _id {
+		if fn == "_id" {
 			id := fmt.Sprint(v)
 			if primitive.IsValidObjectID(id) {
 				v, _ = primitive.ObjectIDFromHex(id)
@@ -127,5 +143,5 @@ func BuildFilter(filter interface{}) bson.D {
 		conds = append(conds, cond)
 	}
 
-	return bson.D{{Key: getOp(and), Value: conds}}
+	return bson.D{{Key: getOp("and"), Value: conds}}
 }

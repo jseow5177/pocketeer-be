@@ -8,6 +8,11 @@ import (
 	"github.com/jseow5177/pockteer-be/util"
 )
 
+const (
+	defaultBudgetMonth  = 99
+	defaultBudgetAmount = 0
+)
+
 type AnnualBudgetBreakdown struct {
 	DefaultBudget  *Budget
 	MonthlyBudgets []*Budget

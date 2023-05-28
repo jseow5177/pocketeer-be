@@ -111,7 +111,7 @@ func (m *UpdateCategoryRequest) GetUserID() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) GetCatID() string {
+func (m *UpdateCategoryRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
 	}

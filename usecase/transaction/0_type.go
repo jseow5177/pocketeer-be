@@ -125,13 +125,11 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 		UserID:          m.UserID,
 		CategoryID:      m.CategoryID,
 		Note:            m.Note,
-		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 	}
 
-	// set to two decimal places, ignore error
-	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
+	t.SetAmount(m.GetAmount())
 
 	return t
 }
@@ -318,14 +316,12 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 func (m *UpdateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 	t := &entity.Transaction{
 		CategoryID:      m.CategoryID,
-		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 		Note:            m.Note,
 	}
 
-	// set to two decimal places, ignore error
-	_ = t.StandardizeAmount(config.AmountDecimalPlaces)
+	t.SetAmount(m.GetAmount())
 
 	return t
 }
@@ -358,4 +354,21 @@ func (m *UpdateTransactionResponse) GetTransactionWithCategory() *TransactionWit
 		return m.TransactionWithCategory
 	}
 	return nil
+}
+
+type AggrTransactionRequest struct {
+	TransactionTime *common.UInt64Filter
+	AggrBy          *string
+	Aggrs           []*common.Aggr
+}
+
+func (m *AggrTransactionRequest) GetTransactionTime() *common.UInt64Filter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
+}
+
+type AggrTransactionResponse struct {
+	Result map[interface{}]string
 }

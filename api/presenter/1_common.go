@@ -1,8 +1,8 @@
 package presenter
 
 type Paging struct {
-	Limit *uint32 `json:"limit"`
-	Page  *uint32 `json:"page"`
+	Limit *uint32 `json:"limit,omitempty"`
+	Page  *uint32 `json:"page,omitempty"`
 }
 
 func (p *Paging) GetLimit() uint32 {
@@ -20,8 +20,8 @@ func (p *Paging) GetPage() uint32 {
 }
 
 type UInt64Filter struct {
-	Gte *uint64 `json:"gte"`
-	Lte *uint64 `json:"lte"`
+	Gte *uint64 `json:"gte,omitempty"`
+	Lte *uint64 `json:"lte,omitempty"`
 }
 
 func (uv *UInt64Filter) GetGte() uint64 {

@@ -151,6 +151,7 @@ func (m *UpdateCategoryRequest) GetCategoryName() string {
 func (m *UpdateCategoryRequest) ToUseCaseReq(userID string) *category.UpdateCategoryRequest {
 	return &category.UpdateCategoryRequest{
 		UserID:       goutil.String(userID),
+		CategoryID:   m.CategoryID,
 		CategoryName: m.CategoryName,
 	}
 }

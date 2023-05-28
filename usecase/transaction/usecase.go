@@ -183,9 +183,9 @@ func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transac
 		nt.CategoryID = changes.CategoryID
 	}
 
-	if changes.Amount != nil && changes.GetAmount() != old.GetAmount() {
+	if changes.IsNilAmount() && changes.GetAmount() != old.GetAmount() {
 		hasUpdates = true
-		nt.Amount = changes.Amount
+		nt.SetAmount(changes.GetAmount())
 	}
 
 	if changes.TransactionType != nil && changes.GetTransactionType() != old.GetTransactionType() {
