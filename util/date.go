@@ -34,10 +34,12 @@ var MonthTypes = map[uint32]string{
 	uint32(Constant_DEC): "DEC",
 }
 
-// Range: 1-12
-func GetCurrMonth() uint32 {
-	now := time.Now()
-	month := now.Month()
-
-	return uint32(month)
+func IsYearMonthAfterCurrent(year, month uint32) bool {
+	currYear, currMonth, _ := time.Now().Date()
+	if year > uint32(currYear) {
+		return true
+	} else if year == uint32(currYear) && month > uint32(currMonth) {
+		return true
+	}
+	return false
 }
