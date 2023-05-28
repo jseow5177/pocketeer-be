@@ -30,4 +30,6 @@ const (
 	MinPagingPage = 1
 
 	MaxTransactionNoteLength = 120
+
+	AmountDecimalPlaces = 2
 )

@@ -10,7 +10,7 @@ type Transaction struct {
 	TransactionID   primitive.ObjectID `bson:"_id,omitempty"`
 	UserID          *string            `bson:"user_id,omitempty"`
 	CategoryID      *string            `bson:"category_id,omitempty"`
-	Amount          *string            `bson:"amount,omitempty"`
+	Amount          *float64           `bson:"amount,omitempty"`
 	Note            *string            `bson:"note,omitempty"`
 	TransactionType *uint32            `bson:"transaction_type,omitempty"`
 	TransactionTime *uint64            `bson:"transaction_time,omitempty"`
@@ -24,16 +24,11 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 		objID, _ = primitive.ObjectIDFromHex(t.GetTransactionID())
 	}
 
-	var amount *string
-	if !t.IsNilAmount() {
-		amount = goutil.String(t.GetAmount())
-	}
-
 	return &Transaction{
 		TransactionID:   objID,
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
-		Amount:          amount,
+		Amount:          t.Amount,
 		Note:            t.Note,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
@@ -48,13 +43,12 @@ func ToTransactionEntity(t *Transaction) *entity.Transaction {
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
 		Note:            t.Note,
+		Amount:          t.Amount,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
 		CreateTime:      t.CreateTime,
 		UpdateTime:      t.UpdateTime,
 	}
-
-	et.SetAmount(t.GetAmount())
 
 	return et
 }
@@ -80,11 +74,11 @@ func (t *Transaction) GetCategoryID() string {
 	return ""
 }
 
-func (t *Transaction) GetAmount() string {
+func (t *Transaction) GetAmount() float64 {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
 	}
-	return ""
+	return 0
 }
 
 func (t *Transaction) GetTransactionType() uint32 {

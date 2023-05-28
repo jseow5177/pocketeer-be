@@ -18,6 +18,8 @@ type UseCase interface {
 
 	CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error)
 	UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error)
+
+	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
 
 type TransactionWithCategory struct {
@@ -356,19 +358,52 @@ func (m *UpdateTransactionResponse) GetTransactionWithCategory() *TransactionWit
 	return nil
 }
 
-type AggrTransactionRequest struct {
+type AggrTransactionsRequest struct {
 	TransactionTime *common.UInt64Filter
 	AggrBy          *string
 	Aggrs           []*common.Aggr
 }
 
-func (m *AggrTransactionRequest) GetTransactionTime() *common.UInt64Filter {
+func (m *AggrTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(common.UInt64Filter)
+	}
+
+	return &repo.TransactionFilter{
+		TransactionTimeGte: tt.Gte,
+		TransactionTimeLte: tt.Lte,
+	}
+}
+
+func (m *AggrTransactionsRequest) GetTransactionTime() *common.UInt64Filter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
 	return nil
 }
 
-type AggrTransactionResponse struct {
-	Result map[interface{}]string
+func (m *AggrTransactionsRequest) GetAggrBy() string {
+	if m != nil && m.AggrBy != nil {
+		return *m.AggrBy
+	}
+	return ""
+}
+
+func (m *AggrTransactionsRequest) GetAggrs() []*common.Aggr {
+	if m != nil && m.Aggrs != nil {
+		return m.Aggrs
+	}
+	return nil
+}
+
+type AggrTransactionsResponse struct {
+	Results map[interface{}]string
+}
+
+func (m *AggrTransactionsResponse) GetResults() map[interface{}]string {
+	if m != nil && m.Results != nil {
+		return m.Results
+	}
+	return nil
 }

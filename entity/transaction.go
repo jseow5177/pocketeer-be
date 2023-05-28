@@ -1,14 +1,15 @@
 package entity
 
 import (
+	"math"
 	"strconv"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 const (
-	DefaultAmount       = 0
-	AmountDecimalPlaces = 2
+	DefaultAmount = 0
 )
 
 type TransactionType uint32
@@ -27,7 +28,7 @@ type Transaction struct {
 	TransactionID   *string
 	UserID          *string
 	CategoryID      *string
-	amount          *string
+	Amount          *float64
 	Note            *string
 	TransactionType *uint32
 	TransactionTime *uint64
@@ -35,16 +36,15 @@ type Transaction struct {
 	UpdateTime      *uint64
 }
 
-func (t *Transaction) IsNilAmount() bool {
-	return t.amount == nil
-}
-
 func (t *Transaction) SetAmount(amount string) {
 	af, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		af = DefaultAmount
 	}
-	t.amount = goutil.String(goutil.FormatFloat(af, AmountDecimalPlaces))
+
+	p := math.Pow(10, float64(config.AmountDecimalPlaces))
+
+	t.Amount = goutil.Float64(math.Round(af*p) / p)
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -68,11 +68,11 @@ func (t *Transaction) GetCategoryID() string {
 	return ""
 }
 
-func (t *Transaction) GetAmount() string {
-	if t != nil && t.amount != nil {
-		return *t.amount
+func (t *Transaction) GetAmount() float64 {
+	if t != nil && t.Amount != nil {
+		return *t.Amount
 	}
-	return ""
+	return 0
 }
 
 func (t *Transaction) GetNote() string {

@@ -29,7 +29,7 @@ func CheckTransactionType(transactionType uint32) error {
 }
 
 func CheckAmount(amount string) error {
-	if err := goutil.IsFloat(amount, AmountDecimalPlaces); err != nil {
+	if err := goutil.IsFloat(amount, config.AmountDecimalPlaces); err != nil {
 		return ErrInvalidAmount
 	}
 	return nil

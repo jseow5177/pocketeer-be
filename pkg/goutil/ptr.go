@@ -18,6 +18,10 @@ func Uint64(ui uint64) *uint64 {
 	return &ui
 }
 
+func Float64(f float64) *float64 {
+	return &f
+}
+
 func Int64(i int64) *int64 {
 	return &i
 }

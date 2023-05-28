@@ -173,6 +173,10 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	}, nil
 }
 
+func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
+	return nil, nil
+}
+
 func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transaction) *entity.Transaction {
 	var hasUpdates bool
 
@@ -183,9 +187,9 @@ func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transac
 		nt.CategoryID = changes.CategoryID
 	}
 
-	if changes.IsNilAmount() && changes.GetAmount() != old.GetAmount() {
+	if changes.Amount != nil && changes.GetAmount() != old.GetAmount() {
 		hasUpdates = true
-		nt.SetAmount(changes.GetAmount())
+		nt.Amount = changes.Amount
 	}
 
 	if changes.TransactionType != nil && changes.GetTransactionType() != old.GetTransactionType() {
