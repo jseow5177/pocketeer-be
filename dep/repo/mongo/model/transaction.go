@@ -24,11 +24,16 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 		objID, _ = primitive.ObjectIDFromHex(t.GetTransactionID())
 	}
 
+	var amount *string
+	if !t.IsNilAmount() {
+		amount = goutil.String(t.GetAmount())
+	}
+
 	return &Transaction{
 		TransactionID:   objID,
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
-		Amount:          t.Amount,
+		Amount:          amount,
 		Note:            t.Note,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
@@ -38,17 +43,20 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 }
 
 func ToTransactionEntity(t *Transaction) *entity.Transaction {
-	return &entity.Transaction{
+	et := &entity.Transaction{
 		TransactionID:   goutil.String(t.TransactionID.Hex()),
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
-		Amount:          t.Amount,
 		Note:            t.Note,
 		TransactionType: t.TransactionType,
 		TransactionTime: t.TransactionTime,
 		CreateTime:      t.CreateTime,
 		UpdateTime:      t.UpdateTime,
 	}
+
+	et.SetAmount(t.GetAmount())
+
+	return et
 }
 
 func (t *Transaction) GetTransactionID() string {

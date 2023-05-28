@@ -8,7 +8,11 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
-const budgetCollName = "budget"
+const (
+	idBsonField = "_id"
+
+	budgetCollName = "budget"
+)
 
 type budgetMongo struct {
 	mColl *MongoColl

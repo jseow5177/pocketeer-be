@@ -75,5 +75,9 @@ func (f *TransactionFilter) GetPaging() *Paging {
 	if f != nil && f.Paging != nil {
 		return f.Paging
 	}
-	return new(Paging)
+	return nil
+}
+
+type TransactionAggr struct {
+	Amount *bool `aggr:""`
 }

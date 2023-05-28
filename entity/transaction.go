@@ -6,6 +6,11 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
+const (
+	DefaultAmount       = 0
+	AmountDecimalPlaces = 2
+)
+
 type TransactionType uint32
 
 const (
@@ -22,7 +27,7 @@ type Transaction struct {
 	TransactionID   *string
 	UserID          *string
 	CategoryID      *string
-	Amount          *string
+	amount          *string
 	Note            *string
 	TransactionType *uint32
 	TransactionTime *uint64
@@ -30,13 +35,16 @@ type Transaction struct {
 	UpdateTime      *uint64
 }
 
-func (t *Transaction) StandardizeAmount(decimalPlaces int) error {
-	af, err := strconv.ParseFloat(t.GetAmount(), 64)
+func (t *Transaction) IsNilAmount() bool {
+	return t.amount == nil
+}
+
+func (t *Transaction) SetAmount(amount string) {
+	af, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return err
+		af = DefaultAmount
 	}
-	t.Amount = goutil.String(goutil.FormatFloat(af, decimalPlaces))
-	return nil
+	t.amount = goutil.String(goutil.FormatFloat(af, AmountDecimalPlaces))
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -61,8 +69,8 @@ func (t *Transaction) GetCategoryID() string {
 }
 
 func (t *Transaction) GetAmount() string {
-	if t != nil && t.Amount != nil {
-		return *t.Amount
+	if t != nil && t.amount != nil {
+		return *t.amount
 	}
 	return ""
 }
