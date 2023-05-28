@@ -165,10 +165,8 @@ func (e *AnnualBudgetBreakdown) setMonthlyBudgetsToDefault() {
 }
 
 func (e *AnnualBudgetBreakdown) setFutureBudgetsToDefault() {
-	currMonth := util.GetCurrMonth()
-
 	for _, budget := range e.GetMonthlyBudgets() {
-		if budget.GetMonth() > currMonth {
+		if util.IsYearMonthAfterCurrent(budget.GetYear(), budget.GetMonth()) {
 			budget.SetBudgetAmount(e.GetDefaultBudget().GetBudgetAmount())
 		}
 	}
