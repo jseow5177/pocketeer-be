@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -172,6 +173,38 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 	}
 
 	return res, nil
+}
+
+func (mc *MongoColl) sum(ctx context.Context, sumBy, field string, filter interface{}) (map[string]float64, error) {
+	f := mongoutil.BuildFilter(filter)
+
+	// aggregation pipeline
+	pipeline := make(bson.A, 0)
+	if f != nil {
+		pipeline = append(pipeline, bson.D{{Key: mongoutil.GetOp("match"), Value: f}})
+	}
+
+	pipeline = append(pipeline, bson.D{{Key: mongoutil.GetOp("group"), Value: bson.D{
+		{Key: "_id", Value: mongoutil.GetOp(sumBy)},
+		{Key: "sum", Value: bson.D{{Key: mongoutil.GetOp("sum"), Value: mongoutil.GetOp(field)}}},
+	}}})
+
+	cursor, err := mc.coll.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]bson.M, 0)
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	sumResults := make(map[string]float64)
+	for _, result := range results {
+		sumResults[fmt.Sprint(result["_id"])] = result["sum"].(float64)
+	}
+
+	return sumResults, nil
 }
 
 func getUniqueKeyValue(doc interface{}, uniqueKey string) interface{} {

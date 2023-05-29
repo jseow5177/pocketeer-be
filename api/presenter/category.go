@@ -93,25 +93,34 @@ func (m *CreateCategoryResponse) Set(useCaseRes *category.CreateCategoryResponse
 }
 
 type GetCategoriesRequest struct {
-	CategoryType *uint32 `json:"category_type"`
+	CategoryType *uint32  `json:"category_type,omitempty"`
+	CategoryIDs  []string `json:"category_ids,omitempty"`
 }
 
-func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
+func (m *GetCategoriesRequest) GetCategoryType() uint32 {
 	if m != nil && m.CategoryType != nil {
 		return *m.CategoryType
 	}
 	return 0
 }
 
+func (m *GetCategoriesRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
 func (m *GetCategoriesRequest) ToUseCaseReq(userID string) *category.GetCategoriesRequest {
 	return &category.GetCategoriesRequest{
 		UserID:       goutil.String(userID),
 		CategoryType: m.CategoryType,
+		CategoryIDs:  m.CategoryIDs,
 	}
 }
 
 type GetCategoriesResponse struct {
-	Categories []*Category `json:"categories"`
+	Categories []*Category `json:"categories,omitempty"`
 }
 
 func (m *GetCategoriesResponse) GetCategories() []*Category {
@@ -172,7 +181,7 @@ func (m *UpdateCategoryResponse) Set(useCaseRes *category.UpdateCategoryResponse
 }
 
 type GetCategoryRequest struct {
-	CategoryID *string `json:"category_id"`
+	CategoryID *string `json:"category_id,omitempty"`
 }
 
 func (m *GetCategoryRequest) GetCatID() string {

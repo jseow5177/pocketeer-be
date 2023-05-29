@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	ErrInvalidTransactionType = errors.New("invalid transaction type")
-	ErrInvalidCategoryType    = errors.New("invalid category type")
-	ErrInvalidAmount          = errors.New("invalid amount")
+	ErrInvalidTransactionType  = errors.New("invalid transaction type")
+	ErrInvalidCategoryType     = errors.New("invalid category type")
+	ErrInvalidAmount           = errors.New("invalid amount")
+	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
 )
 
 func CheckCategoryType(categoryType uint32) error {

@@ -359,21 +359,17 @@ func (m *UpdateTransactionResponse) GetTransactionWithCategory() *TransactionWit
 }
 
 type AggrTransactionsRequest struct {
-	TransactionTime *common.UInt64Filter
-	AggrBy          *string
-	Aggrs           []*common.Aggr
+	UserID           *string
+	TransactionTime  *common.UInt64Filter
+	CategoryIDs      []string
+	TransactionTypes []uint32
 }
 
-func (m *AggrTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.UInt64Filter)
+func (t *AggrTransactionsRequest) GetUserID() string {
+	if t != nil && t.UserID != nil {
+		return *t.UserID
 	}
-
-	return &repo.TransactionFilter{
-		TransactionTimeGte: tt.Gte,
-		TransactionTimeLte: tt.Lte,
-	}
+	return ""
 }
 
 func (m *AggrTransactionsRequest) GetTransactionTime() *common.UInt64Filter {
@@ -383,25 +379,49 @@ func (m *AggrTransactionsRequest) GetTransactionTime() *common.UInt64Filter {
 	return nil
 }
 
-func (m *AggrTransactionsRequest) GetAggrBy() string {
-	if m != nil && m.AggrBy != nil {
-		return *m.AggrBy
-	}
-	return ""
-}
-
-func (m *AggrTransactionsRequest) GetAggrs() []*common.Aggr {
-	if m != nil && m.Aggrs != nil {
-		return m.Aggrs
+func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
 	}
 	return nil
 }
 
-type AggrTransactionsResponse struct {
-	Results map[interface{}]string
+func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
+	if m != nil && m.TransactionTypes != nil {
+		return m.TransactionTypes
+	}
+	return nil
 }
 
-func (m *AggrTransactionsResponse) GetResults() map[interface{}]string {
+func (m *AggrTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(common.UInt64Filter)
+	}
+
+	return &repo.TransactionFilter{
+		CategoryIDs:        m.CategoryIDs,
+		TransactionTypes:   m.TransactionTypes,
+		TransactionTimeGte: tt.Gte,
+		TransactionTimeLte: tt.Lte,
+	}
+}
+
+func (m *AggrTransactionsRequest) ToGetCategoriesRequest() *category.GetCategoriesRequest {
+	return &category.GetCategoriesRequest{
+		CategoryIDs: m.CategoryIDs,
+	}
+}
+
+type Aggr struct {
+	Sum *float64
+}
+
+type AggrTransactionsResponse struct {
+	Results map[string]*Aggr
+}
+
+func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
 	if m != nil && m.Results != nil {
 		return m.Results
 	}

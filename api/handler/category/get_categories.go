@@ -16,6 +16,10 @@ var GetCategoriesValidator = validator.MustForm(map[string]validator.Validator{
 		UnsetZero:  true,
 		Validators: []validator.UInt32Func{entity.CheckCategoryType},
 	},
+	"category_ids": &validator.Slice{
+		Optional:  true,
+		Validator: &validator.String{},
+	},
 })
 
 func (h *categoryHandler) GetCategories(ctx context.Context, req *presenter.GetCategoriesRequest, res *presenter.GetCategoriesResponse) error {

@@ -174,7 +174,41 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 }
 
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
-	return nil, nil
+	tf := req.ToTransactionFilter()
+
+	// default sum by category_id
+	sumBy := "category_id"
+
+	switch {
+	case len(req.CategoryIDs) > 0:
+		getCategoriesRes, err := uc.categoryUseCase.GetCategories(ctx, req.ToGetCategoriesRequest())
+		if err != nil {
+			return nil, err
+		}
+
+		if len(req.CategoryIDs) != len(getCategoriesRes.Categories) {
+			return nil, errutil.NotFoundError(errors.New("invalid category_ids"))
+		}
+	case len(req.TransactionTypes) > 0:
+		sumBy = "transaction_type"
+	}
+
+	res, err := uc.transactionRepo.Sum(ctx, sumBy, tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to sum transactions by %s, err: %v", sumBy, err)
+		return nil, err
+	}
+
+	results := make(map[string]*Aggr)
+	for v, s := range res {
+		results[v] = &Aggr{
+			Sum: goutil.Float64(s),
+		}
+	}
+
+	return &AggrTransactionsResponse{
+		Results: results,
+	}, nil
 }
 
 func (uc *transactionUseCase) getTransactionUpdates(old, changes *entity.Transaction) *entity.Transaction {

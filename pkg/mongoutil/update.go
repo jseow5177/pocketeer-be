@@ -42,7 +42,7 @@ func BuildUpdate(update interface{}) bson.D {
 		}
 	}
 
-	op := getOp("set")
+	op := GetOp("set")
 
 	return bson.D{{Key: op, Value: d}}
 }

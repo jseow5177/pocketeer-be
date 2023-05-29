@@ -159,6 +159,7 @@ func (m *UpdateCategoryResponse) GetCategory() *entity.Category {
 type GetCategoriesRequest struct {
 	UserID       *string
 	CategoryType *uint32
+	CategoryIDs  []string
 }
 
 func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
@@ -168,10 +169,18 @@ func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
 	return 0
 }
 
+func (m *GetCategoriesRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
 func (m *GetCategoriesRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return &repo.CategoryFilter{
 		UserID:       m.UserID,
 		CategoryType: m.CategoryType,
+		CategoryIDs:  m.CategoryIDs,
 	}
 }
 

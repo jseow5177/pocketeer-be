@@ -40,6 +40,13 @@ func (f *CategoryFilter) GetCategoryID() string {
 	return ""
 }
 
+func (f *CategoryFilter) GetCategoryIDs() []string {
+	if f != nil && f.CategoryIDs != nil {
+		return f.CategoryIDs
+	}
+	return nil
+}
+
 func (f *CategoryFilter) GetCategoryType() uint32 {
 	if f != nil && f.CategoryType != nil {
 		return *f.CategoryType

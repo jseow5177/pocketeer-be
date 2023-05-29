@@ -29,7 +29,7 @@ var supportedOps = map[string]string{
 	"nin": "not in",
 }
 
-func getOp(op string) string {
+func GetOp(op string) string {
 	return fmt.Sprintf("$%s", op)
 }
 
@@ -125,7 +125,7 @@ func BuildFilter(filter interface{}) bson.D {
 			// default to eq
 			op = "eq"
 		}
-		op = getOp(op)
+		op = GetOp(op)
 
 		// filter value
 		v := fv.Interface()
@@ -133,9 +133,23 @@ func BuildFilter(filter interface{}) bson.D {
 		// handle _id field
 		fn := strcase.ToSnake(parts[0])
 		if fn == "_id" {
-			id := fmt.Sprint(v)
-			if primitive.IsValidObjectID(id) {
-				v, _ = primitive.ObjectIDFromHex(id)
+			if fk == reflect.Slice {
+				ids := make([]primitive.ObjectID, 0)
+				// loop through each element and convert them to ObjectIDs
+				for i := 0; i < fv.Len(); i++ {
+					e := fv.Index(i).Interface()
+					s := fmt.Sprint(e)
+					if primitive.IsValidObjectID(s) {
+						id, _ := primitive.ObjectIDFromHex(s)
+						ids = append(ids, id)
+					}
+				}
+				v = reflect.ValueOf(ids).Interface()
+			} else {
+				s := fmt.Sprint(v)
+				if primitive.IsValidObjectID(s) {
+					v, _ = primitive.ObjectIDFromHex(s)
+				}
 			}
 		}
 
@@ -143,5 +157,9 @@ func BuildFilter(filter interface{}) bson.D {
 		conds = append(conds, cond)
 	}
 
-	return bson.D{{Key: getOp("and"), Value: conds}}
+	if len(conds) == 0 {
+		return nil
+	}
+
+	return bson.D{{Key: GetOp("and"), Value: conds}}
 }

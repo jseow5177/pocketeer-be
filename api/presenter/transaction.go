@@ -350,3 +350,70 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
 	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
 }
+
+type AggrTransactionsRequest struct {
+	TransactionTime  *UInt64Filter `json:"transaction_time,omitempty"`
+	CategoryIDs      []string      `json:"category_ids,omitempty"`
+	TransactionTypes []uint32      `json:"transaction_types,omitempty"`
+}
+
+func (m *AggrTransactionsRequest) GetTransactionTime() *UInt64Filter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
+}
+
+func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
+func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
+	if m != nil && m.TransactionTypes != nil {
+		return m.TransactionTypes
+	}
+	return nil
+}
+
+func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(UInt64Filter)
+	}
+
+	return &transaction.AggrTransactionsRequest{
+		UserID:           goutil.String(userID),
+		TransactionTypes: m.TransactionTypes,
+		CategoryIDs:      m.CategoryIDs,
+		TransactionTime: &common.UInt64Filter{
+			Gte: tt.Gte,
+			Lte: tt.Lte,
+		},
+	}
+}
+
+type Aggr struct {
+	Sum *float64 `json:"sum,omitempty"`
+}
+
+type AggrTransactionsResponse struct {
+	Results map[string]*Aggr `json:"results,omitempty"`
+}
+
+func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
+	if m != nil && m.Results != nil {
+		return m.Results
+	}
+	return nil
+}
+
+func (m *AggrTransactionsResponse) Set(useCaseRes *transaction.AggrTransactionsResponse) {
+	res := make(map[string]*Aggr)
+	for k, v := range useCaseRes.Results {
+		res[k] = toAggr(v)
+	}
+	m.Results = res
+}

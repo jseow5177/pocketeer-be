@@ -17,16 +17,20 @@ type TransactionRepo interface {
 
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
 	Update(ctx context.Context, tf *TransactionFilter, t *entity.Transaction) error
+
+	Sum(ctx context.Context, sumBy string, tf *TransactionFilter) (map[string]float64, error)
 }
 
 type TransactionFilter struct {
-	UserID             *string `filter:"user_id"`
-	TransactionID      *string `filter:"_id"`
-	CategoryID         *string `filter:"category_id"`
-	TransactionType    *uint32 `filter:"transaction_type"`
-	TransactionTimeGte *uint64 `filter:"transaction_time__gte"`
-	TransactionTimeLte *uint64 `filter:"transaction_time__lte"`
-	Paging             *Paging `filter:"-"`
+	UserID             *string  `filter:"user_id"`
+	TransactionID      *string  `filter:"_id"`
+	CategoryID         *string  `filter:"category_id"`
+	CategoryIDs        []string `filter:"category_id__in"`
+	TransactionType    *uint32  `filter:"transaction_type"`
+	TransactionTypes   []uint32 `filter:"transaction_type__in"`
+	TransactionTimeGte *uint64  `filter:"transaction_time__gte"`
+	TransactionTimeLte *uint64  `filter:"transaction_time__lte"`
+	Paging             *Paging  `filter:"-"`
 }
 
 func (f *TransactionFilter) GetUserID() string {
@@ -50,11 +54,25 @@ func (f *TransactionFilter) GetCategoryID() string {
 	return ""
 }
 
+func (f *TransactionFilter) GetCategoryIDs() []string {
+	if f != nil && f.CategoryIDs != nil {
+		return f.CategoryIDs
+	}
+	return nil
+}
+
 func (f *TransactionFilter) GetTransactionType() uint32 {
 	if f != nil && f.TransactionType != nil {
 		return *f.TransactionType
 	}
 	return 0
+}
+
+func (f *TransactionFilter) GetTransactionTypes() []uint32 {
+	if f != nil && f.TransactionTypes != nil {
+		return f.TransactionTypes
+	}
+	return nil
 }
 
 func (f *TransactionFilter) GetTransactionTimeGte() uint64 {
@@ -76,8 +94,4 @@ func (f *TransactionFilter) GetPaging() *Paging {
 		return f.Paging
 	}
 	return nil
-}
-
-type TransactionAggr struct {
-	Amount *bool `aggr:""`
 }

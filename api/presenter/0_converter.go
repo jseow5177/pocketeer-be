@@ -8,6 +8,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
+	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 func toAnnualBudgetBreakdown(
@@ -125,5 +126,11 @@ func toPaging(paging *common.Paging) *Paging {
 	return &Paging{
 		Limit: goutil.Uint32(paging.GetLimit()),
 		Page:  goutil.Uint32(paging.GetPage()),
+	}
+}
+
+func toAggr(aggr *transaction.Aggr) *Aggr {
+	return &Aggr{
+		Sum: aggr.Sum,
 	}
 }
