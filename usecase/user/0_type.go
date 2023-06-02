@@ -3,7 +3,9 @@ package user
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 type UseCase interface {
@@ -14,7 +16,9 @@ type UseCase interface {
 }
 
 type GetUserRequest struct {
-	UserID *string
+	UserID     *string
+	UserName   *string
+	UserStatus *uint32
 }
 
 func (m *GetUserRequest) GetUserID() string {
@@ -22,6 +26,28 @@ func (m *GetUserRequest) GetUserID() string {
 		return *m.UserID
 	}
 	return ""
+}
+
+func (m *GetUserRequest) GetUserName() string {
+	if m != nil && m.UserName != nil {
+		return *m.UserName
+	}
+	return ""
+}
+
+func (m *GetUserRequest) GetUserStatus() uint32 {
+	if m != nil && m.UserStatus != nil {
+		return *m.UserStatus
+	}
+	return 0
+}
+
+func (m *GetUserRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
+		UserID:     m.UserID,
+		UserName:   m.UserName,
+		UserStatus: m.UserStatus,
+	}
 }
 
 type GetUserResponse struct {
@@ -52,6 +78,20 @@ func (m *SignUpRequest) GetPassword() string {
 		return *m.Password
 	}
 	return ""
+}
+
+func (m *SignUpRequest) ToGetUserRequest() *GetUserRequest {
+	return &GetUserRequest{
+		UserName:   m.Username,
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
+}
+
+func (m *SignUpRequest) ToUserEntity() *entity.User {
+	return &entity.User{
+		Username:   m.Username,
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
 }
 
 type SignUpResponse struct {

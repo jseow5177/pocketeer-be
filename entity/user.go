@@ -1,5 +1,10 @@
 package entity
 
+import (
+	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
+
 type UserStatus uint32
 
 const (
@@ -17,10 +22,39 @@ type User struct {
 	UserID     *string
 	Username   *string
 	UserStatus *uint32
-	Password   *string
+	Hash       *string
 	Salt       *string
 	CreateTime *uint64
 	UpdateTime *uint64
+}
+
+func (u *User) SetHashAndSalt(password string, salt *string) error {
+	s := salt
+	if s == nil {
+		newSalt, err := u.createSalt()
+		if err != nil {
+			return err
+		}
+		s = goutil.String(newSalt)
+	}
+
+	hash, err := goutil.HMACSha256(password, []byte(*s))
+	if err != nil {
+		return err
+	}
+
+	u.Salt = s
+	u.Hash = goutil.String(string(hash))
+
+	return nil
+}
+
+func (u *User) createSalt() (string, error) {
+	salt, err := goutil.RandByte(config.SaltByteSize)
+	if err != nil {
+		return "", err
+	}
+	return string(salt), nil
 }
 
 func (u *User) GetUserID() string {
@@ -44,9 +78,9 @@ func (u *User) GetUserStatus() uint32 {
 	return 0
 }
 
-func (u *User) GetPassword() string {
-	if u != nil && u.Password != nil {
-		return *u.Password
+func (u *User) GetHash() string {
+	if u != nil && u.Hash != nil {
+		return *u.Hash
 	}
 	return ""
 }

@@ -1,5 +1,9 @@
 package presenter
 
+import (
+	"github.com/jseow5177/pockteer-be/usecase/user"
+)
+
 type User struct {
 	UserID     *string `json:"user_id,omitempty"`
 	Username   *string `json:"username,omitempty"`
@@ -54,6 +58,12 @@ func (m *GetUserRequest) GetUserID() string {
 	return ""
 }
 
+func (m *GetUserRequest) ToUseCaseReq() *user.GetUserRequest {
+	return &user.GetUserRequest{
+		UserID: m.UserID,
+	}
+}
+
 type GetUserResponse struct {
 	User *User `json:"user,omitempty"`
 }
@@ -63,6 +73,10 @@ func (m *GetUserResponse) GetUser() *User {
 		return m.User
 	}
 	return nil
+}
+
+func (m *GetUserResponse) Set(useCaseRes *user.GetUserResponse) {
+	m.User = toUser(useCaseRes.User)
 }
 
 type SignUpRequest struct {
@@ -84,6 +98,13 @@ func (m *SignUpRequest) GetPassword() string {
 	return ""
 }
 
+func (m *SignUpRequest) ToUseCaseReq() *user.SignUpRequest {
+	return &user.SignUpRequest{
+		Username: m.Username,
+		Password: m.Password,
+	}
+}
+
 type SignUpResponse struct {
 	User *User `json:"user,omitempty"`
 }
@@ -93,6 +114,10 @@ func (m *SignUpResponse) GetUser() *User {
 		return m.User
 	}
 	return nil
+}
+
+func (m *SignUpResponse) Set(useCaseRes *user.SignUpResponse) {
+	m.User = toUser(useCaseRes.User)
 }
 
 type LogInRequest struct {

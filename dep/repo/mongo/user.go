@@ -47,5 +47,5 @@ func (m *userMongo) Get(ctx context.Context, uf *repo.UserFilter) (*entity.User,
 		return nil, err
 	}
 
-	return model.ToUserEntity(u), nil
+	return model.ToUserEntity(u)
 }

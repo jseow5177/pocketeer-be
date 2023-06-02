@@ -294,7 +294,7 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.GetUserRequest),
 			Res:       new(presenter.GetUserResponse),
-			Validator: th.GetTransactionsValidator,
+			Validator: uh.GetUserValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return userHandler.GetUser(ctx, req.(*presenter.GetUserRequest), res.(*presenter.GetUserResponse))
 			},
@@ -308,7 +308,7 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.SignUpRequest),
 			Res:       new(presenter.SignUpResponse),
-			Validator: th.GetTransactionsValidator,
+			Validator: uh.SignUpValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return userHandler.SignUp(ctx, req.(*presenter.SignUpRequest), res.(*presenter.SignUpResponse))
 			},
@@ -322,7 +322,7 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.LogInRequest),
 			Res:       new(presenter.LogInResponse),
-			Validator: th.GetTransactionsValidator,
+			Validator: uh.LogInValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return userHandler.LogIn(ctx, req.(*presenter.LogInRequest), res.(*presenter.LogInResponse))
 			},

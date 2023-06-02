@@ -6,7 +6,6 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/util"
@@ -15,6 +14,7 @@ import (
 
 var (
 	ErrMismatchTransactionType = errors.New("mismatch transaction type")
+	ErrInvalidCategoryIDs      = errors.New("invalid category_ids")
 )
 
 type transactionUseCase struct {
@@ -33,9 +33,6 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 	t, err := uc.transactionRepo.Get(ctx, req.ToTransactionFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
-		if err == repo.ErrTransactionNotFound {
-			return nil, errutil.NotFoundError(err)
-		}
 		return nil, err
 	}
 
@@ -115,7 +112,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	}
 
 	if cRes.Category.GetCategoryType() != req.GetTransactionType() {
-		return nil, errutil.ValidationError(ErrMismatchTransactionType)
+		return nil, ErrMismatchTransactionType
 	}
 
 	id, err := uc.transactionRepo.Create(ctx, t)
@@ -187,7 +184,7 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 		}
 
 		if len(req.CategoryIDs) != len(getCategoriesRes.Categories) {
-			return nil, errutil.NotFoundError(errors.New("invalid category_ids"))
+			return nil, ErrInvalidCategoryIDs
 		}
 	case len(req.TransactionTypes) > 0:
 		sumBy = "transaction_type"

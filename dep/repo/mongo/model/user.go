@@ -10,7 +10,7 @@ type User struct {
 	UserID     primitive.ObjectID `bson:"user_id,omitempty"`
 	Username   *string            `bson:"username,omitempty"`
 	UserStatus *uint32            `bson:"user_status,omitempty"`
-	Password   *string            `bson:"password,omitempty"`
+	Hash       *string            `bson:"hash,omitempty"`
 	Salt       *string            `bson:"salt,omitempty"`
 	CreateTime *uint64            `bson:"create_time,omitempty"`
 	UpdateTime *uint64            `bson:"update_time,omitempty"`
@@ -22,27 +22,55 @@ func ToUserModel(u *entity.User) *User {
 		objID, _ = primitive.ObjectIDFromHex(u.GetUserID())
 	}
 
+	var encodedHash *string
+	if u.Hash != nil {
+		encodedHash = goutil.String(goutil.Base64Encode([]byte(u.GetHash())))
+	}
+
+	var encodedSalt *string
+	if u.Salt != nil {
+		encodedSalt = goutil.String(goutil.Base64Encode([]byte(u.GetSalt())))
+	}
+
 	return &User{
 		UserID:     objID,
 		Username:   u.Username,
 		UserStatus: u.UserStatus,
-		Password:   u.Password,
-		Salt:       u.Salt,
+		Hash:       encodedHash,
+		Salt:       encodedSalt,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
 	}
 }
 
-func ToUserEntity(u *User) *entity.User {
+func ToUserEntity(u *User) (*entity.User, error) {
+	var decodedHash *string
+	if u.Hash != nil {
+		b, err := goutil.Base64Decode(u.GetHash())
+		if err != nil {
+			return nil, err
+		}
+		decodedHash = goutil.String(string(b))
+	}
+
+	var decodedSalt *string
+	if u.Salt != nil {
+		b, err := goutil.Base64Decode(u.GetSalt())
+		if err != nil {
+			return nil, err
+		}
+		decodedSalt = goutil.String(string(b))
+	}
+
 	return &entity.User{
 		UserID:     goutil.String(u.GetUserID()),
 		Username:   u.Username,
 		UserStatus: u.UserStatus,
-		Password:   u.Password,
-		Salt:       u.Salt,
+		Hash:       decodedHash,
+		Salt:       decodedSalt,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
-	}
+	}, nil
 }
 
 func (u *User) GetUserID() string {
@@ -66,9 +94,9 @@ func (u *User) GetUserStatus() uint32 {
 	return 0
 }
 
-func (u *User) GetPassword() string {
-	if u != nil && u.Password != nil {
-		return *u.Password
+func (u *User) GetHash() string {
+	if u != nil && u.Hash != nil {
+		return *u.Hash
 	}
 	return ""
 }

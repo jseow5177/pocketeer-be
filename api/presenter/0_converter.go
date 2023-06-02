@@ -87,6 +87,22 @@ func toCategory(
 	}
 }
 
+func toUser(
+	user *entity.User,
+) *User {
+	if user == nil {
+		return nil
+	}
+
+	return &User{
+		UserID:     goutil.String(user.GetUserID()),
+		Username:   goutil.String(user.GetUsername()),
+		UserStatus: goutil.Uint32(user.GetUserStatus()),
+		CreateTime: goutil.Uint64(user.GetCreateTime()),
+		UpdateTime: goutil.Uint64(user.GetUpdateTime()),
+	}
+}
+
 func toBudget(
 	budget *entity.Budget,
 ) *Budget {

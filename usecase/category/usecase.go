@@ -5,7 +5,6 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
@@ -24,9 +23,6 @@ func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequ
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-		if err == repo.ErrCategoryNotFound {
-			return nil, errutil.NotFoundError(err)
-		}
 		return nil, err
 	}
 
