@@ -5,6 +5,10 @@ const (
 
 	PathHealthCheck = "/"
 
+	PathSignUp  = PathV1Prefix + "sign_up"
+	PathLogin   = PathV1Prefix + "login"
+	PathGetUser = PathV1Prefix + "get_user"
+
 	PathCreateCategory = PathV1Prefix + "create_category"
 	PathUpdateCategory = PathV1Prefix + "update_category"
 	PathGetCategory    = PathV1Prefix + "get_category"
@@ -33,4 +37,7 @@ const (
 	MaxTransactionNoteLength = 120
 
 	AmountDecimalPlaces = 2
+
+	PasswordMinLength = 8
+	UsernameMaxLength = 60
 )

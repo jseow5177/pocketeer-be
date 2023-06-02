@@ -10,7 +10,7 @@ import (
 type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
-	Amount          *string   `json:"amount,omitempty"`
+	Amount          *float64  `json:"amount,omitempty"`
 	Note            *string   `json:"note,omitempty"`
 	TransactionType *uint32   `json:"transaction_type,omitempty"`
 	TransactionTime *uint64   `json:"transaction_time,omitempty"`
@@ -32,11 +32,11 @@ func (t *Transaction) GetCategory() *Category {
 	return nil
 }
 
-func (t *Transaction) GetAmount() string {
+func (t *Transaction) GetAmount() float64 {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
 	}
-	return ""
+	return 0
 }
 
 func (t *Transaction) GetNote() string {
@@ -348,7 +348,7 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 }
 
 func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
+	m.Transaction = toTransaction(useCaseRes.TransactionWithCategory.Transaction, useCaseRes.TransactionWithCategory.Category)
 }
 
 type AggrTransactionsRequest struct {

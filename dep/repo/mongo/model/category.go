@@ -33,13 +33,20 @@ func ToCategoryModel(c *entity.Category) *Category {
 
 func ToCategoryEntity(c *Category) *entity.Category {
 	return &entity.Category{
-		CategoryID:   goutil.String(c.CategoryID.Hex()),
+		CategoryID:   goutil.String(c.GetCategoryID()),
 		UserID:       c.UserID,
 		CategoryName: c.CategoryName,
 		CategoryType: c.CategoryType,
 		CreateTime:   c.CreateTime,
 		UpdateTime:   c.UpdateTime,
 	}
+}
+
+func (c *Category) GetUserID() string {
+	if c != nil && c.UserID != nil {
+		return *c.UserID
+	}
+	return ""
 }
 
 func (c *Category) GetCategoryID() string {

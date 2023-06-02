@@ -48,7 +48,7 @@ func ToBudgetModel(b *entity.Budget) *Budget {
 
 func ToBudgetEntity(b *Budget) *entity.Budget {
 	return &entity.Budget{
-		BudgetID:     goutil.String(b.BudgetID.Hex()),
+		BudgetID:     goutil.String(b.GetBudgetID()),
 		UserID:       b.UserID,
 		CategoryID:   b.CategoryID,
 		IsDefault:    b.IsDefault,

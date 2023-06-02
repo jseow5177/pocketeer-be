@@ -42,7 +42,7 @@ func (m *GetCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
 }
 
 type GetCategoryResponse struct {
-	*entity.Category
+	Category *entity.Category
 }
 
 func (m *GetCategoryResponse) GetCategory() *entity.Category {
@@ -88,7 +88,7 @@ func (m *CreateCategoryRequest) ToCategoryEntity() *entity.Category {
 }
 
 type CreateCategoryResponse struct {
-	*entity.Category
+	Category *entity.Category
 }
 
 func (m *CreateCategoryResponse) GetCategory() *entity.Category {
@@ -146,7 +146,7 @@ func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
 }
 
 type UpdateCategoryResponse struct {
-	*entity.Category
+	Category *entity.Category
 }
 
 func (m *UpdateCategoryResponse) GetCategory() *entity.Category {

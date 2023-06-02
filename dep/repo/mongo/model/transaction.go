@@ -39,7 +39,7 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 
 func ToTransactionEntity(t *Transaction) *entity.Transaction {
 	et := &entity.Transaction{
-		TransactionID:   goutil.String(t.TransactionID.Hex()),
+		TransactionID:   goutil.String(t.GetTransactionID()),
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
 		Note:            t.Note,

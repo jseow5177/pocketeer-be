@@ -23,10 +23,12 @@ import (
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
+	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
+	uuc "github.com/jseow5177/pockteer-be/usecase/user"
 )
 
 type server struct {
@@ -37,10 +39,12 @@ type server struct {
 	categoryRepo    repo.CategoryRepo
 	transactionRepo repo.TransactionRepo
 	budgetRepo      repo.BudgetRepo
+	userRepo        repo.UserRepo
 
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
 	budgetUseCase      buc.UseCase
+	userUseCase        uuc.UseCase
 }
 
 func main() {
@@ -82,11 +86,13 @@ func (s *server) Start() error {
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
 	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
+	s.userRepo = mongo.NewUserMongo(s.mongo)
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
+	s.userUseCase = uuc.NewUserUseCase(s.userRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -273,6 +279,52 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: th.GetTransactionsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return transactionHandler.GetTransactions(ctx, req.(*presenter.GetTransactionsRequest), res.(*presenter.GetTransactionsResponse))
+			},
+		},
+	})
+
+	// ========== User ========== //
+
+	userHandler := uh.NewUserHandler(s.userUseCase)
+
+	// get user
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetUser,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetUserRequest),
+			Res:       new(presenter.GetUserResponse),
+			Validator: th.GetTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.GetUser(ctx, req.(*presenter.GetUserRequest), res.(*presenter.GetUserResponse))
+			},
+		},
+	})
+
+	// sign up
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSignUp,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SignUpRequest),
+			Res:       new(presenter.SignUpResponse),
+			Validator: th.GetTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.SignUp(ctx, req.(*presenter.SignUpRequest), res.(*presenter.SignUpResponse))
+			},
+		},
+	})
+
+	// log in
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathLogin,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.LogInRequest),
+			Res:       new(presenter.LogInResponse),
+			Validator: th.GetTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.LogIn(ctx, req.(*presenter.LogInRequest), res.(*presenter.LogInResponse))
 			},
 		},
 	})
