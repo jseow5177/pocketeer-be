@@ -6,7 +6,7 @@ const (
 	PathHealthCheck = "/"
 
 	PathSignUp  = PathV1Prefix + "sign_up"
-	PathLogin   = PathV1Prefix + "login"
+	PathLogin   = PathV1Prefix + "log_in"
 	PathGetUser = PathV1Prefix + "get_user"
 
 	PathCreateCategory = PathV1Prefix + "create_category"

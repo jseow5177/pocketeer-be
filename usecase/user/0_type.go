@@ -124,6 +124,13 @@ func (m *LogInRequest) GetPassword() string {
 	return ""
 }
 
+func (m *LogInRequest) ToGetUserRequest() *GetUserRequest {
+	return &GetUserRequest{
+		UserName:   m.Username,
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
+}
+
 type LogInResponse struct {
 	AccessToken *string
 }

@@ -27,6 +27,7 @@ import (
 
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
+	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
 	uuc "github.com/jseow5177/pockteer-be/usecase/user"
 )
@@ -45,6 +46,7 @@ type server struct {
 	transactionUseCase tuc.UseCase
 	budgetUseCase      buc.UseCase
 	userUseCase        uuc.UseCase
+	tokenUseCase       ttuc.UseCase
 }
 
 func main() {
@@ -92,7 +94,8 @@ func (s *server) Start() error {
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
-	s.userUseCase = uuc.NewUserUseCase(s.userRepo)
+	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.AccessToken, s.cfg.RefreshToken)
+	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)

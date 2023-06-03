@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+
+	"github.com/rs/xid"
 )
 
 func RandByte(size int) ([]byte, error) {
@@ -33,4 +35,8 @@ func Base64Encode(b []byte) string {
 
 func Base64Decode(s string) ([]byte, error) {
 	return base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(s)
+}
+
+func NextXID() string {
+	return xid.New().String()
 }

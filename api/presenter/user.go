@@ -139,6 +139,17 @@ func (m *LogInRequest) GetPassword() string {
 	return ""
 }
 
+func (m *LogInRequest) ToUseCaseReq() *user.LogInRequest {
+	return &user.LogInRequest{
+		Username: m.Username,
+		Password: m.Password,
+	}
+}
+
+func (m *LogInResponse) Set(useCaseRes *user.LogInResponse) {
+	m.AccessToken = useCaseRes.AccessToken
+}
+
 type LogInResponse struct {
 	AccessToken *string `json:"access_token,omitempty"`
 }

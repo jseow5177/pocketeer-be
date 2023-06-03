@@ -28,25 +28,33 @@ type User struct {
 	UpdateTime *uint64
 }
 
-func (u *User) SetHashAndSalt(password string, salt *string) error {
-	s := salt
-	if s == nil {
-		newSalt, err := u.createSalt()
-		if err != nil {
-			return err
-		}
-		s = goutil.String(newSalt)
+func (u *User) IsPasswordCorrect(password string) (bool, error) {
+	hash, err := u.hashPassword(password, u.GetSalt())
+	if err != nil {
+		return false, err
 	}
+	return u.GetHash() == string(hash), nil
+}
 
-	hash, err := goutil.HMACSha256(password, []byte(*s))
+func (u *User) SetHash(password string) error {
+	newSalt, err := u.createSalt()
 	if err != nil {
 		return err
 	}
 
-	u.Salt = s
+	hash, err := u.hashPassword(password, newSalt)
+	if err != nil {
+		return err
+	}
+
+	u.Salt = goutil.String(newSalt)
 	u.Hash = goutil.String(string(hash))
 
 	return nil
+}
+
+func (u *User) hashPassword(password, salt string) ([]byte, error) {
+	return goutil.HMACSha256(password, []byte(salt))
 }
 
 func (u *User) createSalt() (string, error) {

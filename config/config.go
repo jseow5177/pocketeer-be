@@ -1,8 +1,10 @@
 package config
 
 type Config struct {
-	Server *Server `json:"server"`
-	Mongo  *Mongo  `json:"mongo"`
+	Server       *Server `json:"server"`
+	Mongo        *Mongo  `json:"mongo"`
+	AccessToken  *Token  `json:"access_token"`
+	RefreshToken *Token  `json:"refresh_token"`
 }
 
 type RateLimit struct {
@@ -23,6 +25,12 @@ type Mongo struct {
 	DBName   string `json:"db_name"`
 }
 
+type Token struct {
+	Secret    string `json:"secret"`
+	ExpiresIn int64  `json:"expires_in"` // second
+	Issuer    string `json:"issuer"`
+}
+
 func (m *Mongo) String() string {
 	//uri := "mongodb+srv://%s:%s@%s/"
 	//return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
@@ -41,6 +49,16 @@ func NewConfig() *Config {
 			Password: "eTSvssKfSWCzRylk",
 			Host:     "mongodb-test.djhnkbj.mongodb.net",
 			DBName:   "pocketeer",
+		},
+		AccessToken: &Token{
+			ExpiresIn: 3600,
+			Issuer:    "pocketeer_be",
+			Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
+		},
+		RefreshToken: &Token{
+			ExpiresIn: 3600,
+			Issuer:    "pocketeer_be",
+			Secret:    "@w8DlsuWfSlg25W0#qbZ5CpGq#MNlB",
 		},
 	}
 }
