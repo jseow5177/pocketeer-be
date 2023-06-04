@@ -5,9 +5,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
@@ -20,7 +20,7 @@ var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *categoryHandler) UpdateCategory(ctx context.Context, req *presenter.UpdateCategoryRequest, res *presenter.UpdateCategoryResponse) error {
-	userID := middleware.GetUserIDFromCtx(ctx)
+	userID := util.GetUserIDFromCtx(ctx)
 
 	useCaseRes, err := h.categoryUseCase.UpdateCategory(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

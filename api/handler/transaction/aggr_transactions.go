@@ -3,10 +3,10 @@ package transaction
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,7 +29,7 @@ func (h *transactionHandler) AggrTransactions(
 	req *presenter.AggrTransactionsRequest,
 	res *presenter.AggrTransactionsResponse,
 ) error {
-	userID := middleware.GetUserIDFromCtx(ctx)
+	userID := util.GetUserIDFromCtx(ctx)
 
 	useCaseRes, err := h.transactionUseCase.AggrTransactions(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

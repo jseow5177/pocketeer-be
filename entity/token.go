@@ -8,7 +8,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
-var signMethod = jwt.SigningMethodHS256
+var signTokenMethod = jwt.SigningMethodHS256
 
 type CustomClaims struct {
 	UserID *string `json:"user_id,omitempty"`
@@ -35,6 +35,19 @@ func NewToken(tokenCfg *config.Token, customClaims *CustomClaims) *Token {
 	}
 }
 
+func ParseToken(plainToken, secret string) (jti string, customClaims *CustomClaims, err error) {
+	token, err := jwt.ParseWithClaims(plainToken, new(claims), func(_ *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	}, jwt.WithValidMethods([]string{signTokenMethod.Name}))
+	if err != nil || !token.Valid {
+		return "", nil, err
+	}
+
+	cms := token.Claims.(*claims)
+
+	return cms.ID, cms.CustomClaims, nil
+}
+
 func (t *Token) Sign() (jti string, signedToken string, err error) {
 	jti = goutil.NextXID()
 
@@ -48,7 +61,7 @@ func (t *Token) Sign() (jti string, signedToken string, err error) {
 		ID:        jti,
 	}
 
-	token := jwt.NewWithClaims(signMethod, claims)
+	token := jwt.NewWithClaims(signTokenMethod, claims)
 	signedToken, err = token.SignedString([]byte(t.secret))
 	if err != nil {
 		return "", "", err

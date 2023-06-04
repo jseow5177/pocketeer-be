@@ -71,6 +71,10 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error) {
 	getUserRes, err := uc.GetUser(ctx, req.ToGetUserRequest())
 	if err != nil {
+		if err == repo.ErrUserNotFound {
+			// hide not found error
+			return nil, ErrUserInvalid
+		}
 		return nil, err
 	}
 
@@ -84,7 +88,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		return nil, ErrUserInvalid
 	}
 
-	createTokenRes, err := uc.tokenUseCase.CreateTokenPair(ctx, &token.CreateTokenPairRequest{
+	createTokenRes, err := uc.tokenUseCase.CreateAuthTokenPair(ctx, &token.CreateAuthTokenPairRequest{
 		UserID: getUserRes.UserID,
 	})
 	if err != nil {

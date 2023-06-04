@@ -7,7 +7,8 @@ import (
 )
 
 type UseCase interface {
-	CreateTokenPair(ctx context.Context, req *CreateTokenPairRequest) (*CreateTokenPairResponse, error)
+	CreateAuthTokenPair(ctx context.Context, req *CreateAuthTokenPairRequest) (*CreateAuthTokenPairResponse, error)
+	ValidateAccessToken(ctx context.Context, req *ValidateAccessTokenRequest) (*ValidateAccessTokenResponse, error)
 }
 
 type TokenPair struct {
@@ -15,28 +16,50 @@ type TokenPair struct {
 	RefreshToken *string // TODO
 }
 
-type CreateTokenPairRequest struct {
+type ValidateAccessTokenRequest struct {
+	AccessToken *string
+}
+
+func (m *ValidateAccessTokenRequest) GetAccessToken() string {
+	if m != nil && m.AccessToken != nil {
+		return *m.AccessToken
+	}
+	return ""
+}
+
+type ValidateAccessTokenResponse struct {
 	UserID *string
 }
 
-func (m *CreateTokenPairRequest) GetUserID() string {
+func (m *ValidateAccessTokenResponse) GetUserID() string {
 	if m != nil && m.UserID != nil {
 		return *m.UserID
 	}
 	return ""
 }
 
-func (m *CreateTokenPairRequest) ToCustomClaims() *entity.CustomClaims {
+type CreateAuthTokenPairRequest struct {
+	UserID *string
+}
+
+func (m *CreateAuthTokenPairRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *CreateAuthTokenPairRequest) ToCustomClaims() *entity.CustomClaims {
 	return &entity.CustomClaims{
 		UserID: m.UserID,
 	}
 }
 
-type CreateTokenPairResponse struct {
+type CreateAuthTokenPairResponse struct {
 	*TokenPair
 }
 
-func (m *CreateTokenPairResponse) GetTokenPair() *TokenPair {
+func (m *CreateAuthTokenPairResponse) GetTokenPair() *TokenPair {
 	if m != nil && m.TokenPair != nil {
 		return m.TokenPair
 	}

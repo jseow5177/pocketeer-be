@@ -2,12 +2,10 @@ package budget
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
-	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var GetCategoryBudgetsByMonthValidator = validator.MustForm(map[string]validator.Validator{
@@ -24,12 +22,7 @@ func (h *budgetHandler) GetCategoryBudgetsByMonth(
 	req *presenter.GetCategoryBudgetsByMonthRequest,
 	res *presenter.GetCategoryBudgetsByMonthResponse,
 ) error {
-	userID := middleware.GetUserIDFromCtx(ctx)
-	if userID == "" {
-		return errutil.BadRequestError(
-			fmt.Errorf("userID is not passed in ctx"),
-		)
-	}
+	userID := util.GetUserIDFromCtx(ctx)
 
 	usecaseRes, err := h.budgetUseCase.GetCategoryBudgetsByMonth(
 		ctx,

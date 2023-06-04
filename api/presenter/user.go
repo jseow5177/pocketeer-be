@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/user"
 )
 
@@ -47,20 +48,11 @@ func (u *User) GetUpdateTime() uint64 {
 	return 0
 }
 
-type GetUserRequest struct {
-	UserID *string `json:"user_id,omitempty"`
-}
+type GetUserRequest struct{}
 
-func (m *GetUserRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *GetUserRequest) ToUseCaseReq() *user.GetUserRequest {
+func (m *GetUserRequest) ToUseCaseReq(userID string) *user.GetUserRequest {
 	return &user.GetUserRequest{
-		UserID: m.UserID,
+		UserID: goutil.String(userID),
 	}
 }
 

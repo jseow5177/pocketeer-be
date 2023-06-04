@@ -12,7 +12,9 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 )
 
-type Middleware func(http.Handler) http.Handler
+type Middleware interface {
+	Handle(http.Handler) http.Handler
+}
 
 type Handler struct {
 	Req        interface{}
@@ -46,7 +48,7 @@ func (r *HttpRouter) RegisterHttpRoute(hr *HttpRoute) {
 	if hr.Middlewares != nil {
 		// wrap middlewares from right to left
 		for i := len(hr.Middlewares) - 1; i >= 0; i-- {
-			chain = hr.Middlewares[i](chain)
+			chain = hr.Middlewares[i].Handle(chain)
 		}
 	}
 

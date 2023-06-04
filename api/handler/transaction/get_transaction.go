@@ -3,9 +3,9 @@ package transaction
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,7 +16,7 @@ var GetTransactionValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *transactionHandler) GetTransaction(ctx context.Context, req *presenter.GetTransactionRequest, res *presenter.GetTransactionResponse) error {
-	userID := middleware.GetUserIDFromCtx(ctx)
+	userID := util.GetUserIDFromCtx(ctx)
 
 	useCaseRes, err := h.transactionUseCase.GetTransaction(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

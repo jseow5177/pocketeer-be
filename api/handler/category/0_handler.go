@@ -1,12 +1,12 @@
 package category
 
-import cuc "github.com/jseow5177/pockteer-be/usecase/category"
+import "github.com/jseow5177/pockteer-be/usecase/category"
 
 type categoryHandler struct {
-	categoryUseCase cuc.UseCase
+	categoryUseCase category.UseCase
 }
 
-func NewCategoryHandler(categoryUseCase cuc.UseCase) *categoryHandler {
+func NewCategoryHandler(categoryUseCase category.UseCase) *categoryHandler {
 	return &categoryHandler{
 		categoryUseCase: categoryUseCase,
 	}

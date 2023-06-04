@@ -136,6 +136,8 @@ func (s *server) registerRoutes() http.Handler {
 		Router: mux.NewRouter(),
 	}
 
+	authMiddleware := middleware.NewAuthMiddleware(s.tokenUseCase)
+
 	// ========== Healthcheck ========== //
 
 	// healthcheck
@@ -168,6 +170,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.CreateCategory(ctx, req.(*presenter.CreateCategoryRequest), res.(*presenter.CreateCategoryResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// update category
@@ -182,6 +185,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.UpdateCategory(ctx, req.(*presenter.UpdateCategoryRequest), res.(*presenter.UpdateCategoryResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// get category
@@ -196,6 +200,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategory(ctx, req.(*presenter.GetCategoryRequest), res.(*presenter.GetCategoryResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// get categories
@@ -210,6 +215,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// ========== Transaction ========== //
@@ -228,6 +234,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.CreateTransaction(ctx, req.(*presenter.CreateTransactionRequest), res.(*presenter.CreateTransactionResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// update transaction
@@ -242,6 +249,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.UpdateTransaction(ctx, req.(*presenter.UpdateTransactionRequest), res.(*presenter.UpdateTransactionResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// get transaction
@@ -256,6 +264,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.GetTransaction(ctx, req.(*presenter.GetTransactionRequest), res.(*presenter.GetTransactionResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// aggr transactions
@@ -270,6 +279,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.AggrTransactions(ctx, req.(*presenter.AggrTransactionsRequest), res.(*presenter.AggrTransactionsResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// get transactions
@@ -284,6 +294,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.GetTransactions(ctx, req.(*presenter.GetTransactionsRequest), res.(*presenter.GetTransactionsResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// ========== User ========== //
@@ -302,6 +313,7 @@ func (s *server) registerRoutes() http.Handler {
 				return userHandler.GetUser(ctx, req.(*presenter.GetUserRequest), res.(*presenter.GetUserResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// sign up
@@ -348,6 +360,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.GetCategoryBudgetsByMonth(ctx, req.(*presenter.GetCategoryBudgetsByMonthRequest), res.(*presenter.GetCategoryBudgetsByMonthResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// get annual budget breakdown
@@ -362,6 +375,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.GetAnnualBudgetBreakdown(ctx, req.(*presenter.GetAnnualBudgetBreakdownRequest), res.(*presenter.GetAnnualBudgetBreakdownResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// set budget
@@ -376,6 +390,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.SetBudget(ctx, req.(*presenter.SetBudgetRequest), res.(*presenter.SetBudgetResponse))
 			},
 		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	return r

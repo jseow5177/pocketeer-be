@@ -21,7 +21,7 @@ func NewTokenUseCase(accessTokenCfg, refreshTokenCfg *config.Token) UseCase {
 	}
 }
 
-func (uc *tokenUseCase) CreateTokenPair(ctx context.Context, req *CreateTokenPairRequest) (*CreateTokenPairResponse, error) {
+func (uc *tokenUseCase) CreateAuthTokenPair(ctx context.Context, req *CreateAuthTokenPairRequest) (*CreateAuthTokenPairResponse, error) {
 	// sign access token
 	at := entity.NewToken(uc.accessTokenCfg, req.ToCustomClaims())
 	_, accessToken, err := at.Sign()
@@ -38,10 +38,22 @@ func (uc *tokenUseCase) CreateTokenPair(ctx context.Context, req *CreateTokenPai
 		return nil, err
 	}
 
-	return &CreateTokenPairResponse{
+	return &CreateAuthTokenPairResponse{
 		TokenPair: &TokenPair{
 			AccessToken:  goutil.String(accessToken),
 			RefreshToken: goutil.String(refreshToken),
 		},
+	}, nil
+}
+
+func (uc *tokenUseCase) ValidateAccessToken(ctx context.Context, req *ValidateAccessTokenRequest) (*ValidateAccessTokenResponse, error) {
+	_, claims, err := entity.ParseToken(req.GetAccessToken(), uc.accessTokenCfg.Secret)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("invalid access token, err: %v", err)
+		return nil, err
+	}
+
+	return &ValidateAccessTokenResponse{
+		UserID: claims.UserID,
 	}, nil
 }
