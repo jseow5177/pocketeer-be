@@ -144,7 +144,7 @@ func (m *CreateTransactionResponse) Set(useCaseReq *transaction.CreateTransactio
 }
 
 type GetTransactionRequest struct {
-	TransactionID *string `json:"transaction_id"`
+	TransactionID *string `json:"transaction_id,omitempty"`
 }
 
 func (m *GetTransactionRequest) GetTransactionID() string {
@@ -246,8 +246,8 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 }
 
 type GetTransactionsResponse struct {
-	Transactions []*Transaction `json:"transactions"`
-	Paging       *Paging        `json:"paging"`
+	Transactions []*Transaction `json:"transactions,omitempty"`
+	Paging       *Paging        `json:"paging,omitempty"`
 }
 
 func (m *GetTransactionsResponse) GetTransactions() []*Transaction {

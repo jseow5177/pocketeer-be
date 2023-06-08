@@ -393,13 +393,14 @@ func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
 	return nil
 }
 
-func (m *AggrTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.UInt64Filter)
 	}
 
 	return &repo.TransactionFilter{
+		UserID:             goutil.String(userID),
 		CategoryIDs:        m.CategoryIDs,
 		TransactionTypes:   m.TransactionTypes,
 		TransactionTimeGte: tt.Gte,

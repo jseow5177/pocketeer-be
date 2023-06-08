@@ -171,7 +171,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 }
 
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
-	tf := req.ToTransactionFilter()
+	tf := req.ToTransactionFilter(req.GetUserID())
 
 	// default sum by category_id
 	sumBy := "category_id"
