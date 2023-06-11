@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -9,53 +10,64 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrUnsupportedTokenType = errors.New("unsupported token type")
+	ErrInvalidToken         = errors.New("invalid token")
+)
+
 type tokenUseCase struct {
-	accessTokenCfg  *config.Token
-	refreshTokenCfg *config.Token
+	tokenCfg *config.Tokens
 }
 
-func NewTokenUseCase(accessTokenCfg, refreshTokenCfg *config.Token) UseCase {
+func NewTokenUseCase(tokenCfg *config.Tokens) UseCase {
 	return &tokenUseCase{
-		accessTokenCfg,
-		refreshTokenCfg,
+		tokenCfg,
 	}
 }
 
-func (uc *tokenUseCase) CreateAuthTokenPair(ctx context.Context, req *CreateAuthTokenPairRequest) (*CreateAuthTokenPairResponse, error) {
-	// sign access token
-	at := entity.NewToken(uc.accessTokenCfg, req.ToCustomClaims())
-	_, accessToken, err := at.Sign()
+func (uc *tokenUseCase) CreateToken(ctx context.Context, req *CreateTokenRequest) (*CreateTokenResponse, error) {
+	tCfg, err := uc.getTokenConfigByType(req.GetTokenType())
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sign access token, err: %v", err)
 		return nil, err
 	}
 
-	// sign refresh token
-	rt := entity.NewToken(uc.accessTokenCfg, req.ToCustomClaims())
-	_, refreshToken, err := rt.Sign()
+	t := entity.NewToken(tCfg, req.GetCustomClaims())
+	tokenID, token, err := t.Sign()
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sign refresh token, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to sign token, err: %v", err)
 		return nil, err
 	}
 
-	return &CreateAuthTokenPairResponse{
-		TokenPair: &TokenPair{
-			AccessToken:  goutil.String(accessToken),
-			RefreshToken: goutil.String(refreshToken),
-		},
+	return &CreateTokenResponse{
+		TokenID: goutil.String(tokenID),
+		Token:   goutil.String(token),
 	}, nil
 }
 
-func (uc *tokenUseCase) ValidateAccessToken(ctx context.Context, req *ValidateAccessTokenRequest) (*ValidateAccessTokenResponse, error) {
-	_, claims, err := entity.ParseToken(req.GetAccessToken(), uc.accessTokenCfg.Secret)
+func (uc *tokenUseCase) ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error) {
+	tCfg, err := uc.getTokenConfigByType(req.GetTokenType())
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("invalid access token, err: %v", err)
 		return nil, err
 	}
 
-	// TODO: SANITY CHECK!! CHECK IF USER EXISTS
+	tokenID, claims, err := entity.ParseToken(req.GetToken(), tCfg.Secret)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to parse token, err: %v", err)
+		return nil, ErrInvalidToken
+	}
 
-	return &ValidateAccessTokenResponse{
-		UserID: claims.UserID,
+	return &ValidateTokenResponse{
+		TokenID:      goutil.String(tokenID),
+		CustomClaims: claims,
 	}, nil
+}
+
+func (uc *tokenUseCase) getTokenConfigByType(tokenType uint32) (*config.Token, error) {
+	switch tokenType {
+	case uint32(entity.TokenTypeAccess):
+		return uc.tokenCfg.AccessToken, nil
+	case uint32(entity.TokenTypeRefresh):
+		return uc.tokenCfg.RefreshToken, nil
+	}
+	return nil, ErrUnsupportedTokenType
 }

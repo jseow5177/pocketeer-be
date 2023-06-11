@@ -7,7 +7,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
-	"github.com/jseow5177/pockteer-be/usecase/token"
+	"github.com/jseow5177/pockteer-be/usecase/user"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
@@ -16,12 +16,12 @@ var (
 )
 
 type AuthMiddleware struct {
-	tokenUseCase token.UseCase
+	userUseCase user.UseCase
 }
 
-func NewAuthMiddleware(tokenUseCase token.UseCase) *AuthMiddleware {
+func NewAuthMiddleware(userUseCase user.UseCase) *AuthMiddleware {
 	return &AuthMiddleware{
-		tokenUseCase: tokenUseCase,
+		userUseCase,
 	}
 }
 
@@ -38,10 +38,12 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			return
 		}
 
-		res, err := am.tokenUseCase.ValidateAccessToken(ctx, &token.ValidateAccessTokenRequest{
+		res, err := am.userUseCase.IsAuthenticated(ctx, &user.IsAuthenticatedRequest{
 			AccessToken: goutil.String(accessToken),
 		})
 		if err != nil {
+			// TODO: Return NotAuthenticated only when user is not found or token is invalid
+			// Else, return 500
 			httputil.ReturnServerResponse(w, nil, ErrUserNotAuthenticated)
 			return
 		}

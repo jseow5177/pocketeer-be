@@ -7,61 +7,82 @@ import (
 )
 
 type UseCase interface {
-	CreateAuthTokenPair(ctx context.Context, req *CreateAuthTokenPairRequest) (*CreateAuthTokenPairResponse, error)
-	ValidateAccessToken(ctx context.Context, req *ValidateAccessTokenRequest) (*ValidateAccessTokenResponse, error)
+	CreateToken(ctx context.Context, req *CreateTokenRequest) (*CreateTokenResponse, error)
+	ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error)
 }
 
-type TokenPair struct {
-	AccessToken  *string
-	RefreshToken *string // TODO
+type CreateTokenRequest struct {
+	TokenType    *uint32
+	CustomClaims *entity.CustomClaims
 }
 
-type ValidateAccessTokenRequest struct {
-	AccessToken *string
+func (m *CreateTokenRequest) GetTokenType() uint32 {
+	if m != nil && m.TokenType != nil {
+		return *m.TokenType
+	}
+	return 0
 }
 
-func (m *ValidateAccessTokenRequest) GetAccessToken() string {
-	if m != nil && m.AccessToken != nil {
-		return *m.AccessToken
+func (m *CreateTokenRequest) GetCustomClaims() *entity.CustomClaims {
+	if m != nil && m.CustomClaims != nil {
+		return m.CustomClaims
+	}
+	return nil
+}
+
+type CreateTokenResponse struct {
+	TokenID *string
+	Token   *string
+}
+
+func (m *CreateTokenResponse) GetTokenID() string {
+	if m != nil && m.TokenID != nil {
+		return *m.TokenID
 	}
 	return ""
 }
 
-type ValidateAccessTokenResponse struct {
-	UserID *string
-}
-
-func (m *ValidateAccessTokenResponse) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
+func (m *CreateTokenResponse) GetToken() string {
+	if m != nil && m.Token != nil {
+		return *m.Token
 	}
 	return ""
 }
 
-type CreateAuthTokenPairRequest struct {
-	UserID *string
+type ValidateTokenRequest struct {
+	TokenType *uint32
+	Token     *string
 }
 
-func (m *CreateAuthTokenPairRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
+func (m *ValidateTokenRequest) GetToken() string {
+	if m != nil && m.Token != nil {
+		return *m.Token
 	}
 	return ""
 }
 
-func (m *CreateAuthTokenPairRequest) ToCustomClaims() *entity.CustomClaims {
-	return &entity.CustomClaims{
-		UserID: m.UserID,
+func (m *ValidateTokenRequest) GetTokenType() uint32 {
+	if m != nil && m.TokenType != nil {
+		return *m.TokenType
 	}
+	return 0
 }
 
-type CreateAuthTokenPairResponse struct {
-	*TokenPair
+type ValidateTokenResponse struct {
+	TokenID      *string
+	CustomClaims *entity.CustomClaims
 }
 
-func (m *CreateAuthTokenPairResponse) GetTokenPair() *TokenPair {
-	if m != nil && m.TokenPair != nil {
-		return m.TokenPair
+func (m *ValidateTokenResponse) GetTokenID() string {
+	if m != nil && m.TokenID != nil {
+		return *m.TokenID
+	}
+	return ""
+}
+
+func (m *ValidateTokenResponse) GetCustomClaims() *entity.CustomClaims {
+	if m != nil && m.CustomClaims != nil {
+		return m.CustomClaims
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/token"
 	"github.com/rs/zerolog/log"
@@ -25,6 +26,25 @@ func NewUserUseCase(userRepo repo.UserRepo, tokenUseCase token.UseCase) UseCase 
 		userRepo:     userRepo,
 		tokenUseCase: tokenUseCase,
 	}
+}
+
+func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
+	validateTokenRes, err := uc.tokenUseCase.ValidateToken(ctx, req.ToValidateTokenRequest())
+	if err != nil {
+		return nil, err
+	}
+
+	userID := validateTokenRes.CustomClaims.GetUserID()
+
+	// check if user exists
+	_, err = uc.GetUser(ctx, &GetUserRequest{
+		UserID: goutil.String(userID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
@@ -88,14 +108,18 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		return nil, ErrUserInvalid
 	}
 
-	createTokenRes, err := uc.tokenUseCase.CreateAuthTokenPair(ctx, &token.CreateAuthTokenPairRequest{
-		UserID: getUserRes.UserID,
+	// create access token
+	accessTokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
+		CustomClaims: &entity.CustomClaims{
+			UserID: getUserRes.UserID,
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &LogInResponse{
-		AccessToken: createTokenRes.AccessToken,
+		AccessToken: accessTokenRes.Token,
 	}, nil
 }

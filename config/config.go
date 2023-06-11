@@ -3,10 +3,9 @@ package config
 import "fmt"
 
 type Config struct {
-	Server       *Server `json:"server"`
-	Mongo        *Mongo  `json:"mongo"`
-	AccessToken  *Token  `json:"access_token"`
-	RefreshToken *Token  `json:"refresh_token"`
+	Server *Server `json:"server"`
+	Mongo  *Mongo  `json:"mongo"`
+	Tokens *Tokens `json:"token"`
 }
 
 type RateLimit struct {
@@ -33,6 +32,11 @@ type Token struct {
 	Issuer    string `json:"issuer"`
 }
 
+type Tokens struct {
+	AccessToken  *Token `json:"access_token"`
+	RefreshToken *Token `json:"refresh_token"`
+}
+
 func (m *Mongo) String() string {
 	uri := "mongodb+srv://%s:%s@%s/"
 	return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
@@ -51,15 +55,17 @@ func NewConfig() *Config {
 			Host:     "mongodb-test.djhnkbj.mongodb.net",
 			DBName:   "pocketeer",
 		},
-		AccessToken: &Token{
-			ExpiresIn: 3600,
-			Issuer:    "pocketeer_be",
-			Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
-		},
-		RefreshToken: &Token{
-			ExpiresIn: 3600,
-			Issuer:    "pocketeer_be",
-			Secret:    "@w8DlsuWfSlg25W0#qbZ5CpGq#MNlB",
+		Tokens: &Tokens{
+			AccessToken: &Token{
+				ExpiresIn: 3600,
+				Issuer:    "pocketeer_be",
+				Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
+			},
+			RefreshToken: &Token{
+				ExpiresIn: 3600,
+				Issuer:    "pocketeer_be",
+				Secret:    "@w8DlsuWfSlg25W0#qbZ5CpGq#MNlB",
+			},
 		},
 	}
 }

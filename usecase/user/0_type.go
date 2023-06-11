@@ -6,10 +6,12 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/token"
 )
 
 type UseCase interface {
 	GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error)
+	IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error)
 
 	SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error)
 	LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error)
@@ -138,6 +140,35 @@ type LogInResponse struct {
 func (m *LogInResponse) GetAccessToken() string {
 	if m != nil && m.AccessToken != nil {
 		return *m.AccessToken
+	}
+	return ""
+}
+
+type IsAuthenticatedRequest struct {
+	AccessToken *string
+}
+
+func (m *IsAuthenticatedRequest) GetAccessToken() string {
+	if m != nil && m.AccessToken != nil {
+		return *m.AccessToken
+	}
+	return ""
+}
+
+func (m *IsAuthenticatedRequest) ToValidateTokenRequest() *token.ValidateTokenRequest {
+	return &token.ValidateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
+		Token:     m.AccessToken,
+	}
+}
+
+type IsAuthenticatedResponse struct {
+	UserID *string
+}
+
+func (m *IsAuthenticatedResponse) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
 	}
 	return ""
 }

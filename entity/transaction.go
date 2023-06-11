@@ -8,8 +8,9 @@ import (
 type TransactionType uint32
 
 const (
-	TransactionTypeExpense TransactionType = 1
-	TransactionTypeIncome  TransactionType = 2
+	TransactionTypeInvalid TransactionType = iota
+	TransactionTypeExpense
+	TransactionTypeIncome
 )
 
 var TransactionTypes = map[uint32]string{
