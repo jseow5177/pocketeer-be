@@ -2,20 +2,22 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
+var (
+	ErrBudgetNotFound = errors.New("budget not found")
+)
+
 type BudgetRepo interface {
-	GetMany(ctx context.Context, req *BudgetFilter) ([]*entity.Budget, error)
-	Set(ctx context.Context, budgets []*entity.Budget) error
+	Get(ctx context.Context, bf *BudgetFilter) (*entity.Budget, error)
+	GetMany(ctx context.Context, bf *BudgetFilter) ([]*entity.Budget, error)
+	Set(ctx context.Context, budget *entity.Budget) error
 }
 
 type BudgetFilter struct {
-	UserID      *string  `filter:"user_id"`
-	CategoryID  *string  `filter:"category_id"`
-	CategoryIDs []string `filter:"category_id__in"`
-	Year        *uint32  `filter:"year"`
-	Month       *uint32  `filter:"month"`
-	BudgetType  *uint32  `filter:"budget_type"`
+	UserID   *string `filter:"user_id"`
+	BudgetID *string `filter:"_id"`
 }

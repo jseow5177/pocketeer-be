@@ -392,3 +392,58 @@ func getFieldName(structField reflect.StructField) string {
 		return jsonFieldName
 	}
 }
+
+// ========== Int64 Field Validator ========== //
+
+type Int64Func func(int64) error
+
+type Int64 struct {
+	Optional   bool
+	UnsetZero  bool
+	Default    int64
+	Min        *int64
+	Max        *int64
+	Validators []Int64Func
+}
+
+func (uv *Int64) Validate(value interface{}) error {
+	if value == nil {
+		if uv.Optional {
+			return nil
+		}
+		return errors.New("uint32 field is required")
+	}
+
+	ui, ok := value.(int64)
+	if !ok {
+		return errors.New("unexpected non-uint32 type")
+	}
+
+	if ui == 0 {
+		if uv.Optional {
+			if uv.UnsetZero {
+				return &defaultValue{}
+			}
+			return nil
+		}
+		return errors.New("uint32 field cannot be zero")
+	}
+
+	if uv.Min != nil && ui < *uv.Min {
+		return fmt.Errorf("must be greater than or equal to %v", *uv.Min)
+	}
+
+	if uv.Max != nil && ui > *uv.Max {
+		return fmt.Errorf("must be lesser than or equal to %v", *uv.Max)
+	}
+
+	for _, v := range uv.Validators {
+		if v != nil {
+			if err := v(ui); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}

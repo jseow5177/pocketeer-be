@@ -25,6 +25,7 @@ import (
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
+	auc "github.com/jseow5177/pockteer-be/usecase/aggr"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
@@ -45,6 +46,7 @@ type server struct {
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
 	budgetUseCase      buc.UseCase
+	aggrUseCase        auc.UseCase
 	userUseCase        uuc.UseCase
 	tokenUseCase       ttuc.UseCase
 }
@@ -94,6 +96,7 @@ func (s *server) Start() error {
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
+	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.AccessToken, s.cfg.RefreshToken)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 
@@ -346,33 +349,36 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Budget ========== //
 
-	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
+	budgetHandler := bh.NewBudgetHandler(
+		s.budgetUseCase,
+		s.aggrUseCase,
+	)
 
-	// get category budgets by month
+	// get budget
 	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetCategoryBudgetsByMonth,
+		Path:   config.PathGetBudget,
 		Method: http.MethodPost,
 		Handler: router.Handler{
-			Req:       new(presenter.GetCategoryBudgetsByMonthRequest),
-			Res:       new(presenter.GetCategoryBudgetsByMonthResponse),
-			Validator: bh.GetCategoryBudgetsByMonthValidator,
+			Req:       new(presenter.GetBudgetRequest),
+			Res:       new(presenter.GetBudgetResponse),
+			Validator: bh.GetBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.GetCategoryBudgetsByMonth(ctx, req.(*presenter.GetCategoryBudgetsByMonthRequest), res.(*presenter.GetCategoryBudgetsByMonthResponse))
+				return budgetHandler.GetBudget(ctx, req.(*presenter.GetBudgetRequest), res.(*presenter.GetBudgetResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// get annual budget breakdown
+	// get budgets
 	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetAnnualBudgetBreakdown,
+		Path:   config.PathGetBudgets,
 		Method: http.MethodPost,
 		Handler: router.Handler{
-			Req:       new(presenter.GetAnnualBudgetBreakdownRequest),
-			Res:       new(presenter.GetAnnualBudgetBreakdownResponse),
-			Validator: bh.GetAnnualBudgetBreakdownValidator,
+			Req:       new(presenter.GetBudgetsRequest),
+			Res:       new(presenter.GetBudgetsResponse),
+			Validator: bh.GetBudgetsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.GetAnnualBudgetBreakdown(ctx, req.(*presenter.GetAnnualBudgetBreakdownRequest), res.(*presenter.GetAnnualBudgetBreakdownResponse))
+				return budgetHandler.GetBudgets(ctx, req.(*presenter.GetBudgetsRequest), res.(*presenter.GetBudgetsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

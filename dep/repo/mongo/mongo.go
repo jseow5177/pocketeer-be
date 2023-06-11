@@ -110,6 +110,31 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
+func (mc *MongoColl) upsert(ctx context.Context, uniqueKey string, doc interface{}) (id string, err error) {
+	keyValue := getUniqueKeyValue(doc, uniqueKey)
+
+	filter := bson.M{uniqueKey: keyValue}
+	update := bson.M{"$set": removeUniqueKeyField(doc, uniqueKey)}
+
+	upsert := mongo.NewUpdateOneModel()
+	upsert.SetFilter(filter)
+	upsert.SetUpdate(update)
+	upsert.SetUpsert(true)
+
+	opts := options.Update().SetUpsert(true)
+	result, err := mc.coll.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return "", err
+	}
+
+	if result.UpsertedID != nil {
+		objID := result.UpsertedID.(primitive.ObjectID)
+		id = objID.Hex()
+	}
+
+	return id, nil
+}
+
 func (mc *MongoColl) upsertMany(ctx context.Context, uniqueKey string, docs []interface{}) (ids []string, err error) {
 	var bulkWrites []mongo.WriteModel
 

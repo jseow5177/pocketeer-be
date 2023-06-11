@@ -7,61 +7,93 @@ import (
 )
 
 type Budget struct {
-	BudgetID     primitive.ObjectID `bson:"_id,omitempty"`
-	UserID       *string            `bson:"user_id,omitempty"`
-	CategoryID   *string            `bson:"category_id,omitempty"`
-	IsDefault    *bool              `bson:"is_default,omitempty"`
-	BudgetType   *uint32            `bson:"budget_type,omitempty"`
-	Year         *uint32            `bson:"year,omitempty"`
-	Month        *uint32            `bson:"month,omitempty"`
-	BudgetAmount *int64             `bson:"budget_amount,omitempty"`
+	UserID           *string            `bson:"user_id,omitempty"`
+	BudgetID         primitive.ObjectID `bson:"_id,omitempty"`
+	BudgetType       *uint32            `bson:"budget_type,omitempty"`
+	BudgetName       *string            `bson:"budget_name,omitempty"`
+	CategoryIDs      []string           `bson:"category_ids,omitempty"`
+	Status           *uint32            `bson:"status,omitempty"`
+	BudgetBreakdowns []*BudgetBreakdown `bson:"budget_breakdowns, omitempty"`
+	UpdateTime       *uint64            `bson:"update_time,omitempty"`
 }
 
-func ToBudgetModels(bs []*entity.Budget) []*Budget {
-	budgets := make([]*Budget, len(bs))
-
-	for idx, b := range bs {
-		budgets[idx] = ToBudgetModel(b)
-	}
-
-	return budgets
-}
-
-func ToBudgetModel(b *entity.Budget) *Budget {
-	objID := primitive.NewObjectID()
-
-	if primitive.IsValidObjectID(b.GetBudgetID()) {
-		objID, _ = primitive.ObjectIDFromHex(b.GetBudgetID())
-	}
-
-	return &Budget{
-		BudgetID:     objID,
-		UserID:       b.UserID,
-		CategoryID:   b.CategoryID,
-		IsDefault:    b.IsDefault,
-		BudgetType:   b.BudgetType,
-		Year:         b.Year,
-		Month:        b.Month,
-		BudgetAmount: b.BudgetAmount,
-	}
+type BudgetBreakdown struct {
+	Year   *int     `bson:"year,omitempty"`
+	Month  *int     `bson:"month,omitempty"`
+	Amount *float64 `bson:"amount,omitempty"`
 }
 
 func ToBudgetEntity(b *Budget) *entity.Budget {
 	return &entity.Budget{
 		BudgetID:     goutil.String(b.GetBudgetID()),
 		UserID:       b.UserID,
-		CategoryID:   b.CategoryID,
-		IsDefault:    b.IsDefault,
 		BudgetType:   b.BudgetType,
-		Year:         b.Year,
-		Month:        b.Month,
-		BudgetAmount: b.BudgetAmount,
+		BudgetName:   b.BudgetName,
+		CategoryIDs:  b.CategoryIDs,
+		Status:       b.Status,
+		BreakdownMap: ToBudgetBreakdownMap(b.BudgetBreakdowns),
+		UpdateTime:   b.UpdateTime,
 	}
+}
+
+func ToBudgetBreakdownMap(breakdowns []*BudgetBreakdown) map[entity.DateInfo]*entity.BudgetBreakdown {
+	_map := make(map[entity.DateInfo]*entity.BudgetBreakdown)
+
+	for _, bd := range breakdowns {
+		dateInfo := entity.DateInfo{
+			Year:  bd.GetYear(),
+			Month: bd.GetMonth(),
+		}
+
+		_map[dateInfo] = &entity.BudgetBreakdown{
+			Year:   bd.Year,
+			Month:  bd.Month,
+			Amount: bd.Amount,
+		}
+	}
+
+	return _map
+}
+
+func ToBudgetModel(e *entity.Budget) *Budget {
+	objID := primitive.NewObjectID()
+	if primitive.IsValidObjectID(e.GetBudgetID()) {
+		objID, _ = primitive.ObjectIDFromHex(e.GetBudgetID())
+	}
+
+	b := &Budget{
+		BudgetID:         objID,
+		UserID:           e.UserID,
+		BudgetType:       e.BudgetType,
+		BudgetName:       e.BudgetName,
+		CategoryIDs:      e.CategoryIDs,
+		Status:           e.Status,
+		BudgetBreakdowns: ToModelBreakdowns(e.BreakdownMap),
+		UpdateTime:       e.UpdateTime,
+	}
+
+	return b
+}
+
+func ToModelBreakdowns(breakdownMap map[entity.DateInfo]*entity.BudgetBreakdown) []*BudgetBreakdown {
+	budgetBreakdowns := make([]*BudgetBreakdown, 0)
+	for _, bd := range breakdownMap {
+		budgetBreakdowns = append(
+			budgetBreakdowns,
+			&BudgetBreakdown{
+				Year:   bd.Year,
+				Month:  bd.Month,
+				Amount: bd.Amount,
+			},
+		)
+	}
+
+	return budgetBreakdowns
 }
 
 func (b *Budget) GetBudgetID() string {
 	if b != nil {
-		b.BudgetID.Hex()
+		return b.BudgetID.Hex()
 	}
 	return ""
 }
@@ -73,20 +105,6 @@ func (b *Budget) GetUserID() string {
 	return ""
 }
 
-func (b *Budget) GetCategoryID() string {
-	if b != nil {
-		return *b.CategoryID
-	}
-	return ""
-}
-
-func (b *Budget) GetIsDefault() bool {
-	if b != nil {
-		return *b.IsDefault
-	}
-	return false
-}
-
 func (b *Budget) GetBudgetType() uint32 {
 	if b != nil {
 		return *b.BudgetType
@@ -94,23 +112,44 @@ func (b *Budget) GetBudgetType() uint32 {
 	return 0
 }
 
-func (b *Budget) GetYear() uint32 {
+func (b *Budget) GetBudgetName() string {
 	if b != nil {
-		return *b.Year
+		return *b.BudgetName
+	}
+	return ""
+}
+
+func (b *Budget) GetCategoryIDs() []string {
+	if b != nil {
+		return b.CategoryIDs
+	}
+	return []string{}
+}
+
+func (b *Budget) GetBudgetBreakdowns() []*BudgetBreakdown {
+	if b != nil {
+		return b.BudgetBreakdowns
+	}
+	return []*BudgetBreakdown{}
+}
+
+func (bd *BudgetBreakdown) GetYear() int {
+	if bd != nil {
+		return *bd.Year
 	}
 	return 0
 }
 
-func (b *Budget) GetMonth() uint32 {
-	if b != nil {
-		return *b.Month
+func (bd *BudgetBreakdown) GetMonth() int {
+	if bd != nil {
+		return *bd.Month
 	}
 	return 0
 }
 
-func (b *Budget) GetBudgetAmount() int64 {
-	if b != nil {
-		return *b.BudgetAmount
+func (bd *BudgetBreakdown) GetAmount() float64 {
+	if bd != nil {
+		return *bd.Amount
 	}
 	return 0
 }

@@ -1,15 +1,8 @@
 package entity
 
 import (
-	"math"
-	"strconv"
-
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-)
-
-const (
-	DefaultAmount = 0
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 type TransactionType uint32
@@ -37,14 +30,7 @@ type Transaction struct {
 }
 
 func (t *Transaction) SetAmount(amount string) {
-	af, err := strconv.ParseFloat(amount, 64)
-	if err != nil {
-		af = DefaultAmount
-	}
-
-	p := math.Pow(10, float64(config.AmountDecimalPlaces))
-
-	t.Amount = goutil.Float64(math.Round(af*p) / p)
+	t.Amount = goutil.Float64(util.MonetaryStrToFloat(amount))
 }
 
 func (t *Transaction) GetTransactionID() string {

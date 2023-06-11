@@ -1,6 +1,11 @@
 package entity
 
-import "github.com/jseow5177/pockteer-be/pkg/goutil"
+import (
+	"fmt"
+	"time"
+
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
 
 type BudgetType uint32
 
@@ -14,37 +19,55 @@ var BudgetTypes = map[uint32]string{
 	uint32(BudgetTypeYearly):  "yearly",
 }
 
+type BudgetStatus uint32
+
+const (
+	BudgetStatusNormal  BudgetStatus = 1
+	BudgetStatusDeleted BudgetStatus = 2
+)
+
+var BudgetStatuses = map[uint32]string{
+	uint32(BudgetStatusNormal):  "normal",
+	uint32(BudgetStatusDeleted): "deleted",
+}
+
 type Budget struct {
 	BudgetID     *string
 	UserID       *string
-	CategoryID   *string
-	IsDefault    *bool
+	BudgetName   *string
 	BudgetType   *uint32
-	Year         *uint32
-	Month        *uint32
-	BudgetAmount *int64
+	CategoryIDs  []string
+	Status       *uint32
+	BreakdownMap BreakdownMap
+	UpdateTime   *uint64
+}
+
+type BreakdownMap map[DateInfo]*BudgetBreakdown
+
+type BudgetBreakdown struct {
+	Amount *float64
+	Year   *int
+	Month  *int
+}
+
+type DateInfo struct {
+	Year  int
+	Month int
 }
 
 func NewBudget(
-	userID,
-	categoryID string,
-	year,
-	month uint32,
-	isDefault bool,
-	budgetAmount int64,
+	userID string,
+	budgetType uint32,
 ) *Budget {
 	return &Budget{
 		UserID:       goutil.String(userID),
-		CategoryID:   goutil.String(categoryID),
-		IsDefault:    goutil.Bool(isDefault),
-		BudgetType:   goutil.Uint32(uint32(BudgetTypeMonthly)),
-		Year:         goutil.Uint32(year),
-		Month:        goutil.Uint32(month),
-		BudgetAmount: goutil.Int64(budgetAmount),
+		BudgetType:   goutil.Uint32(budgetType),
+		CategoryIDs:  make([]string, 0),
+		BreakdownMap: make(BreakdownMap),
+		Status:       goutil.Uint32(uint32(BudgetStatusNormal)),
 	}
 }
 
-// ****************** Getters | Setters
 func (e *Budget) GetBudgetID() string {
 	if e != nil && e.BudgetID != nil {
 		return *e.BudgetID
@@ -59,18 +82,11 @@ func (e *Budget) GetUserID() string {
 	return ""
 }
 
-func (e *Budget) GetCategoryID() string {
-	if e != nil && e.CategoryID != nil {
-		return *e.CategoryID
+func (e *Budget) GetBudgetName() string {
+	if e != nil && e.BudgetName != nil {
+		return *e.BudgetName
 	}
 	return ""
-}
-
-func (e *Budget) GetIsDefault() bool {
-	if e != nil && e.IsDefault != nil {
-		return *e.IsDefault
-	}
-	return false
 }
 
 func (e *Budget) GetBudgetType() uint32 {
@@ -80,41 +96,133 @@ func (e *Budget) GetBudgetType() uint32 {
 	return 0
 }
 
-func (e *Budget) GetYear() uint32 {
-	if e != nil && e.Year != nil {
-		return *e.Year
+func (e *Budget) GetCategoryIDs() []string {
+	if e == nil {
+		return []string{}
 	}
-	return 0
+	return e.CategoryIDs
 }
 
-func (e *Budget) GetMonth() uint32 {
-	if e != nil && e.Month != nil {
-		return *e.Month
+func (e *Budget) GetBreakdownMap() BreakdownMap {
+	if e == nil {
+		return map[DateInfo]*BudgetBreakdown{}
 	}
-	return 0
+	return e.BreakdownMap
 }
 
-func (e *Budget) GetBudgetAmount() int64 {
-	if e != nil && e.BudgetAmount != nil {
-		return *e.BudgetAmount
+func (e *Budget) SetBudgetType(budgetType uint32) error {
+	if e.BudgetType == nil {
+		e.BudgetType = goutil.Uint32(budgetType)
+	} else if e.GetBudgetType() != budgetType {
+		return fmt.Errorf("cannot change budget type")
 	}
-	return 0
+
+	return nil
 }
 
-func (e *Budget) SetBudgetType(budgetType uint32) {
-	e.BudgetType = goutil.Uint32(budgetType)
+func (e *Budget) SetBudgetName(budgetName string) {
+	e.BudgetName = goutil.String(budgetName)
 }
 
-func (e *Budget) SetBudgetAmount(budgetAmount int64) {
-	e.BudgetAmount = goutil.Int64(budgetAmount)
+func (e *Budget) SetCategoryIDs(categoryIDs []string) {
+	e.CategoryIDs = categoryIDs
 }
 
-func (e *Budget) SetIsDefault(isDefault bool) {
-	e.IsDefault = goutil.Bool(isDefault)
+func (e *Budget) SetBudgetAmount(
+	budgetAmount float64,
+	rangeStartDate time.Time,
+	rangeEndDate time.Time,
+) {
+	if e.GetBudgetType() == uint32(BudgetTypeMonthly) {
+		e.setMonthlyBudget(budgetAmount, rangeStartDate, rangeEndDate)
+	} else {
+		e.setYearlyBudget(budgetAmount, rangeStartDate, rangeEndDate)
+	}
 }
 
-// ******************
+func (e *Budget) IsBreakdownAvailable(
+	date time.Time,
+) bool {
+	year, month := date.Year(), int(date.Month())
 
-func (e *Budget) IsDefaultBudget() bool {
-	return e.GetIsDefault()
+	dateInfo := DateInfo{}
+	if e.GetBudgetType() == uint32(BudgetTypeMonthly) {
+		dateInfo.Year = year
+		dateInfo.Month = month
+	} else {
+		dateInfo.Year = year
+	}
+
+	_, exist := e.BreakdownMap[dateInfo]
+
+	return exist
+}
+func (e *Budget) FilterBreakdownByDate(
+	date time.Time,
+) {
+	year, month := date.Year(), int(date.Month())
+
+	dateInfo := DateInfo{}
+	if e.GetBudgetType() == uint32(BudgetTypeMonthly) {
+		dateInfo.Year = year
+		dateInfo.Month = month
+	} else {
+		dateInfo.Year = year
+	}
+
+	// Set breakdownMap to only 1 breakdown (the filtered breakdown)
+	e.BreakdownMap = map[DateInfo]*BudgetBreakdown{
+		dateInfo: e.BreakdownMap[dateInfo],
+	}
+}
+
+func (e *Budget) setMonthlyBudget(
+	budgetAmount float64,
+	rangeStartDate time.Time,
+	rangeEndDate time.Time,
+) {
+	date := rangeStartDate
+
+	for date.Before(rangeEndDate) {
+		year, month := date.Year(), int(date.Month())
+		e.setBudgetBreakdown(budgetAmount, year, month)
+
+		date = date.AddDate(0, 1, 0)
+	}
+}
+
+func (e *Budget) setYearlyBudget(
+	budgetAmount float64,
+	rangeStartDate time.Time,
+	rangeEndDate time.Time,
+) {
+	date := rangeStartDate
+
+	for date.Before(rangeEndDate) {
+		year, _ := date.Year(), date.Month()
+		e.setBudgetBreakdown(budgetAmount, year, 0)
+
+		date = date.AddDate(1, 0, 0)
+	}
+}
+
+func (e *Budget) setBudgetBreakdown(
+	budgetAmount float64,
+	year,
+	month int,
+) {
+	dateInfo := DateInfo{
+		Year:  year,
+		Month: month,
+	}
+
+	_, ok := e.BreakdownMap[dateInfo]
+	if !ok {
+		e.BreakdownMap[dateInfo] = &BudgetBreakdown{
+			Year:  goutil.Int(year),
+			Month: goutil.Int(month),
+		}
+	}
+
+	e.BreakdownMap[dateInfo].Amount = goutil.Float64(budgetAmount)
 }

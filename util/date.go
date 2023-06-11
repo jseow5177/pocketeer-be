@@ -34,6 +34,8 @@ var MonthTypes = map[uint32]string{
 	uint32(Constant_DEC): "DEC",
 }
 
+const layout = "2006-01-02"
+
 func IsYearMonthAfterCurrent(year, month uint32) bool {
 	currYear, currMonth, _ := time.Now().Date()
 	if year > uint32(currYear) {
@@ -42,4 +44,24 @@ func IsYearMonthAfterCurrent(year, month uint32) bool {
 		return true
 	}
 	return false
+}
+
+// YYYY-MM-DD
+func ValidateDateStr(dateString string) error {
+	_, err := time.Parse(layout, dateString)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// YYYY-MM-DD
+func DateStrToDate(dateString string) (time.Time, error) {
+	date, err := time.Parse(layout, dateString)
+	if err != nil {
+		return date, err
+	}
+
+	return date, nil
 }

@@ -2,21 +2,22 @@ package budget
 
 import (
 	"context"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type UseCase interface {
-	GetCategoryBudgetsByMonth(
+	GetBudget(
 		ctx context.Context,
-		req *GetCategoryBudgetsByMonthRequest,
-	) (*GetCategoryBudgetsByMonthResponse, error)
+		req *GetBudgetRequest,
+	) (*GetBudgetResponse, error)
 
-	GetAnnualBudgetBreakdown(
+	GetBudgets(
 		ctx context.Context,
-		req *GetAnnualBudgetBreakdownRequest,
-	) (*GetAnnualBudgetBreakdownResponse, error)
+		req *GetBudgetsRequest,
+	) (*GetBudgetsResponse, error)
 
 	SetBudget(
 		ctx context.Context,
@@ -24,244 +25,139 @@ type UseCase interface {
 	) (*SetBudgetResponse, error)
 }
 
-type CategoryBudget struct {
-	Category *entity.Category
-	Budget   *entity.Budget
+type GetBudgetsRequest struct {
+	UserID *string
+	Date   time.Time
 }
 
-type GetCategoryBudgetsByMonthRequest struct {
-	UserID         *string
-	Year           *uint32
-	Month          *uint32
-	CategoryIDs    []string
-	IncludedAmount *bool
+type GetBudgetsResponse struct {
+	Budgets []*entity.Budget
 }
 
-type GetCategoryBudgetsByMonthResponse struct {
-	CategoryBudgets []*CategoryBudget
+type GetBudgetRequest struct {
+	UserID   *string
+	BudgetID *string
+	Date     time.Time
 }
 
-type GetAnnualBudgetBreakdownRequest struct {
-	UserID     *string
-	CategoryID *string
-	Year       *uint32
-}
-
-type GetAnnualBudgetBreakdownResponse struct {
-	AnnualBudgetBreakdown *entity.AnnualBudgetBreakdown
+type GetBudgetResponse struct {
+	Budget *entity.Budget
 }
 
 type SetBudgetRequest struct {
-	UserID        *string
-	CategoryID    *string
-	Year          *uint32
-	DefaultBudget *DefaultBudgetSetting
-	MonthlyBudget *MonthlyBudgetSetting
-	BudgetConfig  *BudgetConfigSetting
+	UserID         *string
+	BudgetID       *string
+	BudgetName     *string
+	BudgetType     *uint32
+	BudgetAmount   *float64
+	CategoryIDs    []string
+	RangeStartDate time.Time
+	RangeEndDate   time.Time
 }
 
-type DefaultBudgetSetting struct {
-	BudgetAmount *int64
-}
+type SetBudgetResponse struct{}
 
-type MonthlyBudgetSetting struct {
-	Month        *uint32
-	BudgetAmount *int64
-}
-
-type BudgetConfigSetting struct {
-	BudgetType *uint32
-}
-
-type SetBudgetResponse struct {
-	AnnualBudgetBreakdown *entity.AnnualBudgetBreakdown
-}
-
-// ***************** Funcs
-func (u *CategoryBudget) GetCategory() *entity.Category {
-	if u != nil && u.Category != nil {
-		return u.Category
-	}
-	return nil
-}
-
-func (u *CategoryBudget) GetBudget() *entity.Budget {
-	if u != nil && u.Budget != nil {
-		return u.Budget
-	}
-	return nil
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) GetUserID() string {
-	if u != nil && u.UserID != nil {
-		return *u.UserID
-	}
-	return ""
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) GetYear() uint32 {
-	if u != nil && u.Year != nil {
-		return *u.Year
-	}
-	return 0
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) GetMonth() uint32 {
-	if u != nil && u.Month != nil {
-		return *u.Month
-	}
-	return 0
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) GetCategoryIDs() []string {
-	return u.CategoryIDs
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) GetIncludedAmount() bool {
-	return *u.IncludedAmount
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:      u.UserID,
-		CategoryIDs: u.CategoryIDs,
-	}
-}
-
-func (u *GetCategoryBudgetsByMonthRequest) ToBudgetFilter() *repo.BudgetFilter {
+func (m *GetBudgetsRequest) ToBudgetFilter() *repo.BudgetFilter {
 	return &repo.BudgetFilter{
-		UserID:      u.UserID,
-		CategoryIDs: u.CategoryIDs,
-		Year:        u.Year,
-		Month:       u.Month,
+		UserID: m.UserID,
 	}
 }
 
-func (u *GetCategoryBudgetsByMonthResponse) GetCategoryBudgets() []*CategoryBudget {
-	return u.CategoryBudgets
-}
-
-// **********************************
-
-func (u *GetAnnualBudgetBreakdownRequest) GetUserID() string {
-	if u != nil && u.UserID != nil {
-		return *u.UserID
-	}
-	return ""
-}
-
-func (u *GetAnnualBudgetBreakdownRequest) GetCategoryID() string {
-	if u != nil && u.CategoryID != nil {
-		return *u.CategoryID
-	}
-	return ""
-}
-
-func (u *GetAnnualBudgetBreakdownRequest) GetYear() uint32 {
-	if u != nil && u.Year != nil {
-		return *u.Year
-	}
-	return 0
-}
-
-func (u *GetAnnualBudgetBreakdownRequest) ToFullBudgetFilter() *repo.BudgetFilter {
+func (m *GetBudgetRequest) ToBudgetFilter() *repo.BudgetFilter {
 	return &repo.BudgetFilter{
-		UserID:     u.UserID,
-		CategoryID: u.CategoryID,
-		Year:       u.Year,
+		UserID:   m.UserID,
+		BudgetID: m.BudgetID,
 	}
 }
 
-func (u *GetAnnualBudgetBreakdownResponse) GetAnnualBudgetBreakdown() *entity.AnnualBudgetBreakdown {
-	if u != nil && u.AnnualBudgetBreakdown != nil {
-		return u.AnnualBudgetBreakdown
-	}
-	return nil
-}
-
-// **********************************
-
-func (u *SetBudgetRequest) GetUserID() string {
-	if u != nil && u.UserID != nil {
-		return *u.UserID
-	}
-	return ""
-}
-
-func (u *SetBudgetRequest) GetCategoryID() string {
-	if u != nil && u.CategoryID != nil {
-		return *u.CategoryID
-	}
-	return ""
-}
-
-func (u *SetBudgetRequest) GetYear() uint32 {
-	if u != nil && u.Year != nil {
-		return *u.Year
-	}
-	return 0
-}
-
-func (u *SetBudgetRequest) GetDefaultBudget() *DefaultBudgetSetting {
-	if u != nil && u.DefaultBudget != nil {
-		return u.DefaultBudget
-	}
-	return nil
-}
-
-func (u *SetBudgetRequest) GetMonthlyBudget() *MonthlyBudgetSetting {
-	if u != nil && u.MonthlyBudget != nil {
-		return u.MonthlyBudget
-	}
-	return nil
-}
-
-func (u *SetBudgetRequest) GetBudgetConfig() *BudgetConfigSetting {
-	if u != nil && u.BudgetConfig != nil {
-		return u.BudgetConfig
-	}
-	return nil
-}
-
-func (u *DefaultBudgetSetting) GetBudgetAmount() int64 {
-	if u != nil && u.BudgetAmount != nil {
-		return *u.BudgetAmount
-	}
-	return 0
-}
-
-func (u *MonthlyBudgetSetting) GetMonth() uint32 {
-	if u != nil && u.Month != nil {
-		return *u.Month
-	}
-	return 0
-}
-
-func (u *MonthlyBudgetSetting) GetBudgetAmount() int64 {
-	if u != nil && u.BudgetAmount != nil {
-		return *u.BudgetAmount
-	}
-	return 0
-}
-
-func (u *BudgetConfigSetting) GetBudgetType() uint32 {
-	if u != nil && u.BudgetType != nil {
-		return *u.BudgetType
-	}
-	return 0
-}
-
-func (u *SetBudgetRequest) ToFullBudgetFilter() *repo.BudgetFilter {
+func (m *SetBudgetRequest) ToBudgetFilter() *repo.BudgetFilter {
 	return &repo.BudgetFilter{
-		UserID:     u.UserID,
-		CategoryID: u.CategoryID,
-		Year:       u.Year,
+		UserID:   m.UserID,
+		BudgetID: m.BudgetID,
 	}
 }
 
-func (u *SetBudgetResponse) GetAnnualBudgetBreakdown() *entity.AnnualBudgetBreakdown {
-	if u != nil && u.AnnualBudgetBreakdown != nil {
-		return u.AnnualBudgetBreakdown
+func (m *GetBudgetsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetBudgetsRequest) GetDate() time.Time {
+	if m != nil {
+		return m.Date
+	}
+	return time.Time{}
+}
+
+func (m *GetBudgetRequest) GetDate() time.Time {
+	if m != nil {
+		return m.Date
+	}
+	return time.Time{}
+}
+
+func (m *GetBudgetRequest) GetBudgetID() string {
+	if m != nil && m.BudgetID != nil {
+		return *m.BudgetID
+	}
+	return ""
+}
+
+func (m *GetBudgetResponse) GetBudget() *entity.Budget {
+	if m != nil {
+		return m.Budget
 	}
 	return nil
+}
+
+func (m *SetBudgetRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *SetBudgetRequest) GetBudgetID() string {
+	if m != nil && m.BudgetID != nil {
+		return *m.BudgetID
+	}
+	return ""
+}
+
+func (m *SetBudgetRequest) GetBudgetName() string {
+	if m != nil && m.BudgetName != nil {
+		return *m.BudgetName
+	}
+	return ""
+}
+
+func (m *SetBudgetRequest) GetBudgetType() uint32 {
+	if m != nil && m.BudgetType != nil {
+		return *m.BudgetType
+	}
+	return 0
+}
+
+func (m *SetBudgetRequest) GetBudgetAmount() float64 {
+	if m != nil && m.BudgetAmount != nil {
+		return *m.BudgetAmount
+	}
+	return 0
+}
+
+func (m *SetBudgetRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
+func (m *SetBudgetRequest) GetRangeStartDate() time.Time {
+	return m.RangeStartDate
+}
+
+func (m *SetBudgetRequest) GetRangeEndDate() time.Time {
+	return m.RangeEndDate
 }

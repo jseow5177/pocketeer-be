@@ -3,72 +3,62 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
-func toAnnualBudgetBreakdown(
-	annualBreakdown *entity.AnnualBudgetBreakdown,
-) *AnnualBudgetBreakdown {
-	if annualBreakdown == nil {
-		return nil
-	}
-
-	return &AnnualBudgetBreakdown{
-		CategoryID:     goutil.String(annualBreakdown.GetDefaultBudget().GetCategoryID()),
-		BudgetType:     goutil.Uint32(annualBreakdown.GetBudgetType()),
-		Year:           goutil.Uint32(annualBreakdown.GetDefaultBudget().GetYear()),
-		DefaultBudget:  goutil.Int64(annualBreakdown.GetDefaultBudget().GetBudgetAmount()),
-		MonthlyBudgets: toBasicBudgets(annualBreakdown.GetMonthlyBudgets()),
-	}
-}
-
-func toBasicBudgets(
-	entBudgets []*entity.Budget,
-) []*BasicBudget {
-	budgets := make([]*BasicBudget, len(entBudgets))
-	for idx, b := range entBudgets {
-		budgets[idx] = toBasicBudget(b)
+func toBudgets(
+	entities []*entity.Budget,
+) []*Budget {
+	budgets := make([]*Budget, len(entities))
+	for idx, entity := range entities {
+		budgets[idx] = toBudget(entity)
 	}
 	return budgets
 }
 
-func toBasicBudget(
-	entBudget *entity.Budget,
-) *BasicBudget {
-	if entBudget == nil {
-		return nil
-	}
-
-	return &BasicBudget{
-		Year:   goutil.Uint32(entBudget.GetYear()),
-		Month:  goutil.Uint32(entBudget.GetMonth()),
-		Amount: goutil.Int64(entBudget.GetBudgetAmount()),
+func toBudget(
+	budget *entity.Budget,
+) *Budget {
+	return &Budget{
+		BudgetID:         budget.BudgetID,
+		BudgetName:       budget.BudgetName,
+		BudgetType:       budget.BudgetType,
+		CategoryIDs:      budget.CategoryIDs,
+		BudgetBreakdowns: toBudgetBreakdowns(budget.BreakdownMap),
 	}
 }
 
-func toCategoryBudgets(
-	categoryBudgets []*budget.CategoryBudget,
-) []*CategoryBudget {
-	cbs := make([]*CategoryBudget, len(categoryBudgets))
-	for idx, cb := range categoryBudgets {
-		cbs[idx] = toCategoryBudget(cb)
+func toBudgetBreakdowns(
+	breakdownMap entity.BreakdownMap,
+) []*BudgetBreakdown {
+	breakdowns := make([]*BudgetBreakdown, 0)
+
+	for _, bd := range breakdownMap {
+		if bd == nil {
+			continue
+		}
+
+		breakdowns = append(
+			breakdowns,
+			&BudgetBreakdown{
+				Year:   bd.Year,
+				Month:  bd.Month,
+				Amount: bd.Amount,
+			},
+		)
 	}
-	return cbs
+	return breakdowns
 }
 
-func toCategoryBudget(
-	categoryBudget *budget.CategoryBudget,
-) *CategoryBudget {
-	if categoryBudget == nil {
-		return nil
+func toCategories(
+	entities []*entity.Category,
+) []*Category {
+	categories := make([]*Category, len(entities))
+	for idx, entity := range entities {
+		categories[idx] = toCategory(entity)
 	}
-
-	return &CategoryBudget{
-		Budget:   toBudget(categoryBudget.Budget),
-		Category: toCategory(categoryBudget.Category),
-	}
+	return categories
 }
 
 func toCategory(
@@ -100,23 +90,6 @@ func toUser(
 		UserStatus: goutil.Uint32(user.GetUserStatus()),
 		CreateTime: goutil.Uint64(user.GetCreateTime()),
 		UpdateTime: goutil.Uint64(user.GetUpdateTime()),
-	}
-}
-
-func toBudget(
-	budget *entity.Budget,
-) *Budget {
-	if budget == nil {
-		return nil
-	}
-
-	return &Budget{
-		BudgetID:     goutil.String(budget.GetBudgetID()),
-		CategoryID:   goutil.String(budget.GetCategoryID()),
-		BudgetType:   goutil.Uint32(budget.GetBudgetType()),
-		Year:         goutil.Uint32(budget.GetYear()),
-		Month:        goutil.Uint32(budget.GetMonth()),
-		BudgetAmount: goutil.Int64(budget.GetBudgetAmount()),
 	}
 }
 
