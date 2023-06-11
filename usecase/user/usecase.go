@@ -37,14 +37,17 @@ func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticated
 	userID := validateTokenRes.CustomClaims.GetUserID()
 
 	// check if user exists
-	_, err = uc.GetUser(ctx, &GetUserRequest{
-		UserID: goutil.String(userID),
+	getUserRes, err := uc.GetUser(ctx, &GetUserRequest{
+		UserID:     goutil.String(userID),
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return &IsAuthenticatedResponse{
+		UserID: getUserRes.UserID,
+	}, nil
 }
 
 func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {

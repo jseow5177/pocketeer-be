@@ -17,7 +17,7 @@ type UserRepo interface {
 }
 
 type UserFilter struct {
-	UserID     *string `filter:"user_id"`
+	UserID     *string `filter:"_id"`
 	UserName   *string `filter:"username"`
 	UserStatus *uint32 `filter:"user_status"`
 }
