@@ -22,6 +22,7 @@ type GetBudgetWithCategoriesResponse struct {
 	Categories []*entity.Category
 }
 
+// Getters ----------------------------------------------------------------------
 func (m *GetBudgetWithCategoriesRequest) GetDate() time.Time {
 	if m != nil {
 		return m.Date

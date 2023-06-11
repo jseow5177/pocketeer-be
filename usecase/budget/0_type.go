@@ -9,20 +9,9 @@ import (
 )
 
 type UseCase interface {
-	GetBudget(
-		ctx context.Context,
-		req *GetBudgetRequest,
-	) (*GetBudgetResponse, error)
-
-	GetBudgets(
-		ctx context.Context,
-		req *GetBudgetsRequest,
-	) (*GetBudgetsResponse, error)
-
-	SetBudget(
-		ctx context.Context,
-		req *SetBudgetRequest,
-	) (*SetBudgetResponse, error)
+	GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error)
+	GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error)
+	SetBudget(ctx context.Context, req *SetBudgetRequest) (*SetBudgetResponse, error)
 }
 
 type GetBudgetsRequest struct {
@@ -77,6 +66,7 @@ func (m *SetBudgetRequest) ToBudgetFilter() *repo.BudgetFilter {
 	}
 }
 
+// Getters ----------------------------------------------------------------------
 func (m *GetBudgetsRequest) GetUserID() string {
 	if m != nil && m.UserID != nil {
 		return *m.UserID

@@ -91,6 +91,7 @@ func ToModelBreakdowns(breakdownMap map[entity.DateInfo]*entity.BudgetBreakdown)
 	return budgetBreakdowns
 }
 
+// Getters ----------------------------------------------------------------------
 func (b *Budget) GetBudgetID() string {
 	if b != nil {
 		return b.BudgetID.Hex()
