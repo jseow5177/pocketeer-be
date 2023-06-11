@@ -36,7 +36,6 @@ type Token struct {
 func (m *Mongo) String() string {
 	uri := "mongodb+srv://%s:%s@%s/"
 	return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
-	// return "mongodb://localhost:27017/"
 }
 
 func NewConfig() *Config {

@@ -53,6 +53,8 @@ func (uc *tokenUseCase) ValidateAccessToken(ctx context.Context, req *ValidateAc
 		return nil, err
 	}
 
+	// TODO: SANITY CHECK!! CHECK IF USER EXISTS
+
 	return &ValidateAccessTokenResponse{
 		UserID: claims.UserID,
 	}, nil
