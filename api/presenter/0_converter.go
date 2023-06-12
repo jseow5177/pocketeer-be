@@ -1,6 +1,8 @@
 package presenter
 
 import (
+	"fmt"
+
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -97,7 +99,7 @@ func toTransaction(transaction *entity.Transaction, category *entity.Category) *
 	return &Transaction{
 		TransactionID:   goutil.String(transaction.GetTransactionID()),
 		Category:        toCategory(category),
-		Amount:          goutil.Float64(transaction.GetAmount()),
+		Amount:          goutil.String(fmt.Sprint(transaction.GetAmount())),
 		Note:            goutil.String(transaction.GetNote()),
 		TransactionType: goutil.Uint32(transaction.GetTransactionType()),
 		TransactionTime: goutil.Uint64(transaction.GetTransactionTime()),
