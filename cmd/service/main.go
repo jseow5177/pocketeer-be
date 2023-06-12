@@ -97,7 +97,7 @@ func (s *server) Start() error {
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
-	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.AccessToken, s.cfg.RefreshToken)
+	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 
 	// start server
@@ -139,7 +139,7 @@ func (s *server) registerRoutes() http.Handler {
 		Router: mux.NewRouter(),
 	}
 
-	authMiddleware := middleware.NewAuthMiddleware(s.tokenUseCase)
+	authMiddleware := middleware.NewAuthMiddleware(s.userUseCase)
 
 	// ========== Healthcheck ========== //
 

@@ -8,9 +8,9 @@ import (
 type UserStatus uint32
 
 const (
-	UserStatusInvalid UserStatus = 0
-	UserStatusNormal  UserStatus = 1
-	UserStatusDeleted UserStatus = 2
+	UserStatusInvalid UserStatus = iota
+	UserStatusNormal
+	UserStatusDeleted
 )
 
 var UserStatuses = map[uint32]string{

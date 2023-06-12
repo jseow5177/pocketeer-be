@@ -14,10 +14,24 @@ type CustomClaims struct {
 	UserID *string `json:"user_id,omitempty"`
 }
 
+func (cc *CustomClaims) GetUserID() string {
+	if cc != nil && cc.UserID != nil {
+		return *cc.UserID
+	}
+	return ""
+}
+
 type claims struct {
 	*CustomClaims
 	jwt.RegisteredClaims
 }
+
+type TokenType uint32
+
+const (
+	TokenTypeAccess TokenType = iota
+	TokenTypeRefresh
+)
 
 type Token struct {
 	claims    *CustomClaims
