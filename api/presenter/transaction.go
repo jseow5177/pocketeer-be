@@ -10,7 +10,7 @@ import (
 type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
-	Amount          *float64  `json:"amount,omitempty"`
+	Amount          *string   `json:"amount,omitempty"`
 	Note            *string   `json:"note,omitempty"`
 	TransactionType *uint32   `json:"transaction_type,omitempty"`
 	TransactionTime *uint64   `json:"transaction_time,omitempty"`
@@ -32,11 +32,11 @@ func (t *Transaction) GetCategory() *Category {
 	return nil
 }
 
-func (t *Transaction) GetAmount() float64 {
+func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
 	}
-	return 0
+	return ""
 }
 
 func (t *Transaction) GetNote() string {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
 	"github.com/jseow5177/pockteer-be/usecase/user"
@@ -44,7 +45,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 		if err != nil {
 			// TODO: Return NotAuthenticated only when user is not found or token is invalid
 			// Else, return 500
-			httputil.ReturnServerResponse(w, nil, ErrUserNotAuthenticated)
+			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrUserNotAuthenticated))
 			return
 		}
 
