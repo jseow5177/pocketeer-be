@@ -35,7 +35,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 		accessToken := am.stripBearerPrefix(authHeader)
 
 		if accessToken == "" {
-			httputil.ReturnServerResponse(w, nil, ErrUserNotAuthenticated)
+			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrUserNotAuthenticated))
 			return
 		}
 
