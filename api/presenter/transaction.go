@@ -195,6 +195,7 @@ func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionRespo
 
 type GetTransactionsRequest struct {
 	CategoryID      *string       `json:"category_id,omitempty"`
+	AccountID       *string       `json:"account_id,omitempty"`
 	TransactionType *uint32       `json:"transaction_type,omitempty"`
 	TransactionTime *UInt64Filter `json:"transaction_time,omitempty"`
 	Paging          *Paging       `json:"paging,omitempty"`
@@ -203,6 +204,13 @@ type GetTransactionsRequest struct {
 func (m *GetTransactionsRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetTransactionsRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
 	}
 	return ""
 }
@@ -250,6 +258,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 	return &transaction.GetTransactionsRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
+		AccountID:       m.AccountID,
 		TransactionType: m.TransactionType,
 		Paging: &common.Paging{
 			Limit: paging.Limit,

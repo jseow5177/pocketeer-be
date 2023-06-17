@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -11,6 +12,7 @@ import (
 	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -65,13 +67,28 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 }
 
 func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
-	var c *entity.Category
+	var (
+		cMu  sync.RWMutex
+		acMu sync.RWMutex
+
+		categories = make(map[string]*entity.Category)
+		accounts   = make(map[string]*entity.Account)
+	)
+
 	if req.CategoryID != nil {
 		cRes, err := uc.categoryUseCase.GetCategory(ctx, req.ToGetCategoryRequest())
 		if err != nil {
 			return nil, err
 		}
-		c = cRes.Category
+		categories[req.GetCategoryID()] = cRes.Category
+	}
+
+	if req.AccountID != nil {
+		acRes, err := uc.accountUseCase.GetAccount(ctx, req.ToGetAccountRequest())
+		if err != nil {
+			return nil, err
+		}
+		accounts[req.GetAccountID()] = acRes.Account
 	}
 
 	tf := req.ToTransactionFilter()
@@ -82,33 +99,90 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	}
 
 	ucts := make([]*Transaction, len(ts))
-	if c != nil {
-		for i, t := range ts {
-			ucts[i] = &Transaction{
-				Transaction: t,
-				Category:    c,
-			}
+	for i := 0; i < len(ts); i++ {
+		ucts[i] = &Transaction{
+			Transaction: ts[i],
 		}
-	} else {
-		if err := util.ParallelizeWork(ctx, len(ts), 50, func(ctx context.Context, i int) error {
+	}
+
+	g := new(errgroup.Group)
+
+	// set category
+	g.Go(func() error {
+		return util.ParallelizeWork(ctx, len(ts), 50, func(ctx context.Context, i int) error {
 			t := ts[i]
-			c, err := uc.categoryUseCase.GetCategory(ctx, &category.GetCategoryRequest{
-				UserID:     req.UserID,
-				CategoryID: t.CategoryID,
-			})
-			if err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to get category of transaction, transactionID: %v, err: %v",
-					t.GetTransactionID(), err)
-				return err
+
+			// check memory cache for category
+			cMu.RLock()
+			c, ok := categories[t.GetCategoryID()]
+			if ok {
+				ucts[i].Category = c
+				cMu.RUnlock()
+				return nil
 			}
-			ucts[i] = &Transaction{
-				Transaction: t,
-				Category:    c.Category,
+			cMu.RUnlock()
+
+			// if not in memory cache, fetch category from repo and cache it
+			cMu.Lock()
+			if c == nil {
+				cRes, err := uc.categoryUseCase.GetCategory(ctx, &category.GetCategoryRequest{
+					UserID:     req.UserID,
+					CategoryID: t.CategoryID,
+				})
+				if err != nil {
+					log.Ctx(ctx).Error().Msgf("fail to get category of transaction, transactionID: %v, err: %v",
+						t.GetTransactionID(), err)
+					return err
+				}
+
+				ucts[i].Category = cRes.Category
+				categories[t.GetCategoryID()] = cRes.Category
 			}
+			cMu.Unlock()
+
 			return nil
-		}); err != nil {
-			return nil, err
-		}
+		})
+	})
+
+	// set account
+	g.Go(func() error {
+		return util.ParallelizeWork(ctx, len(ts), 50, func(ctx context.Context, i int) error {
+			t := ts[i]
+
+			// check memory cache for account
+			acMu.RLock()
+			ac, ok := accounts[t.GetAccountID()]
+			if ok {
+				ucts[i].Account = ac
+				acMu.RUnlock()
+				return nil
+			}
+			acMu.RUnlock()
+
+			// if not in memory cache, fetch account from repo and cache it
+			acMu.Lock()
+			if ac == nil {
+				acRes, err := uc.accountUseCase.GetAccount(ctx, &account.GetAccountRequest{
+					UserID:    req.UserID,
+					AccountID: t.AccountID,
+				})
+				if err != nil {
+					log.Ctx(ctx).Error().Msgf("fail to get account of transaction, transactionID: %v, err: %v",
+						t.GetTransactionID(), err)
+					return err
+				}
+
+				ucts[i].Account = acRes.Account
+				accounts[t.GetAccountID()] = acRes.Account
+			}
+			acMu.Unlock()
+
+			return nil
+		})
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	return &GetTransactionsResponse{
@@ -129,6 +203,11 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, ErrMismatchTransactionType
 	}
 
+	acRes, err := uc.accountUseCase.GetAccount(ctx, req.ToGetAccountRequest())
+	if err != nil {
+		return nil, err
+	}
+
 	id, err := uc.transactionRepo.Create(ctx, t)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new transaction to repo, err: %v", err)
@@ -141,6 +220,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		Transaction: &Transaction{
 			Transaction: t,
 			Category:    cRes.Category,
+			Account:     acRes.Account,
 		},
 	}, nil
 }

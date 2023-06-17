@@ -144,6 +144,7 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 	t := &entity.Transaction{
 		UserID:          m.UserID,
 		CategoryID:      m.CategoryID,
+		AccountID:       m.AccountID,
 		Note:            m.Note,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
@@ -161,6 +162,13 @@ func (m *CreateTransactionRequest) ToGetCategoryRequest() *category.GetCategoryR
 	}
 }
 
+func (m *CreateTransactionRequest) ToGetAccountRequest() *account.GetAccountRequest {
+	return &account.GetAccountRequest{
+		UserID:    m.UserID,
+		AccountID: m.AccountID,
+	}
+}
+
 type CreateTransactionResponse struct {
 	Transaction *Transaction
 }
@@ -174,6 +182,7 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 
 type GetTransactionsRequest struct {
 	UserID          *string
+	AccountID       *string
 	CategoryID      *string
 	TransactionType *uint32
 	TransactionTime *common.UInt64Filter
@@ -183,6 +192,13 @@ type GetTransactionsRequest struct {
 func (m *GetTransactionsRequest) GetUserID() string {
 	if m != nil && m.UserID != nil {
 		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetTransactionsRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
 	}
 	return ""
 }
@@ -221,6 +237,12 @@ func (m *GetTransactionsRequest) ToGetCategoryRequest() *category.GetCategoryReq
 	}
 }
 
+func (m *GetTransactionsRequest) ToGetAccountRequest() *account.GetAccountRequest {
+	return &account.GetAccountRequest{
+		AccountID: m.AccountID,
+	}
+}
+
 func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
@@ -234,6 +256,7 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 
 	return &repo.TransactionFilter{
 		UserID:             m.UserID,
+		AccountID:          m.AccountID,
 		CategoryID:         m.CategoryID,
 		TransactionType:    m.TransactionType,
 		TransactionTimeGte: tt.Gte,

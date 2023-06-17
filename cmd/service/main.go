@@ -99,12 +99,12 @@ func (s *server) Start() error {
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(s.accountRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.accountUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
-	s.accountUseCase = acuc.NewAccountUseCase(s.accountRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
