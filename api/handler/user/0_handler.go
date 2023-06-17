@@ -8,6 +8,6 @@ type userHandler struct {
 
 func NewUserHandler(userUseCase user.UseCase) *userHandler {
 	return &userHandler{
-		userUseCase: userUseCase,
+		userUseCase,
 	}
 }

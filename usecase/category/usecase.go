@@ -15,7 +15,7 @@ type categoryUseCase struct {
 
 func NewCategoryUseCase(categoryRepo repo.CategoryRepo) UseCase {
 	return &categoryUseCase{
-		categoryRepo: categoryRepo,
+		categoryRepo,
 	}
 }
 

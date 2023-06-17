@@ -9,12 +9,20 @@ import (
 )
 
 var (
+	ErrInvalidAccountType      = errors.New("invalid account type")
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
 	ErrInvalidCategoryType     = errors.New("invalid category type")
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
 	ErrInvalidAmount           = errors.New("invalid amount")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
 )
+
+func CheckAccountType(accountType uint32) error {
+	if _, ok := AccountTypes[accountType]; !ok {
+		return ErrInvalidAccountType
+	}
+	return nil
+}
 
 func CheckCategoryType(categoryType uint32) error {
 	if err := CheckTransactionType(categoryType); err != nil {
@@ -37,8 +45,8 @@ func CheckBudgetType(budgetType uint32) error {
 	return ErrInvalidTransactionType
 }
 
-func CheckAmount(amount string) error {
-	if err := goutil.IsFloat(amount, config.AmountDecimalPlaces); err != nil {
+func CheckMonetaryStr(str string) error {
+	if err := goutil.IsFloat(str, config.AmountDecimalPlaces); err != nil {
 		return ErrInvalidAmount
 	}
 	return nil

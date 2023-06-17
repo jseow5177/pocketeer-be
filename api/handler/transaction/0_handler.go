@@ -10,6 +10,6 @@ type transactionHandler struct {
 
 func NewTransactionHandler(transactionUseCase transaction.UseCase) *transactionHandler {
 	return &transactionHandler{
-		transactionUseCase: transactionUseCase,
+		transactionUseCase,
 	}
 }

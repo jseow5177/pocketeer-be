@@ -1,5 +1,10 @@
 package entity
 
+import (
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
+)
+
 type AccountStatus uint32
 
 const (
@@ -32,14 +37,25 @@ const (
 	DebtMortgage
 )
 
+var AccountTypes = map[uint32]string{
+	uint32(AssetCash):        "cash",
+	uint32(AssetBankAccount): "bank account",
+	uint32(AssetInvestment):  "investment",
+	uint32(DebtCreditCard):   "credit card",
+	uint32(DebtLoan):         "loan",
+	uint32(DebtMortgage):     "mortgage",
+}
+
 type Account struct {
-	UserID      *string
-	AccountID   *string
-	AccountName *string
-	Balance     *float64
-	AccountType *uint32
-	CreateTime  *uint64
-	UpdateTime  *uint64
+	UserID        *string
+	AccountID     *string
+	AccountName   *string
+	Balance       *float64
+	AccountType   *uint32
+	AccountStatus *uint32
+	Note          *string
+	CreateTime    *uint64
+	UpdateTime    *uint64
 }
 
 func (ac *Account) GetUserID() string {
@@ -70,11 +86,25 @@ func (ac *Account) GetBalance() float64 {
 	return 0
 }
 
+func (ac *Account) GetAccountStatus() uint32 {
+	if ac != nil && ac.AccountStatus != nil {
+		return *ac.AccountStatus
+	}
+	return 0
+}
+
 func (ac *Account) GetAccountType() uint32 {
 	if ac != nil && ac.AccountType != nil {
 		return *ac.AccountType
 	}
 	return 0
+}
+
+func (ac *Account) GetNote() string {
+	if ac != nil && ac.Note != nil {
+		return *ac.Note
+	}
+	return ""
 }
 
 func (ac *Account) GetCreateTime() uint64 {
@@ -97,4 +127,8 @@ func (ac *Account) IsAccountTypeAsset() bool {
 
 func (ac *Account) IsAccountTypeDebt() bool {
 	return (ac.GetAccountType() >> AccountTypeBitShift & uint32(AccountTypeDebt)) > 0
+}
+
+func (ac *Account) SetBalance(balance string) {
+	ac.Balance = goutil.Float64(util.MonetaryStrToFloat(balance))
 }

@@ -24,8 +24,8 @@ type transactionUseCase struct {
 
 func NewTransactionUseCase(categoryUseCase category.UseCase, transactionRepo repo.TransactionRepo) UseCase {
 	return &transactionUseCase{
-		categoryUseCase: categoryUseCase,
-		transactionRepo: transactionRepo,
+		categoryUseCase,
+		transactionRepo,
 	}
 }
 

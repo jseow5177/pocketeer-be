@@ -17,7 +17,7 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 	},
 	"amount": &validator.String{
 		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckAmount},
+		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"transaction_type": &validator.UInt32{
 		Optional:   false,

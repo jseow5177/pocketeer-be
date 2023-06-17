@@ -20,7 +20,7 @@ var SetBudgetValidator = validator.MustForm(map[string]validator.Validator{
 	},
 	"budget_amount": &validator.String{
 		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckAmount},
+		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"category_ids": &validator.Slice{
 		MinLen: 1,

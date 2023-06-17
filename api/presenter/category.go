@@ -184,7 +184,7 @@ type GetCategoryRequest struct {
 	CategoryID *string `json:"category_id,omitempty"`
 }
 
-func (m *GetCategoryRequest) GetCatID() string {
+func (m *GetCategoryRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
 	}

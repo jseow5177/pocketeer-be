@@ -9,6 +9,9 @@ const (
 	PathLogin   = PathV1Prefix + "log_in"
 	PathGetUser = PathV1Prefix + "get_user"
 
+	PathCreateAccount = PathV1Prefix + "create_account"
+	PathGetAccount    = PathV1Prefix + "get_account"
+
 	PathCreateCategory = PathV1Prefix + "create_category"
 	PathUpdateCategory = PathV1Prefix + "update_category"
 	PathGetCategory    = PathV1Prefix + "get_category"
@@ -35,6 +38,7 @@ const (
 	MinPagingPage = 1
 
 	MaxTransactionNoteLength = 120
+	MaxAccountNoteLength     = 60
 
 	AmountDecimalPlaces = 2
 

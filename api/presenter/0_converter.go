@@ -63,59 +63,94 @@ func toCategories(
 	return categories
 }
 
-func toCategory(
-	category *entity.Category,
-) *Category {
+func toCategory(category *entity.Category) *Category {
 	if category == nil {
 		return nil
 	}
 
 	return &Category{
-		CategoryID:   goutil.String(category.GetCategoryID()),
-		CategoryName: goutil.String(category.GetCategoryName()),
-		CategoryType: goutil.Uint32(category.GetCategoryType()),
-		CreateTime:   goutil.Uint64(category.GetCreateTime()),
-		UpdateTime:   goutil.Uint64(category.GetUpdateTime()),
+		CategoryID:   category.CategoryID,
+		CategoryName: category.CategoryName,
+		CategoryType: category.CategoryType,
+		CreateTime:   category.CreateTime,
+		UpdateTime:   category.UpdateTime,
 	}
 }
 
-func toUser(
-	user *entity.User,
-) *User {
+func toUser(user *entity.User) *User {
 	if user == nil {
 		return nil
 	}
 
 	return &User{
-		UserID:     goutil.String(user.GetUserID()),
-		Username:   goutil.String(user.GetUsername()),
-		UserStatus: goutil.Uint32(user.GetUserStatus()),
-		CreateTime: goutil.Uint64(user.GetCreateTime()),
-		UpdateTime: goutil.Uint64(user.GetUpdateTime()),
+		UserID:     user.UserID,
+		Username:   user.Username,
+		UserStatus: user.UserStatus,
+		CreateTime: user.CreateTime,
+		UpdateTime: user.UpdateTime,
 	}
 }
 
 func toTransaction(transaction *entity.Transaction, category *entity.Category) *Transaction {
+	if transaction == nil {
+		return nil
+	}
+
+	var ammount *string
+	if transaction.Amount != nil {
+		ammount = goutil.String(fmt.Sprint(transaction.GetAmount()))
+	}
+
 	return &Transaction{
-		TransactionID:   goutil.String(transaction.GetTransactionID()),
+		TransactionID:   transaction.TransactionID,
 		Category:        toCategory(category),
-		Amount:          goutil.String(fmt.Sprint(transaction.GetAmount())),
-		Note:            goutil.String(transaction.GetNote()),
-		TransactionType: goutil.Uint32(transaction.GetTransactionType()),
-		TransactionTime: goutil.Uint64(transaction.GetTransactionTime()),
-		CreateTime:      goutil.Uint64(transaction.GetCreateTime()),
-		UpdateTime:      goutil.Uint64(transaction.GetUpdateTime()),
+		Amount:          ammount,
+		Note:            transaction.Note,
+		TransactionType: transaction.TransactionType,
+		TransactionTime: transaction.TransactionTime,
+		CreateTime:      transaction.CreateTime,
+		UpdateTime:      transaction.UpdateTime,
+	}
+}
+
+func toAccount(account *entity.Account) *Account {
+	if account == nil {
+		return nil
+	}
+
+	var balance *string
+	if account.Balance != nil {
+		balance = goutil.String(fmt.Sprint(account.GetBalance()))
+	}
+
+	return &Account{
+		AccountID:     account.AccountID,
+		AccountName:   account.AccountName,
+		Balance:       balance,
+		AccountType:   account.AccountType,
+		AccountStatus: account.AccountStatus,
+		Note:          account.Note,
+		CreateTime:    account.CreateTime,
+		UpdateTime:    account.UpdateTime,
 	}
 }
 
 func toPaging(paging *common.Paging) *Paging {
+	if paging == nil {
+		return nil
+	}
+
 	return &Paging{
-		Limit: goutil.Uint32(paging.GetLimit()),
-		Page:  goutil.Uint32(paging.GetPage()),
+		Limit: paging.Limit,
+		Page:  paging.Page,
 	}
 }
 
 func toAggr(aggr *transaction.Aggr) *Aggr {
+	if aggr == nil {
+		return nil
+	}
+
 	return &Aggr{
 		Sum: aggr.Sum,
 	}

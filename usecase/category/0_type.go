@@ -27,7 +27,7 @@ func (m *GetCategoryRequest) GetUserID() string {
 	return ""
 }
 
-func (m *GetCategoryRequest) GetCatID() string {
+func (m *GetCategoryRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
 	}

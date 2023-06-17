@@ -139,8 +139,8 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *CreateTransactionResponse) Set(useCaseReq *transaction.CreateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseReq.Transaction, useCaseReq.Category)
+func (m *CreateTransactionResponse) Set(useCaseRes *transaction.CreateTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
 }
 
 type GetTransactionRequest struct {
@@ -172,8 +172,8 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *GetTransactionResponse) Set(useCaseReq *transaction.GetTransactionResponse) {
-	m.Transaction = toTransaction(useCaseReq.Transaction, useCaseReq.Category)
+func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
 }
 
 type GetTransactionsRequest struct {

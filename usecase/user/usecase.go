@@ -23,8 +23,8 @@ type userUseCase struct {
 
 func NewUserUseCase(userRepo repo.UserRepo, tokenUseCase token.UseCase) UseCase {
 	return &userUseCase{
-		userRepo:     userRepo,
-		tokenUseCase: tokenUseCase,
+		userRepo,
+		tokenUseCase,
 	}
 }
 

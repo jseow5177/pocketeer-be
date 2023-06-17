@@ -19,8 +19,8 @@ func NewAggrUseCase(
 	categoryUseCase category.UseCase,
 ) UseCase {
 	return &aggrUseCase{
-		budgetUseCase:   budgetUseCase,
-		categoryUseCase: categoryUseCase,
+		budgetUseCase,
+		categoryUseCase,
 	}
 }
 

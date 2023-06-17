@@ -10,6 +10,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
 	"github.com/jseow5177/pockteer-be/usecase/user"
 	"github.com/jseow5177/pockteer-be/util"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -35,6 +36,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 		accessToken := am.stripBearerPrefix(authHeader)
 
 		if accessToken == "" {
+			log.Ctx(ctx).Error().Msg("token is empty")
 			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrUserNotAuthenticated))
 			return
 		}
