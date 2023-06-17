@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/account"
 	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
@@ -19,12 +20,18 @@ var (
 
 type transactionUseCase struct {
 	categoryUseCase category.UseCase
+	accountUseCase  account.UseCase
 	transactionRepo repo.TransactionRepo
 }
 
-func NewTransactionUseCase(categoryUseCase category.UseCase, transactionRepo repo.TransactionRepo) UseCase {
+func NewTransactionUseCase(
+	categoryUseCase category.UseCase,
+	accountUseCase account.UseCase,
+	transactionRepo repo.TransactionRepo,
+) UseCase {
 	return &transactionUseCase{
 		categoryUseCase,
+		accountUseCase,
 		transactionRepo,
 	}
 }
@@ -42,10 +49,17 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
+	acRes, err := uc.accountUseCase.GetAccount(ctx, req.ToGetAccountRequest(t.GetAccountID()))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
 	return &GetTransactionResponse{
-		TransactionWithCategory: &TransactionWithCategory{
+		Transaction: &Transaction{
 			Transaction: t,
 			Category:    cRes.Category,
+			Account:     acRes.Account,
 		},
 	}, nil
 }
@@ -67,10 +81,10 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		return nil, err
 	}
 
-	tswc := make([]*TransactionWithCategory, len(ts))
+	ucts := make([]*Transaction, len(ts))
 	if c != nil {
 		for i, t := range ts {
-			tswc[i] = &TransactionWithCategory{
+			ucts[i] = &Transaction{
 				Transaction: t,
 				Category:    c,
 			}
@@ -87,7 +101,7 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 					t.GetTransactionID(), err)
 				return err
 			}
-			tswc[i] = &TransactionWithCategory{
+			ucts[i] = &Transaction{
 				Transaction: t,
 				Category:    c.Category,
 			}
@@ -98,8 +112,8 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	}
 
 	return &GetTransactionsResponse{
-		TransactionsWithCategory: tswc,
-		Paging:                   req.Paging,
+		Transactions: ucts,
+		Paging:       req.Paging,
 	}, nil
 }
 
@@ -124,7 +138,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	t.TransactionID = goutil.String(id)
 
 	return &CreateTransactionResponse{
-		TransactionWithCategory: &TransactionWithCategory{
+		Transaction: &Transaction{
 			Transaction: t,
 			Category:    cRes.Category,
 		},
@@ -136,14 +150,14 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if err != nil {
 		return nil, err
 	}
-	twc := tRes.TransactionWithCategory
+	uct := tRes.Transaction
 
-	nt := uc.getTransactionUpdates(tRes.Transaction, req.ToTransactionEntity())
+	nt := uc.getTransactionUpdates(uct.Transaction, req.ToTransactionEntity())
 	if nt == nil {
 		// no updates
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
-			twc,
+			uct,
 		}, nil
 	}
 
@@ -153,7 +167,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		if err != nil {
 			return nil, err
 		}
-		twc.Category = cRes.Category
+		uct.Category = cRes.Category
 	}
 
 	tf := req.ToTransactionFilter()
@@ -163,10 +177,10 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	}
 
 	// merge
-	goutil.MergeWithPtrFields(twc.Transaction, nt)
+	goutil.MergeWithPtrFields(uct.Transaction, nt)
 
 	return &UpdateTransactionResponse{
-		twc,
+		uct,
 	}, nil
 }
 

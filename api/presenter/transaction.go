@@ -10,6 +10,7 @@ import (
 type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
+	Account         *Account  `json:"account,omitempty"`
 	Amount          *string   `json:"amount,omitempty"`
 	Note            *string   `json:"note,omitempty"`
 	TransactionType *uint32   `json:"transaction_type,omitempty"`
@@ -28,6 +29,13 @@ func (t *Transaction) GetTransactionID() string {
 func (t *Transaction) GetCategory() *Category {
 	if t != nil && t.Category != nil {
 		return t.Category
+	}
+	return nil
+}
+
+func (t *Transaction) GetAccount() *Account {
+	if t != nil && t.Account != nil {
+		return t.Account
 	}
 	return nil
 }
@@ -76,10 +84,18 @@ func (t *Transaction) GetUpdateTime() uint64 {
 
 type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
+	AccountID       *string `json:"account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
 	Note            *string `json:"note,omitempty"`
+}
+
+func (m *CreateTransactionRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
 }
 
 func (m *CreateTransactionRequest) GetCategoryID() string {
@@ -121,6 +137,7 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
+		AccountID:       m.AccountID,
 		Amount:          m.Amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
@@ -140,7 +157,7 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 }
 
 func (m *CreateTransactionResponse) Set(useCaseRes *transaction.CreateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
+	m.Transaction = toTransaction(useCaseRes.Transaction)
 }
 
 type GetTransactionRequest struct {
@@ -173,7 +190,7 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 }
 
 func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category)
+	m.Transaction = toTransaction(useCaseRes.Transaction)
 }
 
 type GetTransactionsRequest struct {
@@ -266,8 +283,8 @@ func (m *GetTransactionsResponse) GetPaging() *Paging {
 
 func (m *GetTransactionsResponse) Set(useCaseRes *transaction.GetTransactionsResponse) {
 	ts := make([]*Transaction, 0)
-	for _, twc := range useCaseRes.TransactionsWithCategory {
-		ts = append(ts, toTransaction(twc.Transaction, twc.Category))
+	for _, uct := range useCaseRes.Transactions {
+		ts = append(ts, toTransaction(uct))
 	}
 	m.Transactions = ts
 	m.Paging = toPaging(useCaseRes.Paging)
@@ -348,7 +365,7 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 }
 
 func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.TransactionWithCategory.Transaction, useCaseRes.TransactionWithCategory.Category)
+	m.Transaction = toTransaction(useCaseRes.Transaction)
 }
 
 type AggrTransactionsRequest struct {

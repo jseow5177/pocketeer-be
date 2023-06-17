@@ -91,7 +91,7 @@ func toUser(user *entity.User) *User {
 	}
 }
 
-func toTransaction(transaction *entity.Transaction, category *entity.Category) *Transaction {
+func toTransaction(transaction *transaction.Transaction) *Transaction {
 	if transaction == nil {
 		return nil
 	}
@@ -103,7 +103,8 @@ func toTransaction(transaction *entity.Transaction, category *entity.Category) *
 
 	return &Transaction{
 		TransactionID:   transaction.TransactionID,
-		Category:        toCategory(category),
+		Category:        toCategory(transaction.Category),
+		Account:         toAccount(transaction.Account),
 		Amount:          ammount,
 		Note:            transaction.Note,
 		TransactionType: transaction.TransactionType,

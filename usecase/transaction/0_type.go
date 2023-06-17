@@ -8,6 +8,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/account"
 	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 )
@@ -22,9 +23,11 @@ type UseCase interface {
 	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
 
-type TransactionWithCategory struct {
+type Transaction struct {
 	*entity.Transaction
-	*entity.Category
+
+	Category *entity.Category
+	Account  *entity.Account
 }
 
 type GetTransactionRequest struct {
@@ -60,19 +63,27 @@ func (m *GetTransactionRequest) ToGetCategoryRequest(categoryID string) *categor
 	}
 }
 
-type GetTransactionResponse struct {
-	*TransactionWithCategory
+func (m *GetTransactionRequest) ToGetAccountRequest(accountID string) *account.GetAccountRequest {
+	return &account.GetAccountRequest{
+		UserID:    m.UserID,
+		AccountID: goutil.String(accountID),
+	}
 }
 
-func (m *GetTransactionResponse) GetTransactionWithCategory() *TransactionWithCategory {
-	if m != nil && m.TransactionWithCategory != nil {
-		return m.TransactionWithCategory
+type GetTransactionResponse struct {
+	Transaction *Transaction
+}
+
+func (m *GetTransactionResponse) GetTransaction() *Transaction {
+	if m != nil && m.Transaction != nil {
+		return m.Transaction
 	}
 	return nil
 }
 
 type CreateTransactionRequest struct {
 	UserID          *string
+	AccountID       *string
 	CategoryID      *string
 	Amount          *string
 	Note            *string
@@ -90,6 +101,13 @@ func (m *CreateTransactionRequest) GetUserID() string {
 func (m *CreateTransactionRequest) GetCategoryID() string {
 	if m != nil && m.CategoryID != nil {
 		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *CreateTransactionRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
 	}
 	return ""
 }
@@ -144,12 +162,12 @@ func (m *CreateTransactionRequest) ToGetCategoryRequest() *category.GetCategoryR
 }
 
 type CreateTransactionResponse struct {
-	*TransactionWithCategory
+	Transaction *Transaction
 }
 
-func (m *CreateTransactionResponse) GetTransactionWithCategory() *TransactionWithCategory {
-	if m != nil && m.TransactionWithCategory != nil {
-		return m.TransactionWithCategory
+func (m *CreateTransactionResponse) GetTransaction() *Transaction {
+	if m != nil && m.Transaction != nil {
+		return m.Transaction
 	}
 	return nil
 }
@@ -238,13 +256,13 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 type GetTransactionsResponse struct {
-	TransactionsWithCategory []*TransactionWithCategory
-	Paging                   *common.Paging
+	Transactions []*Transaction
+	Paging       *common.Paging
 }
 
-func (m *GetTransactionsResponse) GetTransactionsWithCategory() []*TransactionWithCategory {
-	if m != nil && m.TransactionsWithCategory != nil {
-		return m.TransactionsWithCategory
+func (m *GetTransactionsResponse) GetTransactions() []*Transaction {
+	if m != nil && m.Transactions != nil {
+		return m.Transactions
 	}
 	return nil
 }
@@ -348,12 +366,12 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 }
 
 type UpdateTransactionResponse struct {
-	*TransactionWithCategory
+	Transaction *Transaction
 }
 
-func (m *UpdateTransactionResponse) GetTransactionWithCategory() *TransactionWithCategory {
-	if m != nil && m.TransactionWithCategory != nil {
-		return m.TransactionWithCategory
+func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
+	if m != nil && m.Transaction != nil {
+		return m.Transaction
 	}
 	return nil
 }

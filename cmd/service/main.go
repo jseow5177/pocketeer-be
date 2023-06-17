@@ -99,7 +99,7 @@ func (s *server) Start() error {
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
-	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
+	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.accountUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
