@@ -198,7 +198,7 @@ func (e *Budget) setYearlyBudget(
 ) {
 	date := rangeStartDate
 
-	for date.Before(rangeEndDate) {
+	for date.Equal(rangeEndDate) || date.Before(rangeEndDate) {
 		year, _ := date.Year(), date.Month()
 		e.setBudgetBreakdown(budgetAmount, year, 0)
 
