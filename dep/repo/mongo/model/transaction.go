@@ -10,6 +10,7 @@ type Transaction struct {
 	TransactionID   primitive.ObjectID `bson:"_id,omitempty"`
 	UserID          *string            `bson:"user_id,omitempty"`
 	CategoryID      *string            `bson:"category_id,omitempty"`
+	AccountID       *string            `bson:"account_id,omitempty"`
 	Amount          *float64           `bson:"amount,omitempty"`
 	Note            *string            `bson:"note,omitempty"`
 	TransactionType *uint32            `bson:"transaction_type,omitempty"`
@@ -28,6 +29,7 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 		TransactionID:   objID,
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
+		AccountID:       t.AccountID,
 		Amount:          t.Amount,
 		Note:            t.Note,
 		TransactionType: t.TransactionType,
@@ -42,6 +44,7 @@ func ToTransactionEntity(t *Transaction) *entity.Transaction {
 		TransactionID:   goutil.String(t.GetTransactionID()),
 		UserID:          t.UserID,
 		CategoryID:      t.CategoryID,
+		AccountID:       t.AccountID,
 		Note:            t.Note,
 		Amount:          t.Amount,
 		TransactionType: t.TransactionType,

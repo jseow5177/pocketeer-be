@@ -8,6 +8,6 @@ type categoryHandler struct {
 
 func NewCategoryHandler(categoryUseCase category.UseCase) *categoryHandler {
 	return &categoryHandler{
-		categoryUseCase: categoryUseCase,
+		categoryUseCase,
 	}
 }

@@ -18,8 +18,8 @@ func NewBudgetUseCase(
 	categoryRepo repo.CategoryRepo,
 ) UseCase {
 	return &budgetUseCase{
-		budgetRepo:   budgetRepo,
-		categoryRepo: categoryRepo,
+		budgetRepo,
+		categoryRepo,
 	}
 }
 

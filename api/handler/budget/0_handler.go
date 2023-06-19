@@ -12,7 +12,7 @@ type budgetHandler struct {
 
 func NewBudgetHandler(budgetUseCase budget.UseCase, aggrUsecase aggr.UseCase) *budgetHandler {
 	return &budgetHandler{
-		budgetUseCase: budgetUseCase,
-		aggrUsecase:   aggrUsecase,
+		budgetUseCase,
+		aggrUsecase,
 	}
 }

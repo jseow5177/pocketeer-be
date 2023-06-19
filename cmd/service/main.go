@@ -20,11 +20,13 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/router"
 	"github.com/jseow5177/pockteer-be/pkg/service"
 
+	ach "github.com/jseow5177/pockteer-be/api/handler/account"
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
+	acuc "github.com/jseow5177/pockteer-be/usecase/account"
 	auc "github.com/jseow5177/pockteer-be/usecase/aggr"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
@@ -42,6 +44,7 @@ type server struct {
 	transactionRepo repo.TransactionRepo
 	budgetRepo      repo.BudgetRepo
 	userRepo        repo.UserRepo
+	accountRepo     repo.AccountRepo
 
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
@@ -49,6 +52,7 @@ type server struct {
 	aggrUseCase        auc.UseCase
 	userUseCase        uuc.UseCase
 	tokenUseCase       ttuc.UseCase
+	accountUseCase     acuc.UseCase
 }
 
 func main() {
@@ -91,10 +95,12 @@ func (s *server) Start() error {
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
 	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
 	s.userRepo = mongo.NewUserMongo(s.mongo)
+	s.accountRepo = mongo.NewAccountMongo(s.mongo)
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
-	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.transactionRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(s.accountRepo)
+	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.accountUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
@@ -216,6 +222,40 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: ch.GetCategoriesValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return categoryHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// ========== Account ========== //
+
+	accountHandler := ach.NewAccountHandler(s.accountUseCase)
+
+	// create account
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateAccount,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateAccountRequest),
+			Res:       new(presenter.CreateAccountResponse),
+			Validator: ach.CreateAccountValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.CreateAccount(ctx, req.(*presenter.CreateAccountRequest), res.(*presenter.CreateAccountResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get account
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAccount,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAccountRequest),
+			Res:       new(presenter.GetAccountResponse),
+			Validator: ach.GetAccountValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.GetAccount(ctx, req.(*presenter.GetAccountRequest), res.(*presenter.GetAccountResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

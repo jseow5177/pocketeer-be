@@ -24,6 +24,7 @@ type TransactionRepo interface {
 type TransactionFilter struct {
 	UserID             *string  `filter:"user_id"`
 	TransactionID      *string  `filter:"_id"`
+	AccountID          *string  `filter:"account_id"`
 	CategoryID         *string  `filter:"category_id"`
 	CategoryIDs        []string `filter:"category_id__in"`
 	TransactionType    *uint32  `filter:"transaction_type"`
@@ -43,6 +44,13 @@ func (f *TransactionFilter) GetUserID() string {
 func (f *TransactionFilter) GetTransactionID() string {
 	if f != nil && f.TransactionID != nil {
 		return *f.TransactionID
+	}
+	return ""
+}
+
+func (f *TransactionFilter) GetAccountID() string {
+	if f != nil && f.AccountID != nil {
+		return *f.AccountID
 	}
 	return ""
 }
