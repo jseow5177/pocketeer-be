@@ -49,10 +49,10 @@ type server struct {
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
 	budgetUseCase      buc.UseCase
-	aggrUseCase        auc.UseCase
 	userUseCase        uuc.UseCase
 	tokenUseCase       ttuc.UseCase
 	accountUseCase     acuc.UseCase
+	aggrUseCase        auc.UseCase
 }
 
 func main() {
@@ -102,9 +102,14 @@ func (s *server) Start() error {
 	s.accountUseCase = acuc.NewAccountUseCase(s.accountRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.accountUseCase, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
-	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
+	s.aggrUseCase = auc.NewAggrUseCase(
+		s.budgetUseCase,
+		s.categoryUseCase,
+		s.accountUseCase,
+		s.transactionUseCase,
+	)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -263,7 +268,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Transaction ========== //
 
-	transactionHandler := th.NewTransactionHandler(s.transactionUseCase)
+	transactionHandler := th.NewTransactionHandler(s.transactionUseCase, s.aggrUseCase)
 
 	// create transaction
 	r.RegisterHttpRoute(&router.HttpRoute{
@@ -389,10 +394,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Budget ========== //
 
-	budgetHandler := bh.NewBudgetHandler(
-		s.budgetUseCase,
-		s.aggrUseCase,
-	)
+	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase, s.aggrUseCase)
 
 	// get budget
 	r.RegisterHttpRoute(&router.HttpRoute{

@@ -91,26 +91,28 @@ func toUser(user *entity.User) *User {
 	}
 }
 
-func toTransaction(transaction *transaction.Transaction) *Transaction {
-	if transaction == nil {
+func toTransaction(t *entity.Transaction, c *entity.Category, ac *entity.Account) *Transaction {
+	if t == nil {
 		return nil
 	}
 
 	var ammount *string
-	if transaction.Amount != nil {
-		ammount = goutil.String(fmt.Sprint(transaction.GetAmount()))
+	if t.Amount != nil {
+		ammount = goutil.String(fmt.Sprint(t.GetAmount()))
 	}
 
 	return &Transaction{
-		TransactionID:   transaction.TransactionID,
-		Category:        toCategory(transaction.Category),
-		Account:         toAccount(transaction.Account),
+		TransactionID:   t.TransactionID,
+		CategoryID:      t.CategoryID,
+		Category:        toCategory(c),
+		AccountID:       t.AccountID,
+		Account:         toAccount(ac),
 		Amount:          ammount,
-		Note:            transaction.Note,
-		TransactionType: transaction.TransactionType,
-		TransactionTime: transaction.TransactionTime,
-		CreateTime:      transaction.CreateTime,
-		UpdateTime:      transaction.UpdateTime,
+		Note:            t.Note,
+		TransactionType: t.TransactionType,
+		TransactionTime: t.TransactionTime,
+		CreateTime:      t.CreateTime,
+		UpdateTime:      t.UpdateTime,
 	}
 }
 

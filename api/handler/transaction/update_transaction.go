@@ -42,7 +42,7 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 func (h *transactionHandler) UpdateTransaction(ctx context.Context, req *presenter.UpdateTransactionRequest, res *presenter.UpdateTransactionResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.transactionUseCase.UpdateTransaction(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.aggrUseCase.UpdateTransaction(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to update transaction, err: %v", err)
 		return err

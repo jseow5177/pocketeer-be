@@ -23,13 +23,6 @@ type UseCase interface {
 	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
 
-type Transaction struct {
-	*entity.Transaction
-
-	Category *entity.Category
-	Account  *entity.Account
-}
-
 type GetTransactionRequest struct {
 	UserID        *string
 	TransactionID *string
@@ -56,25 +49,11 @@ func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 	}
 }
 
-func (m *GetTransactionRequest) ToGetCategoryRequest(categoryID string) *category.GetCategoryRequest {
-	return &category.GetCategoryRequest{
-		UserID:     m.UserID,
-		CategoryID: goutil.String(categoryID),
-	}
-}
-
-func (m *GetTransactionRequest) ToGetAccountRequest(accountID string) *account.GetAccountRequest {
-	return &account.GetAccountRequest{
-		UserID:    m.UserID,
-		AccountID: goutil.String(accountID),
-	}
-}
-
 type GetTransactionResponse struct {
-	Transaction *Transaction
+	Transaction *entity.Transaction
 }
 
-func (m *GetTransactionResponse) GetTransaction() *Transaction {
+func (m *GetTransactionResponse) GetTransaction() *entity.Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
@@ -170,10 +149,10 @@ func (m *CreateTransactionRequest) ToGetAccountRequest() *account.GetAccountRequ
 }
 
 type CreateTransactionResponse struct {
-	Transaction *Transaction
+	Transaction *entity.Transaction
 }
 
-func (m *CreateTransactionResponse) GetTransaction() *Transaction {
+func (m *CreateTransactionResponse) GetTransaction() *entity.Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}
@@ -231,18 +210,6 @@ func (m *GetTransactionsRequest) GetPaging() *common.Paging {
 	return nil
 }
 
-func (m *GetTransactionsRequest) ToGetCategoryRequest() *category.GetCategoryRequest {
-	return &category.GetCategoryRequest{
-		CategoryID: m.CategoryID,
-	}
-}
-
-func (m *GetTransactionsRequest) ToGetAccountRequest() *account.GetAccountRequest {
-	return &account.GetAccountRequest{
-		AccountID: m.AccountID,
-	}
-}
-
 func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
@@ -279,11 +246,11 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 type GetTransactionsResponse struct {
-	Transactions []*Transaction
+	Transactions []*entity.Transaction
 	Paging       *common.Paging
 }
 
-func (m *GetTransactionsResponse) GetTransactions() []*Transaction {
+func (m *GetTransactionsResponse) GetTransactions() []*entity.Transaction {
 	if m != nil && m.Transactions != nil {
 		return m.Transactions
 	}
@@ -389,10 +356,10 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 }
 
 type UpdateTransactionResponse struct {
-	Transaction *Transaction
+	Transaction *entity.Transaction
 }
 
-func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
+func (m *UpdateTransactionResponse) GetTransaction() *entity.Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
 	}

@@ -3,13 +3,16 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/aggr"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
+	CategoryID      *string   `json:"category_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
+	AccountID       *string   `json:"account_id,omitempty"`
 	Account         *Account  `json:"account,omitempty"`
 	Amount          *string   `json:"amount,omitempty"`
 	Note            *string   `json:"note,omitempty"`
@@ -133,8 +136,8 @@ func (m *CreateTransactionRequest) GetNote() string {
 	return ""
 }
 
-func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.CreateTransactionRequest {
-	return &transaction.CreateTransactionRequest{
+func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *aggr.CreateTransactionRequest {
+	return &aggr.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
@@ -156,8 +159,8 @@ func (m *CreateTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *CreateTransactionResponse) Set(useCaseRes *transaction.CreateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction)
+func (m *CreateTransactionResponse) Set(useCaseRes *aggr.CreateTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, nil, nil)
 }
 
 type GetTransactionRequest struct {
@@ -171,8 +174,8 @@ func (m *GetTransactionRequest) GetTransactionID() string {
 	return ""
 }
 
-func (m *GetTransactionRequest) ToUseCaseReq(userID string) *transaction.GetTransactionRequest {
-	return &transaction.GetTransactionRequest{
+func (m *GetTransactionRequest) ToUseCaseReq(userID string) *aggr.GetTransactionRequest {
+	return &aggr.GetTransactionRequest{
 		UserID:        goutil.String(userID),
 		TransactionID: m.TransactionID,
 	}
@@ -189,8 +192,8 @@ func (m *GetTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction)
+func (m *GetTransactionResponse) Set(useCaseRes *aggr.GetTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, useCaseRes.Category, useCaseRes.Account)
 }
 
 type GetTransactionsRequest struct {
@@ -236,7 +239,7 @@ func (m *GetTransactionsRequest) GetPaging() *Paging {
 	return nil
 }
 
-func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTransactionsRequest {
+func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *aggr.GetTransactionsRequest {
 	paging := m.Paging
 	if paging == nil {
 		paging = new(Paging)
@@ -255,7 +258,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 		tt = new(UInt64Filter)
 	}
 
-	return &transaction.GetTransactionsRequest{
+	return &aggr.GetTransactionsRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
@@ -290,10 +293,10 @@ func (m *GetTransactionsResponse) GetPaging() *Paging {
 	return nil
 }
 
-func (m *GetTransactionsResponse) Set(useCaseRes *transaction.GetTransactionsResponse) {
+func (m *GetTransactionsResponse) Set(useCaseRes *aggr.GetTransactionsResponse) {
 	ts := make([]*Transaction, 0)
-	for _, uct := range useCaseRes.Transactions {
-		ts = append(ts, toTransaction(uct))
+	for _, tObj := range useCaseRes.TransactionObjs {
+		ts = append(ts, toTransaction(tObj.Transaction, tObj.Category, tObj.Account))
 	}
 	m.Transactions = ts
 	m.Paging = toPaging(useCaseRes.Paging)
@@ -350,8 +353,8 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.UpdateTransactionRequest {
-	return &transaction.UpdateTransactionRequest{
+func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *aggr.UpdateTransactionRequest {
+	return &aggr.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		TransactionID:   m.TransactionID,
 		CategoryID:      m.CategoryID,
@@ -373,8 +376,8 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 	return nil
 }
 
-func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
-	m.Transaction = toTransaction(useCaseRes.Transaction)
+func (m *UpdateTransactionResponse) Set(useCaseRes *aggr.UpdateTransactionResponse) {
+	m.Transaction = toTransaction(useCaseRes.Transaction, nil, nil)
 }
 
 type AggrTransactionsRequest struct {
