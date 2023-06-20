@@ -103,9 +103,7 @@ func toTransaction(t *entity.Transaction, c *entity.Category, ac *entity.Account
 
 	return &Transaction{
 		TransactionID:   t.TransactionID,
-		CategoryID:      t.CategoryID,
 		Category:        toCategory(c),
-		AccountID:       t.AccountID,
 		Account:         toAccount(ac),
 		Amount:          ammount,
 		Note:            t.Note,

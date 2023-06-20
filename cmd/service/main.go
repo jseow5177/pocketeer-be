@@ -105,6 +105,7 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.aggrUseCase = auc.NewAggrUseCase(
+		s.mongo,
 		s.budgetUseCase,
 		s.categoryUseCase,
 		s.accountUseCase,

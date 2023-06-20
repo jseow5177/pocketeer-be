@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/usecase/account"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
@@ -17,6 +18,7 @@ import (
 )
 
 type aggrUseCase struct {
+	txMgr              repo.TxMgr
 	budgetUseCase      budget.UseCase
 	categoryUseCase    category.UseCase
 	accountUseCase     account.UseCase
@@ -24,12 +26,14 @@ type aggrUseCase struct {
 }
 
 func NewAggrUseCase(
+	txMgr repo.TxMgr,
 	budgetUseCase budget.UseCase,
 	categoryUseCase category.UseCase,
 	accountUseCase account.UseCase,
 	transactionUseCase transaction.UseCase,
 ) UseCase {
 	return &aggrUseCase{
+		txMgr,
 		budgetUseCase,
 		categoryUseCase,
 		accountUseCase,

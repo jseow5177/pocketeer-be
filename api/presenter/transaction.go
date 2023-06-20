@@ -10,9 +10,7 @@ import (
 
 type Transaction struct {
 	TransactionID   *string   `json:"transaction_id,omitempty"`
-	CategoryID      *string   `json:"category_id,omitempty"`
 	Category        *Category `json:"category,omitempty"`
-	AccountID       *string   `json:"account_id,omitempty"`
 	Account         *Account  `json:"account,omitempty"`
 	Amount          *string   `json:"amount,omitempty"`
 	Note            *string   `json:"note,omitempty"`
