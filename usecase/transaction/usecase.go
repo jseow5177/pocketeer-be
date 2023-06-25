@@ -72,7 +72,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	_, err = uc.accountRepo.Get(ctx, req.ToAccountFilter())
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +82,13 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		_, err := uc.transactionRepo.Create(ctx, t)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to save new transaction to repo, err: %v", err)
+			return err
+		}
+
+		// update account balance
+		nac := ac.AddBalance(t.GetAmount())
+		if err := uc.accountRepo.Update(ctx, req.ToAccountFilter(), nac); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to update account balance, err: %v", err)
 			return err
 		}
 

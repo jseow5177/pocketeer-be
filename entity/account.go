@@ -214,6 +214,13 @@ func (ac *Account) GetUpdates(acu *AccountUpdate, mergeUpdate bool) (accountUpda
 	return
 }
 
+func (ac *Account) AddBalance(amount float64) (accountUpdate *Account) {
+	newBalance := ac.GetBalance() + amount
+	return ac.GetUpdates(NewAccountUpdate(
+		WithUpdateAccountBalance(goutil.Float64(newBalance)),
+	), true)
+}
+
 func (ac *Account) GetUserID() string {
 	if ac != nil && ac.UserID != nil {
 		return *ac.UserID

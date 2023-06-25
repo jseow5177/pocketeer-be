@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"math"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -206,12 +207,29 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 	for _, opt := range opts {
 		opt(t)
 	}
+	t.checkOpts()
 	return t
 }
 
 func SetTransaction(t *Transaction, opts ...TransactionOption) {
+	if t == nil {
+		return
+	}
 	for _, opt := range opts {
 		opt(t)
+	}
+	t.checkOpts()
+}
+
+func (t *Transaction) checkOpts() {
+	if t.GetTransactionType() == uint32(TransactionTypeExpense) {
+		if t.GetAmount() > 0 {
+			t.Amount = goutil.Float64(-t.GetAmount())
+		}
+	}
+
+	if t.GetTransactionType() == uint32(TransactionTypeIncome) {
+		t.Amount = goutil.Float64(math.Abs(t.GetAmount()))
 	}
 }
 
