@@ -8,8 +8,6 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/account"
-	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
@@ -49,6 +47,20 @@ func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 	}
 }
 
+func (m *GetTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
+	return &repo.AccountFilter{
+		UserID:    m.UserID,
+		AccountID: goutil.String(accountID),
+	}
+}
+
+func (m *GetTransactionRequest) ToCategoryFilter(categoryID string) *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:     m.UserID,
+		CategoryID: goutil.String(categoryID),
+	}
+}
+
 type GetTransactionResponse struct {
 	Transaction *entity.Transaction
 }
@@ -64,7 +76,7 @@ type CreateTransactionRequest struct {
 	UserID          *string
 	AccountID       *string
 	CategoryID      *string
-	Amount          *string
+	Amount          *float64
 	Note            *string
 	TransactionType *uint32
 	TransactionTime *uint64
@@ -91,11 +103,11 @@ func (m *CreateTransactionRequest) GetAccountID() string {
 	return ""
 }
 
-func (m *CreateTransactionRequest) GetAmount() string {
+func (m *CreateTransactionRequest) GetAmount() float64 {
 	if m != nil && m.Amount != nil {
 		return *m.Amount
 	}
-	return ""
+	return 0
 }
 
 func (m *CreateTransactionRequest) GetNote() string {
@@ -120,29 +132,26 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 }
 
 func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
-	t := &entity.Transaction{
-		UserID:          m.UserID,
-		CategoryID:      m.CategoryID,
-		AccountID:       m.AccountID,
-		Note:            m.Note,
-		TransactionType: m.TransactionType,
-		TransactionTime: m.TransactionTime,
-	}
-
-	t.SetAmount(m.GetAmount())
-
-	return t
+	return entity.NewTransaction(
+		m.GetUserID(),
+		m.GetAccountID(),
+		m.GetCategoryID(),
+		entity.WithTransactionAmount(m.Amount),
+		entity.WithTransactionNote(m.Note),
+		entity.WithTransactionType(m.TransactionType),
+		entity.WithTransactionTime(m.TransactionTime),
+	)
 }
 
-func (m *CreateTransactionRequest) ToGetCategoryRequest() *category.GetCategoryRequest {
-	return &category.GetCategoryRequest{
+func (m *CreateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
 		UserID:     m.UserID,
 		CategoryID: m.CategoryID,
 	}
 }
 
-func (m *CreateTransactionRequest) ToGetAccountRequest() *account.GetAccountRequest {
-	return &account.GetAccountRequest{
+func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
+	return &repo.AccountFilter{
 		UserID:    m.UserID,
 		AccountID: m.AccountID,
 	}
@@ -267,9 +276,10 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
+	AccountID       *string
 	CategoryID      *string
 	Note            *string
-	Amount          *string
+	Amount          *float64
 	TransactionType *uint32
 	TransactionTime *uint64
 }
@@ -295,11 +305,11 @@ func (t *UpdateTransactionRequest) GetCategoryID() string {
 	return ""
 }
 
-func (t *UpdateTransactionRequest) GetAmount() string {
+func (t *UpdateTransactionRequest) GetAmount() float64 {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
 	}
-	return ""
+	return 0
 }
 
 func (t *UpdateTransactionRequest) GetNote() string {
@@ -323,27 +333,9 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *UpdateTransactionRequest) ToTransactionEntity() *entity.Transaction {
-	t := &entity.Transaction{
-		CategoryID:      m.CategoryID,
-		TransactionType: m.TransactionType,
-		TransactionTime: m.TransactionTime,
-		Note:            m.Note,
-	}
-
-	t.SetAmount(m.GetAmount())
-
-	return t
-}
-
-func (m *UpdateTransactionRequest) ToGetTransactionRequest() *GetTransactionRequest {
-	return &GetTransactionRequest{
-		TransactionID: m.TransactionID,
-	}
-}
-
-func (m *UpdateTransactionRequest) ToGetCategoryRequest() *category.GetCategoryRequest {
-	return &category.GetCategoryRequest{
+func (m *UpdateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:     m.UserID,
 		CategoryID: m.CategoryID,
 	}
 }
@@ -353,6 +345,24 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 		UserID:        m.UserID,
 		TransactionID: m.TransactionID,
 	}
+}
+
+func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
+	return &repo.AccountFilter{
+		UserID:    m.UserID,
+		AccountID: goutil.String(accountID),
+	}
+}
+
+func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
+	return entity.NewTransactionUpdate(
+		entity.WithUpdateTransactionAccountID(m.AccountID),
+		entity.WithUpdateTransactionCategoryID(m.CategoryID),
+		entity.WithUpdateTransactionAmount(m.Amount),
+		entity.WithUpdateTransactionType(m.TransactionType),
+		entity.WithUpdateTransactionTime(m.TransactionTime),
+		entity.WithUpdateTransactionNote(m.Note),
+	)
 }
 
 type UpdateTransactionResponse struct {
@@ -416,8 +426,8 @@ func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.Trans
 	}
 }
 
-func (m *AggrTransactionsRequest) ToGetCategoriesRequest() *category.GetCategoriesRequest {
-	return &category.GetCategoriesRequest{
+func (m *AggrTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
 		CategoryIDs: m.CategoryIDs,
 	}
 }

@@ -1,5 +1,38 @@
 package entity
 
+import (
+	"time"
+
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
+
+type CategoryUpdate struct {
+	CategoryName *string
+}
+
+func (cu *CategoryUpdate) GetCategoryName() string {
+	if cu != nil && cu.CategoryName != nil {
+		return *cu.CategoryName
+	}
+	return ""
+}
+
+type CategoryUpdateOption func(cu *CategoryUpdate)
+
+func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
+	return func(cu *CategoryUpdate) {
+		cu.CategoryName = categoryName
+	}
+}
+
+func NewCategoryUpdate(opts ...CategoryUpdateOption) *CategoryUpdate {
+	cu := new(CategoryUpdate)
+	for _, opt := range opts {
+		opt(cu)
+	}
+	return cu
+}
+
 type Category struct {
 	UserID       *string
 	CategoryID   *string
@@ -7,6 +40,84 @@ type Category struct {
 	CategoryType *uint32
 	CreateTime   *uint64
 	UpdateTime   *uint64
+}
+
+type CategoryOption = func(c *Category)
+
+func WithCategoryID(categoryID *string) CategoryOption {
+	return func(c *Category) {
+		c.CategoryID = categoryID
+	}
+}
+
+func WithCategoryName(categoryName *string) CategoryOption {
+	return func(c *Category) {
+		c.CategoryName = categoryName
+	}
+}
+
+func WithCategoryType(categoryType *uint32) CategoryOption {
+	return func(c *Category) {
+		c.CategoryType = categoryType
+	}
+}
+
+func WithCategoryCreateTime(createTime *uint64) CategoryOption {
+	return func(c *Category) {
+		c.CreateTime = createTime
+	}
+}
+
+func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
+	return func(c *Category) {
+		c.UpdateTime = updateTime
+	}
+}
+
+func NewCategory(userID string, opts ...CategoryOption) *Category {
+	now := uint64(time.Now().Unix())
+	c := &Category{
+		UserID:       goutil.String(userID),
+		CategoryType: goutil.Uint32(uint32(TransactionTypeExpense)),
+		CreateTime:   goutil.Uint64(now),
+		UpdateTime:   goutil.Uint64(now),
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
+func SetCategory(c *Category, opts ...CategoryOption) {
+	for _, opt := range opts {
+		opt(c)
+	}
+}
+
+func (c *Category) GetUpdates(cu *CategoryUpdate, mergeUpdate bool) (categoryUpdate *Category) {
+	var hasUpdate bool
+
+	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
+		hasUpdate = true
+	}
+
+	if hasUpdate {
+		categoryUpdate = new(Category)
+		now := uint64(time.Now().Unix())
+
+		SetCategory(
+			categoryUpdate,
+			WithCategoryName(cu.CategoryName),
+			WithCategoryUpdateTime(goutil.Uint64(now)),
+		)
+
+		if mergeUpdate {
+			goutil.MergeWithPtrFields(c, categoryUpdate)
+		}
+		return
+	}
+
+	return
 }
 
 func (c *Category) GetUserID() string {

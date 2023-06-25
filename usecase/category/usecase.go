@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -34,13 +32,11 @@ func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequ
 func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error) {
 	c := req.ToCategoryEntity()
 
-	id, err := uc.categoryRepo.Create(ctx, c)
+	_, err := uc.categoryRepo.Create(ctx, c)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err
 	}
-
-	c.CategoryID = goutil.String(id)
 
 	return &CreateCategoryResponse{
 		Category: c,
@@ -48,18 +44,16 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 }
 
 func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error) {
-	c, err := uc.GetCategory(ctx, req.ToGetCategoryRequest())
+	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
 		return nil, err
 	}
-	category := c.Category
 
-	nc := uc.getCategoryUpdates(category, req.ToCategoryEntity())
+	nc := c.GetUpdates(req.ToCategoryUpdate(), true)
 	if nc == nil {
-		// no updates
 		log.Ctx(ctx).Info().Msg("category has no updates")
 		return &UpdateCategoryResponse{
-			Category: category,
+			c,
 		}, nil
 	}
 
@@ -68,11 +62,8 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 		return nil, err
 	}
 
-	// merge
-	goutil.MergeWithPtrFields(category, nc)
-
 	return &UpdateCategoryResponse{
-		Category: category,
+		c,
 	}, nil
 }
 
@@ -86,21 +77,4 @@ func (uc *categoryUseCase) GetCategories(ctx context.Context, req *GetCategories
 	return &GetCategoriesResponse{
 		Categories: cs,
 	}, nil
-}
-
-func (uc *categoryUseCase) getCategoryUpdates(old, changes *entity.Category) *entity.Category {
-	var hasUpdates bool
-
-	nc := new(entity.Category)
-
-	if changes.CategoryName != nil && changes.GetCategoryName() != old.GetCategoryName() {
-		hasUpdates = true
-		nc.CategoryName = changes.CategoryName
-	}
-
-	if !hasUpdates {
-		return nil
-	}
-
-	return nc
 }

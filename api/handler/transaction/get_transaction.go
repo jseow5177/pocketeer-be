@@ -18,7 +18,7 @@ var GetTransactionValidator = validator.MustForm(map[string]validator.Validator{
 func (h *transactionHandler) GetTransaction(ctx context.Context, req *presenter.GetTransactionRequest, res *presenter.GetTransactionResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.aggrUseCase.GetTransaction(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.transactionUseCase.GetTransaction(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction, err: %v", err)
 		return err

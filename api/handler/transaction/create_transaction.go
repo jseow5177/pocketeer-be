@@ -38,7 +38,7 @@ var CreateTransactionValidator = validator.MustForm(map[string]validator.Validat
 func (h *transactionHandler) CreateTransaction(ctx context.Context, req *presenter.CreateTransactionRequest, res *presenter.CreateTransactionResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.aggrUseCase.CreateTransaction(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.transactionUseCase.CreateTransaction(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create transaction, err: %v", err)
 		return err

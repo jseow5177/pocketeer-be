@@ -38,19 +38,16 @@ func ToAccountModel(ac *entity.Account) *Account {
 }
 
 func ToAccountEntity(ac *Account) *entity.Account {
-	eac := &entity.Account{
-		AccountID:     goutil.String(ac.GetAccountID()),
-		UserID:        ac.UserID,
-		AccountName:   ac.AccountName,
-		Note:          ac.Note,
-		Balance:       ac.Balance,
-		AccountType:   ac.AccountType,
-		AccountStatus: ac.AccountStatus,
-		CreateTime:    ac.CreateTime,
-		UpdateTime:    ac.UpdateTime,
-	}
-
-	return eac
+	return entity.NewAccount(
+		ac.GetUserID(),
+		entity.WithAccountID(goutil.String(ac.GetAccountID())),
+		entity.WithAccountName(ac.AccountName),
+		entity.WithAccountBalance(ac.Balance),
+		entity.WithAccountType(ac.AccountType),
+		entity.WithAccountNote(ac.Note),
+		entity.WithAccountCreateTime(ac.CreateTime),
+		entity.WithAccountUpdateTime(ac.UpdateTime),
+	)
 }
 
 func (ac *Account) GetUserID() string {

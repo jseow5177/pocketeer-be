@@ -53,97 +53,85 @@ func toBudgetBreakdowns(
 	return breakdowns
 }
 
-func toCategories(
-	entities []*entity.Category,
-) []*Category {
-	categories := make([]*Category, len(entities))
-	for idx, entity := range entities {
-		categories[idx] = toCategory(entity)
+func toCategories(cs []*entity.Category) []*Category {
+	categories := make([]*Category, len(cs))
+	for idx, c := range cs {
+		categories[idx] = toCategory(c)
 	}
 	return categories
 }
 
-func toCategory(category *entity.Category) *Category {
-	if category == nil {
+func toCategory(c *entity.Category) *Category {
+	if c == nil {
 		return nil
 	}
 
 	return &Category{
-		CategoryID:   category.CategoryID,
-		CategoryName: category.CategoryName,
-		CategoryType: category.CategoryType,
-		CreateTime:   category.CreateTime,
-		UpdateTime:   category.UpdateTime,
+		CategoryID:   goutil.String(c.GetCategoryID()),
+		CategoryName: goutil.String(c.GetCategoryName()),
+		CategoryType: goutil.Uint32(c.GetCategoryType()),
+		CreateTime:   goutil.Uint64(c.GetCreateTime()),
+		UpdateTime:   goutil.Uint64(c.GetUpdateTime()),
 	}
 }
 
-func toUser(user *entity.User) *User {
-	if user == nil {
+func toUser(u *entity.User) *User {
+	if u == nil {
 		return nil
 	}
 
 	return &User{
-		UserID:     user.UserID,
-		Username:   user.Username,
-		UserStatus: user.UserStatus,
-		CreateTime: user.CreateTime,
-		UpdateTime: user.UpdateTime,
+		UserID:     goutil.String(u.GetUserID()),
+		Username:   goutil.String(u.GetUsername()),
+		UserStatus: goutil.Uint32(u.GetUserStatus()),
+		CreateTime: goutil.Uint64(u.GetCreateTime()),
+		UpdateTime: goutil.Uint64(u.GetUpdateTime()),
 	}
 }
 
-func toTransaction(t *entity.Transaction, c *entity.Category, ac *entity.Account) *Transaction {
+func toTransaction(t *entity.Transaction) *Transaction {
 	if t == nil {
 		return nil
 	}
 
-	var ammount *string
-	if t.Amount != nil {
-		ammount = goutil.String(fmt.Sprint(t.GetAmount()))
-	}
-
 	return &Transaction{
-		TransactionID:   t.TransactionID,
-		Category:        toCategory(c),
-		Account:         toAccount(ac),
-		Amount:          ammount,
-		Note:            t.Note,
-		TransactionType: t.TransactionType,
-		TransactionTime: t.TransactionTime,
-		CreateTime:      t.CreateTime,
-		UpdateTime:      t.UpdateTime,
+		TransactionID:   goutil.String(t.GetTransactionID()),
+		Amount:          goutil.String(fmt.Sprint(t.GetAmount())),
+		CategoryID:      goutil.String(t.GetCategoryID()),
+		AccountID:       goutil.String(t.GetAccountID()),
+		Note:            goutil.String(t.GetNote()),
+		TransactionType: goutil.Uint32(t.GetTransactionType()),
+		TransactionTime: goutil.Uint64(t.GetTransactionTime()),
+		CreateTime:      goutil.Uint64(t.GetCreateTime()),
+		UpdateTime:      goutil.Uint64(t.GetUpdateTime()),
 	}
 }
 
-func toAccount(account *entity.Account) *Account {
-	if account == nil {
+func toAccount(ac *entity.Account) *Account {
+	if ac == nil {
 		return nil
 	}
 
-	var balance *string
-	if account.Balance != nil {
-		balance = goutil.String(fmt.Sprint(account.GetBalance()))
-	}
-
 	return &Account{
-		AccountID:     account.AccountID,
-		AccountName:   account.AccountName,
-		Balance:       balance,
-		AccountType:   account.AccountType,
-		AccountStatus: account.AccountStatus,
-		Note:          account.Note,
-		CreateTime:    account.CreateTime,
-		UpdateTime:    account.UpdateTime,
+		AccountID:     goutil.String(ac.GetAccountID()),
+		AccountName:   goutil.String(ac.GetAccountName()),
+		Balance:       goutil.String(fmt.Sprint(ac.GetBalance())),
+		AccountType:   goutil.Uint32(ac.GetAccountType()),
+		AccountStatus: goutil.Uint32(ac.GetAccountStatus()),
+		Note:          goutil.String(ac.GetNote()),
+		CreateTime:    goutil.Uint64(ac.GetCreateTime()),
+		UpdateTime:    goutil.Uint64(ac.GetUpdateTime()),
 	}
 }
 
-func toPaging(paging *common.Paging) *Paging {
-	if paging == nil {
+func toPaging(p *common.Paging) *Paging {
+	if p == nil {
 		return nil
 	}
 
 	return &Paging{
-		Limit: paging.Limit,
-		Page:  paging.Page,
+		Limit: p.Limit,
+		Page:  p.Page,
 	}
 }
 

@@ -13,7 +13,7 @@ var (
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
 	ErrInvalidCategoryType     = errors.New("invalid category type")
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
-	ErrInvalidAmount           = errors.New("invalid amount")
+	ErrMonetaryStr             = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
 )
 
@@ -47,7 +47,7 @@ func CheckBudgetType(budgetType uint32) error {
 
 func CheckMonetaryStr(str string) error {
 	if err := goutil.IsFloat(str, config.AmountDecimalPlaces); err != nil {
-		return ErrInvalidAmount
+		return ErrMonetaryStr
 	}
 	return nil
 }

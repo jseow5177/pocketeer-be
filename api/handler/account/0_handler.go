@@ -1,6 +1,8 @@
 package account
 
-import "github.com/jseow5177/pockteer-be/usecase/account"
+import (
+	"github.com/jseow5177/pockteer-be/usecase/account"
+)
 
 type accountHandler struct {
 	accountUseCase account.UseCase

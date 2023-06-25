@@ -89,13 +89,14 @@ func (m *GetBudgetsResponse) Set(usecaseRes *budget.GetBudgetsResponse) {
 func (m *SetBudgetRequest) ToUseCaseReq(userID string) *budget.SetBudgetRequest {
 	rangeStartDate, _ := util.DateStrToDate(m.GetRangeStartDate())
 	rangeEndDate, _ := util.DateStrToDate(m.GetRangeEndDate())
+	amount, _ := util.MonetaryStrToFloat(m.GetBudgetAmount())
 
 	return &budget.SetBudgetRequest{
 		UserID:         goutil.String(userID),
 		BudgetID:       m.BudgetID,
 		BudgetName:     m.BudgetName,
 		BudgetType:     m.BudgetType,
-		BudgetAmount:   goutil.Float64(util.MonetaryStrToFloat(m.GetBudgetAmount())),
+		BudgetAmount:   goutil.Float64(amount),
 		CategoryIDs:    m.CategoryIDs,
 		RangeStartDate: rangeStartDate,
 		RangeEndDate:   rangeEndDate,

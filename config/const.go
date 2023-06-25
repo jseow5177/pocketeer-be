@@ -11,6 +11,7 @@ const (
 
 	PathCreateAccount = PathV1Prefix + "create_account"
 	PathGetAccount    = PathV1Prefix + "get_account"
+	PathUpdateAccount = PathV1Prefix + "update_account"
 
 	PathCreateCategory = PathV1Prefix + "create_category"
 	PathUpdateCategory = PathV1Prefix + "update_category"

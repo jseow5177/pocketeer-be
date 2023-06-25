@@ -3,6 +3,7 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 type Account struct {
@@ -108,10 +109,11 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 }
 
 func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
+	balance, _ := util.MonetaryStrToFloat(m.GetBalance())
 	return &account.CreateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
-		Balance:     m.Balance,
+		Balance:     goutil.Float64(balance),
 		AccountType: m.AccountType,
 		Note:        m.Note,
 	}
@@ -162,5 +164,66 @@ func (m *GetAccountResponse) GetAccount() *Account {
 }
 
 func (m *GetAccountResponse) Set(useCaseRes *account.GetAccountResponse) {
+	m.Account = toAccount(useCaseRes.Account)
+}
+
+type UpdateAccountRequest struct {
+	AccountID   *string `json:"account_id,omitempty"`
+	AccountName *string `json:"account_name,omitempty"`
+	Balance     *string `json:"balance,omitempty"`
+	Note        *string `json:"note,omitempty"`
+}
+
+func (m *UpdateAccountRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *UpdateAccountRequest) GetAccountName() string {
+	if m != nil && m.AccountName != nil {
+		return *m.AccountName
+	}
+	return ""
+}
+
+func (m *UpdateAccountRequest) GetBalance() string {
+	if m != nil && m.Balance != nil {
+		return *m.Balance
+	}
+	return ""
+}
+
+func (m *UpdateAccountRequest) GetNote() string {
+	if m != nil && m.Note != nil {
+		return *m.Note
+	}
+	return ""
+}
+
+func (m *UpdateAccountRequest) ToUseCaseReq(userID string) *account.UpdateAccountRequest {
+	balance, _ := util.MonetaryStrToFloat(m.GetBalance())
+	return &account.UpdateAccountRequest{
+		UserID:      goutil.String(userID),
+		AccountID:   m.AccountID,
+		AccountName: m.AccountName,
+		Balance:     goutil.Float64(balance),
+		Note:        m.Note,
+	}
+}
+
+type UpdateAccountResponse struct {
+	Account *Account `json:"account,omitempty"`
+}
+
+func (m *UpdateAccountResponse) GetAccount() *Account {
+	if m != nil && m.Account != nil {
+		return m.Account
+	}
+	return nil
+}
+
+func (m *UpdateAccountResponse) Set(useCaseRes *account.UpdateAccountResponse) {
 	m.Account = toAccount(useCaseRes.Account)
 }

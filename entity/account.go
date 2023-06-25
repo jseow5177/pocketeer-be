@@ -1,8 +1,9 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 )
 
 type AccountStatus uint32
@@ -27,7 +28,6 @@ const (
 const (
 	AssetCash AccountType = AccountTypeAsset<<AccountTypeBitShift | iota
 	AssetBankAccount
-	AssetInvestment
 )
 
 // Allow 2^4 unique debt
@@ -40,10 +40,64 @@ const (
 var AccountTypes = map[uint32]string{
 	uint32(AssetCash):        "cash",
 	uint32(AssetBankAccount): "bank account",
-	uint32(AssetInvestment):  "investment",
 	uint32(DebtCreditCard):   "credit card",
 	uint32(DebtLoan):         "loan",
 	uint32(DebtMortgage):     "mortgage",
+}
+
+type AccountUpdate struct {
+	AccountName *string
+	Balance     *float64
+	Note        *string
+}
+
+func (acu *AccountUpdate) GetAccountName() string {
+	if acu != nil && acu.AccountName != nil {
+		return *acu.AccountName
+	}
+	return ""
+}
+
+func (acu *AccountUpdate) GetBalance() float64 {
+	if acu != nil && acu.Balance != nil {
+		return *acu.Balance
+	}
+	return 0
+}
+
+func (acu *AccountUpdate) GetNote() string {
+	if acu != nil && acu.Note != nil {
+		return *acu.Note
+	}
+	return ""
+}
+
+type AccountUpdateOption func(acu *AccountUpdate)
+
+func WithUpdateAccountName(accountName *string) AccountUpdateOption {
+	return func(acu *AccountUpdate) {
+		acu.AccountName = accountName
+	}
+}
+
+func WithUpdateAccountBalance(balance *float64) AccountUpdateOption {
+	return func(acu *AccountUpdate) {
+		acu.Balance = balance
+	}
+}
+
+func WithUpdateAccountNote(note *string) AccountUpdateOption {
+	return func(acu *AccountUpdate) {
+		acu.Note = note
+	}
+}
+
+func NewAccountUpdate(opts ...AccountUpdateOption) *AccountUpdate {
+	au := new(AccountUpdate)
+	for _, opt := range opts {
+		opt(au)
+	}
+	return au
 }
 
 type Account struct {
@@ -56,6 +110,108 @@ type Account struct {
 	Note          *string
 	CreateTime    *uint64
 	UpdateTime    *uint64
+}
+
+type AccountOption = func(ac *Account)
+
+func WithAccountID(accountID *string) AccountOption {
+	return func(ac *Account) {
+		ac.AccountID = accountID
+	}
+}
+
+func WithAccountName(accountName *string) AccountOption {
+	return func(ac *Account) {
+		ac.AccountName = accountName
+	}
+}
+
+func WithAccountBalance(balance *float64) AccountOption {
+	return func(ac *Account) {
+		ac.Balance = balance
+	}
+}
+
+func WithAccountType(accountType *uint32) AccountOption {
+	return func(ac *Account) {
+		ac.AccountType = accountType
+	}
+}
+
+func WithAccountNote(note *string) AccountOption {
+	return func(ac *Account) {
+		ac.Note = note
+	}
+}
+
+func WithAccountCreateTime(createTime *uint64) AccountOption {
+	return func(ac *Account) {
+		ac.CreateTime = createTime
+	}
+}
+
+func WithAccountUpdateTime(updateTime *uint64) AccountOption {
+	return func(ac *Account) {
+		ac.UpdateTime = updateTime
+	}
+}
+
+func NewAccount(userID string, opts ...AccountOption) *Account {
+	now := uint64(time.Now().Unix())
+	ac := &Account{
+		UserID:        goutil.String(userID),
+		AccountType:   goutil.Uint32(uint32(AssetCash)),
+		Balance:       goutil.Float64(0),
+		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),
+		CreateTime:    goutil.Uint64(now),
+		UpdateTime:    goutil.Uint64(now),
+	}
+	for _, opt := range opts {
+		opt(ac)
+	}
+	return ac
+}
+
+func SetAccount(ac *Account, opts ...AccountOption) {
+	for _, opt := range opts {
+		opt(ac)
+	}
+}
+
+func (ac *Account) GetUpdates(acu *AccountUpdate, mergeUpdate bool) (accountUpdate *Account) {
+	var hasUpdate bool
+
+	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
+		hasUpdate = true
+	}
+
+	if acu.Balance != nil && acu.GetBalance() != ac.GetBalance() {
+		hasUpdate = true
+	}
+
+	if acu.Note != nil && acu.GetNote() != ac.GetNote() {
+		hasUpdate = true
+	}
+
+	if hasUpdate {
+		accountUpdate = new(Account)
+		now := uint64(time.Now().Unix())
+
+		SetAccount(
+			accountUpdate,
+			WithAccountName(acu.AccountName),
+			WithAccountBalance(acu.Balance),
+			WithAccountNote(acu.Note),
+			WithAccountUpdateTime(goutil.Uint64(now)),
+		)
+
+		if mergeUpdate {
+			goutil.MergeWithPtrFields(ac, accountUpdate)
+		}
+		return
+	}
+
+	return
 }
 
 func (ac *Account) GetUserID() string {
@@ -127,8 +283,4 @@ func (ac *Account) IsAccountTypeAsset() bool {
 
 func (ac *Account) IsAccountTypeDebt() bool {
 	return (ac.GetAccountType() >> AccountTypeBitShift & uint32(AccountTypeDebt)) > 0
-}
-
-func (ac *Account) SetBalance(balance string) {
-	ac.Balance = goutil.Float64(util.MonetaryStrToFloat(balance))
 }

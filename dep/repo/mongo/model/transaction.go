@@ -40,20 +40,18 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 }
 
 func ToTransactionEntity(t *Transaction) *entity.Transaction {
-	et := &entity.Transaction{
-		TransactionID:   goutil.String(t.GetTransactionID()),
-		UserID:          t.UserID,
-		CategoryID:      t.CategoryID,
-		AccountID:       t.AccountID,
-		Note:            t.Note,
-		Amount:          t.Amount,
-		TransactionType: t.TransactionType,
-		TransactionTime: t.TransactionTime,
-		CreateTime:      t.CreateTime,
-		UpdateTime:      t.UpdateTime,
-	}
-
-	return et
+	return entity.NewTransaction(
+		t.GetUserID(),
+		t.GetAccountID(),
+		t.GetCategoryID(),
+		entity.WithTransactionID(goutil.String(t.GetTransactionID())),
+		entity.WithTransactionAmount(t.Amount),
+		entity.WithTransactionNote(t.Note),
+		entity.WithTransactionType(t.TransactionType),
+		entity.WithTransactionTime(t.TransactionTime),
+		entity.WithTransactionCreateTime(t.CreateTime),
+		entity.WithTransactionUpdateTime(t.UpdateTime),
+	)
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -70,6 +68,13 @@ func (t *Transaction) GetUserID() string {
 	return ""
 }
 
+func (t *Transaction) GetAccountID() string {
+	if t != nil && t.AccountID != nil {
+		return *t.AccountID
+	}
+	return ""
+}
+
 func (t *Transaction) GetCategoryID() string {
 	if t != nil && t.CategoryID != nil {
 		return *t.CategoryID
@@ -82,6 +87,13 @@ func (t *Transaction) GetAmount() float64 {
 		return *t.Amount
 	}
 	return 0
+}
+
+func (t *Transaction) GetNote() string {
+	if t != nil && t.Note != nil {
+		return *t.Note
+	}
+	return ""
 }
 
 func (t *Transaction) GetTransactionType() uint32 {

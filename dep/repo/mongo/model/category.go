@@ -22,8 +22,8 @@ func ToCategoryModel(c *entity.Category) *Category {
 	}
 
 	return &Category{
-		UserID:       c.UserID,
 		CategoryID:   objID,
+		UserID:       c.UserID,
 		CategoryName: c.CategoryName,
 		CategoryType: c.CategoryType,
 		CreateTime:   c.CreateTime,
@@ -32,14 +32,14 @@ func ToCategoryModel(c *entity.Category) *Category {
 }
 
 func ToCategoryEntity(c *Category) *entity.Category {
-	return &entity.Category{
-		CategoryID:   goutil.String(c.GetCategoryID()),
-		UserID:       c.UserID,
-		CategoryName: c.CategoryName,
-		CategoryType: c.CategoryType,
-		CreateTime:   c.CreateTime,
-		UpdateTime:   c.UpdateTime,
-	}
+	return entity.NewCategory(
+		c.GetUserID(),
+		entity.WithCategoryID(goutil.String(c.GetCategoryID())),
+		entity.WithCategoryName(c.CategoryName),
+		entity.WithCategoryType(c.CategoryType),
+		entity.WithCategoryCreateTime(c.CreateTime),
+		entity.WithCategoryUpdateTime(c.UpdateTime),
+	)
 }
 
 func (c *Category) GetUserID() string {

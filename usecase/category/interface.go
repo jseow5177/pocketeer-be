@@ -80,11 +80,11 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 }
 
 func (m *CreateCategoryRequest) ToCategoryEntity() *entity.Category {
-	return &entity.Category{
-		UserID:       m.UserID,
-		CategoryName: m.CategoryName,
-		CategoryType: m.CategoryType,
-	}
+	return entity.NewCategory(
+		m.GetUserID(),
+		entity.WithCategoryName(m.CategoryName),
+		entity.WithCategoryType(m.CategoryType),
+	)
 }
 
 type CreateCategoryResponse struct {
@@ -125,17 +125,10 @@ func (m *UpdateCategoryRequest) GetCategoryName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToGetCategoryRequest() *GetCategoryRequest {
-	return &GetCategoryRequest{
-		UserID:     m.UserID,
-		CategoryID: m.CategoryID,
-	}
-}
-
-func (m *UpdateCategoryRequest) ToCategoryEntity() *entity.Category {
-	return &entity.Category{
-		CategoryName: m.CategoryName,
-	}
+func (m *UpdateCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
+	return entity.NewCategoryUpdate(
+		entity.WithUpdateCategoryName(m.CategoryName),
+	)
 }
 
 func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {

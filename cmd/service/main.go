@@ -99,18 +99,12 @@ func (s *server) Start() error {
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
-	s.accountUseCase = acuc.NewAccountUseCase(s.accountRepo)
-	s.transactionUseCase = tuc.NewTransactionUseCase(s.categoryUseCase, s.accountUseCase, s.transactionRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo)
+	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
-	s.aggrUseCase = auc.NewAggrUseCase(
-		s.mongo,
-		s.budgetUseCase,
-		s.categoryUseCase,
-		s.accountUseCase,
-		s.transactionUseCase,
-	)
+	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -252,6 +246,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update account
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateAccount,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateAccountRequest),
+			Res:       new(presenter.UpdateAccountResponse),
+			Validator: ach.UpdateAccountValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.UpdateAccount(ctx, req.(*presenter.UpdateAccountRequest), res.(*presenter.UpdateAccountResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get account
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetAccount,
@@ -269,7 +278,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Transaction ========== //
 
-	transactionHandler := th.NewTransactionHandler(s.transactionUseCase, s.aggrUseCase)
+	transactionHandler := th.NewTransactionHandler(s.transactionUseCase)
 
 	// create transaction
 	r.RegisterHttpRoute(&router.HttpRoute{

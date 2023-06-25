@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
@@ -24,23 +23,17 @@ func NewCategoryMongo(mongo *Mongo) repo.CategoryRepo {
 }
 
 func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string, error) {
-	now := uint64(time.Now().Unix())
-
-	c.UpdateTime = goutil.Uint64(now)
-	c.UpdateTime = goutil.Uint64(now)
-
 	cm := model.ToCategoryModel(c)
 	id, err := m.mColl.create(ctx, cm)
 	if err != nil {
 		return "", err
 	}
+	entity.SetCategory(c, entity.WithCategoryID(goutil.String(id)))
 
 	return id, nil
 }
 
 func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
-	c.UpdateTime = goutil.Uint64(uint64(time.Now().Unix()))
-
 	cm := model.ToCategoryModel(c)
 	if err := m.mColl.update(ctx, cf, cm); err != nil {
 		return err

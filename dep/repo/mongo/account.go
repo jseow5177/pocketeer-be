@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
@@ -24,23 +23,17 @@ func NewAccountMongo(mongo *Mongo) repo.AccountRepo {
 }
 
 func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, error) {
-	now := uint64(time.Now().Unix())
-
-	ac.CreateTime = goutil.Uint64(now)
-	ac.UpdateTime = goutil.Uint64(now)
-
 	acm := model.ToAccountModel(ac)
 	id, err := m.mColl.create(ctx, acm)
 	if err != nil {
 		return "", err
 	}
+	entity.SetAccount(ac, entity.WithAccountID(goutil.String(id)))
 
 	return id, nil
 }
 
 func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, ac *entity.Account) error {
-	ac.UpdateTime = goutil.Uint64(uint64(time.Now().Unix()))
-
 	acm := model.ToAccountModel(ac)
 	if err := m.mColl.update(ctx, acf, acm); err != nil {
 		return err

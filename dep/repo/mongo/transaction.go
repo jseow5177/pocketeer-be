@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
@@ -24,23 +23,17 @@ func NewTransactionMongo(mongo *Mongo) repo.TransactionRepo {
 }
 
 func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (string, error) {
-	now := uint64(time.Now().Unix())
-
-	t.CreateTime = goutil.Uint64(now)
-	t.UpdateTime = goutil.Uint64(now)
-
 	tm := model.ToTransactionModel(t)
 	id, err := m.mColl.create(ctx, tm)
 	if err != nil {
 		return "", err
 	}
+	entity.SetTransaction(t, entity.WithTransactionID(goutil.String(id)))
 
 	return id, nil
 }
 
 func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, t *entity.Transaction) error {
-	t.UpdateTime = goutil.Uint64(uint64(time.Now().Unix()))
-
 	tm := model.ToTransactionModel(t)
 	if err := m.mColl.update(ctx, tf, tm); err != nil {
 		return err

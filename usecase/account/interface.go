@@ -54,7 +54,7 @@ func (m *GetAccountResponse) GetAccount() *entity.Account {
 type CreateAccountRequest struct {
 	UserID      *string
 	AccountName *string
-	Balance     *string
+	Balance     *float64
 	Note        *string
 	AccountType *uint32
 }
@@ -73,11 +73,11 @@ func (m *CreateAccountRequest) GetAccountName() string {
 	return ""
 }
 
-func (m *CreateAccountRequest) GetBalance() string {
+func (m *CreateAccountRequest) GetBalance() float64 {
 	if m != nil && m.Balance != nil {
 		return *m.Balance
 	}
-	return ""
+	return 0
 }
 
 func (m *CreateAccountRequest) GetNote() string {
@@ -95,16 +95,13 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 }
 
 func (m *CreateAccountRequest) ToAccountEntity() *entity.Account {
-	ac := &entity.Account{
-		UserID:      m.UserID,
-		AccountName: m.AccountName,
-		Note:        m.Note,
-		AccountType: m.AccountType,
-	}
-
-	ac.SetBalance(m.GetBalance())
-
-	return ac
+	return entity.NewAccount(
+		m.GetUserID(),
+		entity.WithAccountName(m.AccountName),
+		entity.WithAccountBalance(m.Balance),
+		entity.WithAccountType(m.AccountType),
+		entity.WithAccountNote(m.Note),
+	)
 }
 
 type CreateAccountResponse struct {
@@ -122,7 +119,7 @@ type UpdateAccountRequest struct {
 	UserID      *string
 	AccountID   *string
 	AccountName *string
-	Balance     *string
+	Balance     *float64
 	Note        *string
 }
 
@@ -147,11 +144,11 @@ func (m *UpdateAccountRequest) GetAccountName() string {
 	return ""
 }
 
-func (m *UpdateAccountRequest) GetBalance() string {
+func (m *UpdateAccountRequest) GetBalance() float64 {
 	if m != nil && m.Balance != nil {
 		return *m.Balance
 	}
-	return ""
+	return 0
 }
 
 func (m *UpdateAccountRequest) GetNote() string {
@@ -161,29 +158,19 @@ func (m *UpdateAccountRequest) GetNote() string {
 	return ""
 }
 
-func (m *UpdateAccountRequest) ToAccountEntity() *entity.Account {
-	ac := &entity.Account{
-		UserID:      m.UserID,
-		AccountName: m.AccountName,
-		Note:        m.Note,
-	}
-
-	ac.SetBalance(m.GetBalance())
-
-	return ac
-}
-
-func (m *UpdateAccountRequest) ToGetAccountRequest() *GetAccountRequest {
-	return &GetAccountRequest{
-		AccountID: m.AccountID,
-	}
-}
-
 func (m *UpdateAccountRequest) ToAccountFilter() *repo.AccountFilter {
 	return &repo.AccountFilter{
 		UserID:    m.UserID,
 		AccountID: m.AccountID,
 	}
+}
+
+func (m *UpdateAccountRequest) ToAccountUpdate() *entity.AccountUpdate {
+	return entity.NewAccountUpdate(
+		entity.WithUpdateAccountName(m.AccountName),
+		entity.WithUpdateAccountBalance(m.Balance),
+		entity.WithUpdateAccountNote(m.Note),
+	)
 }
 
 type UpdateAccountResponse struct {
