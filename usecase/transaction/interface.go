@@ -276,11 +276,8 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
-	AccountID       *string
-	CategoryID      *string
 	Note            *string
 	Amount          *float64
-	TransactionType *uint32
 	TransactionTime *uint64
 }
 
@@ -294,13 +291,6 @@ func (t *UpdateTransactionRequest) GetUserID() string {
 func (t *UpdateTransactionRequest) GetTransactionID() string {
 	if t != nil && t.TransactionID != nil {
 		return *t.TransactionID
-	}
-	return ""
-}
-
-func (t *UpdateTransactionRequest) GetCategoryID() string {
-	if t != nil && t.CategoryID != nil {
-		return *t.CategoryID
 	}
 	return ""
 }
@@ -319,25 +309,11 @@ func (t *UpdateTransactionRequest) GetNote() string {
 	return ""
 }
 
-func (t *UpdateTransactionRequest) GetTransactionType() uint32 {
-	if t != nil && t.TransactionType != nil {
-		return *t.TransactionType
-	}
-	return 0
-}
-
 func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	if t != nil && t.TransactionTime != nil {
 		return *t.TransactionTime
 	}
 	return 0
-}
-
-func (m *UpdateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:     m.UserID,
-		CategoryID: m.CategoryID,
-	}
 }
 
 func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
@@ -356,10 +332,7 @@ func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.Accou
 
 func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
 	return entity.NewTransactionUpdate(
-		entity.WithUpdateTransactionAccountID(m.AccountID),
-		entity.WithUpdateTransactionCategoryID(m.CategoryID),
 		entity.WithUpdateTransactionAmount(m.Amount),
-		entity.WithUpdateTransactionType(m.TransactionType),
 		entity.WithUpdateTransactionTime(m.TransactionTime),
 		entity.WithUpdateTransactionNote(m.Note),
 	)

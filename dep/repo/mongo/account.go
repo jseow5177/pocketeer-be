@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,18 +22,18 @@ func NewAccountMongo(mongo *Mongo) repo.AccountRepo {
 }
 
 func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, error) {
-	acm := model.ToAccountModel(ac)
+	acm := model.ToAccountModelFromEntity(ac)
 	id, err := m.mColl.create(ctx, acm)
 	if err != nil {
 		return "", err
 	}
-	entity.SetAccount(ac, entity.WithAccountID(goutil.String(id)))
+	ac.SetAccountID(id)
 
 	return id, nil
 }
 
-func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, ac *entity.Account) error {
-	acm := model.ToAccountModel(ac)
+func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu *entity.AccountUpdate) error {
+	acm := model.ToAccountModelFromUpdate(acu)
 	if err := m.mColl.update(ctx, acf, acm); err != nil {
 		return err
 	}

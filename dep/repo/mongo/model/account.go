@@ -18,7 +18,7 @@ type Account struct {
 	UpdateTime    *uint64            `bson:"update_time,omitempty"`
 }
 
-func ToAccountModel(ac *entity.Account) *Account {
+func ToAccountModelFromEntity(ac *entity.Account) *Account {
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(ac.GetAccountID()) {
 		objID, _ = primitive.ObjectIDFromHex(ac.GetAccountID())
@@ -34,6 +34,15 @@ func ToAccountModel(ac *entity.Account) *Account {
 		AccountStatus: ac.AccountStatus,
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
+	}
+}
+
+func ToAccountModelFromUpdate(acu *entity.AccountUpdate) *Account {
+	return &Account{
+		AccountName: acu.AccountName,
+		Balance:     acu.Balance,
+		Note:        acu.Note,
+		UpdateTime:  acu.UpdateTime,
 	}
 }
 

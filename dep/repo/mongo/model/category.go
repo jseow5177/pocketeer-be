@@ -15,7 +15,7 @@ type Category struct {
 	UpdateTime   *uint64            `bson:"update_time,omitempty"`
 }
 
-func ToCategoryModel(c *entity.Category) *Category {
+func ToCategoryModelFromEntity(c *entity.Category) *Category {
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(c.GetCategoryID()) {
 		objID, _ = primitive.ObjectIDFromHex(c.GetCategoryID())
@@ -28,6 +28,13 @@ func ToCategoryModel(c *entity.Category) *Category {
 		CategoryType: c.CategoryType,
 		CreateTime:   c.CreateTime,
 		UpdateTime:   c.UpdateTime,
+	}
+}
+
+func ToCategoryModelFromUpdate(cu *entity.CategoryUpdate) *Category {
+	return &Category{
+		CategoryName: cu.CategoryName,
+		UpdateTime:   cu.UpdateTime,
 	}
 }
 

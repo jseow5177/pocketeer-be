@@ -49,15 +49,15 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 		return nil, err
 	}
 
-	nc := c.GetUpdates(req.ToCategoryUpdate(), true)
-	if nc == nil {
+	cu, hasUpdate := c.Update(req.ToCategoryUpdate())
+	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("category has no updates")
 		return &UpdateCategoryResponse{
 			c,
 		}, nil
 	}
 
-	if err = uc.categoryRepo.Update(ctx, req.ToCategoryFilter(), nc); err != nil {
+	if err = uc.categoryRepo.Update(ctx, req.ToCategoryFilter(), cu); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save category updates to repo, err: %v", err)
 		return nil, err
 	}

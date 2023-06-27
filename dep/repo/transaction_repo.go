@@ -16,7 +16,7 @@ type TransactionRepo interface {
 	GetMany(ctx context.Context, tf *TransactionFilter) ([]*entity.Transaction, error)
 
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
-	Update(ctx context.Context, tf *TransactionFilter, t *entity.Transaction) error
+	Update(ctx context.Context, tf *TransactionFilter, t *entity.TransactionUpdate) error
 
 	Sum(ctx context.Context, sumBy string, tf *TransactionFilter) (map[string]float64, error)
 }

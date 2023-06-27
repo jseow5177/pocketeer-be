@@ -2,8 +2,11 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -52,9 +55,10 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	if err != nil {
 		return nil, err
 	}
+	oldBalance := ac.GetBalance()
 
-	nac := ac.GetUpdates(req.ToAccountUpdate(), true)
-	if nac == nil {
+	acu, hasUpdate := ac.Update(req.ToAccountUpdate())
+	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("acount has no updates")
 		return &UpdateAccountResponse{
 			Account: ac,
@@ -62,9 +66,19 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err = uc.accountRepo.Update(ctx, req.ToAccountFilter(), nac); err != nil {
+		if err = uc.accountRepo.Update(ctx, req.ToAccountFilter(), acu); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to save account updates to repo, err: %v", err)
 			return err
+		}
+
+		if acu.Balance != nil {
+			balanceChange := acu.GetBalance() - oldBalance
+			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
+
+			if _, err = uc.transactionRepo.Create(ctx, t); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
+				return err
+			}
 		}
 
 		return nil
@@ -75,4 +89,21 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	return &UpdateAccountResponse{
 		Account: ac,
 	}, nil
+}
+
+func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accountID string) *entity.Transaction {
+	tt := uint32(entity.GetTransactionTypeByAmount(amount))
+
+	note := fmt.Sprintf("Unrecorded %s", entity.TransactionTypes[tt])
+
+	t := entity.NewTransaction(
+		userID,
+		accountID,
+		"",
+		entity.WithTransactionAmount(goutil.Float64(amount)),
+		entity.WithTransactionType(goutil.Uint32(tt)),
+		entity.WithTransactionNote(goutil.String(note)),
+	)
+
+	return t
 }

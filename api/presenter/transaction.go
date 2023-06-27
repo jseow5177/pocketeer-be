@@ -343,10 +343,8 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		TransactionID:   m.TransactionID,
-		CategoryID:      m.CategoryID,
 		Note:            m.Note,
 		Amount:          goutil.Float64(amount),
-		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 	}
 }

@@ -19,7 +19,7 @@ type Transaction struct {
 	UpdateTime      *uint64            `bson:"update_time,omitempty"`
 }
 
-func ToTransactionModel(t *entity.Transaction) *Transaction {
+func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(t.GetTransactionID()) {
 		objID, _ = primitive.ObjectIDFromHex(t.GetTransactionID())
@@ -36,6 +36,15 @@ func ToTransactionModel(t *entity.Transaction) *Transaction {
 		TransactionTime: t.TransactionTime,
 		CreateTime:      t.CreateTime,
 		UpdateTime:      t.UpdateTime,
+	}
+}
+
+func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
+	return &Transaction{
+		Amount:          tu.Amount,
+		Note:            tu.Note,
+		TransactionTime: tu.TransactionTime,
+		UpdateTime:      tu.UpdateTime,
 	}
 }
 

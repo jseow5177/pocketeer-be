@@ -49,6 +49,7 @@ type AccountUpdate struct {
 	AccountName *string
 	Balance     *float64
 	Note        *string
+	UpdateTime  *uint64
 }
 
 func (acu *AccountUpdate) GetAccountName() string {
@@ -70,6 +71,13 @@ func (acu *AccountUpdate) GetNote() string {
 		return *acu.Note
 	}
 	return ""
+}
+
+func (acu *AccountUpdate) GetUpdateTime() uint64 {
+	if acu != nil && acu.UpdateTime != nil {
+		return *acu.UpdateTime
+	}
+	return 0
 }
 
 type AccountUpdateOption func(acu *AccountUpdate)
@@ -172,53 +180,57 @@ func NewAccount(userID string, opts ...AccountOption) *Account {
 	return ac
 }
 
-func SetAccount(ac *Account, opts ...AccountOption) {
+func setAccount(ac *Account, opts ...AccountOption) {
 	for _, opt := range opts {
 		opt(ac)
 	}
 }
 
-func (ac *Account) GetUpdates(acu *AccountUpdate, mergeUpdate bool) (accountUpdate *Account) {
-	var hasUpdate bool
+func (ac *Account) checkOpts() {}
+
+func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, hasUpdate bool) {
+	accountUpdate = new(AccountUpdate)
 
 	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
 		hasUpdate = true
+		setAccount(ac, WithAccountName(acu.AccountName))
 	}
 
 	if acu.Balance != nil && acu.GetBalance() != ac.GetBalance() {
 		hasUpdate = true
+		setAccount(ac, WithAccountBalance(acu.Balance))
 	}
 
 	if acu.Note != nil && acu.GetNote() != ac.GetNote() {
 		hasUpdate = true
+		setAccount(ac, WithAccountName(acu.Note))
 	}
 
 	if hasUpdate {
-		accountUpdate = new(Account)
-		now := uint64(time.Now().Unix())
+		now := goutil.Uint64(uint64(time.Now().Unix()))
+		setAccount(ac, WithAccountUpdateTime(now))
 
-		SetAccount(
-			accountUpdate,
-			WithAccountName(acu.AccountName),
-			WithAccountBalance(acu.Balance),
-			WithAccountNote(acu.Note),
-			WithAccountUpdateTime(goutil.Uint64(now)),
-		)
+		// check
+		ac.checkOpts()
 
-		if mergeUpdate {
-			goutil.MergeWithPtrFields(ac, accountUpdate)
+		accountUpdate.UpdateTime = now
+
+		if acu.AccountName != nil {
+			accountUpdate.AccountName = ac.AccountName
 		}
+
+		if acu.Balance != nil {
+			accountUpdate.Balance = ac.Balance
+		}
+
+		if acu.Note != nil {
+			accountUpdate.Note = ac.Note
+		}
+
 		return
 	}
 
 	return
-}
-
-func (ac *Account) AddBalance(amount float64) (accountUpdate *Account) {
-	newBalance := ac.GetBalance() + amount
-	return ac.GetUpdates(NewAccountUpdate(
-		WithUpdateAccountBalance(goutil.Float64(newBalance)),
-	), true)
 }
 
 func (ac *Account) GetUserID() string {
@@ -233,6 +245,10 @@ func (ac *Account) GetAccountID() string {
 		return *ac.AccountID
 	}
 	return ""
+}
+
+func (ac *Account) SetAccountID(accountID string) {
+	setAccount(ac, WithAccountID(goutil.String(accountID)))
 }
 
 func (ac *Account) GetAccountName() string {

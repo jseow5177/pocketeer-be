@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
@@ -64,6 +65,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 		return nil, err
 	}
 
@@ -74,6 +76,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
 		return nil, err
 	}
 
@@ -86,7 +89,10 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		}
 
 		// update account balance
-		nac := ac.AddBalance(t.GetAmount())
+		newBalance := ac.GetBalance() + t.GetAmount()
+		nac, _ := ac.Update(entity.NewAccountUpdate(
+			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
+		))
 		if err := uc.accountRepo.Update(ctx, req.ToAccountFilter(), nac); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to update account balance, err: %v", err)
 			return err
@@ -107,38 +113,42 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if err != nil {
 		return nil, err
 	}
+	oldAmount := t.GetAmount()
 
-	nt := t.GetUpdates(req.ToTransactionUpdate(), true)
-	if nt == nil {
+	tu, hasUpdate := t.Update(req.ToTransactionUpdate())
+	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
 			t,
 		}, nil
 	}
 
-	// check if category exists
-	if req.CategoryID != nil {
-		_, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
-		if err != nil {
-			log.Ctx(ctx).Info().Msgf("fail to get category from repo, categoryID: %v, err: %v", req.GetCategoryID(), err)
-			return nil, err
-		}
-	}
-
-	// check if account exists
-	if req.AccountID != nil {
-		_, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
-		if err != nil {
-			log.Ctx(ctx).Info().Msgf("fail to get account from repo, accountID: %v, err: %v", t.GetAccountID(), err)
-			return nil, err
-		}
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
+	if err != nil {
+		log.Ctx(ctx).Info().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
 		// save updates
-		if err = uc.transactionRepo.Update(ctx, req.ToTransactionFilter(), nt); err != nil {
+		if err = uc.transactionRepo.Update(ctx, req.ToTransactionFilter(), tu); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to save transaction updates to repo, err: %v", err)
 			return err
+		}
+
+		// update balance
+		if tu.Amount != nil {
+			newBalance := ac.GetBalance() + (tu.GetAmount() - oldAmount)
+			nac, hasUpdate := ac.Update(entity.NewAccountUpdate(
+				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
+			))
+
+			if hasUpdate {
+				if err := uc.accountRepo.Update(ctx, req.ToAccountFilter(t.GetAccountID()), nac); err != nil {
+					log.Ctx(ctx).Error().Msgf("fail to update account balance, err: %v", err)
+					return err
+				}
+			}
 		}
 
 		return nil

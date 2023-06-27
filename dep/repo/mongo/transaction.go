@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,18 +22,18 @@ func NewTransactionMongo(mongo *Mongo) repo.TransactionRepo {
 }
 
 func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (string, error) {
-	tm := model.ToTransactionModel(t)
+	tm := model.ToTransactionModelFromEntity(t)
 	id, err := m.mColl.create(ctx, tm)
 	if err != nil {
 		return "", err
 	}
-	entity.SetTransaction(t, entity.WithTransactionID(goutil.String(id)))
+	t.SetTransactionID(id)
 
 	return id, nil
 }
 
-func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, t *entity.Transaction) error {
-	tm := model.ToTransactionModel(t)
+func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, tu *entity.TransactionUpdate) error {
+	tm := model.ToTransactionModelFromUpdate(tu)
 	if err := m.mColl.update(ctx, tf, tm); err != nil {
 		return err
 	}

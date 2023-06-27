@@ -15,7 +15,7 @@ type AccountRepo interface {
 	Get(ctx context.Context, af *AccountFilter) (*entity.Account, error)
 
 	Create(ctx context.Context, ac *entity.Account) (string, error)
-	Update(ctx context.Context, af *AccountFilter, ac *entity.Account) error
+	Update(ctx context.Context, af *AccountFilter, acu *entity.AccountUpdate) error
 }
 
 type AccountFilter struct {

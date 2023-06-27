@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,18 +22,18 @@ func NewCategoryMongo(mongo *Mongo) repo.CategoryRepo {
 }
 
 func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string, error) {
-	cm := model.ToCategoryModel(c)
+	cm := model.ToCategoryModelFromEntity(c)
 	id, err := m.mColl.create(ctx, cm)
 	if err != nil {
 		return "", err
 	}
-	entity.SetCategory(c, entity.WithCategoryID(goutil.String(id)))
+	c.SetCategoryID(id)
 
 	return id, nil
 }
 
-func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, c *entity.Category) error {
-	cm := model.ToCategoryModel(c)
+func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu *entity.CategoryUpdate) error {
+	cm := model.ToCategoryModelFromUpdate(cu)
 	if err := m.mColl.update(ctx, cf, cm); err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 
 type CategoryUpdate struct {
 	CategoryName *string
+	UpdateTime   *uint64
 }
 
 func (cu *CategoryUpdate) GetCategoryName() string {
@@ -15,6 +16,13 @@ func (cu *CategoryUpdate) GetCategoryName() string {
 		return *cu.CategoryName
 	}
 	return ""
+}
+
+func (cu *CategoryUpdate) GetUpdateTime() uint64 {
+	if cu != nil && cu.UpdateTime != nil {
+		return *cu.UpdateTime
+	}
+	return 0
 }
 
 type CategoryUpdateOption func(cu *CategoryUpdate)
@@ -85,35 +93,39 @@ func NewCategory(userID string, opts ...CategoryOption) *Category {
 	for _, opt := range opts {
 		opt(c)
 	}
+	c.checkOpts()
 	return c
 }
 
-func SetCategory(c *Category, opts ...CategoryOption) {
+func setCategory(c *Category, opts ...CategoryOption) {
 	for _, opt := range opts {
 		opt(c)
 	}
 }
 
-func (c *Category) GetUpdates(cu *CategoryUpdate, mergeUpdate bool) (categoryUpdate *Category) {
-	var hasUpdate bool
+func (c *Category) checkOpts() {}
+
+func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, hasUpdate bool) {
+	categoryUpdate = new(CategoryUpdate)
 
 	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
 		hasUpdate = true
+		setCategory(c, WithCategoryName(cu.CategoryName))
 	}
 
 	if hasUpdate {
-		categoryUpdate = new(Category)
-		now := uint64(time.Now().Unix())
+		now := goutil.Uint64(uint64(time.Now().Unix()))
+		setCategory(c, WithCategoryUpdateTime(now))
 
-		SetCategory(
-			categoryUpdate,
-			WithCategoryName(cu.CategoryName),
-			WithCategoryUpdateTime(goutil.Uint64(now)),
-		)
+		// check
+		c.checkOpts()
 
-		if mergeUpdate {
-			goutil.MergeWithPtrFields(c, categoryUpdate)
+		categoryUpdate.UpdateTime = now
+
+		if cu.CategoryName != nil {
+			categoryUpdate.CategoryName = c.CategoryName
 		}
+
 		return
 	}
 
@@ -132,6 +144,10 @@ func (c *Category) GetCategoryID() string {
 		return *c.CategoryID
 	}
 	return ""
+}
+
+func (c *Category) SetCategoryID(categoryID string) {
+	setCategory(c, WithCategoryID(goutil.String(categoryID)))
 }
 
 func (c *Category) GetCategoryName() string {
