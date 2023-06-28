@@ -276,6 +276,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// gets account
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAccounts,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAccountsRequest),
+			Res:       new(presenter.GetAccountsResponse),
+			Validator: ach.GetAccountsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.GetAccounts(ctx, req.(*presenter.GetAccountsRequest), res.(*presenter.GetAccountsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// ========== Transaction ========== //
 
 	transactionHandler := th.NewTransactionHandler(s.transactionUseCase)

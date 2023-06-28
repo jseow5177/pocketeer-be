@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/util"
 )
 
-//go:generate easytags $GOFILE
 type CategoryBudget struct {
 	Budget     *Budget     `json:"budget,omitempty"`
 	Categories []*Category `json:"categories,omitempty"`

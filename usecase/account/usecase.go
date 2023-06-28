@@ -36,6 +36,18 @@ func (uc *accountUseCase) GetAccount(ctx context.Context, req *GetAccountRequest
 	}, nil
 }
 
+func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsRequest) (*GetAccountsResponse, error) {
+	acs, err := uc.accountRepo.GetMany(ctx, req.ToAccountFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get accounts from repo, err: %v", err)
+		return nil, err
+	}
+
+	return &GetAccountsResponse{
+		Accounts: acs,
+	}, nil
+}
+
 func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error) {
 	ac := req.ToAccountEntity()
 

@@ -25,7 +25,7 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 	},
 	"account_type": &validator.UInt32{
 		Optional:   false,
-		Validators: []validator.UInt32Func{entity.CheckAccountType},
+		Validators: []validator.UInt32Func{entity.CheckChildAccountType},
 	},
 })
 

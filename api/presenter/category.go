@@ -1,7 +1,5 @@
 package presenter
 
-//go:generate easytags $GOFILE
-
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/category"

@@ -167,6 +167,43 @@ func (m *GetAccountResponse) Set(useCaseRes *account.GetAccountResponse) {
 	m.Account = toAccount(useCaseRes.Account)
 }
 
+type GetAccountsRequest struct {
+	AccountType *uint32 `json:"account_type,omitempty"`
+}
+
+func (m *GetAccountsRequest) GetAccountType() uint32 {
+	if m != nil && m.AccountType != nil {
+		return *m.AccountType
+	}
+	return 0
+}
+
+func (m *GetAccountsRequest) ToUseCaseReq(userID string) *account.GetAccountsRequest {
+	return &account.GetAccountsRequest{
+		UserID:      goutil.String(userID),
+		AccountType: m.AccountType,
+	}
+}
+
+type GetAccountsResponse struct {
+	Accounts []*Account `json:"accounts,omitempty"`
+}
+
+func (m *GetAccountsResponse) GetAccounts() []*Account {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
+}
+
+func (m *GetAccountsResponse) Set(useCaseRes *account.GetAccountsResponse) {
+	acs := make([]*Account, 0)
+	for _, ac := range useCaseRes.Accounts {
+		acs = append(acs, toAccount(ac))
+	}
+	m.Accounts = acs
+}
+
 type UpdateAccountRequest struct {
 	AccountID   *string `json:"account_id,omitempty"`
 	AccountName *string `json:"account_name,omitempty"`

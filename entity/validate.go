@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	ErrInvalidChildAccountType = errors.New("invalid child account type")
 	ErrInvalidAccountType      = errors.New("invalid account type")
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
 	ErrInvalidCategoryType     = errors.New("invalid category type")
@@ -18,8 +19,17 @@ var (
 )
 
 func CheckAccountType(accountType uint32) error {
-	if _, ok := AccountTypes[accountType]; !ok {
+	_, isParent := ParentAccountTypes[accountType]
+	_, isChild := ChildAccountTypes[accountType]
+	if !isParent && !isChild {
 		return ErrInvalidAccountType
+	}
+	return nil
+}
+
+func CheckChildAccountType(accountType uint32) error {
+	if _, ok := ChildAccountTypes[accountType]; !ok {
+		return ErrInvalidChildAccountType
 	}
 	return nil
 }

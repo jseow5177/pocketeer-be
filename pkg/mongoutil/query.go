@@ -19,14 +19,15 @@ var sortOrders = map[string]int{
 }
 
 var supportedOps = map[string]string{
-	"eq":  "equal",
-	"ne":  "not equal",
-	"gt":  "greater than",
-	"gte": "greater than equal",
-	"lt":  "less than",
-	"lte": "less than equal",
-	"in":  "in",
-	"nin": "not in",
+	"eq":         "equal",
+	"ne":         "not equal",
+	"gt":         "greater than",
+	"gte":        "greater than equal",
+	"lt":         "less than",
+	"lte":        "less than equal",
+	"in":         "in",
+	"nin":        "not in",
+	"bitsAllSet": "bit all set",
 }
 
 func GetOp(op string) string {

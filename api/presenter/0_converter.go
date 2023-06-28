@@ -107,6 +107,14 @@ func toTransaction(t *entity.Transaction) *Transaction {
 	}
 }
 
+func toAccounts(acs []*entity.Account) []*Account {
+	accounts := make([]*Account, len(acs))
+	for idx, ac := range acs {
+		accounts[idx] = toAccount(ac)
+	}
+	return accounts
+}
+
 func toAccount(ac *entity.Account) *Account {
 	if ac == nil {
 		return nil

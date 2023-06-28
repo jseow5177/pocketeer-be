@@ -155,7 +155,14 @@ type GetCategoriesRequest struct {
 	CategoryIDs  []string
 }
 
-func (m *GetCategoriesRequest) GetCategoryTypee() uint32 {
+func (m *GetCategoriesRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetCategoriesRequest) GetCategoryType() uint32 {
 	if m != nil && m.CategoryType != nil {
 		return *m.CategoryType
 	}

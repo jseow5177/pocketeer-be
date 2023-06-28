@@ -9,6 +9,7 @@ import (
 
 type UseCase interface {
 	GetAccount(ctx context.Context, req *GetAccountRequest) (*GetAccountResponse, error)
+	GetAccounts(ctx context.Context, req *GetAccountsRequest) (*GetAccountsResponse, error)
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
@@ -47,6 +48,43 @@ type GetAccountResponse struct {
 func (m *GetAccountResponse) GetAccount() *entity.Account {
 	if m != nil && m.Account != nil {
 		return m.Account
+	}
+	return nil
+}
+
+type GetAccountsRequest struct {
+	UserID      *string
+	AccountType *uint32
+}
+
+func (m *GetAccountsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetAccountsRequest) GetAccountType() uint32 {
+	if m != nil && m.AccountType != nil {
+		return *m.AccountType
+	}
+	return 0
+}
+
+func (m *GetAccountsRequest) ToAccountFilter() *repo.AccountFilter {
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WitAccountType(m.AccountType),
+	)
+}
+
+type GetAccountsResponse struct {
+	Accounts []*entity.Account
+}
+
+func (m *GetAccountsResponse) GetAccounts() []*entity.Account {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
 	}
 	return nil
 }

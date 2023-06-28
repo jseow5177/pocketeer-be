@@ -52,3 +52,17 @@ func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entit
 
 	return model.ToAccountEntity(ac), nil
 }
+
+func (m *accountMongo) GetMany(ctx context.Context, acf *repo.AccountFilter) ([]*entity.Account, error) {
+	res, err := m.mColl.getMany(ctx, acf, nil, new(model.Account))
+	if err != nil {
+		return nil, err
+	}
+
+	eacs := make([]*entity.Account, 0, len(res))
+	for _, r := range res {
+		eacs = append(eacs, model.ToAccountEntity(r.(*model.Account)))
+	}
+
+	return eacs, nil
+}

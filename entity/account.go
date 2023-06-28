@@ -37,7 +37,12 @@ const (
 	DebtMortgage
 )
 
-var AccountTypes = map[uint32]string{
+var ParentAccountTypes = map[uint32]string{
+	uint32(AccountTypeAsset): "asset",
+	uint32(AccountTypeDebt):  "debt",
+}
+
+var ChildAccountTypes = map[uint32]string{
 	uint32(AssetCash):        "cash",
 	uint32(AssetBankAccount): "bank account",
 	uint32(DebtCreditCard):   "credit card",
