@@ -2,12 +2,10 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -24,16 +22,12 @@ func NewUserMongo(mongo *Mongo) repo.UserRepo {
 }
 
 func (m *userMongo) Create(ctx context.Context, u *entity.User) (string, error) {
-	now := uint64(time.Now().Unix())
-
-	u.UpdateTime = goutil.Uint64(now)
-	u.UpdateTime = goutil.Uint64(now)
-
 	um := model.ToUserModel(u)
 	id, err := m.mColl.create(ctx, um)
 	if err != nil {
 		return "", err
 	}
+	u.SetUserID(id)
 
 	return id, nil
 }

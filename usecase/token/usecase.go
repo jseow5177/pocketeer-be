@@ -31,7 +31,12 @@ func (uc *tokenUseCase) CreateToken(ctx context.Context, req *CreateTokenRequest
 		return nil, err
 	}
 
-	t := entity.NewToken(tCfg, req.GetCustomClaims())
+	t := entity.NewToken(
+		tCfg.Secret,
+		tCfg.ExpiresIn,
+		entity.WithTokenClaims(req.GetCustomClaims()),
+		entity.WithTokenIssuer(goutil.String(tCfg.Issuer)),
+	)
 	tokenID, token, err := t.Sign()
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to sign token, err: %v", err)

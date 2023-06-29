@@ -62,15 +62,16 @@ func ToUserEntity(u *User) (*entity.User, error) {
 		decodedSalt = goutil.String(string(b))
 	}
 
-	return &entity.User{
-		UserID:     goutil.String(u.GetUserID()),
-		Username:   u.Username,
-		UserStatus: u.UserStatus,
-		Hash:       decodedHash,
-		Salt:       decodedSalt,
-		CreateTime: u.CreateTime,
-		UpdateTime: u.UpdateTime,
-	}, nil
+	return entity.NewUser(
+		u.GetUsername(),
+		"",
+		entity.WithUserID(goutil.String(u.GetUserID())),
+		entity.WithHash(decodedHash),
+		entity.WithSalt(decodedSalt),
+		entity.WithUserStatus(u.UserStatus),
+		entity.WithUserCreateTime(u.CreateTime),
+		entity.WithUserUpdateTime(u.UpdateTime),
+	)
 }
 
 func (u *User) GetUserID() string {

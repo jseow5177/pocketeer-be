@@ -37,7 +37,7 @@ func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticated
 	userID := validateTokenRes.CustomClaims.GetUserID()
 
 	// check if user exists
-	getUserRes, err := uc.GetUser(ctx, &GetUserRequest{
+	u, err := uc.userRepo.Get(ctx, &repo.UserFilter{
 		UserID:     goutil.String(userID),
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	})
@@ -46,7 +46,7 @@ func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticated
 	}
 
 	return &IsAuthenticatedResponse{
-		UserID: getUserRes.UserID,
+		UserID: u.UserID,
 	}, nil
 }
 
@@ -63,7 +63,7 @@ func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUs
 }
 
 func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
-	_, err := uc.GetUser(ctx, req.ToGetUserRequest())
+	_, err := uc.userRepo.Get(ctx, req.ToUserFilter())
 	if err != nil && err != repo.ErrUserNotFound {
 		return nil, err
 	}
@@ -72,19 +72,16 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 		return nil, ErrUsernameAlreadyExist
 	}
 
-	u := req.ToUserEntity()
-	if err = u.SetHash(req.GetPassword()); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to set password hash, err: %v", err)
+	u, err := req.ToUserEntity()
+	if err != nil {
 		return nil, err
 	}
 
-	userID, err := uc.userRepo.Create(ctx, u)
+	_, err = uc.userRepo.Create(ctx, u)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
 		return nil, err
 	}
-
-	u.UserID = goutil.String(userID)
 
 	return &SignUpResponse{
 		User: u,
@@ -92,7 +89,7 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 }
 
 func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error) {
-	getUserRes, err := uc.GetUser(ctx, req.ToGetUserRequest())
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
 	if err != nil {
 		if err == repo.ErrUserNotFound {
 			// hide not found error
@@ -101,7 +98,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		return nil, err
 	}
 
-	isPasswordCorrect, err := getUserRes.IsPasswordCorrect(req.GetPassword())
+	isPasswordCorrect, err := u.IsPasswordCorrect(req.GetPassword())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to check if password is correct, err: %v", err)
 		return nil, err
@@ -115,7 +112,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	accessTokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
 		CustomClaims: &entity.CustomClaims{
-			UserID: getUserRes.UserID,
+			UserID: u.UserID,
 		},
 	})
 	if err != nil {

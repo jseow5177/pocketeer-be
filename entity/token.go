@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
@@ -34,19 +33,63 @@ const (
 )
 
 type Token struct {
-	claims    *CustomClaims
-	expiresIn int64
-	issuer    string
-	secret    string
+	Claims    *CustomClaims
+	ExpiresIn *int64
+	Issuer    *string
+	Secret    *string
 }
 
-func NewToken(tokenCfg *config.Token, customClaims *CustomClaims) *Token {
-	return &Token{
-		expiresIn: tokenCfg.ExpiresIn,
-		issuer:    tokenCfg.Issuer,
-		secret:    tokenCfg.Secret,
-		claims:    customClaims,
+type TokenOption = func(t *Token)
+
+func WithTokenIssuer(issuer *string) TokenOption {
+	return func(t *Token) {
+		t.Issuer = issuer
 	}
+}
+
+func WithTokenClaims(claims *CustomClaims) TokenOption {
+	return func(t *Token) {
+		t.Claims = claims
+	}
+}
+
+func (t *Token) GetClaims() *CustomClaims {
+	if t != nil && t.Claims != nil {
+		return t.Claims
+	}
+	return nil
+}
+
+func (t *Token) GetExpiresIn() int64 {
+	if t != nil && t.ExpiresIn != nil {
+		return *t.ExpiresIn
+	}
+	return 0
+}
+
+func (t *Token) GetIssuer() string {
+	if t != nil && t.Issuer != nil {
+		return *t.Issuer
+	}
+	return ""
+}
+
+func (t *Token) GetSecret() string {
+	if t != nil && t.Secret != nil {
+		return *t.Secret
+	}
+	return ""
+}
+
+func NewToken(secret string, expiresIn int64, opts ...TokenOption) *Token {
+	t := &Token{
+		Secret:    goutil.String(secret),
+		ExpiresIn: goutil.Int64(expiresIn),
+	}
+	for _, opt := range opts {
+		opt(t)
+	}
+	return t
 }
 
 func ParseToken(plainToken, secret string) (jti string, customClaims *CustomClaims, err error) {
@@ -65,18 +108,18 @@ func ParseToken(plainToken, secret string) (jti string, customClaims *CustomClai
 func (t *Token) Sign() (jti string, signedToken string, err error) {
 	jti = goutil.NextXID()
 
-	expiresAt := time.Now().Add(time.Duration(t.expiresIn) * time.Second)
+	expiresAt := time.Now().Add(time.Duration(t.GetExpiresIn()) * time.Second)
 
 	claims := new(claims)
-	claims.CustomClaims = t.claims
+	claims.CustomClaims = t.GetClaims()
 	claims.RegisteredClaims = jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
-		Issuer:    t.issuer,
+		Issuer:    t.GetIssuer(),
 		ID:        jti,
 	}
 
 	token := jwt.NewWithClaims(signTokenMethod, claims)
-	signedToken, err = token.SignedString([]byte(t.secret))
+	signedToken, err = token.SignedString([]byte(t.GetSecret()))
 	if err != nil {
 		return "", "", err
 	}

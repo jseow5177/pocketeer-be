@@ -82,18 +82,15 @@ func (m *SignUpRequest) GetPassword() string {
 	return ""
 }
 
-func (m *SignUpRequest) ToGetUserRequest() *GetUserRequest {
-	return &GetUserRequest{
+func (m *SignUpRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
 		UserName:   m.Username,
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	}
 }
 
-func (m *SignUpRequest) ToUserEntity() *entity.User {
-	return &entity.User{
-		Username:   m.Username,
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
-	}
+func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
+	return entity.NewUser(m.GetUsername(), m.GetPassword())
 }
 
 type SignUpResponse struct {
@@ -126,8 +123,8 @@ func (m *LogInRequest) GetPassword() string {
 	return ""
 }
 
-func (m *LogInRequest) ToGetUserRequest() *GetUserRequest {
-	return &GetUserRequest{
+func (m *LogInRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
 		UserName:   m.Username,
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	}

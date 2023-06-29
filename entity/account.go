@@ -182,6 +182,7 @@ func NewAccount(userID string, opts ...AccountOption) *Account {
 	for _, opt := range opts {
 		opt(ac)
 	}
+	ac.checkOpts()
 	return ac
 }
 
