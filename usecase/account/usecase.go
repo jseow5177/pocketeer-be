@@ -78,8 +78,8 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err = uc.accountRepo.Update(ctx, req.ToAccountFilter(), acu); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save account updates to repo, err: %v", err)
+		if err = uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save account updates to repo, err: %v", err)
 			return err
 		}
 
@@ -87,8 +87,8 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 			balanceChange := acu.GetBalance() - oldBalance
 			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
 
-			if _, err = uc.transactionRepo.Create(ctx, t); err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
+			if _, err = uc.transactionRepo.Create(txCtx, t); err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
 				return err
 			}
 		}

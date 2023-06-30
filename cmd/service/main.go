@@ -276,7 +276,7 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// gets account
+	// gets accounts
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetAccounts,
 		Method: http.MethodPost,

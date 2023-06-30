@@ -50,7 +50,9 @@ func WitAccountType(accountType *uint32) AccountFilterOption {
 }
 
 func NewAccountFilter(userID string, opts ...AccountFilterOption) *AccountFilter {
-	acf := new(AccountFilter)
+	acf := &AccountFilter{
+		UserID: goutil.String(userID),
+	}
 	for _, opt := range opts {
 		opt(acf)
 	}
