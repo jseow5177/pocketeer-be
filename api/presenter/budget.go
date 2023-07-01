@@ -2,7 +2,6 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/aggr"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -55,17 +54,17 @@ type SetBudgetRequest struct {
 
 type SetBudgetResponse struct{}
 
-func (m *GetBudgetRequest) ToUseCaseReq(userID string) *aggr.GetBudgetWithCategoriesRequest {
+func (m *GetBudgetRequest) ToUseCaseReq(userID string) *budget.GetBudgetWithCategoriesRequest {
 	date, _ := util.DateStrToDate(m.GetDate())
 
-	return &aggr.GetBudgetWithCategoriesRequest{
+	return &budget.GetBudgetWithCategoriesRequest{
 		UserID:   goutil.String(userID),
 		BudgetID: m.BudgetID,
 		Date:     date,
 	}
 }
 
-func (m *GetBudgetResponse) Set(usecaseRes *aggr.GetBudgetWithCategoriesResponse) {
+func (m *GetBudgetResponse) Set(usecaseRes *budget.GetBudgetWithCategoriesResponse) {
 	m.CategoryBudget = &CategoryBudget{
 		Budget:     toBudget(usecaseRes.GetBudget()),
 		Categories: toCategories(usecaseRes.GetCategories()),

@@ -2,6 +2,7 @@ package budget
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -112,4 +113,43 @@ func (uc *budgetUseCase) SetBudget(
 	}
 
 	return &SetBudgetResponse{}, nil
+}
+
+func (uc *budgetUseCase) GetBudgetWithCategories(
+	ctx context.Context,
+	req *GetBudgetWithCategoriesRequest,
+) (*GetBudgetWithCategoriesResponse, error) {
+	budgetRes, err := uc.GetBudget(
+		ctx,
+		req.ToGetBudgetRequest(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	budget := budgetRes.GetBudget()
+	if budget == nil {
+		log.Ctx(ctx).Error().Msgf("cannot find budget with budgetID=%s", req.GetBudgetID())
+		return nil, fmt.Errorf("cannot find budget with budgetID=%s", req.GetBudgetID())
+	}
+
+	cs, err := uc.categoryRepo.GetMany(
+		ctx,
+		&repo.CategoryFilter{
+			CategoryIDs: budget.GetCategoryIDs(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cs) != len(budget.GetCategoryIDs()) {
+		log.Ctx(ctx).Error().Msgf("some categories are missing for ids=%+v", budget.GetCategoryIDs())
+		return nil, fmt.Errorf("some categories are missing for ids=%+v", budget.GetCategoryIDs())
+	}
+
+	return &GetBudgetWithCategoriesResponse{
+		Budget:     budget,
+		Categories: cs,
+	}, nil
 }

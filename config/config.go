@@ -1,9 +1,11 @@
 package config
 
 type Config struct {
-	Server *Server `json:"server"`
-	Mongo  *Mongo  `json:"mongo"`
-	Tokens *Tokens `json:"token"`
+	Server  *Server  `json:"server"`
+	Mongo   *Mongo   `json:"mongo"`
+	Tokens  *Tokens  `json:"token"`
+	FinnHub *FinnHub `json:"finnhub"`
+	IEX     *IEX     `json:"iex"`
 }
 
 type RateLimit struct {
@@ -24,6 +26,12 @@ type Mongo struct {
 	DBName   string `json:"db_name"`
 }
 
+func (m *Mongo) String() string {
+	//uri := "mongodb+srv://%s:%s@%s/"
+	//return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
+	return "mongodb://localhost:27017"
+}
+
 type Token struct {
 	Secret    string `json:"secret"`
 	ExpiresIn int64  `json:"expires_in"` // second
@@ -35,10 +43,14 @@ type Tokens struct {
 	RefreshToken *Token `json:"refresh_token"`
 }
 
-func (m *Mongo) String() string {
-	//uri := "mongodb+srv://%s:%s@%s/"
-	//return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
-	return "mongodb://localhost:27017"
+type FinnHub struct {
+	Token string `json:"token"`
+}
+
+type IEX struct {
+	BaseURL          string   `json:"base_url"`
+	Token            string   `json:"token"`
+	SupportedRegions []string `json:"supported_regions"`
 }
 
 func NewConfig() *Config {
@@ -65,6 +77,14 @@ func NewConfig() *Config {
 				Issuer:    "pocketeer_be",
 				Secret:    "@w8DlsuWfSlg25W0#qbZ5CpGq#MNlB",
 			},
+		},
+		FinnHub: &FinnHub{
+			Token: "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
+		},
+		IEX: &IEX{
+			BaseURL:          "https://api.iex.cloud/v1",
+			Token:            "pk_c59529d329c04cdda7708d9b7030f29f",
+			SupportedRegions: []string{"US"},
 		},
 	}
 }

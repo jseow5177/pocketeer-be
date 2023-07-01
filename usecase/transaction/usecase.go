@@ -82,9 +82,9 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
 		// create transaction
-		_, err := uc.transactionRepo.Create(ctx, t)
+		_, err := uc.transactionRepo.Create(txCtx, t)
 		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save new transaction to repo, err: %v", err)
+			log.Ctx(txCtx).Error().Msgf("fail to save new transaction to repo, err: %v", err)
 			return err
 		}
 
@@ -93,8 +93,8 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		nac, _ := ac.Update(entity.NewAccountUpdate(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 		))
-		if err := uc.accountRepo.Update(ctx, req.ToAccountFilter(), nac); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to update account balance, err: %v", err)
+		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), nac); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
 			return err
 		}
 
@@ -131,8 +131,8 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
 		// save updates
-		if err = uc.transactionRepo.Update(ctx, req.ToTransactionFilter(), tu); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save transaction updates to repo, err: %v", err)
+		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), tu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save transaction updates to repo, err: %v", err)
 			return err
 		}
 
@@ -144,8 +144,8 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 			))
 
 			if hasUpdate {
-				if err := uc.accountRepo.Update(ctx, req.ToAccountFilter(t.GetAccountID()), nac); err != nil {
-					log.Ctx(ctx).Error().Msgf("fail to update account balance, err: %v", err)
+				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(t.GetAccountID()), nac); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
 					return err
 				}
 			}

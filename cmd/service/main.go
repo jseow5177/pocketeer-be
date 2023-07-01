@@ -14,6 +14,8 @@ import (
 	"github.com/jseow5177/pockteer-be/api/middleware"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/dep/api"
+	"github.com/jseow5177/pockteer-be/dep/api/iex"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
@@ -23,13 +25,14 @@ import (
 	ach "github.com/jseow5177/pockteer-be/api/handler/account"
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
+	sh "github.com/jseow5177/pockteer-be/api/handler/security"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
 	acuc "github.com/jseow5177/pockteer-be/usecase/account"
-	auc "github.com/jseow5177/pockteer-be/usecase/aggr"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
+	suc "github.com/jseow5177/pockteer-be/usecase/security"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
 	uuc "github.com/jseow5177/pockteer-be/usecase/user"
@@ -46,13 +49,15 @@ type server struct {
 	userRepo        repo.UserRepo
 	accountRepo     repo.AccountRepo
 
+	securityAPI api.SecurityAPI
+
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
 	budgetUseCase      buc.UseCase
 	userUseCase        uuc.UseCase
 	tokenUseCase       ttuc.UseCase
 	accountUseCase     acuc.UseCase
-	aggrUseCase        auc.UseCase
+	securityUseCase    suc.UseCase
 }
 
 func main() {
@@ -97,6 +102,9 @@ func (s *server) Start() error {
 	s.userRepo = mongo.NewUserMongo(s.mongo)
 	s.accountRepo = mongo.NewAccountMongo(s.mongo)
 
+	// init apis
+	s.securityAPI = iex.NewIEXMgr(s.cfg.IEX)
+
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo)
@@ -104,7 +112,7 @@ func (s *server) Start() error {
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
-	s.aggrUseCase = auc.NewAggrUseCase(s.budgetUseCase, s.categoryUseCase)
+	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -419,7 +427,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	// ========== Budget ========== //
 
-	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase, s.aggrUseCase)
+	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
 
 	// get budget
 	r.RegisterHttpRoute(&router.HttpRoute{
@@ -461,6 +469,25 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: bh.SetBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.SetBudget(ctx, req.(*presenter.SetBudgetRequest), res.(*presenter.SetBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// ========== Security ========== //
+
+	securityHandler := sh.NewSecurityHandler(s.securityUseCase)
+
+	// search securities
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSearchSecurities,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SearchSecuritiesRequest),
+			Res:       new(presenter.SearchSecuritiesResponse),
+			Validator: sh.SearchSecuritiesValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return securityHandler.SearchSecurities(ctx, req.(*presenter.SearchSecuritiesRequest), res.(*presenter.SearchSecuritiesResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

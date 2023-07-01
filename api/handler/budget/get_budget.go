@@ -24,7 +24,7 @@ func (h *budgetHandler) GetBudget(
 	res *presenter.GetBudgetResponse,
 ) error {
 	userID := util.GetUserIDFromCtx(ctx)
-	useCaseRes, err := h.aggrUsecase.GetBudgetWithCategories(
+	useCaseRes, err := h.budgetUseCase.GetBudgetWithCategories(
 		ctx,
 		req.ToUseCaseReq(userID),
 	)

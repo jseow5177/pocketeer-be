@@ -40,3 +40,13 @@ func Base64Decode(s string) ([]byte, error) {
 func NextXID() string {
 	return xid.New().String()
 }
+
+func ContainString(slice []string, target string) bool {
+	for _, v := range slice {
+		if target == v {
+			return true
+		}
+	}
+
+	return false
+}

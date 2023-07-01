@@ -152,3 +152,13 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 		Sum: aggr.Sum,
 	}
 }
+
+func toSecurity(security *entity.Security) *Security {
+	return &Security{
+		Symbol:       goutil.String(security.GetSymbol()),
+		SecurityName: goutil.String(security.GetSecurityName()),
+		SecurityType: goutil.Uint32(security.GetSecurityType()),
+		Region:       goutil.String(security.GetRegion()),
+		Currency:     goutil.String(security.GetCurrency()),
+	}
+}

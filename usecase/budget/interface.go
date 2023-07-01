@@ -12,6 +12,7 @@ type UseCase interface {
 	GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error)
 	GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error)
 	SetBudget(ctx context.Context, req *SetBudgetRequest) (*SetBudgetResponse, error)
+	GetBudgetWithCategories(ctx context.Context, req *GetBudgetWithCategoriesRequest) (*GetBudgetWithCategoriesResponse, error)
 }
 
 type GetBudgetsRequest struct {
@@ -150,4 +151,51 @@ func (m *SetBudgetRequest) GetRangeStartDate() time.Time {
 
 func (m *SetBudgetRequest) GetRangeEndDate() time.Time {
 	return m.RangeEndDate
+}
+
+type GetBudgetWithCategoriesRequest struct {
+	UserID   *string
+	BudgetID *string
+	Date     time.Time
+}
+
+func (m *GetBudgetWithCategoriesRequest) GetDate() time.Time {
+	if m != nil {
+		return m.Date
+	}
+	return time.Time{}
+}
+
+func (m *GetBudgetWithCategoriesRequest) GetBudgetID() string {
+	if m != nil && m.BudgetID != nil {
+		return *m.BudgetID
+	}
+	return ""
+}
+
+func (m *GetBudgetWithCategoriesRequest) ToGetBudgetRequest() *GetBudgetRequest {
+	return &GetBudgetRequest{
+		UserID:   m.UserID,
+		BudgetID: m.BudgetID,
+		Date:     m.Date,
+	}
+}
+
+type GetBudgetWithCategoriesResponse struct {
+	Budget     *entity.Budget
+	Categories []*entity.Category
+}
+
+func (m *GetBudgetWithCategoriesResponse) GetBudget() *entity.Budget {
+	if m != nil {
+		return m.Budget
+	}
+	return nil
+}
+
+func (m *GetBudgetWithCategoriesResponse) GetCategories() []*entity.Category {
+	if m != nil {
+		return m.Categories
+	}
+	return nil
 }

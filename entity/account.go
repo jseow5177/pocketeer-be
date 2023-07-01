@@ -28,6 +28,7 @@ const (
 const (
 	AssetCash AccountType = AccountTypeAsset<<AccountTypeBitShift | iota
 	AssetBankAccount
+	AssetInvestment
 )
 
 // Allow 2^4 unique debt
@@ -45,6 +46,7 @@ var ParentAccountTypes = map[uint32]string{
 var ChildAccountTypes = map[uint32]string{
 	uint32(AssetCash):        "cash",
 	uint32(AssetBankAccount): "bank account",
+	uint32(AssetInvestment):  "investment",
 	uint32(DebtCreditCard):   "credit card",
 	uint32(DebtLoan):         "loan",
 	uint32(DebtMortgage):     "mortgage",
