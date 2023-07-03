@@ -18,7 +18,7 @@ func NewSecurityUseCase(securityAPI api.SecurityAPI) UseCase {
 }
 
 func (uc *securityUseCase) SearchSecurities(ctx context.Context, req *SearchSecuritiesRequest) (*SearchSecuritiesResponse, error) {
-	ss, err := uc.securityAPI.SearchSecurities(ctx, req.GetKeyword())
+	ss, err := uc.securityAPI.SearchSecurities(ctx, req.ToSecurityFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to search securities, err: %v", err)
 		return nil, err

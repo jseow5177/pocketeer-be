@@ -86,14 +86,28 @@ func NewMongoColl(m *Mongo, collName string) *MongoColl {
 }
 
 func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error) {
-	r, err := mc.coll.InsertOne(ctx, doc)
+	res, err := mc.coll.InsertOne(ctx, doc)
 	if err != nil {
 		return "", err
 	}
 
-	id := r.InsertedID.(primitive.ObjectID)
+	id := res.InsertedID.(primitive.ObjectID)
 
 	return id.Hex(), nil
+}
+
+func (mc *MongoColl) createMany(ctx context.Context, docs []interface{}) ([]string, error) {
+	res, err := mc.coll.InsertMany(ctx, docs)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0)
+	for _, id := range res.InsertedIDs {
+		ids = append(ids, id.(primitive.ObjectID).Hex())
+	}
+
+	return ids, nil
 }
 
 func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) error {
@@ -133,38 +147,6 @@ func (mc *MongoColl) upsert(ctx context.Context, uniqueKey string, doc interface
 	}
 
 	return id, nil
-}
-
-func (mc *MongoColl) upsertMany(ctx context.Context, uniqueKey string, docs []interface{}) (ids []string, err error) {
-	var bulkWrites []mongo.WriteModel
-
-	for _, doc := range docs {
-		keyValue := getUniqueKeyValue(doc, uniqueKey)
-
-		filter := bson.M{uniqueKey: keyValue}
-		update := bson.M{"$set": removeUniqueKeyField(doc, uniqueKey)}
-
-		upsert := mongo.NewUpdateOneModel()
-		upsert.SetFilter(filter)
-		upsert.SetUpdate(update)
-		upsert.SetUpsert(true)
-
-		bulkWrites = append(bulkWrites, upsert)
-	}
-
-	opts := options.BulkWrite().SetOrdered(false)
-	result, err := mc.coll.BulkWrite(ctx, bulkWrites, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	ids = make([]string, 0)
-	for _, id := range result.UpsertedIDs {
-		objID := id.(primitive.ObjectID)
-		ids = append(ids, objID.Hex())
-	}
-
-	return ids, nil
 }
 
 func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interface{}) error {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
@@ -75,8 +76,8 @@ func NewIEXMgr(cfg *config.IEX) *iexMgr {
 }
 
 // Doc: https://iexcloud.io/docs/core/autocomplete-search
-func (mgr *iexMgr) SearchSecurities(ctx context.Context, keyword string) ([]*entity.Security, error) {
-	url := fmt.Sprintf("%s/search/%s", mgr.baseURL, keyword)
+func (mgr *iexMgr) SearchSecurities(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
+	url := fmt.Sprintf("%s/search/%s", mgr.baseURL, sf.GetKeyword())
 
 	code, data, err := httputil.SendGetRequest(url, mgr.getTokenParam(), nil)
 	if err != nil {
@@ -116,7 +117,11 @@ func (mgr *iexMgr) SearchSecurities(ctx context.Context, keyword string) ([]*ent
 }
 
 // Doc: https://iexcloud.io/docs/core/QUOTE
-func (mgr *iexMgr) GetLatestQuote(ctx context.Context, symbol string) (*entity.Quote, error) {
+func (mgr *iexMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilter) (*entity.Quote, error) {
+	return nil, nil
+}
+
+func (mgr *iexMgr) ListSymbols(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
 	return nil, nil
 }
 
