@@ -9,6 +9,44 @@ import (
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
+type Paging struct {
+	Limit *uint32 `json:"limit,omitempty"`
+	Page  *uint32 `json:"page,omitempty"`
+}
+
+func (p *Paging) GetLimit() uint32 {
+	if p != nil && p.Limit != nil {
+		return *p.Limit
+	}
+	return 0
+}
+
+func (p *Paging) GetPage() uint32 {
+	if p != nil && p.Page != nil {
+		return *p.Page
+	}
+	return 0
+}
+
+type UInt64Filter struct {
+	Gte *uint64 `json:"gte,omitempty"`
+	Lte *uint64 `json:"lte,omitempty"`
+}
+
+func (uv *UInt64Filter) GetGte() uint64 {
+	if uv != nil && uv.Gte != nil {
+		return *uv.Gte
+	}
+	return 0
+}
+
+func (uv *UInt64Filter) GetLte() uint64 {
+	if uv != nil && uv.Lte != nil {
+		return *uv.Lte
+	}
+	return 0
+}
+
 func toBudgets(
 	entities []*entity.Budget,
 ) []*Budget {
@@ -107,12 +145,20 @@ func toTransaction(t *entity.Transaction) *Transaction {
 	}
 }
 
-func toAccounts(acs []*entity.Account) []*Account {
-	accounts := make([]*Account, len(acs))
-	for idx, ac := range acs {
-		accounts[idx] = toAccount(ac)
+func toHolding(h *entity.Holding) *Holding {
+	if h == nil {
+		return nil
 	}
-	return accounts
+
+	return &Holding{
+		HoldingID:     goutil.String(h.GetHoldingID()),
+		AccountID:     goutil.String(h.GetAccountID()),
+		Symbol:        goutil.String(h.GetSymbol()),
+		HoldingType:   goutil.Uint32(h.GetHoldingType()),
+		HoldingStatus: goutil.Uint32(h.GetHoldingStatus()),
+		CreateTime:    goutil.Uint64(h.GetCreateTime()),
+		UpdateTime:    goutil.Uint64(h.GetUpdateTime()),
+	}
 }
 
 func toAccount(ac *entity.Account) *Account {

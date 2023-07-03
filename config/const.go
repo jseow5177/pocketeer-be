@@ -30,6 +30,8 @@ const (
 	PathSetBudget  = PathV1Prefix + "set_budget"
 
 	PathSearchSecurities = PathV1Prefix + "search_securities"
+
+	PathCreateHolding = PathV1Prefix + "create_holding"
 )
 
 const (

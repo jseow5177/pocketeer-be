@@ -96,20 +96,6 @@ func (mc *MongoColl) create(ctx context.Context, doc interface{}) (string, error
 	return id.Hex(), nil
 }
 
-func (mc *MongoColl) createMany(ctx context.Context, docs []interface{}) ([]string, error) {
-	res, err := mc.coll.InsertMany(ctx, docs)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0)
-	for _, id := range res.InsertedIDs {
-		ids = append(ids, id.(primitive.ObjectID).Hex())
-	}
-
-	return ids, nil
-}
-
 func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) error {
 	var (
 		f = mongoutil.BuildFilter(filter)
