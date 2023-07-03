@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -115,6 +116,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accou
 		entity.WithTransactionAmount(goutil.Float64(amount)),
 		entity.WithTransactionType(goutil.Uint32(tt)),
 		entity.WithTransactionNote(goutil.String(note)),
+		entity.WithTransactionTime(goutil.Uint64(uint64(time.Now().UnixMilli()))),
 	)
 
 	return t
