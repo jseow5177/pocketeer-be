@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 
@@ -30,8 +31,8 @@ func NewFinnHubMgr(cfg *config.FinnHub) *finnhubMgr {
 }
 
 // Doc: https://finnhub.io/docs/api/symbol-search
-func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, keyword string) ([]*entity.Security, error) {
-	l, _, err := mgr.client.SymbolSearch(ctx).Q(keyword).Execute()
+func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
+	l, _, err := mgr.client.SymbolSearch(ctx).Q(sf.GetKeyword()).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("fail to search securities, err: %v", err)
 	}
@@ -56,6 +57,10 @@ func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, keyword string) ([]
 }
 
 // Doc: https://finnhub.io/docs/api/quote
-func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, symbol string) (*entity.Quote, error) {
+func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilter) (*entity.Quote, error) {
+	return nil, nil
+}
+
+func (mgr *finnhubMgr) ListSymbols(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
 	return nil, nil
 }

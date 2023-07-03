@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	ErrInvalidHoldingType      = errors.New("invalid holding type")
 	ErrInvalidChildAccountType = errors.New("invalid child account type")
 	ErrInvalidAccountType      = errors.New("invalid account type")
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
@@ -17,6 +18,13 @@ var (
 	ErrMonetaryStr             = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
 )
+
+func CheckHoldingType(holdingType uint32) error {
+	if _, ok := HoldingTypes[holdingType]; !ok {
+		return ErrInvalidHoldingType
+	}
+	return nil
+}
 
 func CheckAccountType(accountType uint32) error {
 	_, isParent := ParentAccountTypes[accountType]

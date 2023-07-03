@@ -16,6 +16,7 @@ const (
 )
 
 type Security struct {
+	SecurityID   *string
 	Symbol       *string
 	SecurityName *string
 	SecurityType *uint32
@@ -24,6 +25,12 @@ type Security struct {
 }
 
 type SecurityOption = func(s *Security)
+
+func WithSecurityID(securityID *string) SecurityOption {
+	return func(s *Security) {
+		s.SecurityID = securityID
+	}
+}
 
 func WithSecurityName(securityName *string) SecurityOption {
 	return func(s *Security) {
@@ -60,6 +67,13 @@ func NewSecurity(symbol string, opts ...SecurityOption) *Security {
 		opt(s)
 	}
 	return s
+}
+
+func (s *Security) GetSecurityID() string {
+	if s != nil && s.SecurityID != nil {
+		return *s.SecurityID
+	}
+	return ""
 }
 
 func (s *Security) GetSymbol() string {

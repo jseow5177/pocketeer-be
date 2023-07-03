@@ -98,6 +98,10 @@ func NewCategory(userID string, opts ...CategoryOption) *Category {
 }
 
 func setCategory(c *Category, opts ...CategoryOption) {
+	if c == nil {
+		return
+	}
+
 	for _, opt := range opts {
 		opt(c)
 	}

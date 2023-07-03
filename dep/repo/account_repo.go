@@ -13,7 +13,7 @@ var (
 )
 
 type AccountRepo interface {
-	Get(ctx context.Context, af *AccountFilter) (*entity.Account, error)
+	Get(ctx context.Context, acf *AccountFilter) (*entity.Account, error)
 	GetMany(ctx context.Context, acf *AccountFilter) ([]*entity.Account, error)
 
 	Create(ctx context.Context, ac *entity.Account) (string, error)

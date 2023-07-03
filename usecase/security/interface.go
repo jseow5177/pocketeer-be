@@ -3,6 +3,7 @@ package security
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
@@ -19,6 +20,12 @@ func (m *SearchSecuritiesRequest) GetKeyword() string {
 		return *m.Keyword
 	}
 	return ""
+}
+
+func (m *SearchSecuritiesRequest) ToSecurityFilter() *api.SecurityFilter {
+	return &api.SecurityFilter{
+		Keyword: m.Keyword,
+	}
 }
 
 type SearchSecuritiesResponse struct {

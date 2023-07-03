@@ -189,6 +189,10 @@ func NewAccount(userID string, opts ...AccountOption) *Account {
 }
 
 func setAccount(ac *Account, opts ...AccountOption) {
+	if ac == nil {
+		return
+	}
+
 	for _, opt := range opts {
 		opt(ac)
 	}
@@ -308,10 +312,18 @@ func (ac *Account) GetUpdateTime() uint64 {
 	return 0
 }
 
-func (ac *Account) IsAccountTypeAsset() bool {
+func (ac *Account) IsAsset() bool {
 	return (ac.GetAccountType() >> AccountTypeBitShift & uint32(AccountTypeAsset)) > 0
 }
 
-func (ac *Account) IsAccountTypeDebt() bool {
+func (ac *Account) IsDebt() bool {
 	return (ac.GetAccountType() >> AccountTypeBitShift & uint32(AccountTypeDebt)) > 0
+}
+
+func (ac *Account) IsInvestment() bool {
+	return ac.GetAccountType() == uint32(AssetInvestment)
+}
+
+func (ac *Account) CanSetBalance() bool {
+	return ac.GetAccountType() != uint32(AssetInvestment)
 }

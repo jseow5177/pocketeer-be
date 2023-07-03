@@ -25,6 +25,7 @@ import (
 	ach "github.com/jseow5177/pockteer-be/api/handler/account"
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
+	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
@@ -32,6 +33,7 @@ import (
 	acuc "github.com/jseow5177/pockteer-be/usecase/account"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
+	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
@@ -48,6 +50,7 @@ type server struct {
 	budgetRepo      repo.BudgetRepo
 	userRepo        repo.UserRepo
 	accountRepo     repo.AccountRepo
+	holdingRepo     repo.HoldingRepo
 
 	securityAPI api.SecurityAPI
 
@@ -58,6 +61,7 @@ type server struct {
 	tokenUseCase       ttuc.UseCase
 	accountUseCase     acuc.UseCase
 	securityUseCase    suc.UseCase
+	holdingUseCase     huc.UseCase
 }
 
 func main() {
@@ -101,6 +105,7 @@ func (s *server) Start() error {
 	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
 	s.userRepo = mongo.NewUserMongo(s.mongo)
 	s.accountRepo = mongo.NewAccountMongo(s.mongo)
+	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
 
 	// init apis
 	s.securityAPI = iex.NewIEXMgr(s.cfg.IEX)
@@ -113,6 +118,7 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.holdingRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -488,6 +494,25 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: sh.SearchSecuritiesValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return securityHandler.SearchSecurities(ctx, req.(*presenter.SearchSecuritiesRequest), res.(*presenter.SearchSecuritiesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// ========== Holding ========== //
+
+	holdingHandler := hh.NewHoldingHandler(s.holdingUseCase)
+
+	// search securities
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateHoldingRequest),
+			Res:       new(presenter.CreateHoldingResponse),
+			Validator: hh.CreateHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.CreateHolding(ctx, req.(*presenter.CreateHoldingRequest), res.(*presenter.CreateHoldingResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
