@@ -7,6 +7,7 @@ import (
 
 type Holding struct {
 	HoldingID     primitive.ObjectID `bson:"_id,omitempty"`
+	UserID        *string            `bson:"user_id,omitempty"`
 	AccountID     *string            `bson:"account_id,omitempty"`
 	Symbol        *string            `bson:"symbol,omitempty"`
 	HoldingStatus *uint32            `bson:"holding_status,omitempty"`
@@ -23,6 +24,7 @@ func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
 
 	return &Holding{
 		HoldingID:     objID,
+		UserID:        h.UserID,
 		AccountID:     h.AccountID,
 		Symbol:        h.Symbol,
 		HoldingType:   h.HoldingType,
@@ -34,6 +36,7 @@ func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
 
 func ToHoldingEntity(h *Holding) *entity.Holding {
 	return entity.NewHolding(
+		h.GetUserID(),
 		h.GetAccountID(),
 		h.GetSymbol(),
 		entity.WithHoldingType(h.HoldingType),
@@ -46,6 +49,13 @@ func ToHoldingEntity(h *Holding) *entity.Holding {
 func (h *Holding) GetHoldingID() string {
 	if h != nil {
 		return h.HoldingID.Hex()
+	}
+	return ""
+}
+
+func (h *Holding) GetUserID() string {
+	if h != nil && h.UserID != nil {
+		return *h.UserID
 	}
 	return ""
 }

@@ -1,6 +1,9 @@
 package presenter
 
-import "github.com/jseow5177/pockteer-be/usecase/holding"
+import (
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
+)
 
 type Holding struct {
 	HoldingID     *string `json:"_id,omitempty"`
@@ -88,8 +91,9 @@ func (m *CreateHoldingRequest) GetHoldingType() uint32 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) ToUseCaseReq() *holding.CreateHoldingRequest {
+func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldingRequest {
 	return &holding.CreateHoldingRequest{
+		UserID:      goutil.String(userID),
 		AccountID:   m.AccountID,
 		Symbol:      m.Symbol,
 		HoldingType: m.HoldingType,

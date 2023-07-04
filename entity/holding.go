@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"strings"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -27,6 +28,7 @@ var HoldingTypes = map[uint32]string{
 }
 
 type Holding struct {
+	UserID        *string
 	HoldingID     *string
 	AccountID     *string
 	Symbol        *string
@@ -80,9 +82,10 @@ func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	}
 }
 
-func NewHolding(accountID, symbol string, opts ...HoldingOption) *Holding {
+func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) *Holding {
 	now := uint64(time.Now().Unix())
 	h := &Holding{
+		UserID:        goutil.String(userID),
 		AccountID:     goutil.String(accountID),
 		Symbol:        goutil.String(symbol),
 		HoldingStatus: goutil.Uint32(uint32(HoldingStatusNormal)),
@@ -107,11 +110,20 @@ func setHolding(h *Holding, opts ...HoldingOption) {
 	}
 }
 
-func (h *Holding) checkOpts() {}
+func (h *Holding) checkOpts() {
+	h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
+}
 
 func (h *Holding) GetHoldingID() string {
 	if h != nil && h.HoldingID != nil {
 		return *h.HoldingID
+	}
+	return ""
+}
+
+func (h *Holding) GetUserID() string {
+	if h != nil && h.UserID != nil {
+		return *h.UserID
 	}
 	return ""
 }

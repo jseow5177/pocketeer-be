@@ -21,6 +21,7 @@ type HoldingRepo interface {
 type HoldingFilter struct {
 	HoldingID *string `filter:"_id"`
 	AccountID *string `filter:"account_id"`
+	UserID    *string `filter:"user_id"`
 }
 
 func (f *HoldingFilter) GetHoldingID() string {
@@ -33,6 +34,13 @@ func (f *HoldingFilter) GetHoldingID() string {
 func (f *HoldingFilter) GetAccountID() string {
 	if f != nil && f.AccountID != nil {
 		return *f.AccountID
+	}
+	return ""
+}
+
+func (f *HoldingFilter) GetUserID() string {
+	if f != nil && f.UserID != nil {
+		return *f.UserID
 	}
 	return ""
 }

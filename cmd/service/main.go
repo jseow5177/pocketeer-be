@@ -118,7 +118,7 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.holdingRepo)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)

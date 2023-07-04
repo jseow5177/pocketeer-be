@@ -48,10 +48,7 @@ func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 func (m *GetTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: goutil.String(accountID),
-	}
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(goutil.String(accountID)))
 }
 
 func (m *GetTransactionRequest) ToCategoryFilter(categoryID string) *repo.CategoryFilter {
@@ -151,10 +148,7 @@ func (m *CreateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
 }
 
 func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: m.AccountID,
-	}
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
 }
 
 type CreateTransactionResponse struct {
@@ -324,10 +318,7 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 }
 
 func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: goutil.String(accountID),
-	}
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(goutil.String(accountID)))
 }
 
 func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {

@@ -35,10 +35,7 @@ func (m *GetAccountRequest) GetAccountID() string {
 }
 
 func (m *GetAccountRequest) ToAccountFilter() *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: m.AccountID,
-	}
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
 }
 
 type GetAccountResponse struct {
@@ -197,10 +194,7 @@ func (m *UpdateAccountRequest) GetNote() string {
 }
 
 func (m *UpdateAccountRequest) ToAccountFilter() *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: m.AccountID,
-	}
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
 }
 
 func (m *UpdateAccountRequest) ToAccountUpdate() *entity.AccountUpdate {
