@@ -147,6 +147,12 @@ func WithAccountBalance(balance *float64) AccountOption {
 	}
 }
 
+func WithAccountStatus(accountStatus *uint32) AccountOption {
+	return func(ac *Account) {
+		ac.AccountStatus = accountStatus
+	}
+}
+
 func WithAccountType(accountType *uint32) AccountOption {
 	return func(ac *Account) {
 		ac.AccountType = accountType
@@ -238,8 +244,6 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 		if acu.Note != nil {
 			accountUpdate.Note = ac.Note
 		}
-
-		return
 	}
 
 	return

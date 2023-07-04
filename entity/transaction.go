@@ -224,8 +224,6 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 		if tu.TransactionTime != nil {
 			transactionUpdate.TransactionTime = t.TransactionTime
 		}
-
-		return
 	}
 
 	return

@@ -46,12 +46,6 @@ func WithHoldingID(holdingID *string) HoldingOption {
 	}
 }
 
-func WithHoldingAccountID(holdingID *string) HoldingOption {
-	return func(h *Holding) {
-		h.AccountID = holdingID
-	}
-}
-
 func WithSymbol(symbol *string) HoldingOption {
 	return func(h *Holding) {
 		h.Symbol = symbol

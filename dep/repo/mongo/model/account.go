@@ -52,6 +52,7 @@ func ToAccountEntity(ac *Account) *entity.Account {
 		entity.WithAccountID(goutil.String(ac.GetAccountID())),
 		entity.WithAccountName(ac.AccountName),
 		entity.WithAccountBalance(ac.Balance),
+		entity.WithAccountStatus(ac.AccountStatus),
 		entity.WithAccountType(ac.AccountType),
 		entity.WithAccountNote(ac.Note),
 		entity.WithAccountCreateTime(ac.CreateTime),

@@ -129,8 +129,6 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 		if cu.CategoryName != nil {
 			categoryUpdate.CategoryName = c.CategoryName
 		}
-
-		return
 	}
 
 	return
