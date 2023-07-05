@@ -32,6 +32,8 @@ const (
 	PathSearchSecurities = PathV1Prefix + "search_securities"
 
 	PathCreateHolding = PathV1Prefix + "create_holding"
+
+	PathCreateLot = PathV1Prefix + "create_lot"
 )
 
 const (

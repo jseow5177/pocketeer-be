@@ -161,6 +161,23 @@ func toHolding(h *entity.Holding) *Holding {
 	}
 }
 
+func toLot(l *entity.Lot) *Lot {
+	if l == nil {
+		return nil
+	}
+
+	return &Lot{
+		LotID:        goutil.String(l.GetLotID()),
+		HoldingID:    goutil.String(l.GetHoldingID()),
+		Shares:       goutil.String(fmt.Sprint(l.GetShares())),
+		CostPerShare: goutil.String(fmt.Sprint(l.GetCostPerShare())),
+		LotStatus:    goutil.Uint32(l.GetLotStatus()),
+		TradeDate:    goutil.Uint64(l.GetTradeDate()),
+		CreateTime:    goutil.Uint64(l.GetCreateTime()),
+		UpdateTime:    goutil.Uint64(l.GetUpdateTime()),
+	}
+}
+
 func toAccount(ac *entity.Account) *Account {
 	if ac == nil {
 		return nil

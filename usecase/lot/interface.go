@@ -15,7 +15,6 @@ type CreateLotRequest struct {
 	HoldingID    *string
 	Shares       *float64
 	CostPerShare *float64
-	LotStatus    *uint32
 	TradeDate    *uint64
 }
 
@@ -43,13 +42,6 @@ func (m *CreateLotRequest) GetShares() float64 {
 func (m *CreateLotRequest) GetCostPerShare() float64 {
 	if m != nil && m.CostPerShare != nil {
 		return *m.CostPerShare
-	}
-	return 0
-}
-
-func (m *CreateLotRequest) GetLotStatus() uint32 {
-	if m != nil && m.LotStatus != nil {
-		return *m.LotStatus
 	}
 	return 0
 }

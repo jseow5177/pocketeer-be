@@ -26,6 +26,7 @@ import (
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
+	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
@@ -34,6 +35,7 @@ import (
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
+	luc "github.com/jseow5177/pockteer-be/usecase/lot"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
@@ -51,6 +53,7 @@ type server struct {
 	userRepo        repo.UserRepo
 	accountRepo     repo.AccountRepo
 	holdingRepo     repo.HoldingRepo
+	lotRepo         repo.LotRepo
 
 	securityAPI api.SecurityAPI
 
@@ -62,6 +65,7 @@ type server struct {
 	accountUseCase     acuc.UseCase
 	securityUseCase    suc.UseCase
 	holdingUseCase     huc.UseCase
+	lotUseCase         luc.UseCase
 }
 
 func main() {
@@ -106,6 +110,7 @@ func (s *server) Start() error {
 	s.userRepo = mongo.NewUserMongo(s.mongo)
 	s.accountRepo = mongo.NewAccountMongo(s.mongo)
 	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
+	s.lotRepo = mongo.NewLotMongo(s.mongo)
 
 	// init apis
 	s.securityAPI = iex.NewIEXMgr(s.cfg.IEX)
@@ -119,6 +124,7 @@ func (s *server) Start() error {
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo)
+	s.lotUseCase = luc.NewLotUseCase(s.lotRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -513,6 +519,25 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: hh.CreateHoldingValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return holdingHandler.CreateHolding(ctx, req.(*presenter.CreateHoldingRequest), res.(*presenter.CreateHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// ========== Lot ========== //
+
+	lotHandler := lh.NewLotHandler(s.lotUseCase)
+
+	// search securities
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateLotRequest),
+			Res:       new(presenter.CreateLotResponse),
+			Validator: lh.CreateLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
