@@ -134,3 +134,81 @@ func (m *CreateLotResponse) GetLot() *Lot {
 func (m *CreateLotResponse) Set(useCaseRes *lot.CreateLotResponse) {
 	m.Lot = toLot(useCaseRes.Lot)
 }
+
+type GetLotRequest struct {
+	UserID *string `json:"user_id,omitempty"`
+	LotID  *string `json:"lot_id,omitempty"`
+}
+
+func (m *GetLotRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetLotRequest) GetLotID() string {
+	if m != nil && m.LotID != nil {
+		return *m.LotID
+	}
+	return ""
+}
+
+func (m *GetLotRequest) ToUseCaseReq(userID string) *lot.GetLotRequest {
+	return &lot.GetLotRequest{
+		UserID: goutil.String(userID),
+		LotID:  m.LotID,
+	}
+}
+
+type GetLotResponse struct {
+	Lot *Lot `json:"lot,omitempty"`
+}
+
+func (m *GetLotResponse) GetLot() *Lot {
+	if m != nil && m.Lot != nil {
+		return m.Lot
+	}
+	return nil
+}
+
+func (m *GetLotResponse) Set(useCaseRes *lot.GetLotResponse) {
+	m.Lot = toLot(useCaseRes.Lot)
+}
+
+type GetLotsRequest struct {
+	HoldingID *string `json:"holding_id,omitempty"`
+}
+
+func (m *GetLotsRequest) GetHoldingID() string {
+	if m != nil && m.HoldingID != nil {
+		return *m.HoldingID
+	}
+	return ""
+}
+
+func (m *GetLotsRequest) ToUseCaseReq(userID string) *lot.GetLotsRequest {
+	return &lot.GetLotsRequest{
+		UserID:    goutil.String(userID),
+		HoldingID: m.HoldingID,
+	}
+}
+
+type GetLotsResponse struct {
+	Lots []*Lot `json:"lots,omitempty"`
+}
+
+func (m *GetLotsResponse) GetLots() []*Lot {
+	if m != nil && m.Lots != nil {
+		return m.Lots
+	}
+	return nil
+}
+
+func (m *GetLotsResponse) Set(useCaseRes *lot.GetLotsResponse) {
+	ls := make([]*Lot, 0)
+	for _, l := range useCaseRes.Lots {
+		ls = append(ls, toLot(l))
+	}
+	m.Lots = ls
+}

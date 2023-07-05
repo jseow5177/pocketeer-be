@@ -1,7 +1,5 @@
 package config
 
-import "fmt"
-
 type Config struct {
 	Server  *Server  `json:"server"`
 	Mongo   *Mongo   `json:"mongo"`
@@ -29,8 +27,9 @@ type Mongo struct {
 }
 
 func (m *Mongo) String() string {
-	uri := "mongodb+srv://%s:%s@%s/"
-	return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
+	//uri := "mongodb+srv://%s:%s@%s/"
+	//return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
+	return "mongodb://localhost:27017"
 }
 
 type Token struct {

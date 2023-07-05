@@ -124,7 +124,7 @@ func (s *server) Start() error {
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo)
-	s.lotUseCase = luc.NewLotUseCase(s.lotRepo)
+	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -528,7 +528,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	lotHandler := lh.NewLotHandler(s.lotUseCase)
 
-	// search securities
+	// create lot
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathCreateLot,
 		Method: http.MethodPost,
@@ -538,6 +538,36 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: lh.CreateLotValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get lot
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetLotRequest),
+			Res:       new(presenter.GetLotResponse),
+			Validator: lh.GetLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.GetLot(ctx, req.(*presenter.GetLotRequest), res.(*presenter.GetLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get lots
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetLots,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetLotsRequest),
+			Res:       new(presenter.GetLotsResponse),
+			Validator: lh.GetLotsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.GetLots(ctx, req.(*presenter.GetLotsRequest), res.(*presenter.GetLotsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
