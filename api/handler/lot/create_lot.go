@@ -16,11 +16,11 @@ var CreateLotValidator = validator.MustForm(map[string]validator.Validator{
 	},
 	"shares": &validator.String{
 		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
+		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"cost_per_share": &validator.String{
 		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
+		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"trade_date": &validator.UInt64{
 		Optional: false,

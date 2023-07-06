@@ -3,8 +3,10 @@ package lot
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
@@ -75,6 +77,18 @@ func (m *GetLotsRequest) ToLotFilter() *repo.LotFilter {
 	return &repo.LotFilter{
 		UserID:    m.UserID,
 		HoldingID: m.HoldingID,
+		Paging: &repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("trade_date"),
+					Order: goutil.String(config.OrderDesc),
+				},
+				&repo.Sort{
+					Field: goutil.String("create_time"),
+					Order: goutil.String(config.OrderDesc),
+				},
+			},
+		},
 	}
 }
 

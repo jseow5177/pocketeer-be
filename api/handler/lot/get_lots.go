@@ -10,7 +10,7 @@ import (
 )
 
 var GetLotsValidator = validator.MustForm(map[string]validator.Validator{
-	"holding_id": &validator.UInt32{
+	"holding_id": &validator.String{
 		Optional: false,
 	},
 })

@@ -50,8 +50,6 @@ const (
 	MaxTransactionNoteLength = 120
 	MaxAccountNoteLength     = 60
 
-	AmountDecimalPlaces = 2
-
 	PasswordMinLength = 8
 	UsernameMaxLength = 60
 	SaltByteSize      = 24

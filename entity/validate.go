@@ -16,9 +16,9 @@ var (
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
 	ErrInvalidCategoryType     = errors.New("invalid category type")
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
-	ErrMonetaryStr             = errors.New("invalid monetary str")
+	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
-	ErrNegativeMonetaryStr     = errors.New("monetary str cannot be negative")
+	ErrMustBePositive          = errors.New("must be positive")
 )
 
 func CheckHoldingType(holdingType uint32) error {
@@ -66,19 +66,8 @@ func CheckBudgetType(budgetType uint32) error {
 }
 
 func CheckMonetaryStr(str string) error {
-	if err := goutil.IsFloat(str, config.AmountDecimalPlaces); err != nil {
-		return ErrMonetaryStr
-	}
-	return nil
-}
-
-func CheckPositiveMonetaryStr(str string) error {
-	f, err := util.MonetaryStrToFloat(str)
-	if err != nil {
-		return ErrMonetaryStr
-	}
-	if f < 0 {
-		return ErrNegativeMonetaryStr
+	if _, err := util.MonetaryStrToFloat(str); err != nil {
+		return ErrInvalidMonetaryStr
 	}
 	return nil
 }
