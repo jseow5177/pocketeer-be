@@ -130,7 +130,7 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) ToAccountEntity() *entity.Account {
+func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),

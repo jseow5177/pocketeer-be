@@ -105,11 +105,11 @@ func toCategory(c *entity.Category) *Category {
 	}
 
 	return &Category{
-		CategoryID:   goutil.String(c.GetCategoryID()),
-		CategoryName: goutil.String(c.GetCategoryName()),
-		CategoryType: goutil.Uint32(c.GetCategoryType()),
-		CreateTime:   goutil.Uint64(c.GetCreateTime()),
-		UpdateTime:   goutil.Uint64(c.GetUpdateTime()),
+		CategoryID:   c.CategoryID,
+		CategoryName: c.CategoryName,
+		CategoryType: c.CategoryType,
+		CreateTime:   c.CreateTime,
+		UpdateTime:   c.UpdateTime,
 	}
 }
 
@@ -119,11 +119,11 @@ func toUser(u *entity.User) *User {
 	}
 
 	return &User{
-		UserID:     goutil.String(u.GetUserID()),
-		Username:   goutil.String(u.GetUsername()),
-		UserStatus: goutil.Uint32(u.GetUserStatus()),
-		CreateTime: goutil.Uint64(u.GetCreateTime()),
-		UpdateTime: goutil.Uint64(u.GetUpdateTime()),
+		UserID:     u.UserID,
+		Username:   u.Username,
+		UserStatus: u.UserStatus,
+		CreateTime: u.CreateTime,
+		UpdateTime: u.UpdateTime,
 	}
 }
 
@@ -132,16 +132,21 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		return nil
 	}
 
+	var amount *string
+	if t.Amount != nil {
+		amount = goutil.String(fmt.Sprint(t.GetAmount()))
+	}
+
 	return &Transaction{
-		TransactionID:   goutil.String(t.GetTransactionID()),
-		Amount:          goutil.String(fmt.Sprint(t.GetAmount())),
-		CategoryID:      goutil.String(t.GetCategoryID()),
-		AccountID:       goutil.String(t.GetAccountID()),
-		Note:            goutil.String(t.GetNote()),
-		TransactionType: goutil.Uint32(t.GetTransactionType()),
-		TransactionTime: goutil.Uint64(t.GetTransactionTime()),
-		CreateTime:      goutil.Uint64(t.GetCreateTime()),
-		UpdateTime:      goutil.Uint64(t.GetUpdateTime()),
+		TransactionID:   t.TransactionID,
+		Amount:          amount,
+		CategoryID:      t.CategoryID,
+		AccountID:       t.AccountID,
+		Note:            t.Note,
+		TransactionType: t.TransactionType,
+		TransactionTime: t.TransactionTime,
+		CreateTime:      t.CreateTime,
+		UpdateTime:      t.UpdateTime,
 	}
 }
 
@@ -151,13 +156,13 @@ func toHolding(h *entity.Holding) *Holding {
 	}
 
 	return &Holding{
-		HoldingID:     goutil.String(h.GetHoldingID()),
-		AccountID:     goutil.String(h.GetAccountID()),
-		Symbol:        goutil.String(h.GetSymbol()),
-		HoldingType:   goutil.Uint32(h.GetHoldingType()),
-		HoldingStatus: goutil.Uint32(h.GetHoldingStatus()),
-		CreateTime:    goutil.Uint64(h.GetCreateTime()),
-		UpdateTime:    goutil.Uint64(h.GetUpdateTime()),
+		HoldingID:     h.HoldingID,
+		AccountID:     h.AccountID,
+		Symbol:        h.Symbol,
+		HoldingType:   h.HoldingType,
+		HoldingStatus: h.HoldingStatus,
+		CreateTime:    h.CreateTime,
+		UpdateTime:    h.UpdateTime,
 	}
 }
 
@@ -166,15 +171,25 @@ func toLot(l *entity.Lot) *Lot {
 		return nil
 	}
 
+	var shares *string
+	if l.Shares != nil {
+		shares = goutil.String(fmt.Sprint(l.GetShares()))
+	}
+
+	var costPerShare *string
+	if l.CostPerShare != nil {
+		costPerShare = goutil.String(fmt.Sprint(l.GetCostPerShare()))
+	}
+
 	return &Lot{
-		LotID:        goutil.String(l.GetLotID()),
-		HoldingID:    goutil.String(l.GetHoldingID()),
-		Shares:       goutil.String(fmt.Sprint(l.GetShares())),
-		CostPerShare: goutil.String(fmt.Sprint(l.GetCostPerShare())),
-		LotStatus:    goutil.Uint32(l.GetLotStatus()),
-		TradeDate:    goutil.Uint64(l.GetTradeDate()),
-		CreateTime:    goutil.Uint64(l.GetCreateTime()),
-		UpdateTime:    goutil.Uint64(l.GetUpdateTime()),
+		LotID:        l.LotID,
+		HoldingID:    l.HoldingID,
+		Shares:       shares,
+		CostPerShare: costPerShare,
+		LotStatus:    l.LotStatus,
+		TradeDate:    l.TradeDate,
+		CreateTime:   l.CreateTime,
+		UpdateTime:   l.UpdateTime,
 	}
 }
 
@@ -183,15 +198,20 @@ func toAccount(ac *entity.Account) *Account {
 		return nil
 	}
 
+	var balance *string
+	if ac.Balance != nil {
+		balance = goutil.String(fmt.Sprint(ac.GetBalance()))
+	}
+
 	return &Account{
-		AccountID:     goutil.String(ac.GetAccountID()),
-		AccountName:   goutil.String(ac.GetAccountName()),
-		Balance:       goutil.String(fmt.Sprint(ac.GetBalance())),
-		AccountType:   goutil.Uint32(ac.GetAccountType()),
-		AccountStatus: goutil.Uint32(ac.GetAccountStatus()),
-		Note:          goutil.String(ac.GetNote()),
-		CreateTime:    goutil.Uint64(ac.GetCreateTime()),
-		UpdateTime:    goutil.Uint64(ac.GetUpdateTime()),
+		AccountID:     ac.AccountID,
+		AccountName:   ac.AccountName,
+		Balance:       balance,
+		AccountType:   ac.AccountType,
+		AccountStatus: ac.AccountStatus,
+		Note:          ac.Note,
+		CreateTime:    ac.CreateTime,
+		UpdateTime:    ac.UpdateTime,
 	}
 }
 
@@ -218,10 +238,10 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 
 func toSecurity(security *entity.Security) *Security {
 	return &Security{
-		Symbol:       goutil.String(security.GetSymbol()),
-		SecurityName: goutil.String(security.GetSecurityName()),
-		SecurityType: goutil.Uint32(security.GetSecurityType()),
-		Region:       goutil.String(security.GetRegion()),
-		Currency:     goutil.String(security.GetCurrency()),
+		Symbol:       security.Symbol,
+		SecurityName: security.SecurityName,
+		SecurityType: security.SecurityType,
+		Region:       security.Region,
+		Currency:     security.Currency,
 	}
 }

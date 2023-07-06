@@ -109,11 +109,15 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 }
 
 func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
-	balance, _ := util.MonetaryStrToFloat(m.GetBalance())
+	var balance *float64
+	if m.Balance != nil {
+		b, _ := util.MonetaryStrToFloat(m.GetBalance())
+		balance = goutil.Float64(b)
+	}
 	return &account.CreateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
-		Balance:     goutil.Float64(balance),
+		Balance:     balance,
 		AccountType: m.AccountType,
 		Note:        m.Note,
 	}
@@ -240,12 +244,16 @@ func (m *UpdateAccountRequest) GetNote() string {
 }
 
 func (m *UpdateAccountRequest) ToUseCaseReq(userID string) *account.UpdateAccountRequest {
-	balance, _ := util.MonetaryStrToFloat(m.GetBalance())
+	var balance *float64
+	if m.Balance != nil {
+		b, _ := util.MonetaryStrToFloat(m.GetBalance())
+		balance = goutil.Float64(b)
+	}
 	return &account.UpdateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountID:   m.AccountID,
 		AccountName: m.AccountName,
-		Balance:     goutil.Float64(balance),
+		Balance:     balance,
 		Note:        m.Note,
 	}
 }

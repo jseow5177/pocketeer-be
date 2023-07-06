@@ -1,9 +1,14 @@
 package entity
 
 import (
+	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
+
+var (
+	ErrSetBalanceForbidden = errors.New("set balance forbidden")
 )
 
 type AccountStatus uint32
@@ -177,12 +182,11 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	}
 }
 
-func NewAccount(userID string, opts ...AccountOption) *Account {
+func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().Unix())
 	ac := &Account{
 		UserID:        goutil.String(userID),
 		AccountType:   goutil.Uint32(uint32(AssetCash)),
-		Balance:       goutil.Float64(0),
 		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),
 		CreateTime:    goutil.Uint64(now),
 		UpdateTime:    goutil.Uint64(now),
@@ -190,8 +194,12 @@ func NewAccount(userID string, opts ...AccountOption) *Account {
 	for _, opt := range opts {
 		opt(ac)
 	}
-	ac.checkOpts()
-	return ac
+
+	if err := ac.checkOpts(); err != nil {
+		return nil, err
+	}
+
+	return ac, nil
 }
 
 func setAccount(ac *Account, opts ...AccountOption) {
@@ -204,9 +212,14 @@ func setAccount(ac *Account, opts ...AccountOption) {
 	}
 }
 
-func (ac *Account) checkOpts() {}
+func (ac *Account) checkOpts() error {
+	if !ac.CanSetBalance() && ac.Balance != nil {
+		return ErrSetBalanceForbidden
+	}
+	return nil
+}
 
-func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, hasUpdate bool) {
+func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, hasUpdate bool, err error) {
 	accountUpdate = new(AccountUpdate)
 
 	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
@@ -229,7 +242,9 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 		setAccount(ac, WithAccountUpdateTime(now))
 
 		// check
-		ac.checkOpts()
+		if err = ac.checkOpts(); err != nil {
+			return nil, false, err
+		}
 
 		accountUpdate.UpdateTime = now
 

@@ -16,7 +16,8 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 		Optional: false,
 	},
 	"balance": &validator.String{
-		Optional:   false,
+		Optional:   true,
+		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"note": &validator.String{

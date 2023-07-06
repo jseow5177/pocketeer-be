@@ -57,6 +57,8 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 		return nil, err
 	}
 
+	// Compute total shares and average cost
+
 	return &GetHoldingResponse{
 		h,
 	}, nil

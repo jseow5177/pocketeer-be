@@ -46,7 +46,7 @@ func ToAccountModelFromUpdate(acu *entity.AccountUpdate) *Account {
 	}
 }
 
-func ToAccountEntity(ac *Account) *entity.Account {
+func ToAccountEntity(ac *Account) (*entity.Account, error) {
 	return entity.NewAccount(
 		ac.GetUserID(),
 		entity.WithAccountID(goutil.String(ac.GetAccountID())),
