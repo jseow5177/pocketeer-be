@@ -80,6 +80,11 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
+	_, err = t.CanTransactionUnderAccount(ac)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
 		// create transaction
 		_, err := uc.transactionRepo.Create(txCtx, t)

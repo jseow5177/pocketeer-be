@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	ErrMismatchTransactionType = errors.New("mismatch transaction type")
+	ErrMismatchTransactionType   = errors.New("mismatch transaction type")
+	ErrInvalidTransactionAccount = errors.New("transaction not allowed under account")
 )
 
 type TransactionType uint32
@@ -232,6 +233,13 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 func (t *Transaction) CanTransactionUnderCategory(c *Category) (bool, error) {
 	if t.GetTransactionType() != c.GetCategoryType() {
 		return false, ErrMismatchTransactionType
+	}
+	return true, nil
+}
+
+func (t *Transaction) CanTransactionUnderAccount(ac *Account) (bool, error) {
+	if !ac.CanSetBalance() {
+		return false, ErrInvalidTransactionAccount
 	}
 	return true, nil
 }
