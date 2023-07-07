@@ -50,9 +50,12 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 }
 
 func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error) {
-	ac := req.ToAccountEntity()
+	ac, err := req.ToAccountEntity()
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := uc.accountRepo.Create(ctx, ac)
+	_, err = uc.accountRepo.Create(ctx, ac)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
 		return nil, err
@@ -70,7 +73,11 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 	oldBalance := ac.GetBalance()
 
-	acu, hasUpdate := ac.Update(req.ToAccountUpdate())
+	acu, hasUpdate, err := ac.Update(req.ToAccountUpdate())
+	if err != nil {
+		return nil, err
+	}
+
 	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("acount has no updates")
 		return &UpdateAccountResponse{

@@ -121,12 +121,16 @@ func (m *CreateTransactionRequest) GetNote() string {
 }
 
 func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.CreateTransactionRequest {
-	amount, _ := util.MonetaryStrToFloat(m.GetAmount())
+	var amount *float64
+	if m.Amount != nil {
+		a, _ := util.MonetaryStrToFloat(m.GetAmount())
+		amount = goutil.Float64(a)
+	}
 	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
-		Amount:          goutil.Float64(amount),
+		Amount:          amount,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 		Note:            m.Note,
@@ -339,12 +343,16 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 }
 
 func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.UpdateTransactionRequest {
-	amount, _ := util.MonetaryStrToFloat(m.GetAmount())
+	var amount *float64
+	if m.Amount != nil {
+		a, _ := util.MonetaryStrToFloat(m.GetAmount())
+		amount = goutil.Float64(a)
+	}
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		TransactionID:   m.TransactionID,
 		Note:            m.Note,
-		Amount:          goutil.Float64(amount),
+		Amount:          amount,
 		TransactionTime: m.TransactionTime,
 	}
 }

@@ -2,7 +2,6 @@ package goutil
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -11,11 +10,6 @@ import (
 var (
 	ErrInvalidFloat = errors.New("invalid float")
 )
-
-func FormatFloat(f float64, decimalPlaces int) string {
-	ft := fmt.Sprintf("%%.%df", decimalPlaces)
-	return fmt.Sprintf(ft, f)
-}
 
 func IsFloat(str string, maxDecimalPoints int) error {
 	regex := regexp.MustCompile(`^\d+(\.\d{0,` + strconv.Itoa(maxDecimalPoints) + `})?$`)

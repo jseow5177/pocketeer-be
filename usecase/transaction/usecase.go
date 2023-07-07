@@ -83,6 +83,11 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
+	_, err = t.CanTransactionUnderAccount(ac)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
 		// create transaction
 		_, err := uc.transactionRepo.Create(txCtx, t)
@@ -93,9 +98,12 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 		// update account balance
 		newBalance := ac.GetBalance() + t.GetAmount()
-		nac, _ := ac.Update(entity.NewAccountUpdate(
+		nac, _, err := ac.Update(entity.NewAccountUpdate(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 		))
+		if err != nil {
+			return err
+		}
 		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), nac); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
 			return err
@@ -142,9 +150,12 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		// update balance
 		if tu.Amount != nil {
 			newBalance := ac.GetBalance() + (tu.GetAmount() - oldAmount)
-			nac, hasUpdate := ac.Update(entity.NewAccountUpdate(
+			nac, hasUpdate, err := ac.Update(entity.NewAccountUpdate(
 				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 			))
+			if err != nil {
+				return err
+			}
 
 			if hasUpdate {
 				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(t.GetAccountID()), nac); err != nil {

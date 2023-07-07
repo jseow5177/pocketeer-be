@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 type UseCase interface {
@@ -129,13 +130,14 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) ToAccountEntity() *entity.Account {
+func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
+		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
 	)
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -15,8 +16,9 @@ var (
 	ErrInvalidTransactionType  = errors.New("invalid transaction type")
 	ErrInvalidCategoryType     = errors.New("invalid category type")
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
-	ErrMonetaryStr             = errors.New("invalid monetary str")
+	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
+	ErrMustBePositive          = errors.New("must be positive")
 )
 
 func CheckHoldingType(holdingType uint32) error {
@@ -64,8 +66,8 @@ func CheckBudgetType(budgetType uint32) error {
 }
 
 func CheckMonetaryStr(str string) error {
-	if err := goutil.IsFloat(str, config.AmountDecimalPlaces); err != nil {
-		return ErrMonetaryStr
+	if _, err := util.MonetaryStrToFloat(str); err != nil {
+		return ErrInvalidMonetaryStr
 	}
 	return nil
 }

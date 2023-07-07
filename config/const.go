@@ -32,6 +32,10 @@ const (
 	PathSearchSecurities = PathV1Prefix + "search_securities"
 
 	PathCreateHolding = PathV1Prefix + "create_holding"
+
+	PathCreateLot = PathV1Prefix + "create_lot"
+	PathGetLot    = PathV1Prefix + "get_lot"
+	PathGetLots   = PathV1Prefix + "get_lots"
 )
 
 const (
@@ -45,8 +49,6 @@ const (
 
 	MaxTransactionNoteLength = 120
 	MaxAccountNoteLength     = 60
-
-	AmountDecimalPlaces = 2
 
 	PasswordMinLength = 8
 	UsernameMaxLength = 60
