@@ -16,6 +16,10 @@ var AggrTransactionsValidator = validator.MustForm(map[string]validator.Validato
 		Optional:  true,
 		Validator: &validator.String{},
 	},
+	"budget_ids": &validator.Slice{
+		Optional:  true,
+		Validator: &validator.String{},
+	},
 	"transaction_types": &validator.Slice{
 		Optional: true,
 		Validator: &validator.UInt32{

@@ -367,6 +367,7 @@ func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactio
 type AggrTransactionsRequest struct {
 	TransactionTime  *UInt64Filter `json:"transaction_time,omitempty"`
 	CategoryIDs      []string      `json:"category_ids,omitempty"`
+	BudgetIDs        []string      `json:"budget_ids,omitempty"`
 	TransactionTypes []uint32      `json:"transaction_types,omitempty"`
 }
 
@@ -380,6 +381,13 @@ func (m *AggrTransactionsRequest) GetTransactionTime() *UInt64Filter {
 func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
 	if m != nil && m.CategoryIDs != nil {
 		return m.CategoryIDs
+	}
+	return nil
+}
+
+func (m *AggrTransactionsRequest) GetBudgetIDs() []string {
+	if m != nil && m.BudgetIDs != nil {
+		return m.BudgetIDs
 	}
 	return nil
 }
@@ -401,6 +409,7 @@ func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrT
 		UserID:           goutil.String(userID),
 		TransactionTypes: m.TransactionTypes,
 		CategoryIDs:      m.CategoryIDs,
+		BudgetIDs:        m.BudgetIDs,
 		TransactionTime: &common.UInt64Filter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,

@@ -18,6 +18,7 @@ type BudgetRepo interface {
 }
 
 type BudgetFilter struct {
-	UserID   *string `filter:"user_id"`
-	BudgetID *string `filter:"_id"`
+	UserID    *string  `filter:"user_id"`
+	BudgetID  *string  `filter:"_id"`
+	BudgetIDs []string `filter:"_id__in"`
 }
