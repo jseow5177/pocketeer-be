@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -168,36 +167,33 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 	return res, nil
 }
 
-func (mc *MongoColl) sum(ctx context.Context, sumBy, field string, filter interface{}) (map[string]float64, error) {
-	f := mongoutil.BuildFilter(filter)
-
-	// aggregation pipeline
-	pipeline := make(bson.A, 0)
-	if f != nil {
-		pipeline = append(pipeline, bson.D{{Key: mongoutil.Prefix("match"), Value: f}})
-	}
-
-	pipeline = append(pipeline, bson.D{{Key: mongoutil.Prefix("group"), Value: bson.D{
-		{Key: "_id", Value: mongoutil.Prefix(sumBy)},
-		{Key: "sum", Value: bson.D{{Key: mongoutil.Prefix("sum"), Value: mongoutil.Prefix(field)}}},
-	}}})
+func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
+	pipeline := mongoutil.BuildAggrPipeline(filter, groupBy, aggrs...)
 
 	cursor, err := mc.coll.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]bson.M, 0)
-	if err = cursor.All(ctx, &results); err != nil {
+	aggrResults := make([]bson.M, 0)
+	if err = cursor.All(ctx, &aggrResults); err != nil {
 		return nil, err
 	}
 
-	sumResults := make(map[string]float64)
-	for _, result := range results {
-		sumResults[fmt.Sprint(result["_id"])] = result["sum"].(float64)
+	allRes := make([]map[string]interface{}, 0)
+	for _, aggrResult := range aggrResults {
+		res := make(map[string]interface{})
+		for _, aggr := range aggrs {
+			// aggr results
+			res[aggr.GetName()] = aggrResult[aggr.GetName()]
+		}
+		// groupBy field
+		res["groupBy"] = aggrResult["_id"]
+
+		allRes = append(allRes, res)
 	}
 
-	return sumResults, nil
+	return allRes, nil
 }
 
 func getUniqueKeyValue(doc interface{}, uniqueKey string) interface{} {

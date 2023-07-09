@@ -2,10 +2,12 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -68,5 +70,24 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 }
 
 func (m *transactionMongo) SumAmountBy(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
-	return m.mColl.sum(ctx, sumBy, "amount", tf)
+	aggrRes, err := m.mColl.aggr(ctx, tf, sumBy, mongoutil.NewAggr("sumAmount", "sum", "amount", nil))
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]float64)
+	for _, ag := range aggrRes {
+		sumAmount := ag["sumAmount"]
+
+		var value float64
+		if v, ok := sumAmount.(int32); ok {
+			value = float64(v)
+		} else {
+			value = sumAmount.(float64)
+		}
+
+		res[fmt.Sprint(ag["groupBy"])] = value
+	}
+
+	return res, nil
 }
