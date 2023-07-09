@@ -174,12 +174,12 @@ func (mc *MongoColl) sum(ctx context.Context, sumBy, field string, filter interf
 	// aggregation pipeline
 	pipeline := make(bson.A, 0)
 	if f != nil {
-		pipeline = append(pipeline, bson.D{{Key: mongoutil.GetOp("match"), Value: f}})
+		pipeline = append(pipeline, bson.D{{Key: mongoutil.Prefix("match"), Value: f}})
 	}
 
-	pipeline = append(pipeline, bson.D{{Key: mongoutil.GetOp("group"), Value: bson.D{
-		{Key: "_id", Value: mongoutil.GetOp(sumBy)},
-		{Key: "sum", Value: bson.D{{Key: mongoutil.GetOp("sum"), Value: mongoutil.GetOp(field)}}},
+	pipeline = append(pipeline, bson.D{{Key: mongoutil.Prefix("group"), Value: bson.D{
+		{Key: "_id", Value: mongoutil.Prefix(sumBy)},
+		{Key: "sum", Value: bson.D{{Key: mongoutil.Prefix("sum"), Value: mongoutil.Prefix(field)}}},
 	}}})
 
 	cursor, err := mc.coll.Aggregate(ctx, pipeline)

@@ -18,7 +18,7 @@ var sortOrders = map[string]int{
 	"desc": -1,
 }
 
-var supportedOps = map[string]string{
+var supportedFilterOps = map[string]string{
 	"eq":         "equal",
 	"ne":         "not equal",
 	"gt":         "greater than",
@@ -30,7 +30,7 @@ var supportedOps = map[string]string{
 	"bitsAllSet": "bit all set",
 }
 
-func GetOp(op string) string {
+func Prefix(op string) string {
 	return fmt.Sprintf("$%s", op)
 }
 
@@ -119,14 +119,14 @@ func BuildFilter(filter interface{}) bson.D {
 		var op string
 		if len(parts) > 1 {
 			op = parts[1]
-			if _, ok := supportedOps[op]; !ok {
+			if _, ok := supportedFilterOps[op]; !ok {
 				continue
 			}
 		} else {
 			// default to eq
 			op = "eq"
 		}
-		op = GetOp(op)
+		op = Prefix(op)
 
 		// filter value
 		v := fv.Interface()
@@ -162,5 +162,5 @@ func BuildFilter(filter interface{}) bson.D {
 		return nil
 	}
 
-	return bson.D{{Key: GetOp("and"), Value: conds}}
+	return bson.D{{Key: Prefix("and"), Value: conds}}
 }

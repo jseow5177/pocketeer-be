@@ -197,7 +197,7 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 		return uc.aggrTransactionByBudgets(ctx, req)
 	}
 
-	res, err := uc.transactionRepo.Sum(ctx, sumBy, tf)
+	res, err := uc.transactionRepo.SumAmountBy(ctx, sumBy, tf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to sum transactions by %s, err: %v", sumBy, err)
 		return nil, err
@@ -231,7 +231,7 @@ func (uc *transactionUseCase) aggrTransactionByBudgets(
 	}
 
 	req.CategoryIDs = allCategoryIDs
-	catIDSum, err := uc.transactionRepo.Sum(
+	catIDSum, err := uc.transactionRepo.SumAmountBy(
 		ctx,
 		"category_id",
 		req.ToTransactionFilter(req.GetUserID()),

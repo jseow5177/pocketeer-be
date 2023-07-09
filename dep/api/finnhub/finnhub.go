@@ -2,15 +2,66 @@ package finnhub
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/httputil"
 
 	finnhub "github.com/Finnhub-Stock-API/finnhub-go/v2"
 )
+
+type quote struct {
+	// Current price
+	C *float64 `json:"c,omitempty"`
+	// Previous close price
+	Pc *float64 `json:"pc,omitempty"`
+	// Change
+	D *float64 `json:"d,omitempty"`
+	// Percent change
+	Dp *float64 `json:"dp,omitempty"`
+	// Update time
+	T *uint64 `json:"t,omitempty"`
+}
+
+func (q *quote) GetC() float64 {
+	if q != nil && q.C != nil {
+		return *q.C
+	}
+	return 0
+}
+
+func (q *quote) GetPc() float64 {
+	if q != nil && q.Pc != nil {
+		return *q.Pc
+	}
+	return 0
+}
+
+func (q *quote) GetD() float64 {
+	if q != nil && q.D != nil {
+		return *q.D
+	}
+	return 0
+}
+
+func (q *quote) GetDp() float64 {
+	if q != nil && q.Dp != nil {
+		return *q.Dp
+	}
+	return 0
+}
+
+func (q *quote) GetT() uint64 {
+	if q != nil && q.T != nil {
+		return *q.T
+	}
+	return 0
+}
 
 var securityTypes = map[string]entity.SecurityType{
 	"Common Stock": entity.SecurityTypeCommonStock,
@@ -18,6 +69,9 @@ var securityTypes = map[string]entity.SecurityType{
 }
 
 type finnhubMgr struct {
+	baseURL string
+	token   string
+
 	client *finnhub.DefaultApiService
 }
 
@@ -58,7 +112,34 @@ func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, sf *api.SecurityFil
 
 // Doc: https://finnhub.io/docs/api/quote
 func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilter) (*entity.Quote, error) {
-	return nil, nil
+	url := fmt.Sprintf("%s/quote", mgr.baseURL)
+
+	queryParams := map[string]string{
+		"token":  mgr.token,
+		"symbol": sf.GetSymbol(),
+	}
+
+	code, data, err := httputil.SendGetRequest(url, queryParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if code != http.StatusOK {
+		return nil, fmt.Errorf("fail to get latest quote, code: %v", code)
+	}
+
+	q := new(quote)
+	if err = json.Unmarshal(data, &q); err != nil {
+		return nil, err
+	}
+
+	return &entity.Quote{
+		LatestPrice:   q.C,
+		Change:        q.D,
+		ChangePercent: q.Dp,
+		PreviousClose: q.Pc,
+		UpdateTime:    q.T,
+	}, nil
 }
 
 func (mgr *finnhubMgr) ListSymbols(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {

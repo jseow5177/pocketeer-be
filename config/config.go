@@ -44,7 +44,8 @@ type Tokens struct {
 }
 
 type FinnHub struct {
-	Token string `json:"token"`
+	BaseURL string `json:"base_url"`
+	Token   string `json:"token"`
 }
 
 type IEX struct {
@@ -79,7 +80,8 @@ func NewConfig() *Config {
 			},
 		},
 		FinnHub: &FinnHub{
-			Token: "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
+			BaseURL: "https://finnhub.io/api/v1",
+			Token:   "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
 		},
 		IEX: &IEX{
 			BaseURL:          "https://api.iex.cloud/v1",

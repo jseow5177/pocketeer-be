@@ -36,6 +36,11 @@ type Holding struct {
 	HoldingType   *uint32
 	CreateTime    *uint64
 	UpdateTime    *uint64
+
+	// computed in real time
+	TotalShares     *float64
+	WeightedAvgCost *float64
+	LatestValue     *float64
 }
 
 type HoldingOption = func(h *Holding)
@@ -73,6 +78,24 @@ func WithHoldingCreateTime(createTime *uint64) HoldingOption {
 func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	return func(h *Holding) {
 		h.UpdateTime = updateTime
+	}
+}
+
+func WithTotalShares(totalShares *float64) HoldingOption {
+	return func(h *Holding) {
+		h.TotalShares = totalShares
+	}
+}
+
+func WithWeightedAvgCost(wac *float64) HoldingOption {
+	return func(h *Holding) {
+		h.WeightedAvgCost = wac
+	}
+}
+
+func WithLatestValue(latestValue *float64) HoldingOption {
+	return func(h *Holding) {
+		h.LatestValue = latestValue
 	}
 }
 
@@ -164,6 +187,27 @@ func (h *Holding) GetCreateTime() uint64 {
 func (h *Holding) GetUpdateTime() uint64 {
 	if h != nil && h.UpdateTime != nil {
 		return *h.UpdateTime
+	}
+	return 0
+}
+
+func (h *Holding) GetTotalShares() float64 {
+	if h != nil && h.TotalShares != nil {
+		return *h.TotalShares
+	}
+	return 0
+}
+
+func (h *Holding) GetWeightedAvgCost() float64 {
+	if h != nil && h.WeightedAvgCost != nil {
+		return *h.WeightedAvgCost
+	}
+	return 0
+}
+
+func (h *Holding) GetLatestValue() float64 {
+	if h != nil && h.LatestValue != nil {
+		return *h.LatestValue
 	}
 	return 0
 }

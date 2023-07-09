@@ -67,6 +67,6 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 	return ets, nil
 }
 
-func (m *transactionMongo) Sum(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
+func (m *transactionMongo) SumAmountBy(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
 	return m.mColl.sum(ctx, sumBy, "amount", tf)
 }

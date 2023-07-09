@@ -112,19 +112,18 @@ func (s *Security) GetCurrency() string {
 }
 
 type Quote struct {
-	Symbol           *string
-	Change           *float64
-	ChangePercent    *float64
-	LatestPrice      *float64
-	LatestUpdateTime *uint64
-	Currency         *string
+	LatestPrice   *float64
+	Change        *float64 // change in price between LatestPrice and PreviousClose
+	ChangePercent *float64
+	PreviousClose *float64
+	UpdateTime    *uint64
 }
 
-func (q *Quote) GetSymbol() string {
-	if q != nil && q.Symbol != nil {
-		return *q.Symbol
+func (q *Quote) GetLatestPrice() float64 {
+	if q != nil && q.LatestPrice != nil {
+		return *q.LatestPrice
 	}
-	return ""
+	return 0
 }
 
 func (q *Quote) GetChange() float64 {
@@ -141,23 +140,16 @@ func (q *Quote) GetChangePercent() float64 {
 	return 0
 }
 
-func (q *Quote) GetLatestPrice() float64 {
-	if q != nil && q.LatestPrice != nil {
-		return *q.LatestPrice
+func (q *Quote) GetPreviousClose() float64 {
+	if q != nil && q.PreviousClose != nil {
+		return *q.PreviousClose
 	}
 	return 0
 }
 
-func (q *Quote) GetLatestUpdateTime() uint64 {
-	if q != nil && q.LatestUpdateTime != nil {
-		return *q.LatestUpdateTime
+func (q *Quote) GetUpdateTime() uint64 {
+	if q != nil && q.UpdateTime != nil {
+		return *q.UpdateTime
 	}
 	return 0
-}
-
-func (q *Quote) GetCurrency() string {
-	if q != nil && q.Currency != nil {
-		return *q.Currency
-	}
-	return ""
 }

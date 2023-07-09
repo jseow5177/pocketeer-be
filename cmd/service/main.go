@@ -15,7 +15,7 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
-	"github.com/jseow5177/pockteer-be/dep/api/iex"
+	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
@@ -113,7 +113,7 @@ func (s *server) Start() error {
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 
 	// init apis
-	s.securityAPI = iex.NewIEXMgr(s.cfg.IEX)
+	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
