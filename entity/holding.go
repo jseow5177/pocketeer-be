@@ -38,9 +38,9 @@ type Holding struct {
 	UpdateTime    *uint64
 
 	// computed in real time
-	TotalShares     *float64
-	WeightedAvgCost *float64
-	LatestValue     *float64
+	TotalShares *float64
+	AvgCost     *float64
+	LatestValue *float64
 }
 
 type HoldingOption = func(h *Holding)
@@ -87,9 +87,9 @@ func WithTotalShares(totalShares *float64) HoldingOption {
 	}
 }
 
-func WithWeightedAvgCost(wac *float64) HoldingOption {
+func WithAvgCost(wac *float64) HoldingOption {
 	return func(h *Holding) {
-		h.WeightedAvgCost = wac
+		h.AvgCost = wac
 	}
 }
 
@@ -152,8 +152,8 @@ func (h *Holding) GetAccountID() string {
 	return ""
 }
 
-func (h *Holding) SetHoldingID(holdingID string) {
-	setHolding(h, WithHoldingID(goutil.String(holdingID)))
+func (h *Holding) SetHoldingID(holdingID *string) {
+	setHolding(h, WithHoldingID(holdingID))
 }
 
 func (h *Holding) GetSymbol() string {
@@ -198,11 +198,19 @@ func (h *Holding) GetTotalShares() float64 {
 	return 0
 }
 
-func (h *Holding) GetWeightedAvgCost() float64 {
-	if h != nil && h.WeightedAvgCost != nil {
-		return *h.WeightedAvgCost
+func (h *Holding) SetTotalShares(totalShares *float64) {
+	setHolding(h, WithTotalShares(totalShares))
+}
+
+func (h *Holding) GetAvgCost() float64 {
+	if h != nil && h.AvgCost != nil {
+		return *h.AvgCost
 	}
 	return 0
+}
+
+func (h *Holding) SetAvgCost(avgCost *float64) {
+	setHolding(h, WithAvgCost(avgCost))
 }
 
 func (h *Holding) GetLatestValue() float64 {
@@ -210,4 +218,8 @@ func (h *Holding) GetLatestValue() float64 {
 		return *h.LatestValue
 	}
 	return 0
+}
+
+func (h *Holding) SetLatestValue(latestValue *float64) {
+	setHolding(h, WithLatestValue(latestValue))
 }

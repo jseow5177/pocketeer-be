@@ -7,11 +7,16 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const transactionCollName = "transaction"
+const (
+	transactionCollName = "transaction"
+
+	aggrSumAmount = "sumAmount"
+)
 
 type transactionMongo struct {
 	mColl *MongoColl
@@ -29,7 +34,7 @@ func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (s
 	if err != nil {
 		return "", err
 	}
-	t.SetTransactionID(id)
+	t.SetTransactionID(goutil.String(id))
 
 	return id, nil
 }
@@ -69,25 +74,24 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 	return ets, nil
 }
 
-func (m *transactionMongo) SumAmountBy(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
-	aggrRes, err := m.mColl.aggr(ctx, tf, sumBy, mongoutil.NewAggr("sumAmount", "sum", "amount", nil))
+func (m *transactionMongo) CalcTotalAmount(ctx context.Context, groupBy string, tf *repo.TransactionFilter) ([]*repo.TransactionAggr, error) {
+	sumAmountAggr := mongoutil.NewAggr(aggrSumAmount, mongoutil.AggrSum, &mongoutil.AggrOpt{
+		Field: "amount",
+	})
+	aggrRes, err := m.mColl.aggr(ctx, tf, groupBy, sumAmountAggr)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make(map[string]float64)
+	aggrs := make([]*repo.TransactionAggr, 0)
 	for _, ag := range aggrRes {
-		sumAmount := ag["sumAmount"]
+		sumAmount := ag[aggrSumAmount]
 
-		var value float64
-		if v, ok := sumAmount.(int32); ok {
-			value = float64(v)
-		} else {
-			value = sumAmount.(float64)
-		}
-
-		res[fmt.Sprint(ag["groupBy"])] = value
+		aggrs = append(aggrs, &repo.TransactionAggr{
+			GroupBy:     goutil.String(fmt.Sprint(ag[aggrGroupByField])),
+			TotalAmount: goutil.Float64(mongoutil.ToFloat64(sumAmount)),
+		})
 	}
 
-	return res, nil
+	return aggrs, nil
 }

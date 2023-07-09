@@ -18,7 +18,7 @@ type TransactionRepo interface {
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
 	Update(ctx context.Context, tf *TransactionFilter, t *entity.TransactionUpdate) error
 
-	SumAmountBy(ctx context.Context, sumBy string, tf *TransactionFilter) (map[string]float64, error)
+	CalcTotalAmount(ctx context.Context, totalBy string, tf *TransactionFilter) ([]*TransactionAggr, error)
 }
 
 type TransactionFilter struct {
@@ -102,4 +102,23 @@ func (f *TransactionFilter) GetPaging() *Paging {
 		return f.Paging
 	}
 	return nil
+}
+
+type TransactionAggr struct {
+	GroupBy     *string
+	TotalAmount *float64
+}
+
+func (ag *TransactionAggr) GetGroupBy() string {
+	if ag != nil && ag.GroupBy != nil {
+		return *ag.GroupBy
+	}
+	return ""
+}
+
+func (ag *TransactionAggr) GetTotalAmount() float64 {
+	if ag != nil && ag.TotalAmount != nil {
+		return *ag.TotalAmount
+	}
+	return 0
 }

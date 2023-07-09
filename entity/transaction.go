@@ -205,26 +205,28 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 		setTransaction(t, WithTransactionTime(tu.TransactionTime))
 	}
 
-	if hasUpdate {
-		now := goutil.Uint64(uint64(time.Now().Unix()))
-		setTransaction(t, WithTransactionUpdateTime(now))
+	if !hasUpdate {
+		return
+	}
 
-		// check
-		t.checkOpts()
+	now := goutil.Uint64(uint64(time.Now().Unix()))
+	setTransaction(t, WithTransactionUpdateTime(now))
 
-		transactionUpdate.UpdateTime = now
+	// check
+	t.checkOpts()
 
-		if tu.Amount != nil {
-			transactionUpdate.Amount = t.Amount
-		}
+	transactionUpdate.UpdateTime = now
 
-		if tu.Note != nil {
-			transactionUpdate.Note = t.Note
-		}
+	if tu.Amount != nil {
+		transactionUpdate.Amount = t.Amount
+	}
 
-		if tu.TransactionTime != nil {
-			transactionUpdate.TransactionTime = t.TransactionTime
-		}
+	if tu.Note != nil {
+		transactionUpdate.Note = t.Note
+	}
+
+	if tu.TransactionTime != nil {
+		transactionUpdate.TransactionTime = t.TransactionTime
 	}
 
 	return
@@ -251,8 +253,8 @@ func (t *Transaction) GetTransactionID() string {
 	return ""
 }
 
-func (t *Transaction) SetTransactionID(transactionID string) {
-	setTransaction(t, WithTransactionID(goutil.String(transactionID)))
+func (t *Transaction) SetTransactionID(transactionID *string) {
+	setTransaction(t, WithTransactionID(transactionID))
 }
 
 func (t *Transaction) GetUserID() string {

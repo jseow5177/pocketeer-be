@@ -6,6 +6,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -27,7 +28,7 @@ func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, 
 	if err != nil {
 		return "", err
 	}
-	ac.SetAccountID(id)
+	ac.SetAccountID(goutil.String(id))
 
 	return id, nil
 }

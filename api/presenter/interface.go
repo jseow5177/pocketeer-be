@@ -163,6 +163,9 @@ func toHolding(h *entity.Holding) *Holding {
 		HoldingStatus: h.HoldingStatus,
 		CreateTime:    h.CreateTime,
 		UpdateTime:    h.UpdateTime,
+		LatestValue:   h.LatestValue,
+		AvgCost:       h.AvgCost,
+		TotalShares:   h.TotalShares,
 	}
 }
 

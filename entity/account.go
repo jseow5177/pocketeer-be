@@ -237,28 +237,30 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 		setAccount(ac, WithAccountName(acu.Note))
 	}
 
-	if hasUpdate {
-		now := goutil.Uint64(uint64(time.Now().Unix()))
-		setAccount(ac, WithAccountUpdateTime(now))
+	if !hasUpdate {
+		return
+	}
 
-		// check
-		if err = ac.checkOpts(); err != nil {
-			return nil, false, err
-		}
+	now := goutil.Uint64(uint64(time.Now().Unix()))
+	setAccount(ac, WithAccountUpdateTime(now))
 
-		accountUpdate.UpdateTime = now
+	// check
+	if err = ac.checkOpts(); err != nil {
+		return nil, false, err
+	}
 
-		if acu.AccountName != nil {
-			accountUpdate.AccountName = ac.AccountName
-		}
+	accountUpdate.UpdateTime = now
 
-		if acu.Balance != nil {
-			accountUpdate.Balance = ac.Balance
-		}
+	if acu.AccountName != nil {
+		accountUpdate.AccountName = ac.AccountName
+	}
 
-		if acu.Note != nil {
-			accountUpdate.Note = ac.Note
-		}
+	if acu.Balance != nil {
+		accountUpdate.Balance = ac.Balance
+	}
+
+	if acu.Note != nil {
+		accountUpdate.Note = ac.Note
 	}
 
 	return
@@ -278,8 +280,8 @@ func (ac *Account) GetAccountID() string {
 	return ""
 }
 
-func (ac *Account) SetAccountID(accountID string) {
-	setAccount(ac, WithAccountID(goutil.String(accountID)))
+func (ac *Account) SetAccountID(accountID *string) {
+	setAccount(ac, WithAccountID(accountID))
 }
 
 func (ac *Account) GetAccountName() string {

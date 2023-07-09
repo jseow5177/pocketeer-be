@@ -10,11 +10,22 @@ import (
 
 const maxAggrDepth = 2
 
+type aggrOp string
+
+const (
+	AggrSum      aggrOp = "sum"
+	AggrMultiply aggrOp = "multiply"
+)
+
+type AggrOpt struct {
+	Field interface{} // field(s) to aggr on, or
+	Aggr  *Aggr       // aggr on a sub-aggr
+}
+
 type Aggr struct {
-	name  string      // aggr name
-	op    string      // aggr op
-	field interface{} // fields to aggr on
-	aggr  *Aggr
+	name    string   // aggr name
+	op      aggrOp   // aggr op
+	aggrOpt *AggrOpt // options to aggr on
 }
 
 func (ag *Aggr) GetName() string {
@@ -30,13 +41,17 @@ func (ag *Aggr) buildPipe() bson.E {
 
 func (ag *Aggr) buildVal() bson.D {
 	be := bson.E{
-		Key: Prefix(ag.op),
+		Key: Prefix(fmt.Sprint(ag.op)),
 	}
 
-	if ag.aggr != nil {
-		be.Value = ag.buildVal()
+	if ag.aggrOpt == nil {
+		return nil
+	}
+
+	if ag.aggrOpt.Aggr != nil {
+		be.Value = ag.aggrOpt.Aggr.buildVal()
 	} else {
-		fv := reflect.Indirect(reflect.ValueOf(ag.field))
+		fv := reflect.Indirect(reflect.ValueOf(ag.aggrOpt.Field))
 		fk := fv.Kind()
 
 		if fk == reflect.Invalid {
@@ -51,26 +66,30 @@ func (ag *Aggr) buildVal() bson.D {
 			}
 			be.Value = ba
 		} else {
-			be.Value = Prefix(fmt.Sprint(ag.field))
+			be.Value = Prefix(fmt.Sprint(ag.aggrOpt.Field))
 		}
 	}
 
 	return bson.D{be}
 }
 
-func (ag *Aggr) getDepth(maxDepth int) int {
-	if ag == nil || maxDepth == 0 {
-		return 0
+func (ag *Aggr) isTooDeep(depth int, maxDepth int) bool {
+	if depth > maxDepth {
+		return true
 	}
-	return 1 + ag.getDepth(maxDepth-1)
+
+	if ag.aggrOpt.Aggr != nil {
+		return ag.aggrOpt.Aggr.isTooDeep(depth+1, maxDepth)
+	}
+
+	return false
 }
 
-func NewAggr(name, op string, field interface{}, subAggr *Aggr) *Aggr {
+func NewAggr(name string, op aggrOp, opt *AggrOpt) *Aggr {
 	return &Aggr{
-		name:  name,
-		op:    op,
-		field: field,
-		aggr:  subAggr,
+		name:    name,
+		op:      op,
+		aggrOpt: opt,
 	}
 }
 
@@ -87,12 +106,14 @@ func BuildAggrPipeline(filter interface{}, groupBy string, aggrs ...*Aggr) primi
 	}
 	group := make(bson.D, 0)
 
+	var val interface{}
 	if groupBy != "" {
-		group = append(group, bson.E{Key: "_id", Value: Prefix(groupBy)})
+		val = Prefix(groupBy)
 	}
+	group = append(group, bson.E{Key: "_id", Value: val})
 
 	for _, aggr := range aggrs {
-		if aggr.getDepth(maxAggrDepth) == 0 {
+		if aggr.isTooDeep(0, maxAggrDepth) {
 			continue
 		}
 		group = append(group, aggr.buildPipe())
@@ -103,4 +124,17 @@ func BuildAggrPipeline(filter interface{}, groupBy string, aggrs ...*Aggr) primi
 	pipeline = append(pipeline, bson.D{be})
 
 	return pipeline
+}
+
+func ToFloat64(i interface{}) float64 {
+	var f float64
+	if v, ok := i.(int32); ok {
+		f = float64(v)
+	}
+
+	if v, ok := i.(float64); ok {
+		f = v
+	}
+
+	return f
 }

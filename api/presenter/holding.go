@@ -13,6 +13,10 @@ type Holding struct {
 	HoldingType   *uint32 `json:"holding_type,omitempty"`
 	CreateTime    *uint64 `json:"create_time,omitempty"`
 	UpdateTime    *uint64 `json:"update_time,omitempty"`
+
+	TotalShares *float64 `json:"total_shares,omitempty"`
+	AvgCost     *float64 `json:"avg_cost,omitempty"`
+	LatestValue *float64 `json:"latest_value,omitempty"`
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -60,6 +64,27 @@ func (h *Holding) GetCreateTime() uint64 {
 func (h *Holding) GetUpdateTime() uint64 {
 	if h != nil && h.UpdateTime != nil {
 		return *h.UpdateTime
+	}
+	return 0
+}
+
+func (h *Holding) GetTotalShares() float64 {
+	if h != nil && h.TotalShares != nil {
+		return *h.TotalShares
+	}
+	return 0
+}
+
+func (h *Holding) GetAvgCost() float64 {
+	if h != nil && h.AvgCost != nil {
+		return *h.AvgCost
+	}
+	return 0
+}
+
+func (h *Holding) GetLatestValue() float64 {
+	if h != nil && h.LatestValue != nil {
+		return *h.LatestValue
 	}
 	return 0
 }
@@ -112,5 +137,38 @@ func (m *CreateHoldingResponse) GetHolding() *Holding {
 }
 
 func (m *CreateHoldingResponse) Set(useCaseRes *holding.CreateHoldingResponse) {
+	m.Holding = toHolding(useCaseRes.Holding)
+}
+
+type GetHoldingRequest struct {
+	HoldingID *string `json:"holding_id,omitempty"`
+}
+
+func (m *GetHoldingRequest) GetHoldingID() string {
+	if m != nil && m.HoldingID != nil {
+		return *m.HoldingID
+	}
+	return ""
+}
+
+func (m *GetHoldingRequest) ToUseCaseReq(userID string) *holding.GetHoldingRequest {
+	return &holding.GetHoldingRequest{
+		UserID:    goutil.String(userID),
+		HoldingID: m.HoldingID,
+	}
+}
+
+type GetHoldingResponse struct {
+	Holding *Holding `json:"holding,omitempty"`
+}
+
+func (m *GetHoldingResponse) GetHolding() *Holding {
+	if m != nil && m.Holding != nil {
+		return m.Holding
+	}
+	return nil
+}
+
+func (m *GetHoldingResponse) Set(useCaseRes *holding.GetHoldingResponse) {
 	m.Holding = toHolding(useCaseRes.Holding)
 }

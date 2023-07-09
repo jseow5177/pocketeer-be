@@ -17,6 +17,8 @@ type LotRepo interface {
 
 	Create(ctx context.Context, l *entity.Lot) (string, error)
 	Update(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
+
+	CalcTotalSharesAndCost(ctx context.Context, lf *LotFilter) (*LotAggr, error)
 }
 
 type LotFilter struct {
@@ -52,4 +54,31 @@ func (f *LotFilter) GetPaging() *Paging {
 		return f.Paging
 	}
 	return nil
+}
+
+type LotAggr struct {
+	GroupBy     *string
+	TotalShares *float64
+	TotalCost   *float64
+}
+
+func (ag *LotAggr) GetGroupBy() string {
+	if ag != nil && ag.GroupBy != nil {
+		return *ag.GroupBy
+	}
+	return ""
+}
+
+func (ag *LotAggr) GetTotalShares() float64 {
+	if ag != nil && ag.TotalShares != nil {
+		return *ag.TotalShares
+	}
+	return 0
+}
+
+func (ag *LotAggr) GetTotalCost() float64 {
+	if ag != nil && ag.TotalCost != nil {
+		return *ag.TotalCost
+	}
+	return 0
 }

@@ -20,7 +20,7 @@ func (h *accountHandler) GetAccount(ctx context.Context, req *presenter.GetAccou
 
 	useCaseRes, err := h.accountUseCase.GetAccount(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get ACCOUNT, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to get account, err: %v", err)
 		return err
 	}
 

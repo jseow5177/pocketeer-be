@@ -15,6 +15,10 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
+const (
+	aggrGroupByField = "groupBy"
+)
+
 type Mongo struct {
 	client *mongo.Client
 	db     *mongo.Database
@@ -187,8 +191,9 @@ func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy strin
 			// aggr results
 			res[aggr.GetName()] = aggrResult[aggr.GetName()]
 		}
+
 		// groupBy field
-		res["groupBy"] = aggrResult["_id"]
+		res[aggrGroupByField] = aggrResult["_id"]
 
 		allRes = append(allRes, res)
 	}

@@ -197,16 +197,16 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 		return uc.aggrTransactionByBudgets(ctx, req)
 	}
 
-	res, err := uc.transactionRepo.SumAmountBy(ctx, sumBy, tf)
+	aggrs, err := uc.transactionRepo.CalcTotalAmount(ctx, sumBy, tf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to sum transactions by %s, err: %v", sumBy, err)
 		return nil, err
 	}
 
 	results := make(map[string]*Aggr)
-	for v, s := range res {
-		results[v] = &Aggr{
-			Sum: goutil.Float64(s),
+	for _, aggr := range aggrs {
+		results[aggr.GetGroupBy()] = &Aggr{
+			Sum: aggr.TotalAmount,
 		}
 	}
 
@@ -231,7 +231,7 @@ func (uc *transactionUseCase) aggrTransactionByBudgets(
 	}
 
 	req.CategoryIDs = allCategoryIDs
-	catIDSum, err := uc.transactionRepo.SumAmountBy(
+	aggrs, err := uc.transactionRepo.CalcTotalAmount(
 		ctx,
 		"category_id",
 		req.ToTransactionFilter(req.GetUserID()),
@@ -239,6 +239,11 @@ func (uc *transactionUseCase) aggrTransactionByBudgets(
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to sum transactions by category_id, err: %v", err)
 		return nil, err
+	}
+
+	catIDSum := make(map[string]float64)
+	for _, aggr := range aggrs {
+		catIDSum[aggr.GetGroupBy()] = aggr.GetTotalAmount()
 	}
 
 	budgetIDSum, err := uc.getBudgetIDSum(budgetIDToCategoryIDs, catIDSum)

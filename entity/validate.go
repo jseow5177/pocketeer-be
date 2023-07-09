@@ -72,6 +72,17 @@ func CheckMonetaryStr(str string) error {
 	return nil
 }
 
+func CheckPositiveMonetaryStr(str string) error {
+	f, err := util.MonetaryStrToFloat(str)
+	if err != nil {
+		return ErrInvalidMonetaryStr
+	}
+	if f <= 0 {
+		return ErrMustBePositive
+	}
+	return nil
+}
+
 func PagingValidator(optional bool) validator.Validator {
 	return &validator.Form{
 		Optional: optional,

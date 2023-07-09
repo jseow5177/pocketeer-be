@@ -154,26 +154,28 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 		setLot(l, WithTradeDate(lu.TradeDate))
 	}
 
-	if hasUpdate {
-		now := goutil.Uint64(uint64(time.Now().Unix()))
-		setLot(l, WithLotUpdateTime(now))
+	if !hasUpdate {
+		return
+	}
 
-		// check
-		l.checkOpts()
+	now := goutil.Uint64(uint64(time.Now().Unix()))
+	setLot(l, WithLotUpdateTime(now))
 
-		lotUpdate.UpdateTime = now
+	// check
+	l.checkOpts()
 
-		if lu.Shares != nil {
-			lotUpdate.Shares = l.Shares
-		}
+	lotUpdate.UpdateTime = now
 
-		if lu.CostPerShare != nil {
-			lotUpdate.CostPerShare = l.CostPerShare
-		}
+	if lu.Shares != nil {
+		lotUpdate.Shares = l.Shares
+	}
 
-		if lu.TradeDate != nil {
-			lotUpdate.TradeDate = l.TradeDate
-		}
+	if lu.CostPerShare != nil {
+		lotUpdate.CostPerShare = l.CostPerShare
+	}
+
+	if lu.TradeDate != nil {
+		lotUpdate.TradeDate = l.TradeDate
 	}
 
 	return
@@ -186,8 +188,8 @@ func (l *Lot) GetLotID() string {
 	return ""
 }
 
-func (l *Lot) SetLotID(lotID string) {
-	setLot(l, WithLotID(goutil.String(lotID)))
+func (l *Lot) SetLotID(lotID *string) {
+	setLot(l, WithLotID(lotID))
 }
 
 func (l *Lot) GetUserID() string {

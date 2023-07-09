@@ -6,10 +6,17 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const lotCollName = "lot"
+const (
+	lotCollName = "lot"
+
+	aggrTotalShares = "totalShares"
+	aggrTotalCost   = "totalCost"
+)
 
 type lotMongo struct {
 	mColl *MongoColl
@@ -27,7 +34,7 @@ func (m *lotMongo) Create(ctx context.Context, l *entity.Lot) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	l.SetLotID(id)
+	l.SetLotID(goutil.String(id))
 
 	return id, nil
 }
@@ -65,4 +72,41 @@ func (m *lotMongo) GetMany(ctx context.Context, lf *repo.LotFilter) ([]*entity.L
 	}
 
 	return els, nil
+}
+
+func (m *lotMongo) CalcTotalSharesAndCost(ctx context.Context, lf *repo.LotFilter) (*repo.LotAggr, error) {
+	// sum of shares
+	totalSharesAggr := mongoutil.NewAggr(aggrTotalShares, mongoutil.AggrSum, &mongoutil.AggrOpt{
+		Field: "shares",
+	})
+
+	// sum of (shares * cost_per_share)
+	totalCostAggr := mongoutil.NewAggr(aggrTotalCost, mongoutil.AggrSum, &mongoutil.AggrOpt{
+		Aggr: mongoutil.NewAggr("", mongoutil.AggrMultiply, &mongoutil.AggrOpt{
+			Field: []string{"shares", "cost_per_share"},
+		}),
+	})
+
+	res, err := m.mColl.aggr(ctx, lf, "", totalSharesAggr, totalCostAggr)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		return &repo.LotAggr{
+			TotalShares: goutil.Float64(0),
+			TotalCost:   goutil.Float64(0),
+		}, nil
+	}
+
+	aggrRes := res[0]
+	var (
+		totalShares = mongoutil.ToFloat64(aggrRes[aggrTotalShares])
+		totalCost   = mongoutil.ToFloat64(aggrRes[aggrTotalCost])
+	)
+
+	return &repo.LotAggr{
+		TotalShares: goutil.Float64(totalShares),
+		TotalCost:   goutil.Float64(totalCost),
+	}, nil
 }

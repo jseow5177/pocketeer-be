@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,12 +18,14 @@ var (
 type holdingUseCase struct {
 	accountRepo repo.AccountRepo
 	holdingRepo repo.HoldingRepo
+	lotRepo     repo.LotRepo
 }
 
-func NewHoldingUseCase(accountRepo repo.AccountRepo, holdingRepo repo.HoldingRepo) UseCase {
+func NewHoldingUseCase(accountRepo repo.AccountRepo, holdingRepo repo.HoldingRepo, lotRepo repo.LotRepo) UseCase {
 	return &holdingUseCase{
 		accountRepo,
 		holdingRepo,
+		lotRepo,
 	}
 }
 
@@ -57,7 +62,22 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 		return nil, err
 	}
 
-	// Compute total shares and average cost
+	// Compute total shares and cost
+	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, req.ToLotFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to calc lot aggr from repo, err: %v", err)
+		return nil, err
+	}
+
+	var avgCost float64
+	if aggr.GetTotalCost() != 0 {
+		avgCost = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.PreciseDP)
+	}
+
+	h.SetTotalShares(aggr.TotalShares)
+	h.SetAvgCost(goutil.Float64(avgCost))
+
+	// TODO: Get latest value
 
 	return &GetHoldingResponse{
 		h,

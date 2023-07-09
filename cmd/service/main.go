@@ -123,7 +123,7 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 
 	// start server
@@ -509,7 +509,7 @@ func (s *server) registerRoutes() http.Handler {
 
 	holdingHandler := hh.NewHoldingHandler(s.holdingUseCase)
 
-	// search securities
+	// create holding
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathCreateHolding,
 		Method: http.MethodPost,
@@ -519,6 +519,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: hh.CreateHoldingValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return holdingHandler.CreateHolding(ctx, req.(*presenter.CreateHoldingRequest), res.(*presenter.CreateHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get holding
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetHoldingRequest),
+			Res:       new(presenter.GetHoldingResponse),
+			Validator: hh.GetHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.GetHolding(ctx, req.(*presenter.GetHoldingRequest), res.(*presenter.GetHoldingResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

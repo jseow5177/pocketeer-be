@@ -117,18 +117,20 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 		setCategory(c, WithCategoryName(cu.CategoryName))
 	}
 
-	if hasUpdate {
-		now := goutil.Uint64(uint64(time.Now().Unix()))
-		setCategory(c, WithCategoryUpdateTime(now))
+	if !hasUpdate {
+		return
+	}
 
-		// check
-		c.checkOpts()
+	now := goutil.Uint64(uint64(time.Now().Unix()))
+	setCategory(c, WithCategoryUpdateTime(now))
 
-		categoryUpdate.UpdateTime = now
+	// check
+	c.checkOpts()
 
-		if cu.CategoryName != nil {
-			categoryUpdate.CategoryName = c.CategoryName
-		}
+	categoryUpdate.UpdateTime = now
+
+	if cu.CategoryName != nil {
+		categoryUpdate.CategoryName = c.CategoryName
 	}
 
 	return
@@ -148,8 +150,8 @@ func (c *Category) GetCategoryID() string {
 	return ""
 }
 
-func (c *Category) SetCategoryID(categoryID string) {
-	setCategory(c, WithCategoryID(goutil.String(categoryID)))
+func (c *Category) SetCategoryID(categoryID *string) {
+	setCategory(c, WithCategoryID(categoryID))
 }
 
 func (c *Category) GetCategoryName() string {

@@ -144,8 +144,8 @@ func (u *User) GetUserID() string {
 	return ""
 }
 
-func (u *User) SetUserID(userID string) {
-	setUser(u, WithUserID(goutil.String(userID)))
+func (u *User) SetUserID(userID *string) {
+	setUser(u, WithUserID(userID))
 }
 
 func (u *User) GetUsername() string {

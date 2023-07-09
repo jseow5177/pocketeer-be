@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,6 +40,7 @@ func ToHoldingEntity(h *Holding) *entity.Holding {
 		h.GetUserID(),
 		h.GetAccountID(),
 		h.GetSymbol(),
+		entity.WithHoldingID(goutil.String(h.GetHoldingID())),
 		entity.WithHoldingType(h.HoldingType),
 		entity.WithHoldingStatus(h.HoldingStatus),
 		entity.WithHoldingCreateTime(h.CreateTime),
