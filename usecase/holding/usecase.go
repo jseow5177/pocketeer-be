@@ -77,8 +77,6 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 	h.SetTotalShares(aggr.TotalShares)
 	h.SetAvgCost(goutil.Float64(avgCost))
 
-	// TODO: Get latest value
-
 	return &GetHoldingResponse{
 		h,
 	}, nil
