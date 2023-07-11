@@ -38,13 +38,6 @@ func (m *GetHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	}
 }
 
-func (m *GetHoldingRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-	}
-}
-
 type GetHoldingResponse struct {
 	Holding *entity.Holding
 }

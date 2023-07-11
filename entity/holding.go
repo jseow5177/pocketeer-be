@@ -41,6 +41,7 @@ type Holding struct {
 	TotalShares *float64
 	AvgCost     *float64
 	LatestValue *float64
+	Quote       *Quote
 }
 
 type HoldingOption = func(h *Holding)
@@ -96,6 +97,12 @@ func WithAvgCost(wac *float64) HoldingOption {
 func WithLatestValue(latestValue *float64) HoldingOption {
 	return func(h *Holding) {
 		h.LatestValue = latestValue
+	}
+}
+
+func WithQuote(quote *Quote) HoldingOption {
+	return func(h *Holding) {
+		h.Quote = quote
 	}
 }
 
@@ -222,4 +229,19 @@ func (h *Holding) GetLatestValue() float64 {
 
 func (h *Holding) SetLatestValue(latestValue *float64) {
 	setHolding(h, WithLatestValue(latestValue))
+}
+
+func (h *Holding) GetQuote() *Quote {
+	if h != nil && h.Quote != nil {
+		return h.Quote
+	}
+	return nil
+}
+
+func (h *Holding) SetQuote(quote *Quote) {
+	setHolding(h, WithQuote(quote))
+}
+
+func (h *Holding) IsCustom() bool {
+	return h.GetHoldingType() == uint32(HoldingTypeCustom)
 }

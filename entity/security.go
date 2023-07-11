@@ -113,7 +113,7 @@ func (s *Security) GetCurrency() string {
 
 type Quote struct {
 	LatestPrice   *float64
-	Change        *float64 // change in price between LatestPrice and PreviousClose
+	Change        *float64 // LatestPrice - PreviousClose
 	ChangePercent *float64
 	PreviousClose *float64
 	UpdateTime    *uint64

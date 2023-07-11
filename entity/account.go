@@ -130,6 +130,11 @@ type Account struct {
 	Note          *string
 	CreateTime    *uint64
 	UpdateTime    *uint64
+
+	// Investment
+	AvgCost     *float64
+	LatestValue *float64
+	Holdings    []*Holding
 }
 
 type AccountOption = func(ac *Account)

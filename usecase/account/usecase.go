@@ -8,6 +8,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,13 +16,21 @@ type accountUseCase struct {
 	txMgr           repo.TxMgr
 	accountRepo     repo.AccountRepo
 	transactionRepo repo.TransactionRepo
+
+	holdingUseCase holding.UseCase
 }
 
-func NewAccountUseCase(txMgr repo.TxMgr, accountRepo repo.AccountRepo, transactionRepo repo.TransactionRepo) UseCase {
+func NewAccountUseCase(
+	txMgr repo.TxMgr,
+	accountRepo repo.AccountRepo,
+	transactionRepo repo.TransactionRepo,
+	holdingUseCase holding.UseCase,
+) UseCase {
 	return &accountUseCase{
 		txMgr,
 		accountRepo,
 		transactionRepo,
+		holdingUseCase,
 	}
 }
 

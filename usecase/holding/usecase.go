@@ -5,7 +5,9 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
@@ -19,13 +21,20 @@ type holdingUseCase struct {
 	accountRepo repo.AccountRepo
 	holdingRepo repo.HoldingRepo
 	lotRepo     repo.LotRepo
+	securityAPI api.SecurityAPI
 }
 
-func NewHoldingUseCase(accountRepo repo.AccountRepo, holdingRepo repo.HoldingRepo, lotRepo repo.LotRepo) UseCase {
+func NewHoldingUseCase(
+	accountRepo repo.AccountRepo,
+	holdingRepo repo.HoldingRepo,
+	lotRepo repo.LotRepo,
+	securityAPI api.SecurityAPI,
+) UseCase {
 	return &holdingUseCase{
 		accountRepo,
 		holdingRepo,
 		lotRepo,
+		securityAPI,
 	}
 }
 
@@ -62,13 +71,28 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 		return nil, err
 	}
 
-	// Compute total shares and cost
-	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, req.ToLotFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to calc lot aggr from repo, err: %v", err)
+	if err = uc.calcHoldingValue(ctx, h); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to compute holding value, err: %v", err)
 		return nil, err
 	}
 
+	return &GetHoldingResponse{
+		h,
+	}, nil
+}
+
+func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holding) error {
+	// Compute total shares and cost
+	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, &repo.LotFilter{
+		UserID:    h.UserID,
+		HoldingID: h.HoldingID,
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to calc lot aggr from repo, err: %v", err)
+		return err
+	}
+
+	// Compute avg cost
 	var avgCost float64
 	if aggr.GetTotalCost() != 0 {
 		avgCost = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.PreciseDP)
@@ -77,7 +101,23 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 	h.SetTotalShares(aggr.TotalShares)
 	h.SetAvgCost(goutil.Float64(avgCost))
 
-	return &GetHoldingResponse{
-		h,
-	}, nil
+	// If custom holding, the latest value is Total Shares * Avg Cost
+	// Else, get quote and calculate Total Shares * Current Price
+	if h.IsCustom() {
+		latestValue := util.RoundFloat(h.GetTotalShares()*h.GetAvgCost(), config.StandardDP)
+		h.SetLatestValue(goutil.Float64(latestValue))
+	} else {
+		quote, err := uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
+			Symbol: h.Symbol,
+		})
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
+			return err
+		}
+		latestValue := util.RoundFloat(h.GetTotalShares()*quote.GetLatestPrice(), config.StandardDP)
+		h.SetLatestValue(goutil.Float64(latestValue))
+		h.SetQuote(quote)
+	}
+
+	return nil
 }
