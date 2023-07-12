@@ -18,7 +18,7 @@ const (
 type HoldingType uint32
 
 const (
-	HoldingTypeDefault HoldingType = iota
+	HoldingTypeDefault HoldingType = iota + 1
 	HoldingTypeCustom
 )
 
