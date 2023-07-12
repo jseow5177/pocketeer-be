@@ -13,15 +13,18 @@ import (
 
 var UpdateAccountValidator = validator.MustForm(map[string]validator.Validator{
 	"account_name": &validator.String{
-		Optional: true,
+		Optional:  true,
+		UnsetZero: true,
 	},
 	"balance": &validator.String{
 		Optional:   true,
+		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
 	"note": &validator.String{
-		Optional: true,
-		MaxLen:   uint32(config.MaxAccountNoteLength),
+		Optional:  true,
+		UnsetZero: true,
+		MaxLen:    uint32(config.MaxAccountNoteLength),
 	},
 })
 
