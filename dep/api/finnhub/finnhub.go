@@ -80,7 +80,9 @@ func NewFinnHubMgr(cfg *config.FinnHub) *finnhubMgr {
 	fhCfg.AddDefaultHeader("X-Finnhub-Token", cfg.Token)
 
 	return &finnhubMgr{
-		client: finnhub.NewAPIClient(fhCfg).DefaultApi,
+		client:  finnhub.NewAPIClient(fhCfg).DefaultApi,
+		baseURL: cfg.BaseURL,
+		token:   cfg.Token,
 	}
 }
 

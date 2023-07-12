@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrSetBalanceForbidden = errors.New("set balance forbidden")
+	ErrMustSetBalance      = errors.New("balance must be set")
 )
 
 type AccountStatus uint32
@@ -187,12 +188,33 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	}
 }
 
+func WithHoldings(hs []*Holding) AccountOption {
+	return func(ac *Account) {
+		ac.Holdings = hs
+	}
+}
+
+func WithAccountAvgCost(avgCost *float64) AccountOption {
+	return func(ac *Account) {
+		ac.AvgCost = avgCost
+	}
+}
+
+func WithAccountLatestValue(latestValue *float64) AccountOption {
+	return func(ac *Account) {
+		ac.LatestValue = latestValue
+	}
+}
+
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().Unix())
 	ac := &Account{
 		UserID:        goutil.String(userID),
+		AccountName:   goutil.String(""),
+		Balance:       goutil.Float64(0),
 		AccountType:   goutil.Uint32(uint32(AssetCash)),
 		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),
+		Note:          goutil.String(""),
 		CreateTime:    goutil.Uint64(now),
 		UpdateTime:    goutil.Uint64(now),
 	}
@@ -218,6 +240,9 @@ func setAccount(ac *Account, opts ...AccountOption) {
 }
 
 func (ac *Account) checkOpts() error {
+	if ac.CanSetBalance() && ac.Balance == nil {
+		return ErrMustSetBalance
+	}
 	if !ac.CanSetBalance() && ac.Balance != nil {
 		return ErrSetBalanceForbidden
 	}
@@ -336,6 +361,39 @@ func (ac *Account) GetUpdateTime() uint64 {
 		return *ac.UpdateTime
 	}
 	return 0
+}
+
+func (ac *Account) GetAvgCost() float64 {
+	if ac != nil && ac.AvgCost != nil {
+		return *ac.AvgCost
+	}
+	return 0
+}
+
+func (ac *Account) SetAvgCost(avgCost *float64) {
+	setAccount(ac, WithAccountAvgCost(avgCost))
+}
+
+func (ac *Account) GetLatestValue() float64 {
+	if ac != nil && ac.LatestValue != nil {
+		return *ac.LatestValue
+	}
+	return 0
+}
+
+func (ac *Account) SetLatestValue(latestValue *float64) {
+	setAccount(ac, WithAccountLatestValue(latestValue))
+}
+
+func (ac *Account) GetHoldings() []*Holding {
+	if ac != nil && ac.Holdings != nil {
+		return ac.Holdings
+	}
+	return nil
+}
+
+func (ac *Account) SetHoldings(hs []*Holding) {
+	setAccount(ac, WithHoldings(hs))
 }
 
 func (ac *Account) IsAsset() bool {

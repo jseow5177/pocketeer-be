@@ -152,10 +152,12 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 	now := uint64(time.Now().Unix())
 	t := &Transaction{
 		UserID:          goutil.String(userID),
-		AccountID:       goutil.String(accountID),
 		CategoryID:      goutil.String(categoryID),
-		TransactionType: goutil.Uint32(uint32(TransactionTypeExpense)),
+		AccountID:       goutil.String(accountID),
 		Amount:          goutil.Float64(0),
+		Note:            goutil.String(""),
+		TransactionType: goutil.Uint32(uint32(TransactionTypeExpense)),
+		TransactionTime: goutil.Uint64(now),
 		CreateTime:      goutil.Uint64(now),
 		UpdateTime:      goutil.Uint64(now),
 	}

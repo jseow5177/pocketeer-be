@@ -117,7 +117,6 @@ func (s *server) Start() error {
 
 	// init use cases
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
-	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
@@ -125,6 +124,7 @@ func (s *server) Start() error {
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityAPI)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)

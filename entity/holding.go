@@ -18,7 +18,8 @@ const (
 type HoldingType uint32
 
 const (
-	HoldingTypeDefault HoldingType = iota
+	HoldingTypeInvalid HoldingType = iota
+	HoldingTypeDefault
 	HoldingTypeCustom
 )
 
@@ -88,13 +89,13 @@ func WithTotalShares(totalShares *float64) HoldingOption {
 	}
 }
 
-func WithAvgCost(wac *float64) HoldingOption {
+func WithHoldingAvgCost(wac *float64) HoldingOption {
 	return func(h *Holding) {
 		h.AvgCost = wac
 	}
 }
 
-func WithLatestValue(latestValue *float64) HoldingOption {
+func WithHoldingLatestValue(latestValue *float64) HoldingOption {
 	return func(h *Holding) {
 		h.LatestValue = latestValue
 	}
@@ -217,7 +218,7 @@ func (h *Holding) GetAvgCost() float64 {
 }
 
 func (h *Holding) SetAvgCost(avgCost *float64) {
-	setHolding(h, WithAvgCost(avgCost))
+	setHolding(h, WithHoldingAvgCost(avgCost))
 }
 
 func (h *Holding) GetLatestValue() float64 {
@@ -228,7 +229,7 @@ func (h *Holding) GetLatestValue() float64 {
 }
 
 func (h *Holding) SetLatestValue(latestValue *float64) {
-	setHolding(h, WithLatestValue(latestValue))
+	setHolding(h, WithHoldingLatestValue(latestValue))
 }
 
 func (h *Holding) GetQuote() *Quote {

@@ -150,6 +150,14 @@ func toTransaction(t *entity.Transaction) *Transaction {
 	}
 }
 
+func toTransactions(ts []*entity.Transaction) []*Transaction {
+	transactions := make([]*Transaction, len(ts))
+	for idx, t := range ts {
+		transactions[idx] = toTransaction(t)
+	}
+	return transactions
+}
+
 func toHolding(h *entity.Holding) *Holding {
 	if h == nil {
 		return nil
@@ -166,6 +174,49 @@ func toHolding(h *entity.Holding) *Holding {
 		LatestValue:   h.LatestValue,
 		AvgCost:       h.AvgCost,
 		TotalShares:   h.TotalShares,
+		Quote:         toQuote(h.Quote),
+	}
+}
+
+func toHoldings(hs []*entity.Holding) []*Holding {
+	holdings := make([]*Holding, len(hs))
+	for idx, h := range hs {
+		holdings[idx] = toHolding(h)
+	}
+	return holdings
+}
+
+func toQuote(q *entity.Quote) *Quote {
+	if q == nil {
+		return nil
+	}
+
+	var latestPrice *string
+	if q.LatestPrice != nil {
+		latestPrice = goutil.String(fmt.Sprint(q.GetLatestPrice()))
+	}
+
+	var change *string
+	if q.Change != nil {
+		change = goutil.String(fmt.Sprint(q.GetChange()))
+	}
+
+	var changePercent *string
+	if q.ChangePercent != nil {
+		changePercent = goutil.String(fmt.Sprint(q.GetChangePercent()))
+	}
+
+	var previousClose *string
+	if q.PreviousClose != nil {
+		previousClose = goutil.String(fmt.Sprint(q.GetPreviousClose()))
+	}
+
+	return &Quote{
+		LatestPrice:   latestPrice,
+		Change:        change,
+		ChangePercent: changePercent,
+		PreviousClose: previousClose,
+		UpdateTime:    q.UpdateTime,
 	}
 }
 
@@ -206,6 +257,16 @@ func toAccount(ac *entity.Account) *Account {
 		balance = goutil.String(fmt.Sprint(ac.GetBalance()))
 	}
 
+	var avgCost *string
+	if ac.AvgCost != nil {
+		avgCost = goutil.String(fmt.Sprint(ac.GetAvgCost()))
+	}
+
+	var latestValue *string
+	if ac.LatestValue != nil {
+		latestValue = goutil.String(fmt.Sprint(ac.GetLatestValue()))
+	}
+
 	return &Account{
 		AccountID:     ac.AccountID,
 		AccountName:   ac.AccountName,
@@ -215,7 +276,18 @@ func toAccount(ac *entity.Account) *Account {
 		Note:          ac.Note,
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
+		AvgCost:       avgCost,
+		LatestValue:   latestValue,
+		Holdings:      toHoldings(ac.Holdings),
 	}
+}
+
+func toAccounts(acs []*entity.Account) []*Account {
+	accounts := make([]*Account, len(acs))
+	for idx, ac := range acs {
+		accounts[idx] = toAccount(ac)
+	}
+	return accounts
 }
 
 func toPaging(p *common.Paging) *Paging {

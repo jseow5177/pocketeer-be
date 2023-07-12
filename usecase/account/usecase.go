@@ -41,8 +41,15 @@ func (uc *accountUseCase) GetAccount(ctx context.Context, req *GetAccountRequest
 		return nil, err
 	}
 
+	if ac.IsInvestment() {
+		if err = uc.calcInvestmentAccountValue(ctx, ac); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to compute account value, err: %v", err)
+			return nil, err
+		}
+	}
+
 	return &GetAccountResponse{
-		Account: ac,
+		ac,
 	}, nil
 }
 
@@ -53,8 +60,19 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		return nil, err
 	}
 
+	if err := goutil.ParallelizeWork(ctx, len(acs), 5, func(ctx context.Context, workNum int) error {
+		ac := acs[workNum]
+		if ac.IsInvestment() {
+			return uc.calcInvestmentAccountValue(ctx, acs[workNum])
+		}
+		return nil
+	}); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to compute accounts value, err: %v", err)
+		return nil, err
+	}
+
 	return &GetAccountsResponse{
-		Accounts: acs,
+		acs,
 	}, nil
 }
 
@@ -136,4 +154,29 @@ func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accou
 	)
 
 	return t
+}
+
+func (uc *accountUseCase) calcInvestmentAccountValue(ctx context.Context, ac *entity.Account) error {
+	res, err := uc.holdingUseCase.GetHoldings(ctx, &holding.GetHoldingsRequest{
+		UserID:    ac.UserID,
+		AccountID: ac.AccountID,
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account holdings, err: %v", err)
+		return err
+	}
+	ac.SetHoldings(res.Holdings)
+
+	var (
+		avgCost     float64
+		latestValue float64
+	)
+	for _, h := range res.Holdings {
+		avgCost += h.GetAvgCost()
+		latestValue += h.GetLatestValue()
+	}
+	ac.SetLatestValue(goutil.Float64(latestValue))
+	ac.SetAvgCost(goutil.Float64(avgCost))
+
+	return nil
 }

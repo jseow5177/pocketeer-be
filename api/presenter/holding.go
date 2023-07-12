@@ -17,6 +17,7 @@ type Holding struct {
 	TotalShares *float64 `json:"total_shares,omitempty"`
 	AvgCost     *float64 `json:"avg_cost,omitempty"`
 	LatestValue *float64 `json:"latest_value,omitempty"`
+	Quote       *Quote   `json:"quote,omitempty"`
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -87,6 +88,13 @@ func (h *Holding) GetLatestValue() float64 {
 		return *h.LatestValue
 	}
 	return 0
+}
+
+func (h *Holding) GetQuote() *Quote {
+	if h != nil && h.Quote != nil {
+		return h.Quote
+	}
+	return nil
 }
 
 type CreateHoldingRequest struct {

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,6 +25,8 @@ func ToAccountModelFromEntity(ac *entity.Account) *Account {
 	if primitive.IsValidObjectID(ac.GetAccountID()) {
 		objID, _ = primitive.ObjectIDFromHex(ac.GetAccountID())
 	}
+
+	fmt.Println(ac.Balance == nil)
 
 	return &Account{
 		AccountID:     objID,
