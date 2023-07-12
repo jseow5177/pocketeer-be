@@ -283,11 +283,7 @@ func (m *GetTransactionsResponse) GetPaging() *Paging {
 }
 
 func (m *GetTransactionsResponse) Set(useCaseRes *transaction.GetTransactionsResponse) {
-	ts := make([]*Transaction, 0)
-	for _, t := range useCaseRes.Transactions {
-		ts = append(ts, toTransaction(t))
-	}
-	m.Transactions = ts
+	m.Transactions = toTransactions(useCaseRes.Transactions)
 	m.Paging = toPaging(useCaseRes.Paging)
 }
 

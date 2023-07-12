@@ -15,7 +15,8 @@ var UpdateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 		Optional: false,
 	},
 	"category_name": &validator.String{
-		Optional: true,
+		Optional:  true,
+		UnsetZero: true,
 	},
 })
 

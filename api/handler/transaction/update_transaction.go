@@ -15,27 +15,19 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 	"transaction_id": &validator.String{
 		Optional: false,
 	},
-	"category_id": &validator.String{
-		Optional:  true,
-		UnsetZero: true,
-	},
 	"amount": &validator.String{
 		Optional:   true,
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
-	},
-	"transaction_type": &validator.UInt32{
-		Optional:   true,
-		UnsetZero:  true,
-		Validators: []validator.UInt32Func{entity.CheckTransactionType},
 	},
 	"transaction_time": &validator.UInt64{
 		Optional:  true,
 		UnsetZero: true,
 	},
 	"note": &validator.String{
-		Optional: true,
-		MaxLen:   uint32(config.MaxTransactionNoteLength),
+		Optional:  true,
+		UnsetZero: true,
+		MaxLen:    uint32(config.MaxTransactionNoteLength),
 	},
 })
 

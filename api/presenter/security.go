@@ -82,3 +82,46 @@ func (m *SearchSecuritiesResponse) Set(useCaseRes *security.SearchSecuritiesResp
 	}
 	m.Securities = ss
 }
+
+type Quote struct {
+	LatestPrice   *string `json:"latest_price,omitempty"`
+	Change        *string `json:"change,omitempty"`
+	ChangePercent *string `json:"change_percent,omitempty"`
+	PreviousClose *string `json:"previous_close,omitempty"`
+	UpdateTime    *uint64 `json:"update_time,omitempty"`
+}
+
+func (q *Quote) GetLatestPrice() string {
+	if q != nil && q.LatestPrice != nil {
+		return *q.LatestPrice
+	}
+	return ""
+}
+
+func (q *Quote) GetChange() string {
+	if q != nil && q.Change != nil {
+		return *q.Change
+	}
+	return ""
+}
+
+func (q *Quote) GetChangePercent() string {
+	if q != nil && q.ChangePercent != nil {
+		return *q.ChangePercent
+	}
+	return ""
+}
+
+func (q *Quote) GetPreviousClose() string {
+	if q != nil && q.PreviousClose != nil {
+		return *q.PreviousClose
+	}
+	return ""
+}
+
+func (q *Quote) GetUpdateTime() uint64 {
+	if q != nil && q.UpdateTime != nil {
+		return *q.UpdateTime
+	}
+	return 0
+}

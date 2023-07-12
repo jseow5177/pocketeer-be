@@ -86,6 +86,7 @@ func NewCategory(userID string, opts ...CategoryOption) *Category {
 	now := uint64(time.Now().Unix())
 	c := &Category{
 		UserID:       goutil.String(userID),
+		CategoryName: goutil.String(""),
 		CategoryType: goutil.Uint32(uint32(TransactionTypeExpense)),
 		CreateTime:   goutil.Uint64(now),
 		UpdateTime:   goutil.Uint64(now),

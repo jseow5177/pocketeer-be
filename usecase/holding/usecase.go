@@ -81,6 +81,25 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 	}, nil
 }
 
+func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsRequest) (*GetHoldingsResponse, error) {
+	hs, err := uc.holdingRepo.GetMany(ctx, req.ToHoldingFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get holdings from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err := goutil.ParallelizeWork(ctx, len(hs), 5, func(ctx context.Context, workNum int) error {
+		return uc.calcHoldingValue(ctx, hs[workNum])
+	}); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to compute holdings value, err: %v", err)
+		return nil, err
+	}
+
+	return &GetHoldingsResponse{
+		hs,
+	}, nil
+}
+
 func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holding) error {
 	// Compute total shares and cost
 	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, &repo.LotFilter{

@@ -9,7 +9,46 @@ import (
 
 type UseCase interface {
 	GetHolding(ctx context.Context, req *GetHoldingRequest) (*GetHoldingResponse, error)
+	GetHoldings(ctx context.Context, req *GetHoldingsRequest) (*GetHoldingsResponse, error)
+
 	CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error)
+}
+
+type GetHoldingsRequest struct {
+	UserID    *string
+	AccountID *string
+}
+
+func (m *GetHoldingsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetHoldingsRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *GetHoldingsRequest) ToHoldingFilter() *repo.HoldingFilter {
+	return &repo.HoldingFilter{
+		UserID:    m.UserID,
+		AccountID: m.AccountID,
+	}
+}
+
+type GetHoldingsResponse struct {
+	Holdings []*entity.Holding
+}
+
+func (m *GetHoldingsResponse) GetHoldings() []*entity.Holding {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
 }
 
 type GetHoldingRequest struct {

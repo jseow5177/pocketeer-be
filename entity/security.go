@@ -59,6 +59,7 @@ func WithSecurityCurrency(currency *string) SecurityOption {
 func NewSecurity(symbol string, opts ...SecurityOption) *Security {
 	s := &Security{
 		Symbol:       goutil.String(symbol),
+		SecurityName: goutil.String(""),
 		SecurityType: goutil.Uint32(uint32(SecurityTypeCommonStock)),
 		Region:       goutil.String(DefaultSecurityRegion),
 		Currency:     goutil.String(DefaultSecurityCurrency),

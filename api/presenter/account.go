@@ -15,6 +15,10 @@ type Account struct {
 	Note          *string `json:"note,omitempty"`
 	CreateTime    *uint64 `json:"create_time,omitempty"`
 	UpdateTime    *uint64 `json:"update_time,omitempty"`
+
+	AvgCost     *string    `json:"avg_cost,omitempty"`
+	LatestValue *string    `json:"latest_value,omitempty"`
+	Holdings    []*Holding `json:"holdings,omitempty"`
 }
 
 func (ac *Account) GetAccountID() string {
@@ -71,6 +75,27 @@ func (ac *Account) GetUpdateTime() uint64 {
 		return *ac.UpdateTime
 	}
 	return 0
+}
+
+func (ac *Account) GetAvgCost() string {
+	if ac != nil && ac.AvgCost != nil {
+		return *ac.AvgCost
+	}
+	return ""
+}
+
+func (ac *Account) GetLatestValue() string {
+	if ac != nil && ac.LatestValue != nil {
+		return *ac.LatestValue
+	}
+	return ""
+}
+
+func (ac *Account) GetHoldings() []*Holding {
+	if ac != nil && ac.Holdings != nil {
+		return ac.Holdings
+	}
+	return nil
 }
 
 type CreateAccountRequest struct {
@@ -201,11 +226,7 @@ func (m *GetAccountsResponse) GetAccounts() []*Account {
 }
 
 func (m *GetAccountsResponse) Set(useCaseRes *account.GetAccountsResponse) {
-	acs := make([]*Account, 0)
-	for _, ac := range useCaseRes.Accounts {
-		acs = append(acs, toAccount(ac))
-	}
-	m.Accounts = acs
+	m.Accounts = toAccounts(useCaseRes.Accounts)
 }
 
 type UpdateAccountRequest struct {

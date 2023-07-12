@@ -79,6 +79,8 @@ func NewUser(username, password string, opts ...UserOption) (*User, error) {
 	u := &User{
 		Username:   goutil.String(username),
 		UserStatus: goutil.Uint32(uint32(UserStatusNormal)),
+		Hash:       goutil.String(""),
+		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
 	}
