@@ -64,7 +64,7 @@ func (m *accountMongo) GetMany(ctx context.Context, acf *repo.AccountFilter) ([]
 	for _, r := range res {
 		eac, err := model.ToAccountEntity(r.(*model.Account))
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 		eacs = append(eacs, eac)
 	}
