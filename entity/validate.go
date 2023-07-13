@@ -77,7 +77,7 @@ func CheckPositiveMonetaryStr(str string) error {
 	if err != nil {
 		return ErrInvalidMonetaryStr
 	}
-	if f <= 0 {
+	if f < 0 {
 		return ErrMustBePositive
 	}
 	return nil

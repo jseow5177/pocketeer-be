@@ -6,7 +6,7 @@ import (
 )
 
 type Holding struct {
-	HoldingID     *string `json:"_id,omitempty"`
+	HoldingID     *string `json:"holding_id,omitempty"`
 	AccountID     *string `json:"account_id,omitempty"`
 	Symbol        *string `json:"symbol,omitempty"`
 	HoldingStatus *uint32 `json:"holding_status,omitempty"`
