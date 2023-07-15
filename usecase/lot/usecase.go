@@ -37,6 +37,30 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 	}, nil
 }
 
+func (uc *lotUseCase) UpdateLot(ctx context.Context, req *UpdateLotRequest) (*UpdateLotResponse, error) {
+	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	lu, hasUpdate := l.Update(req.ToLotUpdate())
+	if !hasUpdate {
+		log.Ctx(ctx).Info().Msg("lot has no updates")
+		return &UpdateLotResponse{
+			l,
+		}, nil
+	}
+
+	if err = uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save lot updates to repo, err: %v", err)
+		return nil, err
+	}
+
+	return &UpdateLotResponse{
+		l,
+	}, nil
+}
+
 func (uc *lotUseCase) GetLot(ctx context.Context, req *GetLotRequest) (*GetLotResponse, error) {
 	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
 	if err != nil {

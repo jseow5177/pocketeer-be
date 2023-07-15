@@ -168,15 +168,6 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 	return t
 }
 
-func setTransaction(t *Transaction, opts ...TransactionOption) {
-	if t == nil {
-		return
-	}
-	for _, opt := range opts {
-		opt(t)
-	}
-}
-
 func (t *Transaction) checkOpts() {
 	if t.GetTransactionType() == uint32(TransactionTypeExpense) {
 		if t.GetAmount() > 0 {
@@ -194,17 +185,17 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 
 	if tu.Amount != nil && tu.GetAmount() != t.GetAmount() {
 		hasUpdate = true
-		setTransaction(t, WithTransactionAmount(tu.Amount))
+		t.Amount = tu.Amount
 	}
 
 	if tu.TransactionTime != nil && tu.GetTransactionTime() != t.GetTransactionTime() {
 		hasUpdate = true
-		setTransaction(t, WithTransactionNote(tu.Note))
+		t.TransactionTime = tu.TransactionTime
 	}
 
 	if tu.Note != nil && tu.GetNote() != t.GetNote() {
 		hasUpdate = true
-		setTransaction(t, WithTransactionTime(tu.TransactionTime))
+		t.Note = tu.Note
 	}
 
 	if !hasUpdate {
@@ -212,7 +203,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 	}
 
 	now := goutil.Uint64(uint64(time.Now().Unix()))
-	setTransaction(t, WithTransactionUpdateTime(now))
+	t.UpdateTime = now
 
 	// check
 	t.checkOpts()
@@ -256,7 +247,7 @@ func (t *Transaction) GetTransactionID() string {
 }
 
 func (t *Transaction) SetTransactionID(transactionID *string) {
-	setTransaction(t, WithTransactionID(transactionID))
+	t.TransactionID = transactionID
 }
 
 func (t *Transaction) GetUserID() string {

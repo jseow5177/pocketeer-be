@@ -262,11 +262,6 @@ func toAccount(ac *entity.Account) *Account {
 		avgCost = goutil.String(fmt.Sprint(ac.GetAvgCost()))
 	}
 
-	var latestValue *string
-	if ac.LatestValue != nil {
-		latestValue = goutil.String(fmt.Sprint(ac.GetLatestValue()))
-	}
-
 	return &Account{
 		AccountID:     ac.AccountID,
 		AccountName:   ac.AccountName,
@@ -277,7 +272,6 @@ func toAccount(ac *entity.Account) *Account {
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
 		AvgCost:       avgCost,
-		LatestValue:   latestValue,
 		Holdings:      toHoldings(ac.Holdings),
 	}
 }

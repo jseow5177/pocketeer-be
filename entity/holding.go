@@ -53,12 +53,6 @@ func WithHoldingID(holdingID *string) HoldingOption {
 	}
 }
 
-func WithSymbol(symbol *string) HoldingOption {
-	return func(h *Holding) {
-		h.Symbol = symbol
-	}
-}
-
 func WithHoldingStatus(holdingStatus *uint32) HoldingOption {
 	return func(h *Holding) {
 		h.HoldingStatus = holdingStatus
@@ -83,7 +77,7 @@ func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	}
 }
 
-func WithTotalShares(totalShares *float64) HoldingOption {
+func WithHoldingTotalShares(totalShares *float64) HoldingOption {
 	return func(h *Holding) {
 		h.TotalShares = totalShares
 	}
@@ -125,18 +119,10 @@ func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) *Holdin
 	return h
 }
 
-func setHolding(h *Holding, opts ...HoldingOption) {
-	if h == nil {
-		return
-	}
-
-	for _, opt := range opts {
-		opt(h)
-	}
-}
-
 func (h *Holding) checkOpts() {
-	h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
+	if !h.IsCustom() {
+		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
+	}
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -161,7 +147,7 @@ func (h *Holding) GetAccountID() string {
 }
 
 func (h *Holding) SetHoldingID(holdingID *string) {
-	setHolding(h, WithHoldingID(holdingID))
+	h.HoldingID = holdingID
 }
 
 func (h *Holding) GetSymbol() string {
@@ -207,7 +193,7 @@ func (h *Holding) GetTotalShares() float64 {
 }
 
 func (h *Holding) SetTotalShares(totalShares *float64) {
-	setHolding(h, WithTotalShares(totalShares))
+	h.TotalShares = totalShares
 }
 
 func (h *Holding) GetAvgCost() float64 {
@@ -218,7 +204,7 @@ func (h *Holding) GetAvgCost() float64 {
 }
 
 func (h *Holding) SetAvgCost(avgCost *float64) {
-	setHolding(h, WithHoldingAvgCost(avgCost))
+	h.AvgCost = avgCost
 }
 
 func (h *Holding) GetLatestValue() float64 {
@@ -229,7 +215,7 @@ func (h *Holding) GetLatestValue() float64 {
 }
 
 func (h *Holding) SetLatestValue(latestValue *float64) {
-	setHolding(h, WithHoldingLatestValue(latestValue))
+	h.LatestValue = latestValue
 }
 
 func (h *Holding) GetQuote() *Quote {
@@ -240,7 +226,7 @@ func (h *Holding) GetQuote() *Quote {
 }
 
 func (h *Holding) SetQuote(quote *Quote) {
-	setHolding(h, WithQuote(quote))
+	h.Quote = quote
 }
 
 func (h *Holding) IsCustom() bool {

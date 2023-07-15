@@ -133,9 +133,8 @@ type Account struct {
 	UpdateTime    *uint64
 
 	// Investment
-	AvgCost     *float64
-	LatestValue *float64
-	Holdings    []*Holding
+	AvgCost  *float64
+	Holdings []*Holding
 }
 
 type AccountOption = func(ac *Account)
@@ -188,30 +187,11 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	}
 }
 
-func WithHoldings(hs []*Holding) AccountOption {
-	return func(ac *Account) {
-		ac.Holdings = hs
-	}
-}
-
-func WithAccountAvgCost(avgCost *float64) AccountOption {
-	return func(ac *Account) {
-		ac.AvgCost = avgCost
-	}
-}
-
-func WithAccountLatestValue(latestValue *float64) AccountOption {
-	return func(ac *Account) {
-		ac.LatestValue = latestValue
-	}
-}
-
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().Unix())
 	ac := &Account{
 		UserID:        goutil.String(userID),
 		AccountName:   goutil.String(""),
-		Balance:       goutil.Float64(0),
 		AccountType:   goutil.Uint32(uint32(AssetCash)),
 		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),
 		Note:          goutil.String(""),
@@ -229,23 +209,15 @@ func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	return ac, nil
 }
 
-func setAccount(ac *Account, opts ...AccountOption) {
-	if ac == nil {
-		return
-	}
-
-	for _, opt := range opts {
-		opt(ac)
-	}
-}
-
 func (ac *Account) checkOpts() error {
 	if ac.CanSetBalance() && ac.Balance == nil {
 		return ErrMustSetBalance
 	}
+
 	if !ac.CanSetBalance() && ac.Balance != nil {
 		return ErrSetBalanceForbidden
 	}
+
 	return nil
 }
 
@@ -254,17 +226,17 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 
 	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
 		hasUpdate = true
-		setAccount(ac, WithAccountName(acu.AccountName))
+		ac.AccountName = acu.AccountName
 	}
 
 	if acu.Balance != nil && acu.GetBalance() != ac.GetBalance() {
 		hasUpdate = true
-		setAccount(ac, WithAccountBalance(acu.Balance))
+		ac.Balance = acu.Balance
 	}
 
 	if acu.Note != nil && acu.GetNote() != ac.GetNote() {
 		hasUpdate = true
-		setAccount(ac, WithAccountName(acu.Note))
+		ac.Note = acu.Note
 	}
 
 	if !hasUpdate {
@@ -272,9 +244,8 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 	}
 
 	now := goutil.Uint64(uint64(time.Now().Unix()))
-	setAccount(ac, WithAccountUpdateTime(now))
+	ac.UpdateTime = acu.UpdateTime
 
-	// check
 	if err = ac.checkOpts(); err != nil {
 		return nil, false, err
 	}
@@ -311,7 +282,7 @@ func (ac *Account) GetAccountID() string {
 }
 
 func (ac *Account) SetAccountID(accountID *string) {
-	setAccount(ac, WithAccountID(accountID))
+	ac.AccountID = accountID
 }
 
 func (ac *Account) GetAccountName() string {
@@ -326,6 +297,10 @@ func (ac *Account) GetBalance() float64 {
 		return *ac.Balance
 	}
 	return 0
+}
+
+func (ac *Account) SetBalance(balance *float64) {
+	ac.Balance = balance
 }
 
 func (ac *Account) GetAccountStatus() uint32 {
@@ -371,18 +346,7 @@ func (ac *Account) GetAvgCost() float64 {
 }
 
 func (ac *Account) SetAvgCost(avgCost *float64) {
-	setAccount(ac, WithAccountAvgCost(avgCost))
-}
-
-func (ac *Account) GetLatestValue() float64 {
-	if ac != nil && ac.LatestValue != nil {
-		return *ac.LatestValue
-	}
-	return 0
-}
-
-func (ac *Account) SetLatestValue(latestValue *float64) {
-	setAccount(ac, WithAccountLatestValue(latestValue))
+	ac.AvgCost = avgCost
 }
 
 func (ac *Account) GetHoldings() []*Holding {
@@ -393,7 +357,7 @@ func (ac *Account) GetHoldings() []*Holding {
 }
 
 func (ac *Account) SetHoldings(hs []*Holding) {
-	setAccount(ac, WithHoldings(hs))
+	ac.Holdings = hs
 }
 
 func (ac *Account) IsAsset() bool {

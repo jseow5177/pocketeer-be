@@ -54,6 +54,8 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	// TODO: Check if symbol exists
 	log.Ctx(ctx).Info().Msgf("checking if symbol exists: %v", h.GetSymbol())
 
+	// TODO: Verify symbol must be unique
+
 	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
 		return nil, err

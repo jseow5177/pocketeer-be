@@ -558,6 +558,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update lot
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateLotRequest),
+			Res:       new(presenter.UpdateLotResponse),
+			Validator: lh.UpdateLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.UpdateLot(ctx, req.(*presenter.UpdateLotRequest), res.(*presenter.UpdateLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get lot
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetLot,
