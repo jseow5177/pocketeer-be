@@ -32,6 +32,7 @@ const (
 	PathSearchSecurities = PathV1Prefix + "search_securities"
 
 	PathCreateHolding = PathV1Prefix + "create_holding"
+	PathUpdateHolding = PathV1Prefix + "update_holding"
 	PathGetHolding    = PathV1Prefix + "get_holding"
 
 	PathCreateLot = PathV1Prefix + "create_lot"
@@ -57,5 +58,4 @@ const (
 	SaltByteSize      = 24
 
 	StandardDP = 2
-	PreciseDP  = 6
 )

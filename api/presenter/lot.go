@@ -109,12 +109,22 @@ func (m *CreateLotRequest) GetTradeDate() uint64 {
 }
 
 func (m *CreateLotRequest) ToUseCaseReq(userID string) *lot.CreateLotRequest {
-	shares, _ := util.MonetaryStrToFloat(m.GetShares())
-	costPerShare, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+	var shares *float64
+	if m.Shares != nil {
+		s, _ := util.MonetaryStrToFloat(m.GetShares())
+		shares = goutil.Float64(s)
+	}
+
+	var costPerShare *float64
+	if m.CostPerShare != nil {
+		cps, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+		costPerShare = goutil.Float64(cps)
+	}
+
 	return &lot.CreateLotRequest{
 		UserID:       goutil.String(userID),
-		Shares:       goutil.Float64(shares),
-		CostPerShare: goutil.Float64(costPerShare),
+		Shares:       shares,
+		CostPerShare: costPerShare,
 		HoldingID:    m.HoldingID,
 		TradeDate:    m.TradeDate,
 	}
@@ -171,13 +181,23 @@ func (m *UpdateLotRequest) GetTradeDate() uint64 {
 }
 
 func (m *UpdateLotRequest) ToUseCaseReq(userID string) *lot.UpdateLotRequest {
-	shares, _ := util.MonetaryStrToFloat(m.GetShares())
-	costPerShare, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+	var shares *float64
+	if m.Shares != nil {
+		s, _ := util.MonetaryStrToFloat(m.GetShares())
+		shares = goutil.Float64(s)
+	}
+
+	var costPerShare *float64
+	if m.CostPerShare != nil {
+		cps, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+		costPerShare = goutil.Float64(cps)
+	}
+
 	return &lot.UpdateLotRequest{
 		UserID:       goutil.String(userID),
 		LotID:        m.LotID,
-		Shares:       goutil.Float64(shares),
-		CostPerShare: goutil.Float64(costPerShare),
+		Shares:       shares,
+		CostPerShare: costPerShare,
 	}
 }
 

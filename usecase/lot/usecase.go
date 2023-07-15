@@ -2,9 +2,14 @@ package lot
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	ErrInvalidHolding = errors.New("invalid holding")
 )
 
 type lotUseCase struct {
@@ -20,13 +25,18 @@ func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
 }
 
 func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error) {
-	if _, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter()); err != nil {
+	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
+	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
 		return nil, err
 	}
 
+	if h.IsCustom() {
+		return nil, ErrInvalidHolding
+	}
+
 	l := req.ToLotEntity()
-	_, err := uc.lotRepo.Create(ctx, l)
+	_, err = uc.lotRepo.Create(ctx, l)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new lot to repo, err: %v", err)
 		return nil, err

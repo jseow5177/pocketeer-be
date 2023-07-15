@@ -33,6 +33,15 @@ func (m *holdingMongo) Create(ctx context.Context, h *entity.Holding) (string, e
 	return id, nil
 }
 
+func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *entity.HoldingUpdate) error {
+	hm := model.ToHoldingModelFromUpdate(hu)
+	if err := m.mColl.update(ctx, hf, hm); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity.Holding, error) {
 	h := new(model.Holding)
 	if err := m.mColl.get(ctx, hf, &h); err != nil {
@@ -42,7 +51,7 @@ func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity
 		return nil, err
 	}
 
-	return model.ToHoldingEntity(h), nil
+	return model.ToHoldingEntity(h)
 }
 
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {
@@ -53,7 +62,11 @@ func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*
 
 	ehs := make([]*entity.Holding, 0, len(res))
 	for _, r := range res {
-		ehs = append(ehs, model.ToHoldingEntity(r.(*model.Holding)))
+		eh, err := model.ToHoldingEntity(r.(*model.Holding))
+		if err != nil {
+			return nil, err
+		}
+		ehs = append(ehs, eh)
 	}
 
 	return ehs, nil

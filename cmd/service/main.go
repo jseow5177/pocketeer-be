@@ -524,6 +524,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update holding
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateHoldingRequest),
+			Res:       new(presenter.UpdateHoldingResponse),
+			Validator: hh.UpdateHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.UpdateHolding(ctx, req.(*presenter.UpdateHoldingRequest), res.(*presenter.UpdateHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get holding
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetHolding,

@@ -148,11 +148,11 @@ func (m *UpdateLotRequest) GetTradeDate() uint64 {
 }
 
 func (m *UpdateLotRequest) ToLotUpdate() *entity.LotUpdate {
-	return &entity.LotUpdate{
-		Shares:       m.Shares,
-		CostPerShare: m.CostPerShare,
-		TradeDate:    m.TradeDate,
-	}
+	return entity.NewLotUpdate(
+		entity.WithUpdateLotCostPerShare(m.CostPerShare),
+		entity.WithUpdateLotShares(m.Shares),
+		entity.WithUpdateLotTradeDate(m.TradeDate),
+	)
 }
 
 func (m *UpdateLotRequest) ToLotFilter() *repo.LotFilter {

@@ -55,24 +55,24 @@ func WithUpdateLotShares(shares *float64) LotUpdateOption {
 	}
 }
 
-func WithUpdateLotCostPerShare(balance *float64) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.Balance = balance
+func WithUpdateLotCostPerShare(costPerShare *float64) LotUpdateOption {
+	return func(lu *LotUpdate) {
+		lu.CostPerShare = costPerShare
 	}
 }
 
-func WithUpdateLotTradeDate(note *string) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.Note = note
+func WithUpdateLotTradeDate(tradeDate *uint64) LotUpdateOption {
+	return func(lu *LotUpdate) {
+		lu.TradeDate = tradeDate
 	}
 }
 
-func NewLotUpdate(opts ...AccountUpdateOption) *AccountUpdate {
-	au := new(AccountUpdate)
+func NewLotUpdate(opts ...LotUpdateOption) *LotUpdate {
+	lu := new(LotUpdate)
 	for _, opt := range opts {
-		opt(au)
+		opt(lu)
 	}
-	return au
+	return lu
 }
 
 type LotUpdateOption = func(lu *LotUpdate)

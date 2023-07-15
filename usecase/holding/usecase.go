@@ -39,6 +39,11 @@ func NewHoldingUseCase(
 }
 
 func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error) {
+	h, err := req.ToHoldingEntity()
+	if err != nil {
+		return nil, err
+	}
+
 	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(req.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
@@ -49,12 +54,10 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, ErrAccountNotInvestment
 	}
 
-	h := req.ToHoldingEntity()
-
-	// TODO: Check if symbol exists
-	log.Ctx(ctx).Info().Msgf("checking if symbol exists: %v", h.GetSymbol())
-
-	// TODO: Verify symbol must be unique
+	if !h.IsCustom() {
+		// TODO: Check if symbol exists
+		log.Ctx(ctx).Info().Msgf("checking if symbol exists: %v", h.GetSymbol())
+	}
 
 	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
@@ -102,7 +105,40 @@ func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsReque
 	}, nil
 }
 
+func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingRequest) (*UpdateHoldingResponse, error) {
+	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	hu, hasUpdate, err := h.Update(req.ToHoldingUpdate())
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasUpdate {
+		log.Ctx(ctx).Info().Msg("holding has no updates")
+		return &UpdateHoldingResponse{
+			Holding: h,
+		}, nil
+	}
+
+	if err = uc.holdingRepo.Update(ctx, req.ToHoldingFilter(), hu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save holding updates to repo, err: %v", err)
+		return nil, err
+	}
+
+	return &UpdateHoldingResponse{
+		Holding: h,
+	}, nil
+}
+
 func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holding) error {
+	// value of custom holding is already stored in DB
+	if h.IsCustom() {
+		return nil
+	}
+
 	// Compute total shares and cost
 	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, &repo.LotFilter{
 		UserID:    h.UserID,
@@ -116,29 +152,23 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	// Compute avg cost
 	var avgCost float64
 	if aggr.GetTotalCost() != 0 {
-		avgCost = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.PreciseDP)
+		avgCost = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.StandardDP)
 	}
 
 	h.SetTotalShares(aggr.TotalShares)
 	h.SetAvgCost(goutil.Float64(avgCost))
 
-	// If custom holding, the latest value is Total Shares * Avg Cost
-	// Else, get quote and calculate Total Shares * Current Price
-	if h.IsCustom() {
-		latestValue := util.RoundFloat(h.GetTotalShares()*h.GetAvgCost(), config.StandardDP)
-		h.SetLatestValue(goutil.Float64(latestValue))
-	} else {
-		quote, err := uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
-			Symbol: h.Symbol,
-		})
-		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
-			return err
-		}
-		latestValue := util.RoundFloat(h.GetTotalShares()*quote.GetLatestPrice(), config.StandardDP)
-		h.SetLatestValue(goutil.Float64(latestValue))
-		h.SetQuote(quote)
+	// Get quote and calculate Total Shares * Current Price
+	quote, err := uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
+		Symbol: h.Symbol,
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
+		return err
 	}
+	latestValue := util.RoundFloat(h.GetTotalShares()*quote.GetLatestPrice(), config.StandardDP)
+	h.SetLatestValue(goutil.Float64(latestValue))
+	h.SetQuote(quote)
 
 	return nil
 }
