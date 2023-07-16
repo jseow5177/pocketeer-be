@@ -22,8 +22,8 @@ type LotRepo interface {
 }
 
 type LotFilter struct {
-	UserID    *string `filter:"user_id"`
 	LotID     *string `filter:"_id"`
+	UserID    *string `filter:"user_id"`
 	HoldingID *string `filter:"holding_id"`
 	Paging    *Paging `filter:"-"`
 }

@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
@@ -29,5 +30,7 @@ func ReturnServerResponse(w http.ResponseWriter, res interface{}, resErr error) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(js)
+	if _, err := w.Write(js); err != nil {
+		fmt.Printf("fail to return server response, err: %v\n", err)
+	}
 }

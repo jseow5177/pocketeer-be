@@ -1,5 +1,11 @@
 package config
 
+import (
+	"fmt"
+	"net/url"
+	"time"
+)
+
 type Config struct {
 	Server  *Server  `json:"server"`
 	Mongo   *Mongo   `json:"mongo"`
@@ -20,16 +26,29 @@ type Server struct {
 }
 
 type Mongo struct {
-	Username string `json:"username"`
-	Password string `json:"passowrd"`
-	Host     string `json:"host"`
-	DBName   string `json:"db_name"`
+	Username       string `json:"username"`
+	Password       string `json:"passowrd"`
+	Host           string `json:"host"`
+	Database       string `json:"database"`
+	ConnectTimeout string `json:"connect_timeout"`
 }
 
 func (m *Mongo) String() string {
-	//uri := "mongodb+srv://%s:%s@%s/"
-	//return fmt.Sprintf(uri, m.Username, m.Password, m.Host)
-	return "mongodb://localhost:27017"
+	dsn := &url.URL{
+		Scheme: "mongodb+srv",
+		User:   url.UserPassword(m.Username, m.Password),
+		Host:   m.Host,
+	}
+
+	q := dsn.Query()
+
+	if m.ConnectTimeout != "" {
+		if t, err := time.ParseDuration(m.ConnectTimeout); err == nil {
+			q.Set("connectTimeoutMS", fmt.Sprint(t.Milliseconds()))
+		}
+	}
+
+	return dsn.String()
 }
 
 type Token struct {
@@ -62,14 +81,15 @@ func NewConfig() *Config {
 			RateLimits: make(map[string]*RateLimit),
 		},
 		Mongo: &Mongo{
-			Username: "pocketeer-test",
-			Password: "eTSvssKfSWCzRylk",
-			Host:     "mongodb-test.djhnkbj.mongodb.net",
-			DBName:   "pocketeer",
+			Username:       "pocketeer-test",
+			Password:       "eTSvssKfSWCzRylk",
+			Host:           "mongodb-test.djhnkbj.mongodb.net",
+			Database:       "pocketeer",
+			ConnectTimeout: "5s",
 		},
 		Tokens: &Tokens{
 			AccessToken: &Token{
-				ExpiresIn: 3600,
+				ExpiresIn: 604_800, // 7 days
 				Issuer:    "pocketeer_be",
 				Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
 			},

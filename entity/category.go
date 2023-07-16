@@ -98,16 +98,6 @@ func NewCategory(userID string, opts ...CategoryOption) *Category {
 	return c
 }
 
-func setCategory(c *Category, opts ...CategoryOption) {
-	if c == nil {
-		return
-	}
-
-	for _, opt := range opts {
-		opt(c)
-	}
-}
-
 func (c *Category) checkOpts() {}
 
 func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, hasUpdate bool) {
@@ -115,7 +105,7 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 
 	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
 		hasUpdate = true
-		setCategory(c, WithCategoryName(cu.CategoryName))
+		c.CategoryName = cu.CategoryName
 	}
 
 	if !hasUpdate {
@@ -123,7 +113,7 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 	}
 
 	now := goutil.Uint64(uint64(time.Now().Unix()))
-	setCategory(c, WithCategoryUpdateTime(now))
+	c.UpdateTime = now
 
 	// check
 	c.checkOpts()
@@ -152,7 +142,7 @@ func (c *Category) GetCategoryID() string {
 }
 
 func (c *Category) SetCategoryID(categoryID *string) {
-	setCategory(c, WithCategoryID(categoryID))
+	c.CategoryID = categoryID
 }
 
 func (c *Category) GetCategoryName() string {

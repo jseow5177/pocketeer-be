@@ -175,7 +175,7 @@ func (uc *accountUseCase) calcInvestmentAccountValue(ctx context.Context, ac *en
 		avgCost += h.GetAvgCost()
 		latestValue += h.GetLatestValue()
 	}
-	ac.SetLatestValue(goutil.Float64(latestValue))
+	ac.SetBalance(goutil.Float64(latestValue)) // store latest value into balance field
 	ac.SetAvgCost(goutil.Float64(avgCost))
 
 	return nil

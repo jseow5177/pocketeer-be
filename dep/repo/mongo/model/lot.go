@@ -51,10 +51,10 @@ func ToLotEntity(l *Lot) *entity.Lot {
 		l.GetUserID(),
 		l.GetHoldingID(),
 		entity.WithLotID(goutil.String(l.GetLotID())),
-		entity.WithShares(l.Shares),
+		entity.WithLotShares(l.Shares),
 		entity.WithLotStatus(l.LotStatus),
-		entity.WithCostPerShare(l.CostPerShare),
-		entity.WithTradeDate(l.TradeDate),
+		entity.WithLotCostPerShare(l.CostPerShare),
+		entity.WithLotTradeDate(l.TradeDate),
 		entity.WithLotCreateTime(l.CreateTime),
 		entity.WithLotUpdateTime(l.UpdateTime),
 	)

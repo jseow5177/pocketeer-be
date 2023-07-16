@@ -36,7 +36,7 @@ func NewMongo(ctx context.Context, cfg *config.Mongo) (*Mongo, error) {
 
 	return &Mongo{
 		client: client,
-		db:     client.Database(cfg.DBName),
+		db:     client.Database(cfg.Database),
 	}, nil
 }
 

@@ -10,33 +10,25 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var CreateHoldingValidator = validator.MustForm(map[string]validator.Validator{
-	"account_id": &validator.String{
-		Optional: false,
-	},
-	"symbol": &validator.String{
-		Optional: false,
-	},
-	"holding_type": &validator.UInt32{
-		Optional:   false,
-		Validators: []validator.UInt32Func{entity.CheckHoldingType},
-	},
+var UpdateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 	"avg_cost": &validator.String{
 		Optional:   true,
+		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
 	"latest_value": &validator.String{
 		Optional:   true,
+		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
 })
 
-func (h *holdingHandler) CreateHolding(ctx context.Context, req *presenter.CreateHoldingRequest, res *presenter.CreateHoldingResponse) error {
+func (h *holdingHandler) UpdateHolding(ctx context.Context, req *presenter.UpdateHoldingRequest, res *presenter.UpdateHoldingResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.holdingUseCase.CreateHolding(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.holdingUseCase.UpdateHolding(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to create holding, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to update holding, err: %v", err)
 		return err
 	}
 

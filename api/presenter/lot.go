@@ -109,12 +109,22 @@ func (m *CreateLotRequest) GetTradeDate() uint64 {
 }
 
 func (m *CreateLotRequest) ToUseCaseReq(userID string) *lot.CreateLotRequest {
-	shares, _ := util.MonetaryStrToFloat(m.GetShares())
-	costPerShare, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+	var shares *float64
+	if m.Shares != nil {
+		s, _ := util.MonetaryStrToFloat(m.GetShares())
+		shares = goutil.Float64(s)
+	}
+
+	var costPerShare *float64
+	if m.CostPerShare != nil {
+		cps, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+		costPerShare = goutil.Float64(cps)
+	}
+
 	return &lot.CreateLotRequest{
 		UserID:       goutil.String(userID),
-		Shares:       goutil.Float64(shares),
-		CostPerShare: goutil.Float64(costPerShare),
+		Shares:       shares,
+		CostPerShare: costPerShare,
 		HoldingID:    m.HoldingID,
 		TradeDate:    m.TradeDate,
 	}
@@ -132,6 +142,77 @@ func (m *CreateLotResponse) GetLot() *Lot {
 }
 
 func (m *CreateLotResponse) Set(useCaseRes *lot.CreateLotResponse) {
+	m.Lot = toLot(useCaseRes.Lot)
+}
+
+type UpdateLotRequest struct {
+	LotID        *string `json:"lot_id,omitempty"`
+	Shares       *string `json:"shares,omitempty"`
+	CostPerShare *string `json:"cost_per_share,omitempty"`
+	TradeDate    *uint64 `json:"trade_date,omitempty"`
+}
+
+func (m *UpdateLotRequest) GetLotID() string {
+	if m != nil && m.LotID != nil {
+		return *m.LotID
+	}
+	return ""
+}
+
+func (m *UpdateLotRequest) GetShares() string {
+	if m != nil && m.Shares != nil {
+		return *m.Shares
+	}
+	return ""
+}
+
+func (m *UpdateLotRequest) GetCostPerShare() string {
+	if m != nil && m.CostPerShare != nil {
+		return *m.CostPerShare
+	}
+	return ""
+}
+
+func (m *UpdateLotRequest) GetTradeDate() uint64 {
+	if m != nil && m.TradeDate != nil {
+		return *m.TradeDate
+	}
+	return 0
+}
+
+func (m *UpdateLotRequest) ToUseCaseReq(userID string) *lot.UpdateLotRequest {
+	var shares *float64
+	if m.Shares != nil {
+		s, _ := util.MonetaryStrToFloat(m.GetShares())
+		shares = goutil.Float64(s)
+	}
+
+	var costPerShare *float64
+	if m.CostPerShare != nil {
+		cps, _ := util.MonetaryStrToFloat(m.GetCostPerShare())
+		costPerShare = goutil.Float64(cps)
+	}
+
+	return &lot.UpdateLotRequest{
+		UserID:       goutil.String(userID),
+		LotID:        m.LotID,
+		Shares:       shares,
+		CostPerShare: costPerShare,
+	}
+}
+
+type UpdateLotResponse struct {
+	Lot *Lot `json:"lot,omitempty"`
+}
+
+func (m *UpdateLotResponse) GetLot() *Lot {
+	if m != nil && m.Lot != nil {
+		return m.Lot
+	}
+	return nil
+}
+
+func (m *UpdateLotResponse) Set(useCaseRes *lot.UpdateLotResponse) {
 	m.Lot = toLot(useCaseRes.Lot)
 }
 

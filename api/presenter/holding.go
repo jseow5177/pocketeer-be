@@ -3,21 +3,21 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 type Holding struct {
-	HoldingID     *string `json:"_id,omitempty"`
-	AccountID     *string `json:"account_id,omitempty"`
-	Symbol        *string `json:"symbol,omitempty"`
-	HoldingStatus *uint32 `json:"holding_status,omitempty"`
-	HoldingType   *uint32 `json:"holding_type,omitempty"`
-	CreateTime    *uint64 `json:"create_time,omitempty"`
-	UpdateTime    *uint64 `json:"update_time,omitempty"`
-
-	TotalShares *float64 `json:"total_shares,omitempty"`
-	AvgCost     *float64 `json:"avg_cost,omitempty"`
-	LatestValue *float64 `json:"latest_value,omitempty"`
-	Quote       *Quote   `json:"quote,omitempty"`
+	HoldingID     *string  `json:"holding_id,omitempty"`
+	AccountID     *string  `json:"account_id,omitempty"`
+	Symbol        *string  `json:"symbol,omitempty"`
+	HoldingStatus *uint32  `json:"holding_status,omitempty"`
+	HoldingType   *uint32  `json:"holding_type,omitempty"`
+	CreateTime    *uint64  `json:"create_time,omitempty"`
+	UpdateTime    *uint64  `json:"update_time,omitempty"`
+	TotalShares   *float64 `json:"total_shares,omitempty"`
+	AvgCost       *float64 `json:"avg_cost,omitempty"`
+	LatestValue   *float64 `json:"latest_value,omitempty"`
+	Quote         *Quote   `json:"quote,omitempty"`
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -97,10 +97,75 @@ func (h *Holding) GetQuote() *Quote {
 	return nil
 }
 
+type UpdateHoldingRequest struct {
+	HoldingID   *string `json:"holding_id,omitempty"`
+	AvgCost     *string `json:"avg_cost,omitempty"`
+	LatestValue *string `json:"latest_value,omitempty"`
+}
+
+func (m *UpdateHoldingRequest) GetHoldingID() string {
+	if m != nil && m.HoldingID != nil {
+		return *m.HoldingID
+	}
+	return ""
+}
+
+func (m *UpdateHoldingRequest) GetAvgCost() string {
+	if m != nil && m.AvgCost != nil {
+		return *m.AvgCost
+	}
+	return ""
+}
+
+func (m *UpdateHoldingRequest) GetLatestValue() string {
+	if m != nil && m.LatestValue != nil {
+		return *m.LatestValue
+	}
+	return ""
+}
+
+func (m *UpdateHoldingRequest) ToUseCaseReq(userID string) *holding.UpdateHoldingRequest {
+	var avgCost *float64
+	if m.AvgCost != nil {
+		ac, _ := util.MonetaryStrToFloat(m.GetAvgCost())
+		avgCost = goutil.Float64(ac)
+	}
+
+	var latestValue *float64
+	if m.LatestValue != nil {
+		lv, _ := util.MonetaryStrToFloat(m.GetLatestValue())
+		latestValue = goutil.Float64(lv)
+	}
+
+	return &holding.UpdateHoldingRequest{
+		UserID:      goutil.String(userID),
+		HoldingID:   m.HoldingID,
+		AvgCost:     avgCost,
+		LatestValue: latestValue,
+	}
+}
+
+type UpdateHoldingResponse struct {
+	Holding *Holding `json:"holding,omitempty"`
+}
+
+func (m *UpdateHoldingResponse) GetHolding() *Holding {
+	if m != nil && m.Holding != nil {
+		return m.Holding
+	}
+	return nil
+}
+
+func (m *UpdateHoldingResponse) Set(useCaseRes *holding.UpdateHoldingResponse) {
+	m.Holding = toHolding(useCaseRes.Holding)
+}
+
 type CreateHoldingRequest struct {
 	AccountID   *string `json:"account_id,omitempty"`
 	Symbol      *string `json:"symbol,omitempty"`
 	HoldingType *uint32 `json:"holding_type,omitempty"`
+	AvgCost     *string `json:"avg_cost,omitempty"`
+	LatestValue *string `json:"latest_value,omitempty"`
 }
 
 func (m *CreateHoldingRequest) GetAccountID() string {
@@ -117,19 +182,39 @@ func (m *CreateHoldingRequest) GetSymbol() string {
 	return ""
 }
 
-func (m *CreateHoldingRequest) GetHoldingType() uint32 {
-	if m != nil && m.HoldingType != nil {
-		return *m.HoldingType
+func (m *CreateHoldingRequest) GetAvgCost() string {
+	if m != nil && m.AvgCost != nil {
+		return *m.AvgCost
 	}
-	return 0
+	return ""
+}
+
+func (m *CreateHoldingRequest) GetLatestValue() string {
+	if m != nil && m.LatestValue != nil {
+		return *m.LatestValue
+	}
+	return ""
 }
 
 func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldingRequest {
+	var avgCost *float64
+	if m.AvgCost != nil {
+		ac, _ := util.MonetaryStrToFloat(m.GetAvgCost())
+		avgCost = goutil.Float64(ac)
+	}
+
+	var latestValue *float64
+	if m.LatestValue != nil {
+		lv, _ := util.MonetaryStrToFloat(m.GetLatestValue())
+		latestValue = goutil.Float64(lv)
+	}
 	return &holding.CreateHoldingRequest{
 		UserID:      goutil.String(userID),
 		AccountID:   m.AccountID,
 		Symbol:      m.Symbol,
 		HoldingType: m.HoldingType,
+		AvgCost:     avgCost,
+		LatestValue: latestValue,
 	}
 }
 

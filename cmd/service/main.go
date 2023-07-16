@@ -524,6 +524,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update holding
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateHoldingRequest),
+			Res:       new(presenter.UpdateHoldingResponse),
+			Validator: hh.UpdateHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.UpdateHolding(ctx, req.(*presenter.UpdateHoldingRequest), res.(*presenter.UpdateHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get holding
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetHolding,
@@ -553,6 +568,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: lh.CreateLotValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// update lot
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateLotRequest),
+			Res:       new(presenter.UpdateLotResponse),
+			Validator: lh.UpdateLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.UpdateLot(ctx, req.(*presenter.UpdateLotRequest), res.(*presenter.UpdateLotResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
