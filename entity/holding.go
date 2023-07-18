@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrSetCostAndValueForbidden = errors.New("set avg_cost or latest_value forbidden")
-	ErrMustSetCostAndValue      = errors.New("avg_cost and latest_value must be set")
+	ErrSetCostValueSharesForbidden = errors.New("set avg_cost or latest_value or total_shares forbidden")
+	ErrMustSetCostAndValue         = errors.New("avg_cost and latest_value must be set")
 )
 
 type HoldingStatus uint32
@@ -134,6 +134,12 @@ func WithHoldingLatestValue(latestValue *float64) HoldingOption {
 	}
 }
 
+func WithHoldingTotalShares(totalShares *float64) HoldingOption {
+	return func(h *Holding) {
+		h.TotalShares = totalShares
+	}
+}
+
 func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holding, error) {
 	now := uint64(time.Now().Unix())
 	h := &Holding{
@@ -158,8 +164,9 @@ func (h *Holding) checkOpts() error {
 	if !h.IsCustom() {
 		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
 
-		if h.AvgCost != nil || h.LatestValue != nil {
-			return ErrSetCostAndValueForbidden
+		// for non-custom type, cannot cost, value, and shares
+		if h.AvgCost != nil || h.LatestValue != nil || h.TotalShares != nil {
+			return ErrSetCostValueSharesForbidden
 		}
 	}
 
@@ -167,6 +174,7 @@ func (h *Holding) checkOpts() error {
 		if h.AvgCost == nil || h.LatestValue == nil {
 			return ErrMustSetCostAndValue
 		}
+		h.TotalShares = goutil.Float64(1) // implicit 1 share for custom holding
 	}
 
 	return nil
