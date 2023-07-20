@@ -134,7 +134,7 @@ func WithLotUpdateTime(updateTime *uint64) LotOption {
 }
 
 func NewLot(userID, holdingID string, opts ...LotOption) *Lot {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	l := &Lot{
 		UserID:       goutil.String(userID),
 		HoldingID:    goutil.String(holdingID),
@@ -176,7 +176,7 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	l.UpdateTime = now
 
 	l.checkOpts()

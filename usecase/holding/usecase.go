@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrAccountNotInvestment = errors.New("account is not investment type")
+	ErrHoldingAlreadyExists = errors.New("holding already exists")
 )
 
 type holdingUseCase struct {
@@ -44,7 +45,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, err
 	}
 
-	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(req.GetUserID()))
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
 		return nil, err
@@ -54,9 +55,15 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, ErrAccountNotInvestment
 	}
 
-	if !h.IsCustom() {
-		// TODO: Check if symbol exists
-		log.Ctx(ctx).Info().Msgf("checking if symbol exists: %v", h.GetSymbol())
+	// Check if holding with same symbol + type exists
+	_, err = uc.holdingRepo.Get(ctx, req.ToHoldingFilter(h.GetSymbol()))
+	if err != nil && err != repo.ErrHoldingNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == nil {
+		return nil, ErrHoldingAlreadyExists
 	}
 
 	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {

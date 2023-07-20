@@ -188,7 +188,7 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 }
 
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
 		UserID:        goutil.String(userID),
 		AccountName:   goutil.String(""),
@@ -243,7 +243,7 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	ac.UpdateTime = acu.UpdateTime
 
 	if err = ac.checkOpts(); err != nil {

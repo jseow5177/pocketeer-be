@@ -104,8 +104,6 @@ func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, sf *api.SecurityFil
 			r.GetSymbol(),
 			entity.WithSecurityName(r.Description),
 			entity.WithSecurityType(goutil.Uint32(uint32(securityType))),
-			entity.WithSecurityRegion(goutil.String("")),
-			entity.WithSecurityCurrency(goutil.String("")),
 		))
 	}
 

@@ -63,7 +63,7 @@ func (m *budgetMongo) Set(
 	ctx context.Context,
 	budget *entity.Budget,
 ) error {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	budget.UpdateTime = goutil.Uint64(now)
 	model := model.ToBudgetModel(budget)
 

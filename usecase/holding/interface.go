@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 type UseCase interface {
@@ -200,8 +201,16 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) ToAccountFilter(userID string) *repo.AccountFilter {
-	return repo.NewAccountFilter(userID, repo.WitAccountID(m.AccountID))
+func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
+}
+
+func (m *CreateHoldingRequest) ToHoldingFilter(symbol string) *repo.HoldingFilter {
+	return &repo.HoldingFilter{
+		UserID:      m.UserID,
+		Symbol:      goutil.String(symbol),
+		HoldingType: m.HoldingType,
+	}
 }
 
 func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {

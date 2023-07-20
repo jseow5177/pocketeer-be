@@ -141,7 +141,7 @@ func WithHoldingTotalShares(totalShares *float64) HoldingOption {
 }
 
 func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holding, error) {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	h := &Holding{
 		UserID:        goutil.String(userID),
 		AccountID:     goutil.String(accountID),
@@ -197,7 +197,7 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	h.UpdateTime = now
 
 	if err = h.checkOpts(); err != nil {

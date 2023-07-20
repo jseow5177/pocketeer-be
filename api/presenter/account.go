@@ -17,7 +17,7 @@ type Account struct {
 	UpdateTime    *uint64 `json:"update_time,omitempty"`
 
 	AvgCost  *string    `json:"avg_cost,omitempty"`
-	Holdings []*Holding `json:"holdings"`
+	Holdings []*Holding `json:"holdings,omitempty"`
 }
 
 func (ac *Account) GetAccountID() string {

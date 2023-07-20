@@ -24,6 +24,7 @@ type CategoryFilter struct {
 	CategoryID   *string  `filter:"_id"`
 	CategoryIDs  []string `filter:"_id__in"`
 	CategoryType *uint32  `filter:"category_type"`
+	CategoryName *string  `filter:"category_name"`
 }
 
 func (f *CategoryFilter) GetUserID() string {
@@ -36,6 +37,13 @@ func (f *CategoryFilter) GetUserID() string {
 func (f *CategoryFilter) GetCategoryID() string {
 	if f != nil && f.CategoryID != nil {
 		return *f.CategoryID
+	}
+	return ""
+}
+
+func (f *CategoryFilter) GetCategoryName() string {
+	if f != nil && f.CategoryName != nil {
+		return *f.CategoryName
 	}
 	return ""
 }
