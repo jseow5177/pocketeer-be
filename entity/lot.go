@@ -160,16 +160,28 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 	if lu.Shares != nil && lu.GetShares() != l.GetShares() {
 		hasUpdate = true
 		l.Shares = lu.Shares
+
+		defer func() {
+			lotUpdate.Shares = l.Shares
+		}()
 	}
 
 	if lu.CostPerShare != nil && lu.GetCostPerShare() != l.GetCostPerShare() {
 		hasUpdate = true
 		l.CostPerShare = lu.CostPerShare
+
+		defer func() {
+			lotUpdate.CostPerShare = l.CostPerShare
+		}()
 	}
 
 	if lu.TradeDate != nil && lu.GetTradeDate() != l.GetTradeDate() {
 		hasUpdate = true
 		l.TradeDate = lu.TradeDate
+
+		defer func() {
+			lotUpdate.TradeDate = l.TradeDate
+		}()
 	}
 
 	if !hasUpdate {
@@ -182,18 +194,6 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 	l.checkOpts()
 
 	lotUpdate.UpdateTime = now
-
-	if lu.Shares != nil {
-		lotUpdate.Shares = l.Shares
-	}
-
-	if lu.CostPerShare != nil {
-		lotUpdate.CostPerShare = l.CostPerShare
-	}
-
-	if lu.TradeDate != nil {
-		lotUpdate.TradeDate = l.TradeDate
-	}
 
 	return
 }

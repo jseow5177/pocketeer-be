@@ -187,11 +187,19 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 	if hu.TotalCost != nil && hu.GetTotalCost() != h.GetTotalCost() {
 		hasUpdate = true
 		h.TotalCost = hu.TotalCost
+
+		defer func() {
+			holdingUpdate.TotalCost = h.TotalCost
+		}()
 	}
 
 	if hu.LatestValue != nil && hu.GetLatestValue() != h.GetLatestValue() {
 		hasUpdate = true
 		h.LatestValue = hu.LatestValue
+
+		defer func() {
+			holdingUpdate.LatestValue = h.LatestValue
+		}()
 	}
 
 	if !hasUpdate {
@@ -206,14 +214,6 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 	}
 
 	holdingUpdate.UpdateTime = now
-
-	if hu.TotalCost != nil {
-		holdingUpdate.TotalCost = h.TotalCost
-	}
-
-	if hu.LatestValue != nil {
-		holdingUpdate.LatestValue = h.LatestValue
-	}
 
 	return
 }

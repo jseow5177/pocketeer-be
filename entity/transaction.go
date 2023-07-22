@@ -186,16 +186,28 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 	if tu.Amount != nil && tu.GetAmount() != t.GetAmount() {
 		hasUpdate = true
 		t.Amount = tu.Amount
+
+		defer func() {
+			transactionUpdate.Amount = t.Amount
+		}()
 	}
 
 	if tu.TransactionTime != nil && tu.GetTransactionTime() != t.GetTransactionTime() {
 		hasUpdate = true
 		t.TransactionTime = tu.TransactionTime
+
+		defer func() {
+			transactionUpdate.TransactionTime = t.TransactionTime
+		}()
 	}
 
 	if tu.Note != nil && tu.GetNote() != t.GetNote() {
 		hasUpdate = true
 		t.Note = tu.Note
+
+		defer func() {
+			transactionUpdate.Note = t.Note
+		}()
 	}
 
 	if !hasUpdate {
@@ -209,18 +221,6 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 	t.checkOpts()
 
 	transactionUpdate.UpdateTime = now
-
-	if tu.Amount != nil {
-		transactionUpdate.Amount = t.Amount
-	}
-
-	if tu.Note != nil {
-		transactionUpdate.Note = t.Note
-	}
-
-	if tu.TransactionTime != nil {
-		transactionUpdate.TransactionTime = t.TransactionTime
-	}
 
 	return
 }
