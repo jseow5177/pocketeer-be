@@ -11,7 +11,7 @@ import (
 )
 
 var UpdateHoldingValidator = validator.MustForm(map[string]validator.Validator{
-	"avg_cost": &validator.String{
+	"total_cost": &validator.String{
 		Optional:   true,
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},

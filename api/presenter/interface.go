@@ -163,18 +163,39 @@ func toHolding(h *entity.Holding) *Holding {
 		return nil
 	}
 
+	var latestValue *string
+	if h.LatestValue != nil {
+		latestValue = goutil.String(fmt.Sprint(h.GetLatestValue()))
+	}
+
+	var totalCost *string
+	if h.TotalCost != nil {
+		totalCost = goutil.String(fmt.Sprint(h.GetTotalCost()))
+	}
+
+	var totalShares *string
+	if h.TotalShares != nil {
+		totalShares = goutil.String(fmt.Sprint(h.GetTotalShares()))
+	}
+
+	var avgCostPerShare *string
+	if h.AvgCostPerShare != nil {
+		avgCostPerShare = goutil.String(fmt.Sprint(h.GetAvgCostPerShare()))
+	}
+
 	return &Holding{
-		HoldingID:     h.HoldingID,
-		AccountID:     h.AccountID,
-		Symbol:        h.Symbol,
-		HoldingType:   h.HoldingType,
-		HoldingStatus: h.HoldingStatus,
-		CreateTime:    h.CreateTime,
-		UpdateTime:    h.UpdateTime,
-		LatestValue:   h.LatestValue,
-		AvgCost:       h.AvgCost,
-		TotalShares:   h.TotalShares,
-		Quote:         toQuote(h.Quote),
+		HoldingID:       h.HoldingID,
+		AccountID:       h.AccountID,
+		Symbol:          h.Symbol,
+		HoldingType:     h.HoldingType,
+		HoldingStatus:   h.HoldingStatus,
+		CreateTime:      h.CreateTime,
+		UpdateTime:      h.UpdateTime,
+		LatestValue:     latestValue,
+		TotalCost:       totalCost,
+		TotalShares:     totalShares,
+		AvgCostPerShare: avgCostPerShare,
+		Quote:           toQuote(h.Quote),
 	}
 }
 
@@ -257,9 +278,9 @@ func toAccount(ac *entity.Account) *Account {
 		balance = goutil.String(fmt.Sprint(ac.GetBalance()))
 	}
 
-	var avgCost *string
-	if ac.AvgCost != nil {
-		avgCost = goutil.String(fmt.Sprint(ac.GetAvgCost()))
+	var totalCost *string
+	if ac.TotalCost != nil {
+		totalCost = goutil.String(fmt.Sprint(ac.GetTotalCost()))
 	}
 
 	return &Account{
@@ -271,7 +292,7 @@ func toAccount(ac *entity.Account) *Account {
 		Note:          ac.Note,
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
-		AvgCost:       avgCost,
+		TotalCost:     totalCost,
 		Holdings:      toHoldings(ac.Holdings),
 	}
 }

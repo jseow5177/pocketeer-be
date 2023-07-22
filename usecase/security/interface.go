@@ -2,9 +2,14 @@ package security
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
-	"github.com/jseow5177/pockteer-be/dep/api"
+	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 type UseCase interface {
@@ -12,19 +17,28 @@ type UseCase interface {
 }
 
 type SearchSecuritiesRequest struct {
-	Keyword *string
+	Symbol *string
 }
 
-func (m *SearchSecuritiesRequest) GetKeyword() string {
-	if m != nil && m.Keyword != nil {
-		return *m.Keyword
+func (m *SearchSecuritiesRequest) GetSymbol() string {
+	if m != nil && m.Symbol != nil {
+		return *m.Symbol
 	}
 	return ""
 }
 
-func (m *SearchSecuritiesRequest) ToSecurityFilter() *api.SecurityFilter {
-	return &api.SecurityFilter{
-		Keyword: m.Keyword,
+func (m *SearchSecuritiesRequest) ToSecurityFilter() *repo.SecurityFilter {
+	return &repo.SecurityFilter{
+		SymbolRegex: goutil.String(fmt.Sprintf(".*%s.*", strings.ToUpper(m.GetSymbol()))),
+		Paging: &repo.Paging{
+			Limit: goutil.Uint32(20),
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("symbol"),
+					Order: goutil.String(config.OrderAsc),
+				},
+			},
+		},
 	}
 }
 

@@ -21,7 +21,7 @@ var CreateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:   false,
 		Validators: []validator.UInt32Func{entity.CheckHoldingType},
 	},
-	"avg_cost": &validator.String{
+	"total_cost": &validator.String{
 		Optional:   true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},

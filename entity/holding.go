@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrSetCostValueSharesForbidden = errors.New("set avg_cost or latest_value or total_shares forbidden")
-	ErrMustSetCostAndValue         = errors.New("avg_cost and latest_value must be set")
+	ErrSetCostValueSharesForbidden = errors.New("set total_cost or latest_value or total_shares forbidden")
+	ErrMustSetCostAndValue         = errors.New("total_cost and latest_value must be set")
 )
 
 type HoldingStatus uint32
@@ -35,14 +35,14 @@ var HoldingTypes = map[uint32]string{
 }
 
 type HoldingUpdate struct {
-	AvgCost     *float64
+	TotalCost   *float64
 	LatestValue *float64
 	UpdateTime  *uint64
 }
 
-func (hu *HoldingUpdate) GetAvgCost() float64 {
-	if hu != nil && hu.AvgCost != nil {
-		return *hu.AvgCost
+func (hu *HoldingUpdate) GetTotalCost() float64 {
+	if hu != nil && hu.TotalCost != nil {
+		return *hu.TotalCost
 	}
 	return 0
 }
@@ -61,9 +61,9 @@ func (hu *HoldingUpdate) GetUpdateTime() uint64 {
 	return 0
 }
 
-func WithUpdateHoldingAvgCost(avgCost *float64) HoldingUpdateOption {
+func WithUpdateHoldingTotalCost(totalCost *float64) HoldingUpdateOption {
 	return func(hu *HoldingUpdate) {
-		hu.AvgCost = avgCost
+		hu.TotalCost = totalCost
 	}
 }
 
@@ -76,18 +76,19 @@ func WithUpdateHoldingLatestValue(latestValue *float64) HoldingUpdateOption {
 type HoldingUpdateOption = func(hu *HoldingUpdate)
 
 type Holding struct {
-	UserID        *string
-	HoldingID     *string
-	AccountID     *string
-	Symbol        *string
-	HoldingStatus *uint32
-	HoldingType   *uint32
-	CreateTime    *uint64
-	UpdateTime    *uint64
-	TotalShares   *float64
-	AvgCost       *float64
-	LatestValue   *float64
-	Quote         *Quote
+	UserID          *string
+	HoldingID       *string
+	AccountID       *string
+	Symbol          *string
+	HoldingStatus   *uint32
+	HoldingType     *uint32
+	CreateTime      *uint64
+	UpdateTime      *uint64
+	TotalShares     *float64
+	TotalCost       *float64
+	AvgCostPerShare *float64
+	LatestValue     *float64
+	Quote           *Quote
 }
 
 type HoldingOption = func(h *Holding)
@@ -122,9 +123,9 @@ func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	}
 }
 
-func WithHoldingAvgCost(wac *float64) HoldingOption {
+func WithHoldingTotalCost(wac *float64) HoldingOption {
 	return func(h *Holding) {
-		h.AvgCost = wac
+		h.TotalCost = wac
 	}
 }
 
@@ -165,13 +166,13 @@ func (h *Holding) checkOpts() error {
 		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
 
 		// for non-custom type, cannot cost, value, and shares
-		if h.AvgCost != nil || h.LatestValue != nil || h.TotalShares != nil {
+		if h.TotalCost != nil || h.LatestValue != nil || h.TotalShares != nil {
 			return ErrSetCostValueSharesForbidden
 		}
 	}
 
 	if h.IsCustom() {
-		if h.AvgCost == nil || h.LatestValue == nil {
+		if h.TotalCost == nil || h.LatestValue == nil {
 			return ErrMustSetCostAndValue
 		}
 		h.TotalShares = goutil.Float64(1) // implicit 1 share for custom holding
@@ -183,9 +184,9 @@ func (h *Holding) checkOpts() error {
 func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUpdate bool, err error) {
 	holdingUpdate = new(HoldingUpdate)
 
-	if hu.AvgCost != nil && hu.GetAvgCost() != h.GetAvgCost() {
+	if hu.TotalCost != nil && hu.GetTotalCost() != h.GetTotalCost() {
 		hasUpdate = true
-		h.AvgCost = hu.AvgCost
+		h.TotalCost = hu.TotalCost
 	}
 
 	if hu.LatestValue != nil && hu.GetLatestValue() != h.GetLatestValue() {
@@ -206,8 +207,8 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 
 	holdingUpdate.UpdateTime = now
 
-	if hu.AvgCost != nil {
-		holdingUpdate.AvgCost = h.AvgCost
+	if hu.TotalCost != nil {
+		holdingUpdate.TotalCost = h.TotalCost
 	}
 
 	if hu.LatestValue != nil {
@@ -288,15 +289,26 @@ func (h *Holding) SetTotalShares(totalShares *float64) {
 	h.TotalShares = totalShares
 }
 
-func (h *Holding) GetAvgCost() float64 {
-	if h != nil && h.AvgCost != nil {
-		return *h.AvgCost
+func (h *Holding) GetAvgCostPerShare() float64 {
+	if h != nil && h.AvgCostPerShare != nil {
+		return *h.AvgCostPerShare
 	}
 	return 0
 }
 
-func (h *Holding) SetAvgCost(avgCost *float64) {
-	h.AvgCost = avgCost
+func (h *Holding) SetAvgCostPerShare(avgCostPerShare *float64) {
+	h.AvgCostPerShare = avgCostPerShare
+}
+
+func (h *Holding) GetTotalCost() float64 {
+	if h != nil && h.TotalCost != nil {
+		return *h.TotalCost
+	}
+	return 0
+}
+
+func (h *Holding) SetTotalCost(totalCost *float64) {
+	h.TotalCost = totalCost
 }
 
 func (h *Holding) GetLatestValue() float64 {

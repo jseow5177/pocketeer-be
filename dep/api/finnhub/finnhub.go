@@ -11,6 +11,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
+	"github.com/jseow5177/pockteer-be/util"
 
 	finnhub "github.com/Finnhub-Stock-API/finnhub-go/v2"
 )
@@ -63,6 +64,23 @@ func (q *quote) GetT() uint64 {
 	return 0
 }
 
+// TODO: Have better currency conversion logic
+func (q *quote) ToSGD() *quote {
+	var (
+		newC  = util.RoundFloat(q.GetC()*config.USDToSGD, config.StandardDP)
+		newPc = util.RoundFloat(q.GetPc()*config.USDToSGD, config.StandardDP)
+		newD  = util.RoundFloat(newC-newPc, config.StandardDP)
+		newDp = util.RoundFloat((newC-newPc)*100/newPc, config.PreciseDP)
+	)
+	return &quote{
+		C:  goutil.Float64(newC),
+		Pc: goutil.Float64(newPc),
+		D:  goutil.Float64(newD),
+		Dp: goutil.Float64(newDp),
+		T:  q.T,
+	}
+}
+
 var securityTypes = map[string]entity.SecurityType{
 	"Common Stock": entity.SecurityTypeCommonStock,
 	"ETP":          entity.SecurityTypeETF,
@@ -88,7 +106,7 @@ func NewFinnHubMgr(cfg *config.FinnHub) *finnhubMgr {
 
 // Doc: https://finnhub.io/docs/api/symbol-search
 func (mgr *finnhubMgr) SearchSecurities(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
-	l, _, err := mgr.client.SymbolSearch(ctx).Q(sf.GetKeyword()).Execute()
+	l, _, err := mgr.client.SymbolSearch(ctx).Q(sf.GetSymbol()).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("fail to search securities, err: %v", err)
 	}
@@ -133,6 +151,8 @@ func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilte
 		return nil, err
 	}
 
+	q = q.ToSGD()
+
 	return &entity.Quote{
 		LatestPrice:   q.C,
 		Change:        q.D,
@@ -142,6 +162,27 @@ func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilte
 	}, nil
 }
 
+// Doc: https://finnhub.io/docs/api/stock-symbols
 func (mgr *finnhubMgr) ListSymbols(ctx context.Context, sf *api.SecurityFilter) ([]*entity.Security, error) {
-	return nil, nil
+	res, _, err := mgr.client.StockSymbols(ctx).Exchange(sf.GetExchange()).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("fail to list stock symbols, err: %v", err)
+	}
+
+	ss := make([]*entity.Security, 0, len(res))
+	for _, r := range res {
+		securityType, ok := securityTypes[r.GetType()]
+		if !ok {
+			securityType = entity.SecurityTypeOther
+		}
+		ss = append(ss, entity.NewSecurity(
+			r.GetSymbol(),
+			entity.WithSecurityName(r.Description),
+			entity.WithSecurityType(goutil.Uint32(uint32(securityType))),
+			entity.WithSecurityCurrency(r.Currency),
+			entity.WithSecurityRegion(sf.Exchange),
+		))
+	}
+
+	return ss, nil
 }

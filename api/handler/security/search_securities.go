@@ -9,7 +9,10 @@ import (
 )
 
 var SearchSecuritiesValidator = validator.MustForm(map[string]validator.Validator{
-	"keyword": &validator.String{},
+	"symbol": &validator.String{
+		Optional: false,
+		MaxLen:   20,
+	},
 })
 
 func (h *securityHandler) SearchSecurities(ctx context.Context, req *presenter.SearchSecuritiesRequest, res *presenter.SearchSecuritiesResponse) error {

@@ -184,15 +184,15 @@ func (uc *accountUseCase) calcInvestmentAccountValue(ctx context.Context, ac *en
 	ac.SetHoldings(res.Holdings)
 
 	var (
-		avgCost     float64
+		totalCost   float64
 		latestValue float64
 	)
 	for _, h := range res.Holdings {
-		avgCost += h.GetAvgCost()
+		totalCost += h.GetTotalCost()
 		latestValue += h.GetLatestValue()
 	}
 	ac.SetBalance(goutil.Float64(latestValue)) // store latest value into balance field
-	ac.SetAvgCost(goutil.Float64(avgCost))
+	ac.SetTotalCost(goutil.Float64(totalCost))
 
 	return nil
 }

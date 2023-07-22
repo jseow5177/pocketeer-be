@@ -11,7 +11,6 @@ type Config struct {
 	Mongo   *Mongo   `json:"mongo"`
 	Tokens  *Tokens  `json:"token"`
 	FinnHub *FinnHub `json:"finnhub"`
-	IEX     *IEX     `json:"iex"`
 }
 
 type RateLimit struct {
@@ -67,12 +66,6 @@ type FinnHub struct {
 	Token   string `json:"token"`
 }
 
-type IEX struct {
-	BaseURL          string   `json:"base_url"`
-	Token            string   `json:"token"`
-	SupportedRegions []string `json:"supported_regions"`
-}
-
 func NewConfig() *Config {
 	return &Config{
 		Server: &Server{
@@ -102,11 +95,6 @@ func NewConfig() *Config {
 		FinnHub: &FinnHub{
 			BaseURL: "https://finnhub.io/api/v1",
 			Token:   "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
-		},
-		IEX: &IEX{
-			BaseURL:          "https://api.iex.cloud/v1",
-			Token:            "pk_c59529d329c04cdda7708d9b7030f29f",
-			SupportedRegions: []string{"US"},
 		},
 	}
 }
