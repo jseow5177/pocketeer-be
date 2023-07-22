@@ -13,11 +13,12 @@ type Holding struct {
 	Symbol        *string            `bson:"symbol,omitempty"`
 	HoldingStatus *uint32            `bson:"holding_status,omitempty"`
 	HoldingType   *uint32            `bson:"holding_type,omitempty"`
-	TotalShares   *float64           `bson:"total_shares,omitempty"`
-	TotalCost     *float64           `bson:"total_cost,omitempty"`
-	LatestValue   *float64           `bson:"latest_value,omitempty"`
 	CreateTime    *uint64            `bson:"create_time,omitempty"`
 	UpdateTime    *uint64            `bson:"update_time,omitempty"`
+
+	// for custom holding
+	TotalCost   *float64 `bson:"total_cost,omitempty"`
+	LatestValue *float64 `bson:"latest_value,omitempty"`
 }
 
 func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
@@ -35,7 +36,6 @@ func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
 		HoldingStatus: h.HoldingStatus,
 		CreateTime:    h.CreateTime,
 		UpdateTime:    h.UpdateTime,
-		TotalShares:   h.TotalShares,
 		TotalCost:     h.TotalCost,
 		LatestValue:   h.LatestValue,
 	}
@@ -115,13 +115,6 @@ func (h *Holding) GetCreateTime() uint64 {
 func (h *Holding) GetUpdateTime() uint64 {
 	if h != nil && h.UpdateTime != nil {
 		return *h.UpdateTime
-	}
-	return 0
-}
-
-func (h *Holding) GetTotalShares() float64 {
-	if h != nil && h.TotalShares != nil {
-		return *h.TotalShares
 	}
 	return 0
 }

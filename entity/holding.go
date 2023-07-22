@@ -76,19 +76,20 @@ func WithUpdateHoldingLatestValue(latestValue *float64) HoldingUpdateOption {
 type HoldingUpdateOption = func(hu *HoldingUpdate)
 
 type Holding struct {
-	UserID          *string
-	HoldingID       *string
-	AccountID       *string
-	Symbol          *string
-	HoldingStatus   *uint32
-	HoldingType     *uint32
-	CreateTime      *uint64
-	UpdateTime      *uint64
-	TotalShares     *float64
-	TotalCost       *float64
-	AvgCostPerShare *float64
-	LatestValue     *float64
-	Quote           *Quote
+	UserID        *string
+	HoldingID     *string
+	AccountID     *string
+	Symbol        *string
+	HoldingStatus *uint32
+	HoldingType   *uint32
+	CreateTime    *uint64
+	UpdateTime    *uint64
+
+	TotalShares     *float64 // no-op for customm, computed for default
+	AvgCostPerShare *float64 // no-op for custom, computed for default
+	Quote           *Quote   // no-op for custom, computed for default
+	TotalCost       *float64 // stored for custom, computed for default
+	LatestValue     *float64 // stored for custom, computed for default
 }
 
 type HoldingOption = func(h *Holding)
@@ -175,7 +176,6 @@ func (h *Holding) checkOpts() error {
 		if h.TotalCost == nil || h.LatestValue == nil {
 			return ErrMustSetCostAndValue
 		}
-		h.TotalShares = goutil.Float64(1) // implicit 1 share for custom holding
 	}
 
 	return nil
