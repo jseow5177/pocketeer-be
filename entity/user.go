@@ -75,7 +75,7 @@ func WithUserUpdateTime(updateTime *uint64) UserOption {
 }
 
 func NewUser(username, password string, opts ...UserOption) (*User, error) {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	u := &User{
 		Username:   goutil.String(username),
 		UserStatus: goutil.Uint32(uint32(UserStatusNormal)),

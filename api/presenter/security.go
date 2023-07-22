@@ -48,19 +48,19 @@ func (s *Security) GetCurrency() string {
 }
 
 type SearchSecuritiesRequest struct {
-	Keyword *string `json:"keyword,omitempty"`
+	Symbol *string `json:"symbol,omitempty"`
 }
 
-func (m *SearchSecuritiesRequest) GetKeyword() string {
-	if m != nil && m.Keyword != nil {
-		return *m.Keyword
+func (m *SearchSecuritiesRequest) GetSymbol() string {
+	if m != nil && m.Symbol != nil {
+		return *m.Symbol
 	}
 	return ""
 }
 
 func (m *SearchSecuritiesRequest) ToUseCaseReq() *security.SearchSecuritiesRequest {
 	return &security.SearchSecuritiesRequest{
-		Keyword: m.Keyword,
+		Symbol: m.Symbol,
 	}
 }
 

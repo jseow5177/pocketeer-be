@@ -28,6 +28,7 @@ var supportedFilterOps = map[string]string{
 	"in":         "in",
 	"nin":        "not in",
 	"bitsAllSet": "bit all set",
+	"regex":      "regex",
 }
 
 func Prefix(op string) string {

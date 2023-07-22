@@ -7,11 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
+	job "github.com/jseow5177/pockteer-be/cmd/job/save_symbols"
 	"github.com/rs/zerolog/log"
 )
 
 type Job interface {
-	Init(ctx context.Context) error
+	Init(ctx context.Context) (context.Context, error)
 	Run(ctx context.Context) error
 	Clean(ctx context.Context) error
 }
@@ -19,9 +20,16 @@ type Job interface {
 var cmds = map[string]struct {
 	desc string
 	job  Job
-}{}
+}{
+	"save_symbols": {
+		desc: "scan symbols from third party API and save into mongo",
+		job:  new(job.SaveSymbols),
+	},
+}
 
 func main() {
+	var err error
+
 	ctx := context.Background()
 
 	flag.Usage = func() {
@@ -45,19 +53,19 @@ func main() {
 	}
 
 	// Job init
-	if err := cmd.job.Init(ctx); err != nil {
+	if ctx, err = cmd.job.Init(ctx); err != nil {
 		log.Ctx(ctx).Fatal().Msgf("fail to init job, err: %v", err)
 		return
 	}
 
 	// Job run
-	if err := cmd.job.Run(ctx); err != nil {
+	if err = cmd.job.Run(ctx); err != nil {
 		log.Ctx(ctx).Fatal().Msgf("fail to run job, err: %v", err)
 		return
 	}
 
 	// Job stop
-	if err := cmd.job.Clean(ctx); err != nil {
+	if err = cmd.job.Clean(ctx); err != nil {
 		log.Ctx(ctx).Fatal().Msgf("fail to clean job, err: %v", err)
 		return
 	}

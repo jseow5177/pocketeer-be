@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	ErrAccountAlreadyExists = errors.New("account already exists")
 )
 
 type accountUseCase struct {
@@ -82,6 +87,17 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 		return nil, err
 	}
 
+	// Check if account with same name + type exists
+	_, err = uc.accountRepo.Get(ctx, req.ToAccountFilter())
+	if err != nil && err != repo.ErrAccountNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == nil {
+		return nil, ErrAccountAlreadyExists
+	}
+
 	_, err = uc.accountRepo.Create(ctx, ac)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
@@ -150,7 +166,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accou
 		entity.WithTransactionAmount(goutil.Float64(amount)),
 		entity.WithTransactionType(goutil.Uint32(tt)),
 		entity.WithTransactionNote(goutil.String(note)),
-		entity.WithTransactionTime(goutil.Uint64(uint64(time.Now().Unix()))),
+		entity.WithTransactionTime(goutil.Uint64(uint64(time.Now().UnixMilli()))),
 	)
 
 	return t
@@ -168,15 +184,15 @@ func (uc *accountUseCase) calcInvestmentAccountValue(ctx context.Context, ac *en
 	ac.SetHoldings(res.Holdings)
 
 	var (
-		avgCost     float64
+		totalCost   float64
 		latestValue float64
 	)
 	for _, h := range res.Holdings {
-		avgCost += h.GetAvgCost()
+		totalCost += h.GetTotalCost()
 		latestValue += h.GetLatestValue()
 	}
 	ac.SetBalance(goutil.Float64(latestValue)) // store latest value into balance field
-	ac.SetAvgCost(goutil.Float64(avgCost))
+	ac.SetTotalCost(goutil.Float64(totalCost))
 
 	return nil
 }

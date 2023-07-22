@@ -149,7 +149,7 @@ func WithTransactionUpdateTime(updateTime *uint64) TransactionOption {
 }
 
 func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOption) *Transaction {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	t := &Transaction{
 		UserID:          goutil.String(userID),
 		CategoryID:      goutil.String(categoryID),
@@ -202,7 +202,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	t.UpdateTime = now
 
 	// check

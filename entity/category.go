@@ -83,7 +83,7 @@ func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 }
 
 func NewCategory(userID string, opts ...CategoryOption) *Category {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	c := &Category{
 		UserID:       goutil.String(userID),
 		CategoryName: goutil.String(""),
@@ -112,7 +112,7 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	c.UpdateTime = now
 
 	// check

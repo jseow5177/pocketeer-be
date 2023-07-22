@@ -77,6 +77,10 @@ func (s *Security) GetSecurityID() string {
 	return ""
 }
 
+func (s *Security) SetSecurityID(securityID *string) {
+	s.SecurityID = securityID
+}
+
 func (s *Security) GetSymbol() string {
 	if s != nil && s.Symbol != nil {
 		return *s.Symbol

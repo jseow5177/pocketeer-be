@@ -133,8 +133,8 @@ type Account struct {
 	UpdateTime    *uint64
 
 	// Investment
-	AvgCost  *float64
-	Holdings []*Holding
+	TotalCost *float64
+	Holdings  []*Holding
 }
 
 type AccountOption = func(ac *Account)
@@ -188,7 +188,7 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 }
 
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
-	now := uint64(time.Now().Unix())
+	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
 		UserID:        goutil.String(userID),
 		AccountName:   goutil.String(""),
@@ -243,7 +243,7 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 		return
 	}
 
-	now := goutil.Uint64(uint64(time.Now().Unix()))
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	ac.UpdateTime = acu.UpdateTime
 
 	if err = ac.checkOpts(); err != nil {
@@ -338,15 +338,15 @@ func (ac *Account) GetUpdateTime() uint64 {
 	return 0
 }
 
-func (ac *Account) GetAvgCost() float64 {
-	if ac != nil && ac.AvgCost != nil {
-		return *ac.AvgCost
+func (ac *Account) GetTotalCost() float64 {
+	if ac != nil && ac.TotalCost != nil {
+		return *ac.TotalCost
 	}
 	return 0
 }
 
-func (ac *Account) SetAvgCost(avgCost *float64) {
-	ac.AvgCost = avgCost
+func (ac *Account) SetTotalCost(totalCost *float64) {
+	ac.TotalCost = totalCost
 }
 
 func (ac *Account) GetHoldings() []*Holding {

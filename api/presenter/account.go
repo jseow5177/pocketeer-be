@@ -16,8 +16,8 @@ type Account struct {
 	CreateTime    *uint64 `json:"create_time,omitempty"`
 	UpdateTime    *uint64 `json:"update_time,omitempty"`
 
-	AvgCost  *string    `json:"avg_cost,omitempty"`
-	Holdings []*Holding `json:"holdings"`
+	TotalCost *string    `json:"total_cost,omitempty"`
+	Holdings  []*Holding `json:"holdings,omitempty"`
 }
 
 func (ac *Account) GetAccountID() string {
@@ -76,9 +76,9 @@ func (ac *Account) GetUpdateTime() uint64 {
 	return 0
 }
 
-func (ac *Account) GetAvgCost() string {
-	if ac != nil && ac.AvgCost != nil {
-		return *ac.AvgCost
+func (ac *Account) GetTotalCost() string {
+	if ac != nil && ac.TotalCost != nil {
+		return *ac.TotalCost
 	}
 	return ""
 }

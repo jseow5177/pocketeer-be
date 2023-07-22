@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 type UseCase interface {
@@ -92,7 +93,7 @@ func (m *GetHoldingResponse) GetHolding() *entity.Holding {
 type UpdateHoldingRequest struct {
 	UserID      *string
 	HoldingID   *string
-	AvgCost     *float64
+	TotalCost   *float64
 	LatestValue *float64
 }
 
@@ -110,9 +111,9 @@ func (m *UpdateHoldingRequest) GetHoldingID() string {
 	return ""
 }
 
-func (m *UpdateHoldingRequest) GetAvgCost() float64 {
-	if m != nil && m.AvgCost != nil {
-		return *m.AvgCost
+func (m *UpdateHoldingRequest) GetTotalCost() float64 {
+	if m != nil && m.TotalCost != nil {
+		return *m.TotalCost
 	}
 	return 0
 }
@@ -133,7 +134,7 @@ func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 
 func (m *UpdateHoldingRequest) ToHoldingUpdate() *entity.HoldingUpdate {
 	return &entity.HoldingUpdate{
-		AvgCost:     m.AvgCost,
+		TotalCost:   m.TotalCost,
 		LatestValue: m.LatestValue,
 	}
 }
@@ -154,7 +155,7 @@ type CreateHoldingRequest struct {
 	AccountID   *string
 	Symbol      *string
 	HoldingType *uint32
-	AvgCost     *float64
+	TotalCost   *float64
 	LatestValue *float64
 }
 
@@ -186,9 +187,9 @@ func (m *CreateHoldingRequest) GetHoldingType() uint32 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) GetAvgCost() float64 {
-	if m != nil && m.AvgCost != nil {
-		return *m.AvgCost
+func (m *CreateHoldingRequest) GetTotalCost() float64 {
+	if m != nil && m.TotalCost != nil {
+		return *m.TotalCost
 	}
 	return 0
 }
@@ -200,8 +201,16 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) ToAccountFilter(userID string) *repo.AccountFilter {
-	return repo.NewAccountFilter(userID, repo.WitAccountID(m.AccountID))
+func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
+	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
+}
+
+func (m *CreateHoldingRequest) ToHoldingFilter(symbol string) *repo.HoldingFilter {
+	return &repo.HoldingFilter{
+		UserID:      m.UserID,
+		Symbol:      goutil.String(symbol),
+		HoldingType: m.HoldingType,
+	}
 }
 
 func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
@@ -210,7 +219,7 @@ func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
 		m.GetAccountID(),
 		m.GetSymbol(),
 		entity.WithHoldingType(m.HoldingType),
-		entity.WithHoldingAvgCost(m.AvgCost),
+		entity.WithHoldingTotalCost(m.TotalCost),
 		entity.WithHoldingLatestValue(m.LatestValue),
 	)
 }

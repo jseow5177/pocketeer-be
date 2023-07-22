@@ -54,6 +54,7 @@ type server struct {
 	accountRepo     repo.AccountRepo
 	holdingRepo     repo.HoldingRepo
 	lotRepo         repo.LotRepo
+	securityRepo    repo.SecurityRepo
 
 	securityAPI api.SecurityAPI
 
@@ -111,6 +112,7 @@ func (s *server) Start() error {
 	s.accountRepo = mongo.NewAccountMongo(s.mongo)
 	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
+	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
 
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
@@ -121,7 +123,7 @@ func (s *server) Start() error {
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
-	s.securityUseCase = suc.NewSecurityUseCase(s.securityAPI)
+	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityAPI)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)

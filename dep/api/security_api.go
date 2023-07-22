@@ -13,16 +13,8 @@ type SecurityAPI interface {
 }
 
 type SecurityFilter struct {
-	Keyword  *string `filter:"keyword"`
-	Symbol   *string `filter:"symbol"`
+	Symbol   *string
 	Exchange *string
-}
-
-func (f *SecurityFilter) GetKeyword() string {
-	if f != nil && f.Keyword != nil {
-		return *f.Keyword
-	}
-	return ""
 }
 
 func (f *SecurityFilter) GetSymbol() string {
