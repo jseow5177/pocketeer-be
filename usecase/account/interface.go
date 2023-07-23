@@ -130,14 +130,6 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) ToAccountFilter() *repo.AccountFilter {
-	return repo.NewAccountFilter(
-		m.GetUserID(),
-		repo.WitAccountType(m.AccountType),
-		repo.WithAccountName(m.AccountName),
-	)
-}
-
 func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 	return entity.NewAccount(
 		m.GetUserID(),

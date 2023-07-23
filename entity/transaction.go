@@ -13,6 +13,14 @@ var (
 	ErrInvalidTransactionAccount = errors.New("transaction not allowed under account")
 )
 
+type TransactionStatus uint32
+
+const (
+	TransactionStatusInvalid TransactionStatus = iota
+	TransactionStatusNormal
+	TransactionStatusDeleted
+)
+
 type TransactionType uint32
 
 const (
@@ -29,10 +37,11 @@ var TransactionTypes = map[uint32]string{
 }
 
 type TransactionUpdate struct {
-	Amount          *float64
-	TransactionTime *uint64
-	Note            *string
-	UpdateTime      *uint64
+	Amount            *float64
+	TransactionTime   *uint64
+	Note              *string
+	TransactionStatus *uint32
+	UpdateTime        *uint64
 }
 
 func (tu *TransactionUpdate) GetAmount() float64 {
@@ -45,6 +54,13 @@ func (tu *TransactionUpdate) GetAmount() float64 {
 func (tu *TransactionUpdate) GetTransactionTime() uint64 {
 	if tu != nil && tu.TransactionTime != nil {
 		return *tu.TransactionTime
+	}
+	return 0
+}
+
+func (tu *TransactionUpdate) GetTransactionStatus() uint32 {
+	if tu != nil && tu.TransactionStatus != nil {
+		return *tu.TransactionStatus
 	}
 	return 0
 }
@@ -83,6 +99,12 @@ func WithUpdateTransactionNote(note *string) TransactionUpdateOption {
 	}
 }
 
+func WithUpdateTransactionStatus(transactionStatus *uint32) TransactionUpdateOption {
+	return func(tu *TransactionUpdate) {
+		tu.TransactionStatus = transactionStatus
+	}
+}
+
 func NewTransactionUpdate(opts ...TransactionUpdateOption) *TransactionUpdate {
 	tu := new(TransactionUpdate)
 	for _, opt := range opts {
@@ -92,16 +114,17 @@ func NewTransactionUpdate(opts ...TransactionUpdateOption) *TransactionUpdate {
 }
 
 type Transaction struct {
-	TransactionID   *string
-	UserID          *string
-	CategoryID      *string
-	AccountID       *string
-	Amount          *float64
-	Note            *string
-	TransactionType *uint32
-	TransactionTime *uint64
-	CreateTime      *uint64
-	UpdateTime      *uint64
+	TransactionID     *string
+	UserID            *string
+	CategoryID        *string
+	AccountID         *string
+	Amount            *float64
+	Note              *string
+	TransactionStatus *uint32
+	TransactionType   *uint32
+	TransactionTime   *uint64
+	CreateTime        *uint64
+	UpdateTime        *uint64
 }
 
 type TransactionOption = func(t *Transaction)
@@ -121,6 +144,12 @@ func WithTransactionAmount(amount *float64) TransactionOption {
 func WithTransactionNote(note *string) TransactionOption {
 	return func(t *Transaction) {
 		t.Note = note
+	}
+}
+
+func WithTransactionStatus(transactionStatus *uint32) TransactionOption {
+	return func(t *Transaction) {
+		t.TransactionStatus = transactionStatus
 	}
 }
 
@@ -151,15 +180,16 @@ func WithTransactionUpdateTime(updateTime *uint64) TransactionOption {
 func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOption) *Transaction {
 	now := uint64(time.Now().UnixMilli())
 	t := &Transaction{
-		UserID:          goutil.String(userID),
-		CategoryID:      goutil.String(categoryID),
-		AccountID:       goutil.String(accountID),
-		Amount:          goutil.Float64(0),
-		Note:            goutil.String(""),
-		TransactionType: goutil.Uint32(uint32(TransactionTypeExpense)),
-		TransactionTime: goutil.Uint64(now),
-		CreateTime:      goutil.Uint64(now),
-		UpdateTime:      goutil.Uint64(now),
+		UserID:            goutil.String(userID),
+		CategoryID:        goutil.String(categoryID),
+		AccountID:         goutil.String(accountID),
+		Amount:            goutil.Float64(0),
+		Note:              goutil.String(""),
+		TransactionStatus: goutil.Uint32(uint32(TransactionStatusNormal)),
+		TransactionType:   goutil.Uint32(uint32(TransactionTypeExpense)),
+		TransactionTime:   goutil.Uint64(now),
+		CreateTime:        goutil.Uint64(now),
+		UpdateTime:        goutil.Uint64(now),
 	}
 	for _, opt := range opts {
 		opt(t)
@@ -207,6 +237,15 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 
 		defer func() {
 			transactionUpdate.Note = t.Note
+		}()
+	}
+
+	if tu.TransactionStatus != nil && tu.GetTransactionStatus() != t.GetTransactionStatus() {
+		hasUpdate = true
+		t.TransactionStatus = tu.TransactionStatus
+
+		defer func() {
+			transactionUpdate.TransactionStatus = t.TransactionStatus
 		}()
 	}
 
@@ -283,6 +322,13 @@ func (t *Transaction) GetNote() string {
 		return *t.Note
 	}
 	return ""
+}
+
+func (t *Transaction) GetTransactionStatus() uint32 {
+	if t != nil && t.TransactionStatus != nil {
+		return *t.TransactionStatus
+	}
+	return 0
 }
 
 func (t *Transaction) GetTransactionType() uint32 {

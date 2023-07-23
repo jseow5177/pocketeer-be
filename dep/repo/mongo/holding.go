@@ -26,6 +26,9 @@ func (m *holdingMongo) Create(ctx context.Context, h *entity.Holding) (string, e
 	hm := model.ToHoldingModelFromEntity(h)
 	id, err := m.mColl.create(ctx, hm)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return "", repo.ErrHoldingAlreadyExists
+		}
 		return "", err
 	}
 	h.SetHoldingID(goutil.String(id))
@@ -36,6 +39,9 @@ func (m *holdingMongo) Create(ctx context.Context, h *entity.Holding) (string, e
 func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *entity.HoldingUpdate) error {
 	hm := model.ToHoldingModelFromUpdate(hu)
 	if err := m.mColl.update(ctx, hf, hm); err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return repo.ErrHoldingAlreadyExists
+		}
 		return err
 	}
 

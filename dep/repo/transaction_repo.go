@@ -27,6 +27,7 @@ type TransactionFilter struct {
 	AccountID          *string  `filter:"account_id"`
 	CategoryID         *string  `filter:"category_id"`
 	CategoryIDs        []string `filter:"category_id__in"`
+	TransactionStatus  *uint32  `filter:"transaction_status"`
 	TransactionType    *uint32  `filter:"transaction_type"`
 	TransactionTypes   []uint32 `filter:"transaction_type__in"`
 	TransactionTimeGte *uint64  `filter:"transaction_time__gte"`
@@ -67,6 +68,13 @@ func (f *TransactionFilter) GetCategoryIDs() []string {
 		return f.CategoryIDs
 	}
 	return nil
+}
+
+func (f *TransactionFilter) GetTransactionStatus() uint32 {
+	if f != nil && f.TransactionStatus != nil {
+		return *f.TransactionStatus
+	}
+	return 0
 }
 
 func (f *TransactionFilter) GetTransactionType() uint32 {

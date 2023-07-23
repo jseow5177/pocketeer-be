@@ -392,6 +392,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// delete transactions
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteTransaction,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteTransactionRequest),
+			Res:       new(presenter.DeleteTransactionResponse),
+			Validator: th.DeleteTransactionValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.DeleteTransaction(ctx, req.(*presenter.DeleteTransactionRequest), res.(*presenter.DeleteTransactionResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// ========== User ========== //
 
 	userHandler := uh.NewUserHandler(s.userUseCase)

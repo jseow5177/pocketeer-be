@@ -2,14 +2,9 @@ package category
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	ErrCategoryAlreadyExists = errors.New("category already exists")
 )
 
 type categoryUseCase struct {
@@ -37,18 +32,7 @@ func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequ
 func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error) {
 	c := req.ToCategoryEntity()
 
-	// Check if category with same name + type exists
-	_, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
-	if err != nil && err != repo.ErrCategoryNotFound {
-		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-		return nil, err
-	}
-
-	if err == nil {
-		return nil, ErrCategoryAlreadyExists
-	}
-
-	_, err = uc.categoryRepo.Create(ctx, c)
+	_, err := uc.categoryRepo.Create(ctx, c)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err

@@ -37,6 +37,7 @@ var HoldingTypes = map[uint32]string{
 type HoldingUpdate struct {
 	TotalCost   *float64
 	LatestValue *float64
+	Symbol      *string
 	UpdateTime  *uint64
 }
 
@@ -52,6 +53,13 @@ func (hu *HoldingUpdate) GetLatestValue() float64 {
 		return *hu.LatestValue
 	}
 	return 0
+}
+
+func (hu *HoldingUpdate) GetSymbol() string {
+	if hu != nil && hu.Symbol != nil {
+		return *hu.Symbol
+	}
+	return ""
 }
 
 func (hu *HoldingUpdate) GetUpdateTime() uint64 {
@@ -70,6 +78,12 @@ func WithUpdateHoldingTotalCost(totalCost *float64) HoldingUpdateOption {
 func WithUpdateHoldingLatestValue(latestValue *float64) HoldingUpdateOption {
 	return func(hu *HoldingUpdate) {
 		hu.LatestValue = latestValue
+	}
+}
+
+func WithUpdateHoldingSymbol(symbol *string) HoldingUpdateOption {
+	return func(hu *HoldingUpdate) {
+		hu.Symbol = symbol
 	}
 }
 
@@ -199,6 +213,15 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 
 		defer func() {
 			holdingUpdate.LatestValue = h.LatestValue
+		}()
+	}
+
+	if hu.Symbol != nil && hu.GetSymbol() != h.GetSymbol() {
+		hasUpdate = true
+		h.Symbol = hu.Symbol
+
+		defer func() {
+			holdingUpdate.Symbol = h.Symbol
 		}()
 	}
 

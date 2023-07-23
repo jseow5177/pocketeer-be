@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrCategoryNotFound = errors.New("category not found")
+	ErrCategoryNotFound      = errors.New("category not found")
+	ErrCategoryAlreadyExists = errors.New("category already exists")
 )
 
 type CategoryRepo interface {

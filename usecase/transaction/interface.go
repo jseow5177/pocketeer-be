@@ -17,6 +17,7 @@ type UseCase interface {
 
 	CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error)
 	UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error)
+	DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error)
 
 	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
@@ -42,8 +43,9 @@ func (m *GetTransactionRequest) GetTransactionID() string {
 
 func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 	return &repo.TransactionFilter{
-		UserID:        m.UserID,
-		TransactionID: m.TransactionID,
+		UserID:            m.UserID,
+		TransactionID:     m.TransactionID,
+		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
 	}
 }
 
@@ -231,6 +233,7 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		TransactionType:    m.TransactionType,
 		TransactionTimeGte: tt.Gte,
 		TransactionTimeLte: tt.Lte,
+		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
 		Paging: &repo.Paging{
 			Limit: paging.Limit,
 			Page:  paging.Page,
@@ -275,45 +278,46 @@ type UpdateTransactionRequest struct {
 	TransactionTime *uint64
 }
 
-func (t *UpdateTransactionRequest) GetUserID() string {
-	if t != nil && t.UserID != nil {
-		return *t.UserID
+func (m *UpdateTransactionRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
 	}
 	return ""
 }
 
-func (t *UpdateTransactionRequest) GetTransactionID() string {
-	if t != nil && t.TransactionID != nil {
-		return *t.TransactionID
+func (m *UpdateTransactionRequest) GetTransactionID() string {
+	if m != nil && m.TransactionID != nil {
+		return *m.TransactionID
 	}
 	return ""
 }
 
-func (t *UpdateTransactionRequest) GetAmount() float64 {
-	if t != nil && t.Amount != nil {
-		return *t.Amount
+func (m *UpdateTransactionRequest) GetAmount() float64 {
+	if m != nil && m.Amount != nil {
+		return *m.Amount
 	}
 	return 0
 }
 
-func (t *UpdateTransactionRequest) GetNote() string {
-	if t != nil && t.Note != nil {
-		return *t.Note
+func (m *UpdateTransactionRequest) GetNote() string {
+	if m != nil && m.Note != nil {
+		return *m.Note
 	}
 	return ""
 }
 
-func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
-	if t != nil && t.TransactionTime != nil {
-		return *t.TransactionTime
+func (m *UpdateTransactionRequest) GetTransactionTime() uint64 {
+	if m != nil && m.TransactionTime != nil {
+		return *m.TransactionTime
 	}
 	return 0
 }
 
 func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 	return &repo.TransactionFilter{
-		UserID:        m.UserID,
-		TransactionID: m.TransactionID,
+		UserID:            m.UserID,
+		TransactionID:     m.TransactionID,
+		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
 	}
 }
 
@@ -348,9 +352,9 @@ type AggrTransactionsRequest struct {
 	TransactionTypes []uint32
 }
 
-func (t *AggrTransactionsRequest) GetUserID() string {
-	if t != nil && t.UserID != nil {
-		return *t.UserID
+func (m *AggrTransactionsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
 	}
 	return ""
 }
@@ -393,6 +397,7 @@ func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.Trans
 		UserID:             goutil.String(userID),
 		CategoryIDs:        m.CategoryIDs,
 		TransactionTypes:   m.TransactionTypes,
+		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
 		TransactionTimeGte: tt.Gte,
 		TransactionTimeLte: tt.Lte,
 	}
@@ -418,3 +423,45 @@ func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
 	}
 	return nil
 }
+
+type DeleteTransactionRequest struct {
+	UserID        *string
+	TransactionID *string
+}
+
+func (m *DeleteTransactionRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteTransactionRequest) GetTransactionID() string {
+	if m != nil && m.TransactionID != nil {
+		return *m.TransactionID
+	}
+	return ""
+}
+
+func (m *DeleteTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:            m.UserID,
+		TransactionID:     m.TransactionID,
+		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
+	}
+}
+
+func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.AccountFilter {
+	return &repo.AccountFilter{
+		UserID:    m.UserID,
+		AccountID: t.AccountID,
+	}
+}
+
+func (m *DeleteTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
+	return entity.NewTransactionUpdate(
+		entity.WithUpdateTransactionStatus(goutil.Uint32(uint32(entity.TransactionStatusDeleted))),
+	)
+}
+
+type DeleteTransactionResponse struct{}

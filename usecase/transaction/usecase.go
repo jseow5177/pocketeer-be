@@ -63,6 +63,57 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	}, nil
 }
 
+func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error) {
+	t, err := uc.transactionRepo.Get(ctx, req.ToTransactionFilter())
+	if err != nil && err != repo.ErrTransactionNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == repo.ErrTransactionNotFound {
+		return new(DeleteTransactionResponse), nil
+	}
+
+	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		// mark transaction as deleted
+		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), req.ToTransactionUpdate()); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark transaction as deleted, err: %v", err)
+			return err
+		}
+
+		if t.GetAmount() != 0 {
+			// get account
+			ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t))
+			if err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to get account from repo, err: %v", err)
+				return err
+			}
+
+			// reset account balance
+			newBalance := ac.GetBalance() - t.GetAmount()
+			nac, hasUpdate, err := ac.Update(entity.NewAccountUpdate(
+				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
+			))
+			if err != nil {
+				return err
+			}
+
+			if hasUpdate {
+				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(t), nac); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
+					return err
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return new(DeleteTransactionResponse), nil
+}
+
 func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error) {
 	t := req.ToTransactionEntity()
 
