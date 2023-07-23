@@ -13,7 +13,7 @@ type Budget struct {
 	BudgetName       *string            `bson:"budget_name,omitempty"`
 	CategoryIDs      []string           `bson:"category_ids,omitempty"`
 	Status           *uint32            `bson:"status,omitempty"`
-	BudgetBreakdowns []*BudgetBreakdown `bson:"budget_breakdowns, omitempty"`
+	BudgetBreakdowns []*BudgetBreakdown `bson:"budget_breakdowns,omitempty"`
 	UpdateTime       *uint64            `bson:"update_time,omitempty"`
 }
 

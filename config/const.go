@@ -21,6 +21,7 @@ const (
 
 	PathCreateTransaction = PathV1Prefix + "create_transaction"
 	PathUpdateTransaction = PathV1Prefix + "update_transaction"
+	PathDeleteTransaction = PathV1Prefix + "delete_transaction"
 	PathGetTransaction    = PathV1Prefix + "get_transaction"
 	PathGetTransactions   = PathV1Prefix + "get_transactions"
 	PathAggrTransactions  = PathV1Prefix + "aggr_transactions"

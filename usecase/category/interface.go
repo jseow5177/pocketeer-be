@@ -87,14 +87,6 @@ func (m *CreateCategoryRequest) ToCategoryEntity() *entity.Category {
 	)
 }
 
-func (m *CreateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:       m.UserID,
-		CategoryName: m.CategoryName,
-		CategoryType: m.CategoryType,
-	}
-}
-
 type CreateCategoryResponse struct {
 	Category *entity.Category
 }

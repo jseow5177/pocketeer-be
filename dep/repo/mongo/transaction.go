@@ -14,8 +14,7 @@ import (
 
 const (
 	transactionCollName = "transaction"
-
-	aggrSumAmount = "sumAmount"
+	aggrSumAmount       = "sumAmount"
 )
 
 type transactionMongo struct {

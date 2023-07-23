@@ -9,15 +9,16 @@ import (
 )
 
 type Transaction struct {
-	TransactionID   *string `json:"transaction_id,omitempty"`
-	CategoryID      *string `json:"category_id,omitempty"`
-	AccountID       *string `json:"account_id,omitempty"`
-	Amount          *string `json:"amount,omitempty"`
-	Note            *string `json:"note,omitempty"`
-	TransactionType *uint32 `json:"transaction_type,omitempty"`
-	TransactionTime *uint64 `json:"transaction_time,omitempty"`
-	CreateTime      *uint64 `json:"create_time,omitempty"`
-	UpdateTime      *uint64 `json:"update_time,omitempty"`
+	TransactionID     *string `json:"transaction_id,omitempty"`
+	CategoryID        *string `json:"category_id,omitempty"`
+	AccountID         *string `json:"account_id,omitempty"`
+	Amount            *string `json:"amount,omitempty"`
+	Note              *string `json:"note,omitempty"`
+	TransactionStatus *uint32 `json:"transaction_status,omitempty"`
+	TransactionType   *uint32 `json:"transaction_type,omitempty"`
+	TransactionTime   *uint64 `json:"transaction_time,omitempty"`
+	CreateTime        *uint64 `json:"create_time,omitempty"`
+	UpdateTime        *uint64 `json:"update_time,omitempty"`
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -44,6 +45,13 @@ func (t *Transaction) GetNote() string {
 func (t *Transaction) GetTransactionType() uint32 {
 	if t != nil && t.TransactionType != nil {
 		return *t.TransactionType
+	}
+	return 0
+}
+
+func (t *Transaction) GetTransactionStatus() uint32 {
+	if t != nil && t.TransactionStatus != nil {
+		return *t.TransactionStatus
 	}
 	return 0
 }
@@ -443,3 +451,25 @@ func (m *AggrTransactionsResponse) Set(useCaseRes *transaction.AggrTransactionsR
 	}
 	m.Results = res
 }
+
+type DeleteTransactionRequest struct {
+	TransactionID *string `json:"transaction_id,omitempty"`
+}
+
+func (m *DeleteTransactionRequest) GetTransactionID() string {
+	if m != nil && m.TransactionID != nil {
+		return *m.TransactionID
+	}
+	return ""
+}
+
+func (m *DeleteTransactionRequest) ToUseCaseReq(userID string) *transaction.DeleteTransactionRequest {
+	return &transaction.DeleteTransactionRequest{
+		UserID:        goutil.String(userID),
+		TransactionID: m.TransactionID,
+	}
+}
+
+type DeleteTransactionResponse struct{}
+
+func (m *DeleteTransactionResponse) Set(useCaseRes *transaction.DeleteTransactionResponse) {}

@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrHoldingNotFound = errors.New("holding not found")
+	ErrHoldingNotFound      = errors.New("holding not found")
+	ErrHoldingAlreadyExists = errors.New("holding already exists")
 )
 
 type HoldingRepo interface {

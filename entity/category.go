@@ -106,6 +106,10 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
 		hasUpdate = true
 		c.CategoryName = cu.CategoryName
+
+		defer func() {
+			categoryUpdate.CategoryName = c.CategoryName
+		}()
 	}
 
 	if !hasUpdate {
@@ -119,10 +123,6 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 	c.checkOpts()
 
 	categoryUpdate.UpdateTime = now
-
-	if cu.CategoryName != nil {
-		categoryUpdate.CategoryName = c.CategoryName
-	}
 
 	return
 }

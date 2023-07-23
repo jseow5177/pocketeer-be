@@ -227,16 +227,28 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
 		hasUpdate = true
 		ac.AccountName = acu.AccountName
+
+		defer func() {
+			accountUpdate.AccountName = ac.AccountName
+		}()
 	}
 
 	if acu.Balance != nil && acu.GetBalance() != ac.GetBalance() {
 		hasUpdate = true
 		ac.Balance = acu.Balance
+
+		defer func() {
+			accountUpdate.Balance = ac.Balance
+		}()
 	}
 
 	if acu.Note != nil && acu.GetNote() != ac.GetNote() {
 		hasUpdate = true
 		ac.Note = acu.Note
+
+		defer func() {
+			accountUpdate.Note = ac.Note
+		}()
 	}
 
 	if !hasUpdate {
@@ -251,18 +263,6 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 	}
 
 	accountUpdate.UpdateTime = now
-
-	if acu.AccountName != nil {
-		accountUpdate.AccountName = ac.AccountName
-	}
-
-	if acu.Balance != nil {
-		accountUpdate.Balance = ac.Balance
-	}
-
-	if acu.Note != nil {
-		accountUpdate.Note = ac.Note
-	}
 
 	return
 }

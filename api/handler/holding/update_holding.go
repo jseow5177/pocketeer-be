@@ -21,6 +21,10 @@ var UpdateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
+	"symbol": &validator.String{
+		Optional:  true,
+		UnsetZero: true,
+	},
 })
 
 func (h *holdingHandler) UpdateHolding(ctx context.Context, req *presenter.UpdateHoldingRequest, res *presenter.UpdateHoldingResponse) error {

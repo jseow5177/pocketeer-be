@@ -7,16 +7,17 @@ import (
 )
 
 type Transaction struct {
-	TransactionID   primitive.ObjectID `bson:"_id,omitempty"`
-	UserID          *string            `bson:"user_id,omitempty"`
-	CategoryID      *string            `bson:"category_id,omitempty"`
-	AccountID       *string            `bson:"account_id,omitempty"`
-	Amount          *float64           `bson:"amount,omitempty"`
-	Note            *string            `bson:"note,omitempty"`
-	TransactionType *uint32            `bson:"transaction_type,omitempty"`
-	TransactionTime *uint64            `bson:"transaction_time,omitempty"`
-	CreateTime      *uint64            `bson:"create_time,omitempty"`
-	UpdateTime      *uint64            `bson:"update_time,omitempty"`
+	TransactionID     primitive.ObjectID `bson:"_id,omitempty"`
+	UserID            *string            `bson:"user_id,omitempty"`
+	CategoryID        *string            `bson:"category_id,omitempty"`
+	AccountID         *string            `bson:"account_id,omitempty"`
+	Amount            *float64           `bson:"amount,omitempty"`
+	Note              *string            `bson:"note,omitempty"`
+	TransactionStatus *uint32            `bson:"transaction_status,omitempty"`
+	TransactionType   *uint32            `bson:"transaction_type,omitempty"`
+	TransactionTime   *uint64            `bson:"transaction_time,omitempty"`
+	CreateTime        *uint64            `bson:"create_time,omitempty"`
+	UpdateTime        *uint64            `bson:"update_time,omitempty"`
 }
 
 func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
@@ -26,25 +27,27 @@ func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
 	}
 
 	return &Transaction{
-		TransactionID:   objID,
-		UserID:          t.UserID,
-		CategoryID:      t.CategoryID,
-		AccountID:       t.AccountID,
-		Amount:          t.Amount,
-		Note:            t.Note,
-		TransactionType: t.TransactionType,
-		TransactionTime: t.TransactionTime,
-		CreateTime:      t.CreateTime,
-		UpdateTime:      t.UpdateTime,
+		TransactionID:     objID,
+		UserID:            t.UserID,
+		CategoryID:        t.CategoryID,
+		AccountID:         t.AccountID,
+		Amount:            t.Amount,
+		Note:              t.Note,
+		TransactionStatus: t.TransactionStatus,
+		TransactionType:   t.TransactionType,
+		TransactionTime:   t.TransactionTime,
+		CreateTime:        t.CreateTime,
+		UpdateTime:        t.UpdateTime,
 	}
 }
 
 func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 	return &Transaction{
-		Amount:          tu.Amount,
-		Note:            tu.Note,
-		TransactionTime: tu.TransactionTime,
-		UpdateTime:      tu.UpdateTime,
+		Amount:            tu.Amount,
+		Note:              tu.Note,
+		TransactionTime:   tu.TransactionTime,
+		TransactionStatus: tu.TransactionStatus,
+		UpdateTime:        tu.UpdateTime,
 	}
 }
 
@@ -60,6 +63,7 @@ func ToTransactionEntity(t *Transaction) *entity.Transaction {
 		entity.WithTransactionTime(t.TransactionTime),
 		entity.WithTransactionCreateTime(t.CreateTime),
 		entity.WithTransactionUpdateTime(t.UpdateTime),
+		entity.WithTransactionStatus(t.TransactionStatus),
 	)
 }
 
@@ -103,6 +107,13 @@ func (t *Transaction) GetNote() string {
 		return *t.Note
 	}
 	return ""
+}
+
+func (t *Transaction) GetTransactionStatus() uint32 {
+	if t != nil && t.TransactionStatus != nil {
+		return *t.TransactionStatus
+	}
+	return 0
 }
 
 func (t *Transaction) GetTransactionType() uint32 {

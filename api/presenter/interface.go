@@ -138,15 +138,16 @@ func toTransaction(t *entity.Transaction) *Transaction {
 	}
 
 	return &Transaction{
-		TransactionID:   t.TransactionID,
-		Amount:          amount,
-		CategoryID:      t.CategoryID,
-		AccountID:       t.AccountID,
-		Note:            t.Note,
-		TransactionType: t.TransactionType,
-		TransactionTime: t.TransactionTime,
-		CreateTime:      t.CreateTime,
-		UpdateTime:      t.UpdateTime,
+		TransactionID:     t.TransactionID,
+		Amount:            amount,
+		CategoryID:        t.CategoryID,
+		AccountID:         t.AccountID,
+		Note:              t.Note,
+		TransactionStatus: t.TransactionStatus,
+		TransactionType:   t.TransactionType,
+		TransactionTime:   t.TransactionTime,
+		CreateTime:        t.CreateTime,
+		UpdateTime:        t.UpdateTime,
 	}
 }
 
