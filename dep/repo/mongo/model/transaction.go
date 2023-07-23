@@ -21,6 +21,10 @@ type Transaction struct {
 }
 
 func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
+	if t == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(t.GetTransactionID()) {
 		objID, _ = primitive.ObjectIDFromHex(t.GetTransactionID())
@@ -42,6 +46,10 @@ func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
 }
 
 func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
+	if tu == nil {
+		return nil
+	}
+
 	return &Transaction{
 		Amount:            tu.Amount,
 		Note:              tu.Note,
@@ -52,6 +60,10 @@ func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 }
 
 func ToTransactionEntity(t *Transaction) *entity.Transaction {
+	if t == nil {
+		return nil
+	}
+
 	return entity.NewTransaction(
 		t.GetUserID(),
 		t.GetAccountID(),

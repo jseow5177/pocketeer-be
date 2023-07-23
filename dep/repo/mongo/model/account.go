@@ -19,6 +19,10 @@ type Account struct {
 }
 
 func ToAccountModelFromEntity(ac *entity.Account) *Account {
+	if ac == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(ac.GetAccountID()) {
 		objID, _ = primitive.ObjectIDFromHex(ac.GetAccountID())
@@ -38,6 +42,10 @@ func ToAccountModelFromEntity(ac *entity.Account) *Account {
 }
 
 func ToAccountModelFromUpdate(acu *entity.AccountUpdate) *Account {
+	if acu == nil {
+		return nil
+	}
+
 	return &Account{
 		AccountName: acu.AccountName,
 		Balance:     acu.Balance,
@@ -47,6 +55,10 @@ func ToAccountModelFromUpdate(acu *entity.AccountUpdate) *Account {
 }
 
 func ToAccountEntity(ac *Account) (*entity.Account, error) {
+	if ac == nil {
+		return nil, nil
+	}
+
 	return entity.NewAccount(
 		ac.GetUserID(),
 		entity.WithAccountID(goutil.String(ac.GetAccountID())),

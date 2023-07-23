@@ -1,10 +1,9 @@
 package entity
 
-import "github.com/jseow5177/pockteer-be/pkg/goutil"
-
-const (
-	DefaultSecurityRegion   = "US"
-	DefaultSecurityCurrency = "USD"
+import (
+	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 type SecurityType uint32
@@ -15,6 +14,33 @@ const (
 	SecurityTypeETF
 )
 
+type SecurityUpdate struct {
+	Quote *Quote
+}
+
+func (su *SecurityUpdate) GetQuote() *Quote {
+	if su != nil && su.Quote != nil {
+		return su.Quote
+	}
+	return nil
+}
+
+type SecurityUpdateOption func(su *SecurityUpdate)
+
+func WithUpdateSecurityQuote(quote *Quote) SecurityUpdateOption {
+	return func(su *SecurityUpdate) {
+		su.Quote = quote
+	}
+}
+
+func NewSecurityUpdate(opts ...SecurityUpdateOption) *SecurityUpdate {
+	su := new(SecurityUpdate)
+	for _, opt := range opts {
+		opt(su)
+	}
+	return su
+}
+
 type Security struct {
 	SecurityID   *string
 	Symbol       *string
@@ -22,6 +48,7 @@ type Security struct {
 	SecurityType *uint32
 	Region       *string
 	Currency     *string
+	Quote        *Quote
 }
 
 type SecurityOption = func(s *Security)
@@ -56,13 +83,17 @@ func WithSecurityCurrency(currency *string) SecurityOption {
 	}
 }
 
+func WithSecurityQuote(quote *Quote) SecurityOption {
+	return func(s *Security) {
+		s.Quote = quote
+	}
+}
+
 func NewSecurity(symbol string, opts ...SecurityOption) *Security {
 	s := &Security{
 		Symbol:       goutil.String(symbol),
 		SecurityName: goutil.String(""),
 		SecurityType: goutil.Uint32(uint32(SecurityTypeCommonStock)),
-		Region:       goutil.String(DefaultSecurityRegion),
-		Currency:     goutil.String(DefaultSecurityCurrency),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -116,6 +147,13 @@ func (s *Security) GetCurrency() string {
 	return ""
 }
 
+func (s *Security) GetQuote() *Quote {
+	if s != nil && s.Quote != nil {
+		return s.Quote
+	}
+	return nil
+}
+
 type Quote struct {
 	LatestPrice   *float64
 	Change        *float64 // LatestPrice - PreviousClose
@@ -157,4 +195,21 @@ func (q *Quote) GetUpdateTime() uint64 {
 		return *q.UpdateTime
 	}
 	return 0
+}
+
+// TODO: Have better currency conversion logic
+func (q *Quote) ToSGD() *Quote {
+	var (
+		lp  = util.RoundFloat(q.GetLatestPrice()*config.USDToSGD, config.StandardDP)
+		pc  = util.RoundFloat(q.GetPreviousClose()*config.USDToSGD, config.StandardDP)
+		ch  = util.RoundFloat(lp-pc, config.StandardDP)
+		chp = util.RoundFloat((lp-pc)*100/pc, config.PreciseDP)
+	)
+	return &Quote{
+		LatestPrice:   goutil.Float64(lp),
+		PreviousClose: goutil.Float64(pc),
+		Change:        goutil.Float64(ch),
+		ChangePercent: goutil.Float64(chp),
+		UpdateTime:    q.UpdateTime,
+	}
 }

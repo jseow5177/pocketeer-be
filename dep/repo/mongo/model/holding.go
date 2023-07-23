@@ -22,6 +22,10 @@ type Holding struct {
 }
 
 func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
+	if h == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(h.GetHoldingID()) {
 		objID, _ = primitive.ObjectIDFromHex(h.GetHoldingID())
@@ -42,6 +46,10 @@ func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
 }
 
 func ToHoldingModelFromUpdate(hu *entity.HoldingUpdate) *Holding {
+	if hu == nil {
+		return nil
+	}
+
 	return &Holding{
 		TotalCost:   hu.TotalCost,
 		LatestValue: hu.LatestValue,
@@ -49,6 +57,10 @@ func ToHoldingModelFromUpdate(hu *entity.HoldingUpdate) *Holding {
 }
 
 func ToHoldingEntity(h *Holding) (*entity.Holding, error) {
+	if h == nil {
+		return nil, nil
+	}
+
 	return entity.NewHolding(
 		h.GetUserID(),
 		h.GetAccountID(),

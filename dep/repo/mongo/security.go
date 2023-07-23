@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const securityCollName = "security"
@@ -37,6 +38,27 @@ func (m *securityMongo) CreateMany(ctx context.Context, ss []*entity.Security) e
 	}
 
 	return nil
+}
+
+func (m *securityMongo) Update(ctx context.Context, sf *repo.SecurityFilter, su *entity.SecurityUpdate) error {
+	sm := model.ToSecurityModelFromUpdate(su)
+	if err := m.mColl.update(ctx, sf, sm); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*entity.Security, error) {
+	s := new(model.Security)
+	if err := m.mColl.get(ctx, sf, &s); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, repo.ErrSecurityNotFound
+		}
+		return nil, err
+	}
+
+	return model.ToSecurityEntity(s), nil
 }
 
 func (m *securityMongo) GetMany(ctx context.Context, sf *repo.SecurityFilter) ([]*entity.Security, error) {

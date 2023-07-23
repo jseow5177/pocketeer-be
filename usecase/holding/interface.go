@@ -212,6 +212,12 @@ func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
 	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
 }
 
+func (m *CreateHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {
+	return &repo.SecurityFilter{
+		Symbol: m.Symbol,
+	}
+}
+
 func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
 	return entity.NewHolding(
 		m.GetUserID(),

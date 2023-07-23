@@ -17,6 +17,10 @@ type User struct {
 }
 
 func ToUserModel(u *entity.User) *User {
+	if u == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(u.GetUserID()) {
 		objID, _ = primitive.ObjectIDFromHex(u.GetUserID())
@@ -44,6 +48,10 @@ func ToUserModel(u *entity.User) *User {
 }
 
 func ToUserEntity(u *User) (*entity.User, error) {
+	if u == nil {
+		return nil, nil
+	}
+
 	var decodedHash *string
 	if u.Hash != nil {
 		b, err := goutil.Base64Decode(u.GetHash())

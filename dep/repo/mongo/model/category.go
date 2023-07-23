@@ -16,6 +16,10 @@ type Category struct {
 }
 
 func ToCategoryModelFromEntity(c *entity.Category) *Category {
+	if c == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(c.GetCategoryID()) {
 		objID, _ = primitive.ObjectIDFromHex(c.GetCategoryID())
@@ -32,6 +36,10 @@ func ToCategoryModelFromEntity(c *entity.Category) *Category {
 }
 
 func ToCategoryModelFromUpdate(cu *entity.CategoryUpdate) *Category {
+	if cu == nil {
+		return nil
+	}
+
 	return &Category{
 		CategoryName: cu.CategoryName,
 		UpdateTime:   cu.UpdateTime,
@@ -39,6 +47,10 @@ func ToCategoryModelFromUpdate(cu *entity.CategoryUpdate) *Category {
 }
 
 func ToCategoryEntity(c *Category) *entity.Category {
+	if c == nil {
+		return nil
+	}
+
 	return entity.NewCategory(
 		c.GetUserID(),
 		entity.WithCategoryID(goutil.String(c.GetCategoryID())),

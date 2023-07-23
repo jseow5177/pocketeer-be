@@ -11,7 +11,6 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
-	"github.com/jseow5177/pockteer-be/util"
 
 	finnhub "github.com/Finnhub-Stock-API/finnhub-go/v2"
 )
@@ -62,23 +61,6 @@ func (q *quote) GetT() uint64 {
 		return *q.T
 	}
 	return 0
-}
-
-// TODO: Have better currency conversion logic
-func (q *quote) ToSGD() *quote {
-	var (
-		newC  = util.RoundFloat(q.GetC()*config.USDToSGD, config.StandardDP)
-		newPc = util.RoundFloat(q.GetPc()*config.USDToSGD, config.StandardDP)
-		newD  = util.RoundFloat(newC-newPc, config.StandardDP)
-		newDp = util.RoundFloat((newC-newPc)*100/newPc, config.PreciseDP)
-	)
-	return &quote{
-		C:  goutil.Float64(newC),
-		Pc: goutil.Float64(newPc),
-		D:  goutil.Float64(newD),
-		Dp: goutil.Float64(newDp),
-		T:  q.T,
-	}
 }
 
 var securityTypes = map[string]entity.SecurityType{
@@ -151,14 +133,15 @@ func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilte
 		return nil, err
 	}
 
-	q = q.ToSGD()
+	// to milli
+	t := q.GetT() * 1000
 
 	return &entity.Quote{
 		LatestPrice:   q.C,
 		Change:        q.D,
 		ChangePercent: q.Dp,
 		PreviousClose: q.Pc,
-		UpdateTime:    q.T,
+		UpdateTime:    goutil.Uint64(t),
 	}, nil
 }
 

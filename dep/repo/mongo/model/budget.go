@@ -24,6 +24,10 @@ type BudgetBreakdown struct {
 }
 
 func ToBudgetEntity(b *Budget) *entity.Budget {
+	if b == nil {
+		return nil
+	}
+
 	return &entity.Budget{
 		BudgetID:     goutil.String(b.GetBudgetID()),
 		UserID:       b.UserID,
@@ -56,6 +60,10 @@ func ToBudgetBreakdownMap(breakdowns []*BudgetBreakdown) map[entity.DateInfo]*en
 }
 
 func ToBudgetModel(e *entity.Budget) *Budget {
+	if e == nil {
+		return nil
+	}
+
 	objID := primitive.NewObjectID()
 	if primitive.IsValidObjectID(e.GetBudgetID()) {
 		objID, _ = primitive.ObjectIDFromHex(e.GetBudgetID())
