@@ -2,19 +2,34 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
+var (
+	ErrSecurityNotFound = errors.New("security not found")
+)
+
 type SecurityRepo interface {
 	GetMany(ctx context.Context, sf *SecurityFilter) ([]*entity.Security, error)
+	Get(ctx context.Context, sf *SecurityFilter) (*entity.Security, error)
 
 	CreateMany(ctx context.Context, ss []*entity.Security) error
+	Update(ctx context.Context, sf *SecurityFilter, su *entity.SecurityUpdate) error
 }
 
 type SecurityFilter struct {
 	SymbolRegex *string `filter:"symbol__regex"`
+	Symbol      *string `filter:"symbol"`
 	Paging      *Paging `filter:"-"`
+}
+
+func (f *SecurityFilter) GetSymbol() string {
+	if f != nil && f.Symbol != nil {
+		return *f.Symbol
+	}
+	return ""
 }
 
 func (f *SecurityFilter) GetSymbolRegex() string {

@@ -87,7 +87,7 @@ func (c *SaveSymbols) Run(ctx context.Context) error {
 		batchSize  = 1000
 		batch      = make([]*entity.Security, 0, batchSize)
 		retryCount = 10
-		backoffMs  = 300
+		backOffMs  = 300
 		count      = 0
 	)
 
@@ -99,7 +99,7 @@ func (c *SaveSymbols) Run(ctx context.Context) error {
 
 		if err := goutil.SyncRetry(ctx, func(ctx context.Context) error {
 			return c.securityRepo.CreateMany(ctx, batch)
-		}, retryCount, backoffMs); err != nil {
+		}, retryCount, backOffMs); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to save securities to mongo, err: %v", err)
 			return err
 		}
@@ -112,7 +112,7 @@ func (c *SaveSymbols) Run(ctx context.Context) error {
 	if len(batch) > 0 {
 		if err := goutil.SyncRetry(ctx, func(ctx context.Context) error {
 			return c.securityRepo.CreateMany(ctx, batch)
-		}, retryCount, backoffMs); err != nil {
+		}, retryCount, backOffMs); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to save securities to mongo, err: %v", err)
 			return err
 		}

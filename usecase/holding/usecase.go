@@ -18,22 +18,25 @@ var (
 )
 
 type holdingUseCase struct {
-	accountRepo repo.AccountRepo
-	holdingRepo repo.HoldingRepo
-	lotRepo     repo.LotRepo
-	securityAPI api.SecurityAPI
+	accountRepo  repo.AccountRepo
+	holdingRepo  repo.HoldingRepo
+	lotRepo      repo.LotRepo
+	securityRepo repo.SecurityRepo
+	securityAPI  api.SecurityAPI
 }
 
 func NewHoldingUseCase(
 	accountRepo repo.AccountRepo,
 	holdingRepo repo.HoldingRepo,
 	lotRepo repo.LotRepo,
+	securityRepo repo.SecurityRepo,
 	securityAPI api.SecurityAPI,
 ) UseCase {
 	return &holdingUseCase{
 		accountRepo,
 		holdingRepo,
 		lotRepo,
+		securityRepo,
 		securityAPI,
 	}
 }
@@ -52,6 +55,13 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 
 	if !ac.IsInvestment() {
 		return nil, ErrAccountNotInvestment
+	}
+
+	if !h.IsCustom() {
+		if _, err = uc.securityRepo.Get(ctx, req.ToSecurityFilter()); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
+			return nil, err
+		}
 	}
 
 	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
@@ -149,22 +159,51 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	if aggr.GetTotalCost() != 0 {
 		avgCostPerShare = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.StandardDP)
 	}
-
 	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
 	h.SetTotalShares(aggr.TotalShares)
 	h.SetTotalCost(aggr.TotalCost)
 
-	// Get quote and calculate Total Shares * Current Price
-	quote, err := uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
+	// Get security quote
+	s, err := uc.securityRepo.Get(ctx, &repo.SecurityFilter{
 		Symbol: h.Symbol,
 	})
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
+		log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
 		return err
 	}
-	latestValue := util.RoundFloat(h.GetTotalShares()*quote.GetLatestPrice(), config.StandardDP)
+
+	// If quote is not in Mongo, get from API
+	q := s.Quote
+	if q == nil {
+		q, err = uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
+			Symbol: h.Symbol,
+		})
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
+			return err
+		}
+
+		// cache quote to Mongo, ignore error
+		go func() {
+			ctx = goutil.WithoutCancel(ctx)
+			su := entity.NewSecurityUpdate(
+				entity.WithUpdateSecurityQuote(q),
+			)
+			if err := uc.securityRepo.Update(ctx, &repo.SecurityFilter{
+				Symbol: h.Symbol,
+			}, su); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to cache latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
+			}
+		}()
+	}
+
+	// TODO: Have better currency conversion logic
+	q = q.ToSGD()
+
+	// Calculate value as Total Shares * Current Price
+	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice(), config.StandardDP)
 	h.SetLatestValue(goutil.Float64(latestValue))
-	h.SetQuote(quote)
+	h.SetQuote(q)
 
 	return nil
 }

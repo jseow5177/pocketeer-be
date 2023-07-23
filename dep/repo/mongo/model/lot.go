@@ -19,6 +19,10 @@ type Lot struct {
 }
 
 func ToLotModelFromEntity(l *entity.Lot) *Lot {
+	if l == nil {
+		return nil
+	}
+
 	objID := primitive.NilObjectID
 	if primitive.IsValidObjectID(l.GetLotID()) {
 		objID, _ = primitive.ObjectIDFromHex(l.GetLotID())
@@ -38,6 +42,10 @@ func ToLotModelFromEntity(l *entity.Lot) *Lot {
 }
 
 func ToLotModelFromUpdate(lu *entity.LotUpdate) *Lot {
+	if lu == nil {
+		return nil
+	}
+
 	return &Lot{
 		Shares:       lu.Shares,
 		CostPerShare: lu.CostPerShare,
@@ -47,6 +55,10 @@ func ToLotModelFromUpdate(lu *entity.LotUpdate) *Lot {
 }
 
 func ToLotEntity(l *Lot) *entity.Lot {
+	if l == nil {
+		return nil
+	}
+
 	return entity.NewLot(
 		l.GetUserID(),
 		l.GetHoldingID(),
