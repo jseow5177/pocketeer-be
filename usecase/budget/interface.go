@@ -2,200 +2,76 @@ package budget
 
 import (
 	"context"
-	"time"
 
-	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type UseCase interface {
 	GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error)
 	GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error)
-	SetBudget(ctx context.Context, req *SetBudgetRequest) (*SetBudgetResponse, error)
-	GetBudgetWithCategories(ctx context.Context, req *GetBudgetWithCategoriesRequest) (*GetBudgetWithCategoriesResponse, error)
+
+	CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error)
 }
 
-type GetBudgetsRequest struct {
-	UserID *string
-	Date   time.Time
+type CreateBudgetRequest struct {
+	CategoryID *string
+	UserID     *string
+	BudgetType *uint32
+	Amount     *float64
 }
 
-type GetBudgetsResponse struct {
-	Budgets []*entity.Budget
-}
-
-type GetBudgetRequest struct {
-	UserID   *string
-	BudgetID *string
-	Date     time.Time
-}
-
-type GetBudgetResponse struct {
-	Budget *entity.Budget
-}
-
-type SetBudgetRequest struct {
-	UserID         *string
-	BudgetID       *string
-	BudgetName     *string
-	BudgetType     *uint32
-	BudgetAmount   *float64
-	CategoryIDs    []string
-	RangeStartDate time.Time
-	RangeEndDate   time.Time
-}
-
-type SetBudgetResponse struct{}
-
-func (m *GetBudgetsRequest) ToBudgetFilter() *repo.BudgetFilter {
-	return &repo.BudgetFilter{
-		UserID: m.UserID,
-	}
-}
-
-func (m *GetBudgetRequest) ToBudgetFilter() *repo.BudgetFilter {
-	return &repo.BudgetFilter{
-		UserID:   m.UserID,
-		BudgetID: m.BudgetID,
-	}
-}
-
-func (m *SetBudgetRequest) ToBudgetFilter() *repo.BudgetFilter {
-	return &repo.BudgetFilter{
-		UserID:   m.UserID,
-		BudgetID: m.BudgetID,
-	}
-}
-
-// Getters ----------------------------------------------------------------------
-func (m *GetBudgetsRequest) GetUserID() string {
+func (m *CreateBudgetRequest) GetUserID() string {
 	if m != nil && m.UserID != nil {
 		return *m.UserID
 	}
 	return ""
 }
 
-func (m *GetBudgetsRequest) GetDate() time.Time {
-	if m != nil {
-		return m.Date
-	}
-	return time.Time{}
-}
-
-func (m *GetBudgetRequest) GetDate() time.Time {
-	if m != nil {
-		return m.Date
-	}
-	return time.Time{}
-}
-
-func (m *GetBudgetRequest) GetBudgetID() string {
-	if m != nil && m.BudgetID != nil {
-		return *m.BudgetID
+func (m *CreateBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
 	}
 	return ""
 }
 
-func (m *GetBudgetResponse) GetBudget() *entity.Budget {
-	if m != nil {
-		return m.Budget
-	}
-	return nil
-}
-
-func (m *SetBudgetRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *SetBudgetRequest) GetBudgetID() string {
-	if m != nil && m.BudgetID != nil {
-		return *m.BudgetID
-	}
-	return ""
-}
-
-func (m *SetBudgetRequest) GetBudgetName() string {
-	if m != nil && m.BudgetName != nil {
-		return *m.BudgetName
-	}
-	return ""
-}
-
-func (m *SetBudgetRequest) GetBudgetType() uint32 {
+func (m *CreateBudgetRequest) GetBudgetType() uint32 {
 	if m != nil && m.BudgetType != nil {
 		return *m.BudgetType
 	}
 	return 0
 }
 
-func (m *SetBudgetRequest) GetBudgetAmount() float64 {
-	if m != nil && m.BudgetAmount != nil {
-		return *m.BudgetAmount
+func (m *CreateBudgetRequest) GetAmount() float64 {
+	if m != nil && m.Amount != nil {
+		return *m.Amount
 	}
 	return 0
 }
 
-func (m *SetBudgetRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
+func (m *CreateBudgetRequest) ToBudgetEntity() *entity.Budget {
+	return entity.NewBudget(
+		m.GetUserID(),
+		m.GetCategoryID(),
+		entity.WithBudgetType(m.BudgetType),
+		entity.WithBudgetAmount(m.Amount),
+	)
 }
 
-func (m *SetBudgetRequest) GetRangeStartDate() time.Time {
-	return m.RangeStartDate
+type CreateBudgetResponse struct {
+	Budget *entity.Budget
 }
 
-func (m *SetBudgetRequest) GetRangeEndDate() time.Time {
-	return m.RangeEndDate
-}
-
-type GetBudgetWithCategoriesRequest struct {
-	UserID   *string
-	BudgetID *string
-	Date     time.Time
-}
-
-func (m *GetBudgetWithCategoriesRequest) GetDate() time.Time {
-	if m != nil {
-		return m.Date
-	}
-	return time.Time{}
-}
-
-func (m *GetBudgetWithCategoriesRequest) GetBudgetID() string {
-	if m != nil && m.BudgetID != nil {
-		return *m.BudgetID
-	}
-	return ""
-}
-
-func (m *GetBudgetWithCategoriesRequest) ToGetBudgetRequest() *GetBudgetRequest {
-	return &GetBudgetRequest{
-		UserID:   m.UserID,
-		BudgetID: m.BudgetID,
-		Date:     m.Date,
-	}
-}
-
-type GetBudgetWithCategoriesResponse struct {
-	Budget     *entity.Budget
-	Categories []*entity.Category
-}
-
-func (m *GetBudgetWithCategoriesResponse) GetBudget() *entity.Budget {
-	if m != nil {
+func (m *CreateBudgetResponse) GetBudget() *entity.Budget {
+	if m != nil && m.Budget != nil {
 		return m.Budget
 	}
 	return nil
 }
 
-func (m *GetBudgetWithCategoriesResponse) GetCategories() []*entity.Category {
-	if m != nil {
-		return m.Categories
-	}
-	return nil
-}
+type GetBudgetsRequest struct{}
+
+type GetBudgetsResponse struct{}
+
+type GetBudgetRequest struct{}
+
+type GetBudgetResponse struct{}

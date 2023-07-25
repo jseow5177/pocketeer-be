@@ -488,21 +488,6 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// set budget
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathSetBudget,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.SetBudgetRequest),
-			Res:       new(presenter.SetBudgetResponse),
-			Validator: bh.SetBudgetValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.SetBudget(ctx, req.(*presenter.SetBudgetRequest), res.(*presenter.SetBudgetResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
 	// ========== Security ========== //
 
 	securityHandler := sh.NewSecurityHandler(s.securityUseCase)

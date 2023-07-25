@@ -421,7 +421,6 @@ func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrT
 		UserID:           goutil.String(userID),
 		TransactionTypes: m.TransactionTypes,
 		CategoryIDs:      m.CategoryIDs,
-		BudgetIDs:        m.BudgetIDs,
 		TransactionTime: &common.UInt64Filter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,
