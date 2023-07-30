@@ -14,6 +14,7 @@ type Budget struct {
 	Amount       *string `json:"amount,omitempty"`
 	CreateTime   *uint64 `json:"create_time,omitempty"`
 	UpdateTime   *uint64 `json:"update_time,omitempty"`
+	Used         *string `json:"float,omitempty"`
 }
 
 func (b *Budget) GetBudgetID() string {
@@ -51,6 +52,13 @@ func (b *Budget) GetAmount() string {
 	return ""
 }
 
+func (b *Budget) GetUsed() string {
+	if b != nil && b.Used != nil {
+		return *b.Used
+	}
+	return ""
+}
+
 func (b *Budget) GetCreateTime() uint64 {
 	if b != nil && b.CreateTime != nil {
 		return *b.CreateTime
@@ -65,10 +73,54 @@ func (b *Budget) GetUpdateTime() uint64 {
 	return 0
 }
 
-type CreateBudgetRequest struct {
+type GetBudgetRequest struct {
 	CategoryID *string `json:"category_id,omitempty"`
-	BudgetType *uint32 `json:"budget_type,omitempty"`
-	Amount     *string `json:"amount,omitempty"`
+	BudgetDate *string `json:"budget_date,omitempty"`
+}
+
+func (m *GetBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetBudgetRequest) ToUseCaseReq(userID string) *budget.GetBudgetRequest {
+	return &budget.GetBudgetRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+		BudgetDate: m.BudgetDate,
+	}
+}
+
+type GetBudgetResponse struct {
+	Budget *Budget `json:"budget,omitempty"`
+}
+
+func (m *GetBudgetResponse) GetBudget() *Budget {
+	if m != nil && m.Budget != nil {
+		return m.Budget
+	}
+	return nil
+}
+
+func (m *GetBudgetResponse) Set(res *budget.GetBudgetResponse) {
+	m.Budget = toBudget(res.Budget)
+}
+
+type CreateBudgetRequest struct {
+	BudgetDate   *string `json:"budget_date,omitempty"`
+	CategoryID   *string `json:"category_id,omitempty"`
+	BudgetType   *uint32 `json:"budget_type,omitempty"`
+	BudgetRepeat *uint32 `json:"budget_repeat,omitempty"`
+	Amount       *string `json:"amount,omitempty"`
 }
 
 func (m *CreateBudgetRequest) GetCategoryID() string {
@@ -78,9 +130,23 @@ func (m *CreateBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
+func (m *CreateBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
 func (m *CreateBudgetRequest) GetBudgetType() uint32 {
 	if m != nil && m.BudgetType != nil {
 		return *m.BudgetType
+	}
+	return 0
+}
+
+func (m *CreateBudgetRequest) GetBudgetRepeat() uint32 {
+	if m != nil && m.BudgetRepeat != nil {
+		return *m.BudgetRepeat
 	}
 	return 0
 }
@@ -99,10 +165,12 @@ func (m *CreateBudgetRequest) ToUseCaseReq(userID string) *budget.CreateBudgetRe
 		amount = goutil.Float64(a)
 	}
 	return &budget.CreateBudgetRequest{
-		UserID:     goutil.String(userID),
-		CategoryID: m.CategoryID,
-		Amount:     amount,
-		BudgetType: m.BudgetType,
+		UserID:       goutil.String(userID),
+		CategoryID:   m.CategoryID,
+		Amount:       amount,
+		BudgetType:   m.BudgetType,
+		BudgetDate:   m.BudgetDate,
+		BudgetRepeat: m.BudgetRepeat,
 	}
 }
 
@@ -121,10 +189,42 @@ func (m *CreateBudgetResponse) Set(res *budget.CreateBudgetResponse) {
 	m.Budget = toBudget(res.Budget)
 }
 
-type GetBudgetRequest struct{}
+type DeleteBudgetRequest struct {
+	BudgetDate   *string `json:"budget_date,omitempty"`
+	CategoryID   *string `json:"category_id,omitempty"`
+	BudgetRepeat *uint32 `json:"budget_repeat,omitempty"`
+}
 
-type GetBudgetResponse struct{}
+func (m *DeleteBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
 
-type GetBudgetsRequest struct{}
+func (m *DeleteBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
 
-type GetBudgetsResponse struct{}
+func (m *DeleteBudgetRequest) GetBudgetRepeat() uint32 {
+	if m != nil && m.BudgetRepeat != nil {
+		return *m.BudgetRepeat
+	}
+	return 0
+}
+
+func (m *DeleteBudgetRequest) ToUseCaseReq(userID string) *budget.DeleteBudgetRequest {
+	return &budget.DeleteBudgetRequest{
+		UserID:       goutil.String(userID),
+		CategoryID:   m.CategoryID,
+		BudgetDate:   m.BudgetDate,
+		BudgetRepeat: m.BudgetRepeat,
+	}
+}
+
+type DeleteBudgetResponse struct{}
+
+func (m *DeleteBudgetResponse) Set(res *budget.DeleteBudgetResponse) {}

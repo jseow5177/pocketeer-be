@@ -1,15 +1,38 @@
 package entity
 
 import (
+	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 )
+
+var (
+	ErrBudgetNotAllowed      = errors.New("budget not allowed under category")
+	ErrUnsupportedBudgetType = errors.New("unsupported budget type")
+	ErrBudgetDateEmpty       = errors.New("date cannot be empty")
+)
+
+type BudgetRepeat uint32
+
+const (
+	BudgetRepeatNow BudgetRepeat = iota
+	BudgetRepeatNowToFuture
+	BudgetRepeatAllTime
+)
+
+var BudgetRepeats = map[uint32]string{
+	uint32(BudgetRepeatNow):         "for a period only",
+	uint32(BudgetRepeatNowToFuture): "for a period and all future periods",
+	uint32(BudgetRepeatAllTime):     "for all periods past and future",
+}
 
 type BudgetType uint32
 
 const (
-	BudgetTypeMonth BudgetType = iota
+	BudgetTypeInvalid BudgetType = iota
+	BudgetTypeMonth
 	BudgetTypeYear
 )
 
@@ -21,19 +44,46 @@ var BudgetTypes = map[uint32]string{
 type BudgetStatus uint32
 
 const (
-	BudgetStatusNormal BudgetStatus = iota
+	BudgetStatusInvalid BudgetStatus = iota
+	BudgetStatusNormal
 	BudgetStatusDeleted
 )
 
+type IBudget interface {
+	CheckOpts() error
+}
+
+type MonthBudget struct {
+	Budget *Budget
+}
+
+func (b *MonthBudget) CheckOpts() (err error) {
+	return b.Budget.checkDate(util.GetMonthDateRange)
+}
+
+type YearBudget struct {
+	Budget *Budget
+}
+
+func (b *YearBudget) CheckOpts() (err error) {
+	return b.Budget.checkDate(util.GetYearDateRange)
+}
+
 type Budget struct {
+	UserID       *string
 	BudgetID     *string
 	CategoryID   *string
-	UserID       *string
-	BudgetType   *uint32
 	Amount       *float64
+	BudgetType   *uint32
 	BudgetStatus *uint32
+	StartDate    *uint64
+	EndDate      *uint64
 	CreateTime   *uint64
 	UpdateTime   *uint64
+
+	BudgetDate   *string
+	BudgetRepeat *uint32
+	Used         *float64
 }
 
 type BudgetOption = func(b *Budget)
@@ -41,6 +91,12 @@ type BudgetOption = func(b *Budget)
 func WithBudgetID(budgetID *string) BudgetOption {
 	return func(b *Budget) {
 		b.BudgetID = budgetID
+	}
+}
+
+func WithBudgetRepeat(budgetPeriod *uint32) BudgetOption {
+	return func(b *Budget) {
+		b.BudgetRepeat = budgetPeriod
 	}
 }
 
@@ -62,6 +118,24 @@ func WithBudgetAmount(amount *float64) BudgetOption {
 	}
 }
 
+func WithBudgetStartDate(startDate *uint64) BudgetOption {
+	return func(b *Budget) {
+		b.StartDate = startDate
+	}
+}
+
+func WithBudgetEndDate(endDate *uint64) BudgetOption {
+	return func(b *Budget) {
+		b.EndDate = endDate
+	}
+}
+
+func WithBudgetDate(budgetTime *string) BudgetOption {
+	return func(b *Budget) {
+		b.BudgetDate = budgetTime
+	}
+}
+
 func WithBudgetCreateTime(createTime *uint64) BudgetOption {
 	return func(b *Budget) {
 		b.CreateTime = createTime
@@ -74,13 +148,14 @@ func WithBudgetUpdateTime(updateTime *uint64) BudgetOption {
 	}
 }
 
-func NewBudget(userID, categoryID string, opts ...BudgetOption) *Budget {
+func NewBudget(userID, categoryID string, opts ...BudgetOption) (*Budget, error) {
 	now := uint64(time.Now().UnixMilli())
 	b := &Budget{
 		UserID:       goutil.String(userID),
 		CategoryID:   goutil.String(categoryID),
 		BudgetType:   goutil.Uint32(uint32(BudgetTypeMonth)),
 		BudgetStatus: goutil.Uint32(uint32(BudgetStatusNormal)),
+		BudgetRepeat: goutil.Uint32(uint32(BudgetRepeatNow)),
 		Amount:       goutil.Float64(0),
 		CreateTime:   goutil.Uint64(now),
 		UpdateTime:   goutil.Uint64(now),
@@ -89,12 +164,64 @@ func NewBudget(userID, categoryID string, opts ...BudgetOption) *Budget {
 		opt(b)
 	}
 
-	b.checkOpts()
+	if err := b.checkOpts(); err != nil {
+		return nil, err
+	}
 
-	return b
+	return b, nil
 }
 
-func (b *Budget) checkOpts() {}
+func (b *Budget) checkOpts() error {
+	ib, err := b.ToIBudget()
+	if err != nil {
+		return err
+	}
+	return ib.CheckOpts()
+}
+
+type getDateRangeFn func(s string) (startDate, endDate uint64, err error)
+
+func (b *Budget) checkDate(getDateRange getDateRangeFn) error {
+	// no-op if already set
+	if b.StartDate != nil && b.EndDate != nil {
+		return nil
+	}
+
+	if b.MustSetBudgetDate() && b.GetBudgetDate() == "" {
+		return ErrBudgetDateEmpty
+	}
+
+	var (
+		startDate uint64
+		endDate   uint64
+		err       error
+	)
+	switch b.GetBudgetRepeat() {
+	case uint32(BudgetRepeatNow):
+		startDate, endDate, err = getDateRange(b.GetBudgetDate())
+	case uint32(BudgetRepeatNowToFuture):
+		startDate, _, err = getDateRange(b.GetBudgetDate())
+	case uint32(BudgetRepeatAllTime):
+	}
+	if err != nil {
+		return err
+	}
+
+	b.StartDate = goutil.Uint64(startDate)
+	b.EndDate = goutil.Uint64(endDate)
+
+	return nil
+}
+
+func (b *Budget) ToIBudget() (IBudget, error) {
+	switch b.GetBudgetType() {
+	case uint32(BudgetTypeMonth):
+		return &MonthBudget{b}, nil
+	case uint32(BudgetTypeYear):
+		return &YearBudget{b}, nil
+	}
+	return nil, ErrUnsupportedBudgetType
+}
 
 func (b *Budget) GetBudgetID() string {
 	if b != nil && b.BudgetID != nil {
@@ -128,6 +255,13 @@ func (b *Budget) GetBudgetType() uint32 {
 	return 0
 }
 
+func (b *Budget) GetBudgetRepeat() uint32 {
+	if b != nil && b.BudgetRepeat != nil {
+		return *b.BudgetRepeat
+	}
+	return 0
+}
+
 func (b *Budget) GetBudgetStatus() uint32 {
 	if b != nil && b.BudgetStatus != nil {
 		return *b.BudgetStatus
@@ -142,6 +276,20 @@ func (b *Budget) GetAmount() float64 {
 	return 0
 }
 
+func (b *Budget) GetUsed() float64 {
+	if b != nil && b.Used != nil {
+		return *b.Used
+	}
+	return 0
+}
+
+func (b *Budget) GetBudgetDate() string {
+	if b != nil && b.BudgetDate != nil {
+		return *b.BudgetDate
+	}
+	return ""
+}
+
 func (b *Budget) GetCreateTime() uint64 {
 	if b != nil && b.CreateTime != nil {
 		return *b.CreateTime
@@ -154,4 +302,20 @@ func (b *Budget) GetUpdateTime() uint64 {
 		return *b.UpdateTime
 	}
 	return 0
+}
+
+func (b *Budget) CanBudgetUnderCategory(c *Category) (bool, error) {
+	if !c.IsExpense() {
+		return false, ErrBudgetNotAllowed
+	}
+	return true, nil
+}
+
+func (b *Budget) MustSetBudgetDate() bool {
+	return b.GetBudgetRepeat() == uint32(BudgetRepeatNow) ||
+		b.GetBudgetRepeat() == uint32(BudgetRepeatNowToFuture)
+}
+
+func (b *Budget) IsDeleted() bool {
+	return b.GetBudgetStatus() == uint32(BudgetStatusDeleted)
 }

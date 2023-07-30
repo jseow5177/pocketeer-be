@@ -50,7 +50,7 @@ func (m *lotMongo) Update(ctx context.Context, lf *repo.LotFilter, lu *entity.Lo
 
 func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, error) {
 	lm := new(model.Lot)
-	if err := m.mColl.get(ctx, lf, &lm); err != nil {
+	if err := m.mColl.get(ctx, &lm, lf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrLotNotFound
 		}
@@ -61,7 +61,7 @@ func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, er
 }
 
 func (m *lotMongo) GetMany(ctx context.Context, lf *repo.LotFilter) ([]*entity.Lot, error) {
-	res, err := m.mColl.getMany(ctx, lf, nil, new(model.Lot))
+	res, err := m.mColl.getMany(ctx, new(model.Lot), nil, lf)
 	if err != nil {
 		return nil, err
 	}

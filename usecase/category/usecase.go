@@ -4,17 +4,26 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/rs/zerolog/log"
 )
 
 type categoryUseCase struct {
-	categoryRepo repo.CategoryRepo
+	categoryRepo    repo.CategoryRepo
+	transactionRepo repo.TransactionRepo
+	budgetUseCase   budget.UseCase
 }
 
-func NewCategoryUseCase(categoryRepo repo.CategoryRepo) UseCase {
+func NewCategoryUseCase(categoryRepo repo.CategoryRepo, transactionRepo repo.TransactionRepo, budgetUseCase budget.UseCase) UseCase {
 	return &categoryUseCase{
 		categoryRepo,
+		transactionRepo,
+		budgetUseCase,
 	}
+}
+
+func (uc *categoryUseCase) GetCategoryUsage(ctx context.Context, req *GetCategoryUsageRequest) (*GetCategoryUsageResponse, error) {
+	return nil, nil
 }
 
 func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequest) (*GetCategoryResponse, error) {
@@ -63,7 +72,7 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 	}
 
 	return &UpdateCategoryResponse{
-		c,
+		Category: c,
 	}, nil
 }
 

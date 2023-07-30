@@ -118,9 +118,9 @@ func (s *server) Start() error {
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
 	// init use cases
-	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
+	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
@@ -458,6 +458,36 @@ func (s *server) registerRoutes() http.Handler {
 
 	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
 
+	// create budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateBudgetRequest),
+			Res:       new(presenter.CreateBudgetResponse),
+			Validator: bh.CreateBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// delete budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteBudgetRequest),
+			Res:       new(presenter.DeleteBudgetResponse),
+			Validator: bh.DeleteBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.DeleteBudget(ctx, req.(*presenter.DeleteBudgetRequest), res.(*presenter.DeleteBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get budget
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetBudget,
@@ -468,21 +498,6 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: bh.GetBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.GetBudget(ctx, req.(*presenter.GetBudgetRequest), res.(*presenter.GetBudgetResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
-	// get budgets
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetBudgets,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.GetBudgetsRequest),
-			Res:       new(presenter.GetBudgetsResponse),
-			Validator: bh.GetBudgetsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.GetBudgets(ctx, req.(*presenter.GetBudgetsRequest), res.(*presenter.GetBudgetsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

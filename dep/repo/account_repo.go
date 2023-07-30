@@ -31,7 +31,7 @@ type AccountFilter struct {
 
 type AccountFilterOption = func(acf *AccountFilter)
 
-func WitAccountID(accountID *string) AccountFilterOption {
+func WithAccountID(accountID *string) AccountFilterOption {
 	return func(acf *AccountFilter) {
 		acf.AccountID = accountID
 	}

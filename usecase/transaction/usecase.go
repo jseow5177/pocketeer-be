@@ -46,7 +46,7 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 	}
 
 	return &GetTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 
@@ -58,8 +58,8 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	}
 
 	return &GetTransactionsResponse{
-		ts,
-		req.Paging,
+		Transactions: ts,
+		Paging:       req.Paging,
 	}, nil
 }
 
@@ -166,7 +166,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	}
 
 	return &CreateTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 
@@ -181,7 +181,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
-			t,
+			Transaction: t,
 		}, nil
 	}
 
@@ -222,7 +222,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	}
 
 	return &UpdateTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 

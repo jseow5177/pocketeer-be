@@ -172,3 +172,7 @@ func (c *Category) GetUpdateTime() uint64 {
 	}
 	return 0
 }
+
+func (c *Category) IsExpense() bool {
+	return c.GetCategoryType() == uint32(TransactionTypeExpense)
+}

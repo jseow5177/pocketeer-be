@@ -127,33 +127,8 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
-func (mc *MongoColl) upsert(ctx context.Context, uniqueKey string, doc interface{}) (id string, err error) {
-	keyValue := getUniqueKeyValue(doc, uniqueKey)
-
-	filter := bson.M{uniqueKey: keyValue}
-	update := bson.M{"$set": removeUniqueKeyField(doc, uniqueKey)}
-
-	upsert := mongo.NewUpdateOneModel()
-	upsert.SetFilter(filter)
-	upsert.SetUpdate(update)
-	upsert.SetUpsert(true)
-
-	opts := options.Update().SetUpsert(true)
-	result, err := mc.coll.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		return "", err
-	}
-
-	if result.UpsertedID != nil {
-		objID := result.UpsertedID.(primitive.ObjectID)
-		id = objID.Hex()
-	}
-
-	return id, nil
-}
-
-func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interface{}) error {
-	f := mongoutil.BuildFilter(filter)
+func (mc *MongoColl) get(ctx context.Context, model interface{}, filters ...interface{}) error {
+	f := mongoutil.BuildFilters(filters...)
 
 	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
 		return err
@@ -162,8 +137,8 @@ func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interfac
 	return nil
 }
 
-func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts filter.FilterOptions, model interface{}) ([]interface{}, error) {
-	f := mongoutil.BuildFilter(filter)
+func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts filter.FilterOptions, filters ...interface{}) ([]interface{}, error) {
+	f := mongoutil.BuildFilters(filters...)
 	opts := mongoutil.BuildFilterOptions(filterOpts)
 
 	cursor, err := mc.coll.Find(ctx, f, opts)
@@ -213,22 +188,4 @@ func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy strin
 	}
 
 	return allRes, nil
-}
-
-func getUniqueKeyValue(doc interface{}, uniqueKey string) interface{} {
-	value := bson.M{}
-	bsonBytes, _ := bson.Marshal(doc)
-	_ = bson.Unmarshal(bsonBytes, &value)
-
-	return value[uniqueKey]
-}
-
-func removeUniqueKeyField(doc interface{}, uniqueKey string) interface{} {
-	value := bson.M{}
-	bsonBytes, _ := bson.Marshal(doc)
-	_ = bson.Unmarshal(bsonBytes, &value)
-
-	delete(value, uniqueKey)
-
-	return value
 }

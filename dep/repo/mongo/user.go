@@ -35,7 +35,7 @@ func (m *userMongo) Create(ctx context.Context, u *entity.User) (string, error) 
 
 func (m *userMongo) Get(ctx context.Context, uf *repo.UserFilter) (*entity.User, error) {
 	u := new(model.User)
-	if err := m.mColl.get(ctx, uf, &u); err != nil {
+	if err := m.mColl.get(ctx, &u, uf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrUserNotFound
 		}

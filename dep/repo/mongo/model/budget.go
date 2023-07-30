@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -12,8 +13,29 @@ type Budget struct {
 	BudgetType   *uint32            `bson:"budget_type,omitempty"`
 	Amount       *float64           `bson:"amount,omitempty"`
 	BudgetStatus *uint32            `bson:"budget_status,omitempty"`
+	StartDate    *uint64            `bson:"start_date,omitempty"`
+	EndDate      *uint64            `bson:"end_date,omitempty"`
 	CreateTime   *uint64            `bson:"create_time,omitempty"`
 	UpdateTime   *uint64            `bson:"update_time,omitempty"`
+}
+
+func ToBudgetEntity(b *Budget) (*entity.Budget, error) {
+	if b == nil {
+		return nil, nil
+	}
+
+	return entity.NewBudget(
+		b.GetUserID(),
+		b.GetCategoryID(),
+		entity.WithBudgetID(goutil.String(b.GetBudgetID())),
+		entity.WithBudgetAmount(b.Amount),
+		entity.WithBudgetType(b.BudgetType),
+		entity.WithBudgetStatus(b.BudgetStatus),
+		entity.WithBudgetStartDate(b.StartDate),
+		entity.WithBudgetEndDate(b.EndDate),
+		entity.WithBudgetCreateTime(b.CreateTime),
+		entity.WithBudgetUpdateTime(b.UpdateTime),
+	)
 }
 
 func ToBudgetModelFromEntity(b *entity.Budget) *Budget {
@@ -33,6 +55,8 @@ func ToBudgetModelFromEntity(b *entity.Budget) *Budget {
 		BudgetType:   b.BudgetType,
 		BudgetStatus: b.BudgetStatus,
 		Amount:       b.Amount,
+		StartDate:    b.StartDate,
+		EndDate:      b.EndDate,
 		CreateTime:   b.CreateTime,
 		UpdateTime:   b.UpdateTime,
 	}

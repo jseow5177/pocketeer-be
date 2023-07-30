@@ -50,7 +50,7 @@ func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu 
 
 func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
 	c := new(model.Category)
-	if err := m.mColl.get(ctx, cf, &c); err != nil {
+	if err := m.mColl.get(ctx, &c, cf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrCategoryNotFound
 		}
@@ -61,7 +61,7 @@ func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*enti
 }
 
 func (m *categoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
-	res, err := m.mColl.getMany(ctx, cf, nil, new(model.Category))
+	res, err := m.mColl.getMany(ctx, new(model.Category), nil, cf)
 	if err != nil {
 		return nil, err
 	}

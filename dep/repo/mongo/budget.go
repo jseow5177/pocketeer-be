@@ -9,7 +9,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
-const budgetCollName = "budget"
+const budgetCollName = "budgetV2"
 
 type budgetMongo struct {
 	mColl *MongoColl
@@ -32,10 +32,25 @@ func (m *budgetMongo) Create(ctx context.Context, b *entity.Budget) (string, err
 	return id, nil
 }
 
-func (m *budgetMongo) Get(ctx context.Context, bf *repo.BudgetFilter) (*entity.Budget, error) {
-	return nil, nil
-}
+func (m *budgetMongo) GetMany(ctx context.Context, paging *repo.Paging, bfs ...*repo.BudgetFilter) ([]*entity.Budget, error) {
+	ibfs := make([]interface{}, 0)
+	for _, bf := range bfs {
+		ibfs = append(ibfs, bf)
+	}
 
-func (m *budgetMongo) GetMany(ctx context.Context, bf *repo.BudgetFilter) ([]*entity.Budget, error) {
-	return nil, nil
+	res, err := m.mColl.getMany(ctx, new(model.Budget), paging, ibfs...)
+	if err != nil {
+		return nil, err
+	}
+
+	bs := make([]*entity.Budget, 0, len(res))
+	for _, r := range res {
+		b, err := model.ToBudgetEntity(r.(*model.Budget))
+		if err != nil {
+			return nil, err
+		}
+		bs = append(bs, b)
+	}
+
+	return bs, nil
 }

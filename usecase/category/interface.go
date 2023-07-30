@@ -11,8 +11,48 @@ type UseCase interface {
 	GetCategory(ctx context.Context, req *GetCategoryRequest) (*GetCategoryResponse, error)
 	GetCategories(ctx context.Context, req *GetCategoriesRequest) (*GetCategoriesResponse, error)
 
+	GetCategoryUsage(ctx context.Context, req *GetCategoryUsageRequest) (*GetCategoryUsageResponse, error)
+
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error)
+}
+
+type GetCategoryUsageRequest struct {
+	UserID     *string
+	CategoryID *string
+	Date       *string
+}
+
+func (m *GetCategoryUsageRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetCategoryUsageRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetCategoryUsageRequest) GetDate() string {
+	if m != nil && m.Date != nil {
+		return *m.Date
+	}
+	return ""
+}
+
+type GetCategoryUsageResponse struct {
+	Category *entity.Category
+}
+
+func (m *GetCategoryUsageResponse) GetCategory() *entity.Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
 }
 
 type GetCategoryRequest struct {

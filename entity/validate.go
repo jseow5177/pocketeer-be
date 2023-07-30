@@ -18,8 +18,24 @@ var (
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
 	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
+	ErrInvalidBudgetRepeats    = errors.New("invalid budget periods")
 	ErrMustBePositive          = errors.New("must be positive")
 )
+
+func CheckBudgetRepeat(budgetPeriod uint32) error {
+	if _, ok := BudgetRepeats[budgetPeriod]; !ok {
+		return ErrInvalidBudgetRepeats
+	}
+	return nil
+}
+
+func CheckDateStr(s string) error {
+	_, err := util.ParseDateStr(s)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func CheckHoldingType(holdingType uint32) error {
 	if _, ok := HoldingTypes[holdingType]; !ok {

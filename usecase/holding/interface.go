@@ -209,7 +209,7 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 }
 
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
-	return repo.NewAccountFilter(m.GetUserID(), repo.WitAccountID(m.AccountID))
+	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
 }
 
 func (m *CreateHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {

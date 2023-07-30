@@ -51,7 +51,7 @@ func (m *securityMongo) Update(ctx context.Context, sf *repo.SecurityFilter, su 
 
 func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*entity.Security, error) {
 	s := new(model.Security)
-	if err := m.mColl.get(ctx, sf, &s); err != nil {
+	if err := m.mColl.get(ctx, &s, sf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrSecurityNotFound
 		}
@@ -62,7 +62,7 @@ func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*enti
 }
 
 func (m *securityMongo) GetMany(ctx context.Context, sf *repo.SecurityFilter) ([]*entity.Security, error) {
-	res, err := m.mColl.getMany(ctx, sf, sf.Paging, new(model.Security))
+	res, err := m.mColl.getMany(ctx, new(model.Security), sf.Paging, sf)
 	if err != nil {
 		return nil, err
 	}

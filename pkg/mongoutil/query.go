@@ -165,3 +165,27 @@ func BuildFilter(filter interface{}) bson.D {
 
 	return bson.D{{Key: Prefix("and"), Value: conds}}
 }
+
+func BuildFilters(filters ...interface{}) bson.D {
+	if len(filters) == 0 {
+		return nil
+	}
+
+	var f bson.D
+	if len(filters) > 1 {
+		fs := make(bson.A, 0)
+		for _, filter := range filters {
+			fs = append(fs, BuildFilter(filter))
+		}
+		f = bson.D{
+			{
+				Key:   Prefix("or"),
+				Value: fs,
+			},
+		}
+	} else {
+		f = BuildFilter(filters[0])
+	}
+
+	return f
+}

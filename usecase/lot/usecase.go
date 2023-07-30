@@ -43,7 +43,7 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 	}
 
 	return &CreateLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -67,7 +67,7 @@ func (uc *lotUseCase) UpdateLot(ctx context.Context, req *UpdateLotRequest) (*Up
 	}
 
 	return &UpdateLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -79,7 +79,7 @@ func (uc *lotUseCase) GetLot(ctx context.Context, req *GetLotRequest) (*GetLotRe
 	}
 
 	return &GetLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -91,6 +91,6 @@ func (uc *lotUseCase) GetLots(ctx context.Context, req *GetLotsRequest) (*GetLot
 	}
 
 	return &GetLotsResponse{
-		ls,
+		Lots: ls,
 	}, nil
 }

@@ -50,7 +50,7 @@ func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu 
 
 func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entity.Account, error) {
 	ac := new(model.Account)
-	if err := m.mColl.get(ctx, acf, &ac); err != nil {
+	if err := m.mColl.get(ctx, &ac, acf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrAccountNotFound
 		}
@@ -61,7 +61,7 @@ func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entit
 }
 
 func (m *accountMongo) GetMany(ctx context.Context, acf *repo.AccountFilter) ([]*entity.Account, error) {
-	res, err := m.mColl.getMany(ctx, acf, nil, new(model.Account))
+	res, err := m.mColl.getMany(ctx, new(model.Account), nil, acf)
 	if err != nil {
 		return nil, err
 	}

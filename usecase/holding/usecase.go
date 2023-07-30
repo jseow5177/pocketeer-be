@@ -70,7 +70,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	}
 
 	return &CreateHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -87,7 +87,7 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 	}
 
 	return &GetHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -106,7 +106,7 @@ func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsReque
 	}
 
 	return &GetHoldingsResponse{
-		hs,
+		Holdings: hs,
 	}, nil
 }
 

@@ -50,7 +50,7 @@ func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *e
 
 func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity.Holding, error) {
 	h := new(model.Holding)
-	if err := m.mColl.get(ctx, hf, &h); err != nil {
+	if err := m.mColl.get(ctx, &h, hf); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrHoldingNotFound
 		}
@@ -61,7 +61,7 @@ func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity
 }
 
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {
-	res, err := m.mColl.getMany(ctx, hf, nil, new(model.Holding))
+	res, err := m.mColl.getMany(ctx, new(model.Holding), nil, hf)
 	if err != nil {
 		return nil, err
 	}
