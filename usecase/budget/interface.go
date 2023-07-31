@@ -177,31 +177,43 @@ func (m *GetBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
-func (m *GetBudgetRequest) ToBudgetFilters() ([]*repo.BudgetFilter, *repo.Paging, error) {
+func (m *GetBudgetRequest) ToBudgetQuery() (*repo.BudgetQuery, *repo.Paging, error) {
 	t, err := util.ParseDateStrToInt(m.GetBudgetDate())
 	if err != nil {
 		return nil, nil, err
 	}
-	return []*repo.BudgetFilter{
-			{
-				UserID:       m.UserID,
-				CategoryID:   m.CategoryID,
-				StartDateLte: goutil.Uint64(t),
-				EndDateGte:   goutil.Uint64(t),
+
+	return &repo.BudgetQuery{
+			Queries: []*repo.BudgetQuery{
+				{
+					Filters: []*repo.BudgetFilter{
+						{
+							StartDateLte: goutil.Uint64(t),
+							EndDateGte:   goutil.Uint64(t),
+						},
+						{
+							StartDateLte: goutil.Uint64(t),
+							EndDate:      goutil.Uint64(0),
+						},
+						{
+							StartDate: goutil.Uint64(0),
+							EndDate:   goutil.Uint64(0),
+						},
+					},
+					Op: filter.Or,
+				},
+				{
+					Filters: []*repo.BudgetFilter{
+						{
+							UserID:     m.UserID,
+							CategoryID: m.CategoryID,
+						},
+					},
+				},
 			},
-			{
-				UserID:       m.UserID,
-				CategoryID:   m.CategoryID,
-				StartDateLte: goutil.Uint64(t),
-				EndDate:      goutil.Uint64(0),
-			},
-			{
-				UserID:     m.UserID,
-				CategoryID: m.CategoryID,
-				StartDate:  goutil.Uint64(0),
-				EndDate:    goutil.Uint64(0),
-			},
-		}, &repo.Paging{
+			Op: filter.And,
+		},
+		&repo.Paging{
 			Limit: goutil.Uint32(1),
 			Sorts: []filter.Sort{
 				&repo.Sort{
@@ -223,6 +235,53 @@ func (m *GetBudgetResponse) GetBudget() *entity.Budget {
 	return nil
 }
 
-type GetBudgetsRequest struct{}
+type UpdateBudgetRequest struct{}
 
-type GetBudgetsResponse struct{}
+type UpdateBudgetResponse struct {
+	Budget *entity.Budget
+}
+
+func (m *UpdateBudgetResponse) GetBudget() *entity.Budget {
+	if m != nil && m.Budget != nil {
+		return m.Budget
+	}
+	return nil
+}
+
+type GetBudgetsRequest struct {
+	UserID      *string
+	CategoryIDs []string
+	BudgetDate  *string
+}
+
+func (m *GetBudgetsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetBudgetsRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetBudgetsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
+type GetBudgetsResponse struct {
+	Budgets []*entity.Budget
+}
+
+func (m *GetBudgetsResponse) GetBudgets() []*entity.Budget {
+	if m != nil && m.Budgets != nil {
+		return m.Budgets
+	}
+	return nil
+}

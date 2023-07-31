@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
 const budgetCollName = "budgetV2"
@@ -32,13 +33,13 @@ func (m *budgetMongo) Create(ctx context.Context, b *entity.Budget) (string, err
 	return id, nil
 }
 
-func (m *budgetMongo) GetMany(ctx context.Context, paging *repo.Paging, bfs ...*repo.BudgetFilter) ([]*entity.Budget, error) {
-	ibfs := make([]interface{}, 0)
-	for _, bf := range bfs {
-		ibfs = append(ibfs, bf)
+func (m *budgetMongo) GetMany(ctx context.Context, paging *repo.Paging, bq *repo.BudgetQuery) ([]*entity.Budget, error) {
+	q, err := mongoutil.BuildQuery(bq)
+	if err != nil {
+		return nil, err
 	}
 
-	res, err := m.mColl.getMany(ctx, new(model.Budget), paging, ibfs...)
+	res, err := m.mColl.getMany(ctx, new(model.Budget), paging, q)
 	if err != nil {
 		return nil, err
 	}

@@ -127,21 +127,18 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
-func (mc *MongoColl) get(ctx context.Context, model interface{}, filters ...interface{}) error {
-	f := mongoutil.BuildFilters(filters...)
-
-	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
+func (mc *MongoColl) get(ctx context.Context, model interface{}, filter bson.D) error {
+	if err := mc.coll.FindOne(ctx, filter).Decode(model); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts filter.FilterOptions, filters ...interface{}) ([]interface{}, error) {
-	f := mongoutil.BuildFilters(filters...)
+func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts filter.FilterOptions, filter bson.D) ([]interface{}, error) {
 	opts := mongoutil.BuildFilterOptions(filterOpts)
 
-	cursor, err := mc.coll.Find(ctx, f, opts)
+	cursor, err := mc.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +157,7 @@ func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts 
 	return res, nil
 }
 
-func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
+func (mc *MongoColl) aggr(ctx context.Context, filter bson.D, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
 	pipeline := mongoutil.BuildAggrPipeline(filter, groupBy, aggrs...)
 
 	cursor, err := mc.coll.Aggregate(ctx, pipeline)

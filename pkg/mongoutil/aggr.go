@@ -93,12 +93,11 @@ func NewAggr(name string, op aggrOp, opt *AggrOpt) *Aggr {
 	}
 }
 
-func BuildAggrPipeline(filter interface{}, groupBy string, aggrs ...*Aggr) primitive.A {
+func BuildAggrPipeline(filter bson.D, groupBy string, aggrs ...*Aggr) primitive.A {
 	pipeline := make(bson.A, 0)
 
 	if filter != nil {
-		f := BuildFilter(filter)
-		pipeline = append(pipeline, bson.D{{Key: Prefix("match"), Value: f}})
+		pipeline = append(pipeline, bson.D{{Key: Prefix("match"), Value: filter}})
 	}
 
 	be := bson.E{

@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -49,8 +50,10 @@ func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu 
 }
 
 func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
+	f := mongoutil.BuildFilter(cf)
+
 	c := new(model.Category)
-	if err := m.mColl.get(ctx, &c, cf); err != nil {
+	if err := m.mColl.get(ctx, &c, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrCategoryNotFound
 		}
@@ -61,7 +64,9 @@ func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*enti
 }
 
 func (m *categoryMongo) GetMany(ctx context.Context, cf *repo.CategoryFilter) ([]*entity.Category, error) {
-	res, err := m.mColl.getMany(ctx, new(model.Category), nil, cf)
+	f := mongoutil.BuildFilter(cf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Category), nil, f)
 	if err != nil {
 		return nil, err
 	}

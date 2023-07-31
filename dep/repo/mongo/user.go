@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -34,8 +35,10 @@ func (m *userMongo) Create(ctx context.Context, u *entity.User) (string, error) 
 }
 
 func (m *userMongo) Get(ctx context.Context, uf *repo.UserFilter) (*entity.User, error) {
+	f := mongoutil.BuildFilter(uf)
+
 	u := new(model.User)
-	if err := m.mColl.get(ctx, &u, uf); err != nil {
+	if err := m.mColl.get(ctx, &u, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrUserNotFound
 		}

@@ -1,6 +1,7 @@
 package mongoutil
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,12 +14,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	ErrInvalidBoolOp = errors.New("[mongoutil] invalid bool op")
+	ErrInvalidQuery  = errors.New("[mongoutil] must have one of filters or queries")
+
+	boolOps = map[string]string{
+		"and": "and",
+		"or":  "or",
+	}
+)
+
 var sortOrders = map[string]int{
 	"asc":  1,
 	"desc": -1,
 }
 
-var supportedFilterOps = map[string]string{
+var filterOps = map[string]string{
 	"eq":         "equal",
 	"ne":         "not equal",
 	"gt":         "greater than",
@@ -120,7 +131,7 @@ func BuildFilter(filter interface{}) bson.D {
 		var op string
 		if len(parts) > 1 {
 			op = parts[1]
-			if _, ok := supportedFilterOps[op]; !ok {
+			if _, ok := filterOps[op]; !ok {
 				continue
 			}
 		} else {
@@ -166,26 +177,41 @@ func BuildFilter(filter interface{}) bson.D {
 	return bson.D{{Key: Prefix("and"), Value: conds}}
 }
 
-func BuildFilters(filters ...interface{}) bson.D {
-	if len(filters) == 0 {
-		return nil
+func BuildQuery(query filter.Query) (bson.D, error) {
+	composedQuery := make(bson.D, 0)
+
+	if len(query.GetFilters()) == 0 && len(query.GetQueries()) == 0 {
+		return nil, ErrInvalidQuery
 	}
 
-	var f bson.D
-	if len(filters) > 1 {
+	var (
+		boolOp = "and" // default to and
+		ok     bool
+	)
+	if query.GetOp() != "" {
+		boolOp, ok = boolOps[string(query.GetOp())]
+		if !ok {
+			return nil, ErrInvalidBoolOp
+		}
+	}
+
+	if len(query.GetFilters()) != 0 {
 		fs := make(bson.A, 0)
-		for _, filter := range filters {
+		for _, filter := range query.GetFilters() {
 			fs = append(fs, BuildFilter(filter))
 		}
-		f = bson.D{
-			{
-				Key:   Prefix("or"),
-				Value: fs,
-			},
+		composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: fs})
+	} else if len(query.GetQueries()) != 0 {
+		qs := make(bson.A, 0)
+		for _, query := range query.GetQueries() {
+			q, err := BuildQuery(query)
+			if err != nil {
+				return nil, err
+			}
+			qs = append(qs, q)
 		}
-	} else {
-		f = BuildFilter(filters[0])
+		composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: qs})
 	}
 
-	return f
+	return composedQuery, nil
 }

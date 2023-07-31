@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 )
 
 var (
@@ -13,9 +14,35 @@ var (
 )
 
 type BudgetRepo interface {
-	GetMany(ctx context.Context, paging *Paging, bf ...*BudgetFilter) ([]*entity.Budget, error)
+	GetMany(ctx context.Context, paging *Paging, bq *BudgetQuery) ([]*entity.Budget, error)
 
 	Create(ctx context.Context, b *entity.Budget) (string, error)
+}
+
+type BudgetQuery struct {
+	Filters []*BudgetFilter
+	Queries []*BudgetQuery
+	Op      filter.BoolOp
+}
+
+func (q *BudgetQuery) GetQueries() []filter.Query {
+	qs := make([]filter.Query, 0)
+	for _, bq := range q.Queries {
+		qs = append(qs, bq)
+	}
+	return qs
+}
+
+func (q *BudgetQuery) GetFilters() []interface{} {
+	ibfs := make([]interface{}, 0)
+	for _, bf := range q.Filters {
+		ibfs = append(ibfs, bf)
+	}
+	return ibfs
+}
+
+func (q *BudgetQuery) GetOp() filter.BoolOp {
+	return q.Op
 }
 
 type BudgetFilter struct {

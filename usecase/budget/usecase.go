@@ -59,12 +59,12 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 }
 
 func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
-	bfs, paging, err := req.ToBudgetFilters()
+	q, paging, err := req.ToBudgetQuery()
 	if err != nil {
 		return nil, err
 	}
 
-	bs, err := uc.budgetRepo.GetMany(ctx, paging, bfs...)
+	bs, err := uc.budgetRepo.GetMany(ctx, paging, q)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get budget from repo, err: %v", err)
 		return nil, err
