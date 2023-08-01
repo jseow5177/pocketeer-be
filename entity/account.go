@@ -218,6 +218,12 @@ func (ac *Account) checkOpts() error {
 		return ErrSetBalanceForbidden
 	}
 
+	if ac.IsDebt() {
+		if ac.GetBalance() > 0 {
+			ac.Balance = goutil.Float64(-ac.GetBalance())
+		}
+	}
+
 	return nil
 }
 

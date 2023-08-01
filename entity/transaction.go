@@ -199,13 +199,13 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 }
 
 func (t *Transaction) checkOpts() {
-	if t.GetTransactionType() == uint32(TransactionTypeExpense) {
+	if t.IsExpense() {
 		if t.GetAmount() > 0 {
 			t.Amount = goutil.Float64(-t.GetAmount())
 		}
 	}
 
-	if t.GetTransactionType() == uint32(TransactionTypeIncome) {
+	if t.IsIncome() {
 		t.Amount = goutil.Float64(math.Abs(t.GetAmount()))
 	}
 }
@@ -357,6 +357,14 @@ func (t *Transaction) GetUpdateTime() uint64 {
 		return *t.UpdateTime
 	}
 	return 0
+}
+
+func (t *Transaction) IsExpense() bool {
+	return t.GetTransactionType() == uint32(TransactionTypeExpense)
+}
+
+func (t *Transaction) IsIncome() bool {
+	return t.GetTransactionType() == uint32(TransactionTypeIncome)
 }
 
 func GetTransactionTypeByAmount(amount float64) TransactionType {

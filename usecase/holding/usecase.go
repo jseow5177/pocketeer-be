@@ -198,12 +198,11 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	}
 
 	// Calculate value as Total Shares * Current Price
-	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice(), config.StandardDP)
-
-	// We support only USD holdings now
-	// Convert value from USD to SGD
+	// We support only USD holdings now, so convert value from USD to SGD
 	// TODO: Have better currency handling
-	h.SetLatestValue(goutil.Float64(latestValue * config.USDToSGD))
+	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice()*config.USDToSGD, config.StandardDP)
+
+	h.SetLatestValue(goutil.Float64(latestValue))
 
 	h.SetQuote(q)
 
