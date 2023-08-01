@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -29,9 +30,15 @@ func CheckBudgetRepeat(budgetPeriod uint32) error {
 	return nil
 }
 
-func CheckDateStr(s string) error {
-	_, err := util.ParseDateStr(s)
-	if err != nil {
+func CheckDateStr(date string) error {
+	if _, err := util.ParseDateStr(date); err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckTimezone(timezone string) error {
+	if _, err := time.LoadLocation(timezone); err != nil {
 		return err
 	}
 	return nil

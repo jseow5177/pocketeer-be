@@ -27,6 +27,7 @@ const (
 	PathAggrTransactions  = PathV1Prefix + "aggr_transactions"
 
 	PathGetBudget    = PathV1Prefix + "get_budget"
+	PathUpdateBudget = PathV1Prefix + "update_budget"
 	PathGetBudgets   = PathV1Prefix + "get_budgets"
 	PathCreateBudget = PathV1Prefix + "create_budget"
 	PathDeleteBudget = PathV1Prefix + "delete_budget"

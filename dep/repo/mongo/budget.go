@@ -33,13 +33,13 @@ func (m *budgetMongo) Create(ctx context.Context, b *entity.Budget) (string, err
 	return id, nil
 }
 
-func (m *budgetMongo) GetMany(ctx context.Context, paging *repo.Paging, bq *repo.BudgetQuery) ([]*entity.Budget, error) {
+func (m *budgetMongo) GetMany(ctx context.Context, bq *repo.BudgetQuery) ([]*entity.Budget, error) {
 	q, err := mongoutil.BuildQuery(bq)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := m.mColl.getMany(ctx, new(model.Budget), paging, q)
+	res, err := m.mColl.getMany(ctx, new(model.Budget), bq.Paging, q)
 	if err != nil {
 		return nil, err
 	}

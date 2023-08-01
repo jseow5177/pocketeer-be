@@ -16,6 +16,7 @@ type UseCase interface {
 	GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error)
 
 	CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error)
+	UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error)
 	DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error)
 }
 
@@ -154,6 +155,7 @@ type GetBudgetRequest struct {
 	UserID     *string
 	CategoryID *string
 	BudgetDate *string
+	Timezone   *string
 }
 
 func (m *GetBudgetRequest) GetUserID() string {
@@ -177,43 +179,58 @@ func (m *GetBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
-func (m *GetBudgetRequest) ToBudgetQuery() (*repo.BudgetQuery, *repo.Paging, error) {
+func (m *GetBudgetRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetBudgetRequest) ToTransactionFilter(userID string, startUnix, endUnix uint64) *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:             goutil.String(userID),
+		CategoryID:         m.CategoryID,
+		TransactionTimeGte: goutil.Uint64(startUnix),
+		TransactionTimeLte: goutil.Uint64(endUnix),
+	}
+}
+
+func (m *GetBudgetRequest) ToBudgetQuery() (*repo.BudgetQuery, error) {
 	t, err := util.ParseDateStrToInt(m.GetBudgetDate())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	return &repo.BudgetQuery{
-			Queries: []*repo.BudgetQuery{
-				{
-					Filters: []*repo.BudgetFilter{
-						{
-							StartDateLte: goutil.Uint64(t),
-							EndDateGte:   goutil.Uint64(t),
-						},
-						{
-							StartDateLte: goutil.Uint64(t),
-							EndDate:      goutil.Uint64(0),
-						},
-						{
-							StartDate: goutil.Uint64(0),
-							EndDate:   goutil.Uint64(0),
-						},
+		Queries: []*repo.BudgetQuery{
+			{
+				Filters: []*repo.BudgetFilter{
+					{
+						StartDateLte: goutil.Uint64(t),
+						EndDateGte:   goutil.Uint64(t),
 					},
-					Op: filter.Or,
+					{
+						StartDateLte: goutil.Uint64(t),
+						EndDate:      goutil.Uint64(0),
+					},
+					{
+						StartDate: goutil.Uint64(0),
+						EndDate:   goutil.Uint64(0),
+					},
 				},
-				{
-					Filters: []*repo.BudgetFilter{
-						{
-							UserID:     m.UserID,
-							CategoryID: m.CategoryID,
-						},
+				Op: filter.Or,
+			},
+			{
+				Filters: []*repo.BudgetFilter{
+					{
+						UserID:     m.UserID,
+						CategoryID: m.CategoryID,
 					},
 				},
 			},
-			Op: filter.And,
 		},
-		&repo.Paging{
+		Op: filter.And,
+		Paging: &repo.Paging{
 			Limit: goutil.Uint32(1),
 			Sorts: []filter.Sort{
 				&repo.Sort{
@@ -221,7 +238,8 @@ func (m *GetBudgetRequest) ToBudgetQuery() (*repo.BudgetQuery, *repo.Paging, err
 					Order: goutil.String(config.OrderDesc),
 				},
 			},
-		}, nil
+		},
+	}, nil
 }
 
 type GetBudgetResponse struct {
@@ -235,7 +253,56 @@ func (m *GetBudgetResponse) GetBudget() *entity.Budget {
 	return nil
 }
 
-type UpdateBudgetRequest struct{}
+type UpdateBudgetRequest struct {
+	CategoryID   *string
+	UserID       *string
+	BudgetDate   *string
+	BudgetType   *uint32
+	BudgetRepeat *uint32
+	Amount       *float64
+}
+
+func (m *UpdateBudgetRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *UpdateBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *UpdateBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *UpdateBudgetRequest) GetBudgetType() uint32 {
+	if m != nil && m.BudgetType != nil {
+		return *m.BudgetType
+	}
+	return 0
+}
+
+func (m *UpdateBudgetRequest) GetBudgetRepeat() uint32 {
+	if m != nil && m.BudgetRepeat != nil {
+		return *m.BudgetRepeat
+	}
+	return 0
+}
+
+func (m *UpdateBudgetRequest) GetAmount() float64 {
+	if m != nil && m.Amount != nil {
+		return *m.Amount
+	}
+	return 0
+}
 
 type UpdateBudgetResponse struct {
 	Budget *entity.Budget
@@ -250,8 +317,9 @@ func (m *UpdateBudgetResponse) GetBudget() *entity.Budget {
 
 type GetBudgetsRequest struct {
 	UserID      *string
-	CategoryIDs []string
 	BudgetDate  *string
+	CategoryIDs []string
+	Timezone    *string
 }
 
 func (m *GetBudgetsRequest) GetUserID() string {
@@ -273,6 +341,26 @@ func (m *GetBudgetsRequest) GetCategoryIDs() []string {
 		return m.CategoryIDs
 	}
 	return nil
+}
+
+func (m *GetBudgetsRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetBudgetsRequest) ToGetBudgetRequests(userID string) []*GetBudgetRequest {
+	reqs := make([]*GetBudgetRequest, 0)
+	for _, catID := range m.CategoryIDs {
+		reqs = append(reqs, &GetBudgetRequest{
+			UserID:     goutil.String(userID),
+			CategoryID: goutil.String(catID),
+			BudgetDate: m.BudgetDate,
+			Timezone:   m.Timezone,
+		})
+	}
+	return reqs
 }
 
 type GetBudgetsResponse struct {

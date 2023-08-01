@@ -200,7 +200,11 @@ func BuildQuery(query filter.Query) (bson.D, error) {
 		for _, filter := range query.GetFilters() {
 			fs = append(fs, BuildFilter(filter))
 		}
-		composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: fs})
+		if len(fs) > 1 {
+			composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: fs})
+		} else {
+			composedQuery = fs[0].(bson.D)
+		}
 	} else if len(query.GetQueries()) != 0 {
 		qs := make(bson.A, 0)
 		for _, query := range query.GetQueries() {
@@ -210,7 +214,11 @@ func BuildQuery(query filter.Query) (bson.D, error) {
 			}
 			qs = append(qs, q)
 		}
-		composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: qs})
+		if len(qs) > 1 {
+			composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: qs})
+		} else {
+			composedQuery = qs[0].(bson.D)
+		}
 	}
 
 	return composedQuery, nil

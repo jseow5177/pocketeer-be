@@ -22,10 +22,6 @@ func NewCategoryUseCase(categoryRepo repo.CategoryRepo, transactionRepo repo.Tra
 	}
 }
 
-func (uc *categoryUseCase) GetCategoryUsage(ctx context.Context, req *GetCategoryUsageRequest) (*GetCategoryUsageResponse, error) {
-	return nil, nil
-}
-
 func (uc *categoryUseCase) GetCategory(ctx context.Context, req *GetCategoryRequest) (*GetCategoryResponse, error) {
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {

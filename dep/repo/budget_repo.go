@@ -14,7 +14,7 @@ var (
 )
 
 type BudgetRepo interface {
-	GetMany(ctx context.Context, paging *Paging, bq *BudgetQuery) ([]*entity.Budget, error)
+	GetMany(ctx context.Context, bq *BudgetQuery) ([]*entity.Budget, error)
 
 	Create(ctx context.Context, b *entity.Budget) (string, error)
 }
@@ -23,6 +23,7 @@ type BudgetQuery struct {
 	Filters []*BudgetFilter
 	Queries []*BudgetQuery
 	Op      filter.BoolOp
+	Paging  *Paging
 }
 
 func (q *BudgetQuery) GetQueries() []filter.Query {

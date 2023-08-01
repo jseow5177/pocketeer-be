@@ -58,7 +58,7 @@ type MonthBudget struct {
 }
 
 func (b *MonthBudget) CheckOpts() (err error) {
-	return b.Budget.checkDate(util.GetMonthDateRange)
+	return b.Budget.checkDate(util.GetMonthRangeAsDate)
 }
 
 type YearBudget struct {
@@ -66,7 +66,7 @@ type YearBudget struct {
 }
 
 func (b *YearBudget) CheckOpts() (err error) {
-	return b.Budget.checkDate(util.GetYearDateRange)
+	return b.Budget.checkDate(util.GetYearRangeAsDate)
 }
 
 type Budget struct {
@@ -83,7 +83,7 @@ type Budget struct {
 
 	BudgetDate   *string
 	BudgetRepeat *uint32
-	Used         *float64
+	UsedAmount   *float64
 }
 
 type BudgetOption = func(b *Budget)
@@ -179,7 +179,7 @@ func (b *Budget) checkOpts() error {
 	return ib.CheckOpts()
 }
 
-type getDateRangeFn func(s string) (startDate, endDate uint64, err error)
+type getDateRangeFn func(date, timezone string) (startDate, endDate uint64, err error)
 
 func (b *Budget) checkDate(getDateRange getDateRangeFn) error {
 	// no-op if already set
@@ -198,9 +198,9 @@ func (b *Budget) checkDate(getDateRange getDateRangeFn) error {
 	)
 	switch b.GetBudgetRepeat() {
 	case uint32(BudgetRepeatNow):
-		startDate, endDate, err = getDateRange(b.GetBudgetDate())
+		startDate, endDate, err = getDateRange(b.GetBudgetDate(), "")
 	case uint32(BudgetRepeatNowToFuture):
-		startDate, _, err = getDateRange(b.GetBudgetDate())
+		startDate, _, err = getDateRange(b.GetBudgetDate(), "")
 	case uint32(BudgetRepeatAllTime):
 	}
 	if err != nil {
@@ -276,11 +276,15 @@ func (b *Budget) GetAmount() float64 {
 	return 0
 }
 
-func (b *Budget) GetUsed() float64 {
-	if b != nil && b.Used != nil {
-		return *b.Used
+func (b *Budget) GetUsedAmount() float64 {
+	if b != nil && b.UsedAmount != nil {
+		return *b.UsedAmount
 	}
 	return 0
+}
+
+func (b *Budget) SetUsedAmount(usedAmount *float64) {
+	b.UsedAmount = usedAmount
 }
 
 func (b *Budget) GetBudgetDate() string {
@@ -318,4 +322,12 @@ func (b *Budget) MustSetBudgetDate() bool {
 
 func (b *Budget) IsDeleted() bool {
 	return b.GetBudgetStatus() == uint32(BudgetStatusDeleted)
+}
+
+func (b *Budget) IsMonth() bool {
+	return b.GetBudgetType() == uint32(BudgetTypeMonth)
+}
+
+func (b *Budget) IsYear() bool {
+	return b.GetBudgetType() == uint32(BudgetTypeYear)
 }

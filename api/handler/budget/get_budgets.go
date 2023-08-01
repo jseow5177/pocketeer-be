@@ -10,9 +10,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var GetBudgetValidator = validator.MustForm(map[string]validator.Validator{
-	"category_id": &validator.String{
-		Optional: false,
+var GetBudgetsValidator = validator.MustForm(map[string]validator.Validator{
+	"category_ids": &validator.Slice{
+		Optional:  false,
+		Validator: &validator.String{},
 	},
 	"budget_date": &validator.String{
 		Optional:   false,
@@ -24,10 +25,10 @@ var GetBudgetValidator = validator.MustForm(map[string]validator.Validator{
 	},
 })
 
-func (h *budgetHandler) GetBudget(ctx context.Context, req *presenter.GetBudgetRequest, res *presenter.GetBudgetResponse) error {
+func (h *budgetHandler) GetBudgets(ctx context.Context, req *presenter.GetBudgetsRequest, res *presenter.GetBudgetsResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.budgetUseCase.GetBudget(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.budgetUseCase.GetBudgets(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get budget, err: %v", err)
 		return err

@@ -119,7 +119,7 @@ func (s *server) Start() error {
 
 	// init use cases
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
-	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
+	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo, s.transactionRepo)
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
@@ -498,6 +498,36 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: bh.GetBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.GetBudget(ctx, req.(*presenter.GetBudgetRequest), res.(*presenter.GetBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get budgets
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetBudgets,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetBudgetsRequest),
+			Res:       new(presenter.GetBudgetsResponse),
+			Validator: bh.GetBudgetsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.GetBudgets(ctx, req.(*presenter.GetBudgetsRequest), res.(*presenter.GetBudgetsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// update budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateBudgetRequest),
+			Res:       new(presenter.UpdateBudgetResponse),
+			Validator: bh.UpdateBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.UpdateBudget(ctx, req.(*presenter.UpdateBudgetRequest), res.(*presenter.UpdateBudgetResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
