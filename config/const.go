@@ -14,10 +14,12 @@ const (
 	PathUpdateAccount = PathV1Prefix + "update_account"
 	PathGetAccounts   = PathV1Prefix + "get_accounts"
 
-	PathCreateCategory = PathV1Prefix + "create_category"
-	PathUpdateCategory = PathV1Prefix + "update_category"
-	PathGetCategory    = PathV1Prefix + "get_category"
-	PathGetCategories  = PathV1Prefix + "get_categories"
+	PathCreateCategory      = PathV1Prefix + "create_category"
+	PathUpdateCategory      = PathV1Prefix + "update_category"
+	PathGetCategory         = PathV1Prefix + "get_category"
+	PathGetCategoryBudget   = PathV1Prefix + "get_category_budget"
+	PathGetCategories       = PathV1Prefix + "get_categories"
+	PathGetCategoriesBudget = PathV1Prefix + "get_categories_budget"
 
 	PathCreateTransaction = PathV1Prefix + "create_transaction"
 	PathUpdateTransaction = PathV1Prefix + "update_transaction"

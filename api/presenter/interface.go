@@ -93,7 +93,16 @@ func toCategory(c *entity.Category) *Category {
 		CategoryType: c.CategoryType,
 		CreateTime:   c.CreateTime,
 		UpdateTime:   c.UpdateTime,
+		Budget:       toBudget(c.Budget),
 	}
+}
+
+func toCategories(cs []*entity.Category) []*Category {
+	categories := make([]*Category, len(cs))
+	for idx, c := range cs {
+		categories[idx] = toCategory(c)
+	}
+	return categories
 }
 
 func toUser(u *entity.User) *User {

@@ -309,7 +309,7 @@ func (b *Budget) GetUpdateTime() uint64 {
 }
 
 func (b *Budget) CanBudgetUnderCategory(c *Category) (bool, error) {
-	if !c.IsExpense() {
+	if !c.CanAddBudget() {
 		return false, ErrBudgetNotAllowed
 	}
 	return true, nil

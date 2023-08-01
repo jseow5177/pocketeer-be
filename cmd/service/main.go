@@ -234,6 +234,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// get category budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategoryBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoryBudgetRequest),
+			Res:       new(presenter.GetCategoryBudgetResponse),
+			Validator: ch.GetCategoryBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.GetCategoryBudget(ctx, req.(*presenter.GetCategoryBudgetRequest), res.(*presenter.GetCategoryBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get categories
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetCategories,
@@ -244,6 +259,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: ch.GetCategoriesValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return categoryHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get categories budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategoriesBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoriesBudgetRequest),
+			Res:       new(presenter.GetCategoriesBudgetResponse),
+			Validator: ch.GetCategoriesBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.GetCategoriesBudget(ctx, req.(*presenter.GetCategoriesBudgetRequest), res.(*presenter.GetCategoriesBudgetResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
