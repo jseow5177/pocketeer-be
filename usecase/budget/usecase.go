@@ -33,7 +33,7 @@ func NewBudgetUseCase(
 }
 
 func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error) {
-	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
+	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +68,22 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 }
 
 func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error) {
+	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Budget == nil {
+		return nil, repo.ErrBudgetNotFound
+	}
+
 	return nil, nil
 }
 
-func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
+// Fetch budget from repo, won't compute used amount.
+//
+// Timezone is not needed.
+func (uc *budgetUseCase) getBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
 	q, err := req.ToBudgetQuery()
 	if err != nil {
 		return nil, err
@@ -87,6 +99,19 @@ func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (
 	if len(bs) > 0 && !bs[0].IsDeleted() {
 		b = bs[0]
 	}
+
+	return &GetBudgetResponse{
+		Budget: b,
+	}, nil
+}
+
+// Fetch budget from repo and compute the used amount.
+func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
+	res, err := uc.getBudget(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	b := res.Budget
 
 	if b == nil {
 		return new(GetBudgetResponse), nil
@@ -170,7 +195,7 @@ func (uc *budgetUseCase) GetBudgets(ctx context.Context, req *GetBudgetsRequest)
 }
 
 func (uc *budgetUseCase) DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error) {
-	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
+	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}

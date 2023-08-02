@@ -72,13 +72,22 @@ func (m *CreateBudgetRequest) GetAmount() float64 {
 }
 
 func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
+	startDate, endDate, err := entity.GetBudgetDateRange(
+		m.GetBudgetDate(),
+		m.GetBudgetType(),
+		m.GetBudgetRepeat(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return entity.NewBudget(
 		m.GetUserID(),
 		m.GetCategoryID(),
-		entity.WithBudgetDate(m.BudgetDate),
 		entity.WithBudgetAmount(m.Amount),
 		entity.WithBudgetType(m.BudgetType),
-		entity.WithBudgetRepeat(m.BudgetRepeat),
+		entity.WithBudgetStartDate(goutil.Uint64(startDate)),
+		entity.WithBudgetEndDate(goutil.Uint64(endDate)),
 	)
 }
 
@@ -129,6 +138,20 @@ func (m *DeleteBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
+func (m *DeleteBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *DeleteBudgetRequest) GetBudgetRepeat() uint32 {
+	if m != nil && m.BudgetRepeat != nil {
+		return *m.BudgetRepeat
+	}
+	return 0
+}
+
 func (m *DeleteBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
 	return &GetBudgetRequest{
 		UserID:     m.UserID,
@@ -138,14 +161,22 @@ func (m *DeleteBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
 }
 
 func (m *DeleteBudgetRequest) ToBudgetEntity(budgetType uint32) (*entity.Budget, error) {
+	startDate, endDate, err := entity.GetBudgetDateRange(
+		m.GetBudgetDate(),
+		budgetType,
+		m.GetBudgetRepeat(),
+	)
+	if err != nil {
+		return nil, err
+	}
 	return entity.NewBudget(
 		m.GetUserID(),
 		m.GetCategoryID(),
-		entity.WithBudgetDate(m.BudgetDate),
 		entity.WithBudgetAmount(goutil.Float64(0)),
 		entity.WithBudgetType(goutil.Uint32(budgetType)),
-		entity.WithBudgetRepeat(m.BudgetRepeat),
 		entity.WithBudgetStatus(goutil.Uint32(uint32(entity.BudgetStatusDeleted))),
+		entity.WithBudgetStartDate(goutil.Uint64(startDate)),
+		entity.WithBudgetEndDate(goutil.Uint64(endDate)),
 	)
 }
 
@@ -302,6 +333,14 @@ func (m *UpdateBudgetRequest) GetAmount() float64 {
 		return *m.Amount
 	}
 	return 0
+}
+
+func (m *UpdateBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
+	return &GetBudgetRequest{
+		UserID:     m.UserID,
+		CategoryID: m.CategoryID,
+		BudgetDate: m.BudgetDate,
+	}
 }
 
 type UpdateBudgetResponse struct {

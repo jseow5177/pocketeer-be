@@ -262,7 +262,7 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
-	ac.UpdateTime = acu.UpdateTime
+	ac.UpdateTime = now
 
 	if err = ac.checkOpts(); err != nil {
 		return nil, false, err
