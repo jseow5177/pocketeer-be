@@ -14,17 +14,17 @@ var CreateBudgetValidator = validator.MustForm(map[string]validator.Validator{
 	"category_id": &validator.String{
 		Optional: false,
 	},
+	"budget_date": &validator.String{
+		Optional:   false,
+		Validators: []validator.StringFunc{entity.CheckDateStr},
+	},
 	"amount": &validator.String{
 		Optional:   false,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
 	"budget_type": &validator.UInt32{
-		Optional:   false,
-		Validators: []validator.UInt32Func{entity.CheckBudgetType},
-	},
-	"budget_date": &validator.String{
 		Optional:   true,
-		Validators: []validator.StringFunc{entity.CheckDateStr},
+		Validators: []validator.UInt32Func{entity.CheckBudgetType},
 	},
 	"budget_repeat": &validator.UInt32{
 		Optional:   true,

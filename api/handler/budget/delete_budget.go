@@ -15,7 +15,7 @@ var DeleteBudgetValidator = validator.MustForm(map[string]validator.Validator{
 		Optional: false,
 	},
 	"budget_date": &validator.String{
-		Optional:   true,
+		Optional:   false,
 		Validators: []validator.StringFunc{entity.CheckDateStr},
 	},
 	"budget_repeat": &validator.UInt32{

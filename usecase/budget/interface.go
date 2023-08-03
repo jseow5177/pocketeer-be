@@ -2,6 +2,7 @@ package budget
 
 import (
 	"context"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
@@ -122,6 +123,7 @@ type DeleteBudgetRequest struct {
 	BudgetDate   *string
 	CategoryID   *string
 	BudgetRepeat *uint32
+	DeleteTime   *uint64
 }
 
 func (m *DeleteBudgetRequest) GetUserID() string {
@@ -152,6 +154,13 @@ func (m *DeleteBudgetRequest) GetBudgetRepeat() uint32 {
 	return 0
 }
 
+func (m *DeleteBudgetRequest) GetDeleteTime() uint64 {
+	if m != nil && m.DeleteTime != nil {
+		return *m.DeleteTime
+	}
+	return 0
+}
+
 func (m *DeleteBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
 	return &GetBudgetRequest{
 		UserID:     m.UserID,
@@ -160,7 +169,7 @@ func (m *DeleteBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
 	}
 }
 
-func (m *DeleteBudgetRequest) ToBudgetEntity(budgetType uint32) (*entity.Budget, error) {
+func (m *DeleteBudgetRequest) ToBudgetEntity(budgetType uint32, deleteTime uint64) (*entity.Budget, error) {
 	startDate, endDate, err := entity.GetBudgetDateRange(
 		m.GetBudgetDate(),
 		budgetType,
@@ -169,6 +178,12 @@ func (m *DeleteBudgetRequest) ToBudgetEntity(budgetType uint32) (*entity.Budget,
 	if err != nil {
 		return nil, err
 	}
+
+	t := uint64(time.Now().UnixMilli())
+	if deleteTime != 0 {
+		t = deleteTime
+	}
+
 	return entity.NewBudget(
 		m.GetUserID(),
 		m.GetCategoryID(),
@@ -177,6 +192,8 @@ func (m *DeleteBudgetRequest) ToBudgetEntity(budgetType uint32) (*entity.Budget,
 		entity.WithBudgetStatus(goutil.Uint32(uint32(entity.BudgetStatusDeleted))),
 		entity.WithBudgetStartDate(goutil.Uint64(startDate)),
 		entity.WithBudgetEndDate(goutil.Uint64(endDate)),
+		entity.WithBudgetCreateTime(goutil.Uint64(t)),
+		entity.WithBudgetUpdateTime(goutil.Uint64(t)),
 	)
 }
 
@@ -265,7 +282,7 @@ func (m *GetBudgetRequest) ToBudgetQuery() (*repo.BudgetQuery, error) {
 			Limit: goutil.Uint32(1),
 			Sorts: []filter.Sort{
 				&repo.Sort{
-					Field: goutil.String("create_time"),
+					Field: goutil.String("update_time"),
 					Order: goutil.String(config.OrderDesc),
 				},
 			},
@@ -341,6 +358,33 @@ func (m *UpdateBudgetRequest) ToGetBudgetRequest() *GetBudgetRequest {
 		CategoryID: m.CategoryID,
 		BudgetDate: m.BudgetDate,
 	}
+}
+
+func (m *UpdateBudgetRequest) ToDeleteBudgetRequest(deleteTime uint64) *DeleteBudgetRequest {
+	return &DeleteBudgetRequest{
+		UserID:       m.UserID,
+		CategoryID:   m.CategoryID,
+		BudgetDate:   m.BudgetDate,
+		BudgetRepeat: goutil.Uint32(uint32(entity.BudgetRepeatAllTime)),
+		DeleteTime:   goutil.Uint64(deleteTime),
+	}
+}
+
+func (m *UpdateBudgetRequest) ToBudgetUpdate() (*entity.BudgetUpdate, error) {
+	startDate, endDate, err := entity.GetBudgetDateRange(
+		m.GetBudgetDate(),
+		m.GetBudgetType(),
+		m.GetBudgetRepeat(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return entity.NewBudgetUpdate(
+		entity.WithUpdateBudgetAmount(m.Amount),
+		entity.WithUpdateBudgetType(m.BudgetType),
+		entity.WithUpdateBudgetStartDate(goutil.Uint64(startDate)),
+		entity.WithUpdateBudgetEndDate(goutil.Uint64(endDate)),
+	), nil
 }
 
 type UpdateBudgetResponse struct {

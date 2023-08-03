@@ -332,6 +332,22 @@ func (m *UpdateBudgetRequest) GetAmount() string {
 	return ""
 }
 
+func (m *UpdateBudgetRequest) ToUseCaseReq(userID string) *budget.UpdateBudgetRequest {
+	var amount *float64
+	if m.Amount != nil {
+		a, _ := util.MonetaryStrToFloat(m.GetAmount())
+		amount = goutil.Float64(a)
+	}
+	return &budget.UpdateBudgetRequest{
+		UserID:       goutil.String(userID),
+		CategoryID:   m.CategoryID,
+		Amount:       amount,
+		BudgetType:   m.BudgetType,
+		BudgetDate:   m.BudgetDate,
+		BudgetRepeat: m.BudgetRepeat,
+	}
+}
+
 type UpdateBudgetResponse struct {
 	Budget *Budget `json:"budget,omitempty"`
 }
@@ -341,4 +357,8 @@ func (m *UpdateBudgetResponse) GetBudget() *Budget {
 		return m.Budget
 	}
 	return nil
+}
+
+func (m *UpdateBudgetResponse) Set(res *budget.UpdateBudgetResponse) {
+	m.Budget = toBudget(res.Budget)
 }

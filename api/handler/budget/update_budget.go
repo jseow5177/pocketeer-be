@@ -6,6 +6,8 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
+	"github.com/jseow5177/pockteer-be/util"
+	"github.com/rs/zerolog/log"
 )
 
 var UpdateBudgetValidator = validator.MustForm(map[string]validator.Validator{
@@ -13,7 +15,7 @@ var UpdateBudgetValidator = validator.MustForm(map[string]validator.Validator{
 		Optional: false,
 	},
 	"budget_date": &validator.String{
-		Optional:   true,
+		Optional:   false,
 		Validators: []validator.StringFunc{entity.CheckDateStr},
 	},
 	"amount": &validator.String{
@@ -31,5 +33,15 @@ var UpdateBudgetValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *budgetHandler) UpdateBudget(ctx context.Context, req *presenter.UpdateBudgetRequest, res *presenter.UpdateBudgetResponse) error {
+	userID := util.GetUserIDFromCtx(ctx)
+
+	useCaseRes, err := h.budgetUseCase.UpdateBudget(ctx, req.ToUseCaseReq(userID))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to update budget, err: %v", err)
+		return err
+	}
+
+	res.Set(useCaseRes)
+
 	return nil
 }

@@ -82,7 +82,7 @@ func NewConfig() *Config {
 		},
 		Tokens: &Tokens{
 			AccessToken: &Token{
-				ExpiresIn: 604_800, // 7 days
+				ExpiresIn: 31_536_000, // 365 days
 				Issuer:    "pocketeer_be",
 				Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
 			},

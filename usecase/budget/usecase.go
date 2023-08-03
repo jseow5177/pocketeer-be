@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -15,17 +16,20 @@ import (
 )
 
 type budgetUseCase struct {
+	txMgr           repo.TxMgr
 	budgetRepo      repo.BudgetRepo
 	categoryRepo    repo.CategoryRepo
 	transactionRepo repo.TransactionRepo
 }
 
 func NewBudgetUseCase(
+	txMgr repo.TxMgr,
 	budgetRepo repo.BudgetRepo,
 	categoryRepo repo.CategoryRepo,
 	transactionRepo repo.TransactionRepo,
 ) UseCase {
 	return &budgetUseCase{
+		txMgr,
 		budgetRepo,
 		categoryRepo,
 		transactionRepo,
@@ -68,16 +72,59 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 }
 
 func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error) {
+	now := uint64(time.Now().UnixMilli())
+
 	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}
+	b := res.Budget
 
-	if res.Budget == nil {
+	if b == nil {
 		return nil, repo.ErrBudgetNotFound
 	}
 
-	return nil, nil
+	bu, err := req.ToBudgetUpdate()
+	if err != nil {
+		return nil, err
+	}
+
+	var hasUpdate bool
+	bu, hasUpdate, err = b.Update(bu)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasUpdate {
+		log.Ctx(ctx).Info().Msg("budget has no updates")
+		return &UpdateBudgetResponse{
+			Budget: b,
+		}, nil
+	}
+
+	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		// if there is a change in budget type, wipe all old records
+		// delete time must be before update time
+		if bu.BudgetType != nil {
+			if _, err := uc.DeleteBudget(txCtx, req.ToDeleteBudgetRequest(now)); err != nil {
+				return err
+			}
+		}
+
+		b.BudgetID = nil
+		if _, err := uc.budgetRepo.Create(txCtx, b); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to create new updated budget to repo, err: %v", err)
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return &UpdateBudgetResponse{
+		Budget: b,
+	}, nil
 }
 
 // Fetch budget from repo, won't compute used amount.
@@ -205,13 +252,13 @@ func (uc *budgetUseCase) DeleteBudget(ctx context.Context, req *DeleteBudgetRequ
 	}
 
 	// create a dummy, deleted budget
-	b, err := req.ToBudgetEntity(res.Budget.GetBudgetType())
+	b, err := req.ToBudgetEntity(res.Budget.GetBudgetType(), req.GetDeleteTime())
 	if err != nil {
 		return nil, err
 	}
 
 	if _, err := uc.budgetRepo.Create(ctx, b); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new budget to repo, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to save dummy budget to repo, err: %v", err)
 		return nil, err
 	}
 

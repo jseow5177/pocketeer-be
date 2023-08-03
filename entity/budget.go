@@ -31,8 +31,7 @@ var BudgetRepeats = map[uint32]string{
 type BudgetType uint32
 
 const (
-	BudgetTypeInvalid BudgetType = iota
-	BudgetTypeMonth
+	BudgetTypeMonth BudgetType = iota
 	BudgetTypeYear
 )
 
@@ -97,6 +96,14 @@ func (bu *BudgetUpdate) GetEndDate() uint64 {
 		return *bu.EndDate
 	}
 	return 0
+}
+
+func NewBudgetUpdate(opts ...BudgetUpdateOption) *BudgetUpdate {
+	au := new(BudgetUpdate)
+	for _, opt := range opts {
+		opt(au)
+	}
+	return au
 }
 
 type BudgetUpdateOption func(bu *BudgetUpdate)
