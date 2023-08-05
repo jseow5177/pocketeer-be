@@ -46,7 +46,7 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 	}
 
 	return &GetTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 
@@ -58,8 +58,8 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	}
 
 	return &GetTransactionsResponse{
-		ts,
-		req.Paging,
+		Transactions: ts,
+		Paging:       req.Paging,
 	}, nil
 }
 
@@ -166,7 +166,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	}
 
 	return &CreateTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 
@@ -181,7 +181,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
-			t,
+			Transaction: t,
 		}, nil
 	}
 
@@ -222,7 +222,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	}
 
 	return &UpdateTransactionResponse{
-		t,
+		Transaction: t,
 	}, nil
 }
 
@@ -244,8 +244,6 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 		}
 	case len(req.TransactionTypes) > 0:
 		sumBy = "transaction_type"
-	case len(req.BudgetIDs) > 0:
-		return uc.aggrTransactionByBudgets(ctx, req)
 	}
 
 	aggrs, err := uc.transactionRepo.CalcTotalAmount(ctx, sumBy, tf)
@@ -264,89 +262,4 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 	return &AggrTransactionsResponse{
 		Results: results,
 	}, nil
-}
-
-func (uc *transactionUseCase) aggrTransactionByBudgets(
-	ctx context.Context,
-	req *AggrTransactionsRequest,
-) (*AggrTransactionsResponse, error) {
-	budgetIDToCategoryIDs, err := uc.getBudgetToCategoryIDs(ctx, req.GetBudgetIDs())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get budgetIDToCategoryIDs, err: %v", err)
-		return nil, err
-	}
-
-	allCategoryIDs := make([]string, 0)
-	for _, ids := range budgetIDToCategoryIDs {
-		allCategoryIDs = append(allCategoryIDs, ids...)
-	}
-
-	req.CategoryIDs = allCategoryIDs
-	aggrs, err := uc.transactionRepo.CalcTotalAmount(
-		ctx,
-		"category_id",
-		req.ToTransactionFilter(req.GetUserID()),
-	)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum transactions by category_id, err: %v", err)
-		return nil, err
-	}
-
-	catIDSum := make(map[string]float64)
-	for _, aggr := range aggrs {
-		catIDSum[aggr.GetGroupBy()] = aggr.GetTotalAmount()
-	}
-
-	budgetIDSum, err := uc.getBudgetIDSum(budgetIDToCategoryIDs, catIDSum)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get budgetIDSum err: %v", err)
-		return nil, err
-	}
-
-	return &AggrTransactionsResponse{
-		Results: budgetIDSum,
-	}, nil
-}
-
-func (uc *transactionUseCase) getBudgetToCategoryIDs(
-	ctx context.Context,
-	budgetIDs []string,
-) (budgetToCategoryIDs map[string][]string, err error) {
-	budgets, err := uc.budgetRepo.GetMany(
-		ctx,
-		&repo.BudgetFilter{
-			BudgetIDs: budgetIDs,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	budgetToCategoryIDs = make(map[string][]string, len(budgets))
-	for _, budget := range budgets {
-		budgetToCategoryIDs[budget.GetBudgetID()] = budget.GetCategoryIDs()
-	}
-
-	return budgetToCategoryIDs, nil
-}
-
-func (uc *transactionUseCase) getBudgetIDSum(
-	budgetIDToCategoryIDs map[string][]string,
-	catIDSum map[string]float64,
-) (map[string]*Aggr, error) {
-	budgetIDSum := make(map[string]*Aggr)
-	for budgetID, catIDs := range budgetIDToCategoryIDs {
-		sum := float64(0)
-
-		for _, catID := range catIDs {
-			amount := catIDSum[catID]
-			sum += amount
-		}
-
-		budgetIDSum[budgetID] = &Aggr{
-			Sum: goutil.Float64(sum),
-		}
-	}
-
-	return budgetIDSum, nil
 }

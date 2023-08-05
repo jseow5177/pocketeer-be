@@ -1,9 +1,7 @@
 package entity
 
 import (
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 )
 
 type SecurityType uint32
@@ -195,21 +193,4 @@ func (q *Quote) GetUpdateTime() uint64 {
 		return *q.UpdateTime
 	}
 	return 0
-}
-
-// TODO: Have better currency conversion logic
-func (q *Quote) ToSGD() *Quote {
-	var (
-		lp  = util.RoundFloat(q.GetLatestPrice()*config.USDToSGD, config.StandardDP)
-		pc  = util.RoundFloat(q.GetPreviousClose()*config.USDToSGD, config.StandardDP)
-		ch  = util.RoundFloat(lp-pc, config.StandardDP)
-		chp = util.RoundFloat((lp-pc)*100/pc, config.PreciseDP)
-	)
-	return &Quote{
-		LatestPrice:   goutil.Float64(lp),
-		PreviousClose: goutil.Float64(pc),
-		Change:        goutil.Float64(ch),
-		ChangePercent: goutil.Float64(chp),
-		UpdateTime:    q.UpdateTime,
-	}
 }

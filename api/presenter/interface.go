@@ -47,56 +47,39 @@ func (uv *UInt64Filter) GetLte() uint64 {
 	return 0
 }
 
-func toBudgets(
-	entities []*entity.Budget,
-) []*Budget {
-	budgets := make([]*Budget, len(entities))
-	for idx, entity := range entities {
-		budgets[idx] = toBudget(entity)
+func toBudgets(bs []*entity.Budget) []*Budget {
+	budgets := make([]*Budget, len(bs))
+	for idx, b := range bs {
+		budgets[idx] = toBudget(b)
 	}
 	return budgets
 }
 
-func toBudget(
-	budget *entity.Budget,
-) *Budget {
+func toBudget(b *entity.Budget) *Budget {
+	if b == nil {
+		return nil
+	}
+
+	var amount *string
+	if b.Amount != nil {
+		amount = goutil.String(fmt.Sprint(b.GetAmount()))
+	}
+
+	var usedAmount *string
+	if b.UsedAmount != nil {
+		usedAmount = goutil.String(fmt.Sprint(b.GetUsedAmount()))
+	}
+
 	return &Budget{
-		BudgetID:         budget.BudgetID,
-		BudgetName:       budget.BudgetName,
-		BudgetType:       budget.BudgetType,
-		CategoryIDs:      budget.CategoryIDs,
-		BudgetBreakdowns: toBudgetBreakdowns(budget.BreakdownMap),
+		BudgetID:     b.BudgetID,
+		CategoryID:   b.CategoryID,
+		BudgetType:   b.BudgetType,
+		BudgetStatus: b.BudgetStatus,
+		Amount:       amount,
+		CreateTime:   b.CreateTime,
+		UpdateTime:   b.UpdateTime,
+		UsedAmount:   usedAmount,
 	}
-}
-
-func toBudgetBreakdowns(
-	breakdownMap entity.BreakdownMap,
-) []*BudgetBreakdown {
-	breakdowns := make([]*BudgetBreakdown, 0)
-
-	for _, bd := range breakdownMap {
-		if bd == nil {
-			continue
-		}
-
-		breakdowns = append(
-			breakdowns,
-			&BudgetBreakdown{
-				Year:   bd.Year,
-				Month:  bd.Month,
-				Amount: bd.Amount,
-			},
-		)
-	}
-	return breakdowns
-}
-
-func toCategories(cs []*entity.Category) []*Category {
-	categories := make([]*Category, len(cs))
-	for idx, c := range cs {
-		categories[idx] = toCategory(c)
-	}
-	return categories
 }
 
 func toCategory(c *entity.Category) *Category {
@@ -110,7 +93,16 @@ func toCategory(c *entity.Category) *Category {
 		CategoryType: c.CategoryType,
 		CreateTime:   c.CreateTime,
 		UpdateTime:   c.UpdateTime,
+		Budget:       toBudget(c.Budget),
 	}
+}
+
+func toCategories(cs []*entity.Category) []*Category {
+	categories := make([]*Category, len(cs))
+	for idx, c := range cs {
+		categories[idx] = toCategory(c)
+	}
+	return categories
 }
 
 func toUser(u *entity.User) *User {

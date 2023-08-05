@@ -49,7 +49,7 @@ func (uc *accountUseCase) GetAccount(ctx context.Context, req *GetAccountRequest
 	}
 
 	return &GetAccountResponse{
-		ac,
+		Account: ac,
 	}, nil
 }
 
@@ -72,7 +72,7 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 	}
 
 	return &GetAccountsResponse{
-		acs,
+		Accounts: acs,
 	}, nil
 }
 
@@ -82,8 +82,7 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 		return nil, err
 	}
 
-	_, err = uc.accountRepo.Create(ctx, ac)
-	if err != nil {
+	if _, err := uc.accountRepo.Create(ctx, ac); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
 		return nil, err
 	}

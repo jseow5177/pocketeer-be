@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -49,8 +50,10 @@ func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *e
 }
 
 func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity.Holding, error) {
+	f := mongoutil.BuildFilter(hf)
+
 	h := new(model.Holding)
-	if err := m.mColl.get(ctx, hf, &h); err != nil {
+	if err := m.mColl.get(ctx, &h, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrHoldingNotFound
 		}
@@ -61,7 +64,9 @@ func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity
 }
 
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {
-	res, err := m.mColl.getMany(ctx, hf, nil, new(model.Holding))
+	f := mongoutil.BuildFilter(hf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Holding), nil, f)
 	if err != nil {
 		return nil, err
 	}

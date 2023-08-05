@@ -11,6 +11,7 @@ type Category struct {
 	CategoryType *uint32 `json:"category_type,omitempty"`
 	CreateTime   *uint64 `json:"create_time,omitempty"`
 	UpdateTime   *uint64 `json:"update_time,omitempty"`
+	Budget       *Budget `json:"budget,omitempty"`
 }
 
 func (c *Category) GetCategoryID() string {
@@ -46,6 +47,13 @@ func (c *Category) GetUpdateTime() uint64 {
 		return *c.UpdateTime
 	}
 	return 0
+}
+
+func (c *Category) GetBudget() *Budget {
+	if c != nil && c.Budget != nil {
+		return c.Budget
+	}
+	return nil
 }
 
 type CreateCategoryRequest struct {
@@ -129,11 +137,7 @@ func (m *GetCategoriesResponse) GetCategories() []*Category {
 }
 
 func (m *GetCategoriesResponse) Set(useCaseRes *category.GetCategoriesResponse) {
-	cs := make([]*Category, 0)
-	for _, c := range useCaseRes.Categories {
-		cs = append(cs, toCategory(c))
-	}
-	m.Categories = cs
+	m.Categories = toCategories(useCaseRes.Categories)
 }
 
 type UpdateCategoryRequest struct {
@@ -209,4 +213,106 @@ func (m *GetCategoryResponse) GetCategory() *Category {
 
 func (m *GetCategoryResponse) Set(useCaseRes *category.GetCategoryResponse) {
 	m.Category = toCategory(useCaseRes.Category)
+}
+
+type GetCategoryBudgetRequest struct {
+	CategoryID *string `json:"category_id,omitempty"`
+	BudgetDate *string `json:"budget_date,omitempty"`
+	Timezone   *string `json:"timezone,omitempty"`
+}
+
+func (m *GetCategoryBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) ToUseCaseReq(userID string) *category.GetCategoryBudgetRequest {
+	return &category.GetCategoryBudgetRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+		BudgetDate: m.BudgetDate,
+		Timezone:   m.Timezone,
+	}
+}
+
+type GetCategoryBudgetResponse struct {
+	Category *Category `json:"category,omitempty"`
+}
+
+func (m *GetCategoryBudgetResponse) GetCategory() *Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
+}
+
+func (m *GetCategoryBudgetResponse) Set(res *category.GetCategoryBudgetResponse) {
+	m.Category = toCategory(res.Category)
+}
+
+type GetCategoriesBudgetRequest struct {
+	CategoryIDs []string `json:"category_ids,omitempty"`
+	BudgetDate  *string  `json:"budget_date,omitempty"`
+	Timezone    *string  `json:"timezone,omitempty"`
+}
+
+func (m *GetCategoriesBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetCategoriesBudgetRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
+func (m *GetCategoriesBudgetRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetCategoriesBudgetRequest) ToUseCaseReq(userID string) *category.GetCategoriesBudgetRequest {
+	return &category.GetCategoriesBudgetRequest{
+		UserID:      goutil.String(userID),
+		Timezone:    m.Timezone,
+		BudgetDate:  m.BudgetDate,
+		CategoryIDs: m.CategoryIDs,
+	}
+}
+
+type GetCategoriesBudgetResponse struct {
+	Categories []*Category `json:"categories,omitempty"`
+}
+
+func (m *GetCategoriesBudgetResponse) GetCategories() []*Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+func (m *GetCategoriesBudgetResponse) Set(res *category.GetCategoriesBudgetResponse) {
+	m.Categories = toCategories(res.Categories)
 }

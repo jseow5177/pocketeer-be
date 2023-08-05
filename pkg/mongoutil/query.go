@@ -1,6 +1,7 @@
 package mongoutil
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,12 +14,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	ErrInvalidBoolOp = errors.New("[mongoutil] invalid bool op")
+	ErrInvalidQuery  = errors.New("[mongoutil] must have one of filters or queries")
+
+	boolOps = map[string]string{
+		"and": "and",
+		"or":  "or",
+	}
+)
+
 var sortOrders = map[string]int{
 	"asc":  1,
 	"desc": -1,
 }
 
-var supportedFilterOps = map[string]string{
+var filterOps = map[string]string{
 	"eq":         "equal",
 	"ne":         "not equal",
 	"gt":         "greater than",
@@ -120,7 +131,7 @@ func BuildFilter(filter interface{}) bson.D {
 		var op string
 		if len(parts) > 1 {
 			op = parts[1]
-			if _, ok := supportedFilterOps[op]; !ok {
+			if _, ok := filterOps[op]; !ok {
 				continue
 			}
 		} else {
@@ -164,4 +175,51 @@ func BuildFilter(filter interface{}) bson.D {
 	}
 
 	return bson.D{{Key: Prefix("and"), Value: conds}}
+}
+
+func BuildQuery(query filter.Query) (bson.D, error) {
+	composedQuery := make(bson.D, 0)
+
+	if len(query.GetFilters()) == 0 && len(query.GetQueries()) == 0 {
+		return nil, ErrInvalidQuery
+	}
+
+	var (
+		boolOp = "and" // default to and
+		ok     bool
+	)
+	if query.GetOp() != "" {
+		boolOp, ok = boolOps[string(query.GetOp())]
+		if !ok {
+			return nil, ErrInvalidBoolOp
+		}
+	}
+
+	if len(query.GetFilters()) != 0 {
+		fs := make(bson.A, 0)
+		for _, filter := range query.GetFilters() {
+			fs = append(fs, BuildFilter(filter))
+		}
+		if len(fs) > 1 {
+			composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: fs})
+		} else {
+			composedQuery = fs[0].(bson.D)
+		}
+	} else if len(query.GetQueries()) != 0 {
+		qs := make(bson.A, 0)
+		for _, query := range query.GetQueries() {
+			q, err := BuildQuery(query)
+			if err != nil {
+				return nil, err
+			}
+			qs = append(qs, q)
+		}
+		if len(qs) > 1 {
+			composedQuery = append(composedQuery, bson.E{Key: Prefix(boolOp), Value: qs})
+		} else {
+			composedQuery = qs[0].(bson.D)
+		}
+	}
+
+	return composedQuery, nil
 }

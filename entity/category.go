@@ -48,6 +48,8 @@ type Category struct {
 	CategoryType *uint32
 	CreateTime   *uint64
 	UpdateTime   *uint64
+
+	Budget *Budget
 }
 
 type CategoryOption = func(c *Category)
@@ -171,4 +173,19 @@ func (c *Category) GetUpdateTime() uint64 {
 		return *c.UpdateTime
 	}
 	return 0
+}
+
+func (c *Category) GetBudget() *Budget {
+	if c != nil && c.Budget != nil {
+		return c.Budget
+	}
+	return nil
+}
+
+func (c *Category) SetBudget(b *Budget) {
+	c.Budget = b
+}
+
+func (c *Category) CanAddBudget() bool {
+	return c.GetCategoryType() == uint32(TransactionTypeExpense)
 }

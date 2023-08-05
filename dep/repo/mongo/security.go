@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -50,8 +51,10 @@ func (m *securityMongo) Update(ctx context.Context, sf *repo.SecurityFilter, su 
 }
 
 func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*entity.Security, error) {
+	f := mongoutil.BuildFilter(sf)
+
 	s := new(model.Security)
-	if err := m.mColl.get(ctx, sf, &s); err != nil {
+	if err := m.mColl.get(ctx, &s, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrSecurityNotFound
 		}
@@ -62,7 +65,9 @@ func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*enti
 }
 
 func (m *securityMongo) GetMany(ctx context.Context, sf *repo.SecurityFilter) ([]*entity.Security, error) {
-	res, err := m.mColl.getMany(ctx, sf, sf.Paging, new(model.Security))
+	f := mongoutil.BuildFilter(sf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Security), sf.Paging, f)
 	if err != nil {
 		return nil, err
 	}

@@ -49,8 +49,10 @@ func (m *lotMongo) Update(ctx context.Context, lf *repo.LotFilter, lu *entity.Lo
 }
 
 func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, error) {
+	f := mongoutil.BuildFilter(lf)
+
 	lm := new(model.Lot)
-	if err := m.mColl.get(ctx, lf, &lm); err != nil {
+	if err := m.mColl.get(ctx, &lm, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrLotNotFound
 		}
@@ -61,7 +63,9 @@ func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, er
 }
 
 func (m *lotMongo) GetMany(ctx context.Context, lf *repo.LotFilter) ([]*entity.Lot, error) {
-	res, err := m.mColl.getMany(ctx, lf, nil, new(model.Lot))
+	f := mongoutil.BuildFilter(lf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Lot), nil, f)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +91,9 @@ func (m *lotMongo) CalcTotalSharesAndCost(ctx context.Context, lf *repo.LotFilte
 		}),
 	})
 
-	res, err := m.mColl.aggr(ctx, lf, "", totalSharesAggr, totalCostAggr)
+	f := mongoutil.BuildFilter(lf)
+
+	res, err := m.mColl.aggr(ctx, f, "", totalSharesAggr, totalCostAggr)
 	if err != nil {
 		return nil, err
 	}

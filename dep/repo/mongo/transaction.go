@@ -48,8 +48,10 @@ func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilte
 }
 
 func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) (*entity.Transaction, error) {
+	f := mongoutil.BuildFilter(tf)
+
 	t := new(model.Transaction)
-	if err := m.mColl.get(ctx, tf, &t); err != nil {
+	if err := m.mColl.get(ctx, &t, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrTransactionNotFound
 		}
@@ -60,7 +62,9 @@ func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) 
 }
 
 func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilter) ([]*entity.Transaction, error) {
-	res, err := m.mColl.getMany(ctx, tf, tf.Paging, new(model.Transaction))
+	f := mongoutil.BuildFilter(tf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Transaction), tf.Paging, f)
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +78,12 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 }
 
 func (m *transactionMongo) CalcTotalAmount(ctx context.Context, groupBy string, tf *repo.TransactionFilter) ([]*repo.TransactionAggr, error) {
+	f := mongoutil.BuildFilter(tf)
+
 	sumAmountAggr := mongoutil.NewAggr(aggrSumAmount, mongoutil.AggrSum, &mongoutil.AggrOpt{
 		Field: "amount",
 	})
-	aggrRes, err := m.mColl.aggr(ctx, tf, groupBy, sumAmountAggr)
+	aggrRes, err := m.mColl.aggr(ctx, f, groupBy, sumAmountAggr)
 	if err != nil {
 		return nil, err
 	}

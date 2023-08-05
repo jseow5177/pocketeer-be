@@ -70,7 +70,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	}
 
 	return &CreateHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -87,7 +87,7 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 	}
 
 	return &GetHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -106,7 +106,7 @@ func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsReque
 	}
 
 	return &GetHoldingsResponse{
-		hs,
+		Holdings: hs,
 	}, nil
 }
 
@@ -197,12 +197,13 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 		}()
 	}
 
-	// TODO: Have better currency conversion logic
-	q = q.ToSGD()
-
 	// Calculate value as Total Shares * Current Price
-	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice(), config.StandardDP)
+	// We support only USD holdings now, so convert value from USD to SGD
+	// TODO: Have better currency handling
+	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice()*config.USDToSGD, config.StandardDP)
+
 	h.SetLatestValue(goutil.Float64(latestValue))
+
 	h.SetQuote(q)
 
 	return nil
