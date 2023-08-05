@@ -89,11 +89,19 @@ type Quote struct {
 	ChangePercent *string `json:"change_percent,omitempty"`
 	PreviousClose *string `json:"previous_close,omitempty"`
 	UpdateTime    *uint64 `json:"update_time,omitempty"`
+	Currency      *string `json:"currency,omitempty"`
 }
 
 func (q *Quote) GetLatestPrice() string {
 	if q != nil && q.LatestPrice != nil {
 		return *q.LatestPrice
+	}
+	return ""
+}
+
+func (q *Quote) GetCurrency() string {
+	if q != nil && q.Currency != nil {
+		return *q.Currency
 	}
 	return ""
 }

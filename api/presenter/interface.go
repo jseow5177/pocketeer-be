@@ -231,6 +231,7 @@ func toQuote(q *entity.Quote) *Quote {
 		ChangePercent: changePercent,
 		PreviousClose: previousClose,
 		UpdateTime:    q.UpdateTime,
+		Currency:      q.Currency,
 	}
 }
 

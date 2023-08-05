@@ -17,6 +17,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/jseow5177/pockteer-be/pkg/router"
@@ -55,6 +56,7 @@ type server struct {
 	holdingRepo     repo.HoldingRepo
 	lotRepo         repo.LotRepo
 	securityRepo    repo.SecurityRepo
+	quoteRepo       repo.QuoteRepo
 
 	securityAPI api.SecurityAPI
 
@@ -104,7 +106,7 @@ func (s *server) Start() error {
 		}
 	}()
 
-	// init repos
+	// init mongo repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
 	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
@@ -117,6 +119,13 @@ func (s *server) Start() error {
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
+	// init mem repos
+	s.quoteRepo, err = mem.NewQuoteMemCache(s.cfg.QuoteMemCache, s.securityAPI)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init quote repo, err: %v", err)
+		return err
+	}
+
 	// init use cases
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
@@ -124,7 +133,7 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.securityAPI)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
 

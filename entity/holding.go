@@ -177,7 +177,7 @@ func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holdi
 }
 
 func (h *Holding) checkOpts() error {
-	if !h.IsCustom() {
+	if h.IsDefault() {
 		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
 
 		// for non-custom type, cannot cost, value, and shares
@@ -358,4 +358,8 @@ func (h *Holding) SetQuote(quote *Quote) {
 
 func (h *Holding) IsCustom() bool {
 	return h.GetHoldingType() == uint32(HoldingTypeCustom)
+}
+
+func (h *Holding) IsDefault() bool {
+	return h.GetHoldingType() == uint32(HoldingTypeDefault)
 }

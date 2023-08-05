@@ -41,15 +41,6 @@ func (m *securityMongo) CreateMany(ctx context.Context, ss []*entity.Security) e
 	return nil
 }
 
-func (m *securityMongo) Update(ctx context.Context, sf *repo.SecurityFilter, su *entity.SecurityUpdate) error {
-	sm := model.ToSecurityModelFromUpdate(su)
-	if err := m.mColl.update(ctx, sf, sm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *securityMongo) Get(ctx context.Context, sf *repo.SecurityFilter) (*entity.Security, error) {
 	f := mongoutil.BuildFilter(sf)
 

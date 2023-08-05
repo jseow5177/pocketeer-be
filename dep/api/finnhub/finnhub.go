@@ -136,13 +136,14 @@ func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilte
 	// to milli
 	t := q.GetT() * 1000
 
-	return &entity.Quote{
-		LatestPrice:   q.C,
-		Change:        q.D,
-		ChangePercent: q.Dp,
-		PreviousClose: q.Pc,
-		UpdateTime:    goutil.Uint64(t),
-	}, nil
+	return entity.NewQuote(
+		entity.WithQuoteLatestPrice(q.C),
+		entity.WithQuoteChange(q.D),
+		entity.WithQuoteChangePercent(q.Dp),
+		entity.WithQuotePreviousClose(q.Pc),
+		entity.WithQuoteUpdateTime(goutil.Uint64(t)),
+		entity.WithQuoteCurrency(goutil.String(string(entity.CurrencyUSD))), // only USD for now
+	), nil
 }
 
 // Doc: https://finnhub.io/docs/api/stock-symbols

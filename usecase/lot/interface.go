@@ -18,6 +18,9 @@ type UseCase interface {
 	UpdateLot(ctx context.Context, req *UpdateLotRequest) (*UpdateLotResponse, error)
 }
 
+type DeleteLotRequest struct {
+}
+
 type GetLotRequest struct {
 	UserID *string
 	LotID  *string

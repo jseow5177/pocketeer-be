@@ -84,7 +84,6 @@ type Security struct {
 	SecurityType *uint32            `bson:"security_type,omitempty"`
 	Region       *string            `bson:"region,omitempty"`
 	Currency     *string            `bson:"currency,omitempty"`
-	Quote        *Quote             `bson:"quote,omitempty"`
 }
 
 func ToSecurityModelFromEntity(s *entity.Security) *Security {
@@ -104,17 +103,6 @@ func ToSecurityModelFromEntity(s *entity.Security) *Security {
 		SecurityType: s.SecurityType,
 		Region:       s.Region,
 		Currency:     s.Currency,
-		Quote:        ToQuoteModelFromEntity(s.Quote),
-	}
-}
-
-func ToSecurityModelFromUpdate(su *entity.SecurityUpdate) *Security {
-	if su == nil {
-		return nil
-	}
-
-	return &Security{
-		Quote: ToQuoteModelFromEntity(su.Quote),
 	}
 }
 
@@ -130,7 +118,6 @@ func ToSecurityEntity(s *Security) *entity.Security {
 		entity.WithSecurityType(s.SecurityType),
 		entity.WithSecurityRegion(s.Region),
 		entity.WithSecurityCurrency(s.Currency),
-		entity.WithSecurityQuote(ToQuoteEntity(s.Quote)),
 	)
 }
 
