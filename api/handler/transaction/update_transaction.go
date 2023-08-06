@@ -20,6 +20,10 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckMonetaryStr},
 	},
+	"account_id": &validator.String{
+		Optional:  true,
+		UnsetZero: true,
+	},
 	"transaction_time": &validator.UInt64{
 		Optional:  true,
 		UnsetZero: true,

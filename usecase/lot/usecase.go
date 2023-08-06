@@ -3,7 +3,6 @@ package lot
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/rs/zerolog/log"
@@ -37,8 +36,6 @@ func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*De
 	}
 
 	lu, _ := l.Update(req.ToLotUpdate())
-
-	fmt.Println(lu.GetLotStatus())
 
 	// mark lot as deleted
 	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {

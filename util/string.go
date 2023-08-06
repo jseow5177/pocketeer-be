@@ -17,15 +17,19 @@ func StrToFloat(val string, dp int) (float64, error) {
 		return 0, err
 	}
 
-	return RoundFloat(f, dp), nil
+	return roundFloat(f, dp), nil
 }
 
-func RoundFloat(f float64, dp int) float64 {
+func roundFloat(f float64, dp int) float64 {
 	p := math.Pow(10, float64(dp))
 
 	return math.Round(f*p) / p
 }
 
 func RoundFloatToStandardDP(f float64) float64 {
-	return RoundFloat(f, config.StandardDP)
+	return roundFloat(f, config.StandardDP)
+}
+
+func RoundFloatToPreciseDP(f float64) float64 {
+	return roundFloat(f, config.PreciseDP)
 }

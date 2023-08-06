@@ -64,6 +64,7 @@ const (
 	SaltByteSize      = 24
 
 	StandardDP = 2
+	PreciseDP  = 5
 
 	USDToSGD = 1.31
 )

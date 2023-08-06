@@ -50,6 +50,8 @@ func (hu *HoldingUpdate) GetTotalCost() float64 {
 }
 
 func (hu *HoldingUpdate) SetTotalCost(totalCost *float64) {
+	hu.TotalCost = totalCost
+
 	if totalCost != nil {
 		tc := util.RoundFloatToStandardDP(*totalCost)
 		hu.TotalCost = goutil.Float64(tc)
@@ -64,6 +66,8 @@ func (hu *HoldingUpdate) GetLatestValue() float64 {
 }
 
 func (hu *HoldingUpdate) SetLatestValue(latestValue *float64) {
+	hu.LatestValue = latestValue
+
 	if latestValue != nil {
 		lv := util.RoundFloatToStandardDP(*latestValue)
 		hu.LatestValue = goutil.Float64(lv)
@@ -360,6 +364,8 @@ func (h *Holding) GetTotalShares() float64 {
 }
 
 func (h *Holding) SetTotalShares(totalShares *float64) {
+	h.TotalShares = totalShares
+
 	if totalShares != nil {
 		ts := util.RoundFloatToStandardDP(*totalShares)
 		h.TotalShares = goutil.Float64(ts)
@@ -374,6 +380,8 @@ func (h *Holding) GetAvgCostPerShare() float64 {
 }
 
 func (h *Holding) SetAvgCostPerShare(avgCostPerShare *float64) {
+	h.AvgCostPerShare = avgCostPerShare
+
 	if avgCostPerShare != nil {
 		acps := util.RoundFloatToStandardDP(*avgCostPerShare)
 		h.AvgCostPerShare = goutil.Float64(acps)
@@ -388,6 +396,8 @@ func (h *Holding) GetTotalCost() float64 {
 }
 
 func (h *Holding) SetTotalCost(totalCost *float64) {
+	h.TotalCost = totalCost
+
 	if totalCost != nil {
 		tc := util.RoundFloatToStandardDP(*totalCost)
 		h.TotalCost = goutil.Float64(tc)
@@ -402,6 +412,8 @@ func (h *Holding) GetLatestValue() float64 {
 }
 
 func (h *Holding) SetLatestValue(latestValue *float64) {
+	h.LatestValue = latestValue
+
 	if latestValue != nil {
 		lv := util.RoundFloatToStandardDP(*latestValue)
 		h.LatestValue = goutil.Float64(lv)

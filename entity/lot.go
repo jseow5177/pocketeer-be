@@ -3,6 +3,7 @@ package entity
 import (
 	"time"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -32,7 +33,7 @@ func (lu *LotUpdate) GetShares() float64 {
 
 func (lu *LotUpdate) SetShares(shares *float64) {
 	if shares != nil {
-		s := util.RoundFloatToStandardDP(*shares)
+		s := util.RoundFloatToPreciseDP(*shares)
 		lu.Shares = goutil.Float64(s)
 	}
 }
@@ -45,8 +46,12 @@ func (lu *LotUpdate) GetCostPerShare() float64 {
 }
 
 func (lu *LotUpdate) SetCostPerShare(costPerShare *float64) {
+	lu.CostPerShare = costPerShare
+
 	if costPerShare != nil {
-		cps := util.RoundFloatToStandardDP(*costPerShare)
+		// Assume USD
+		// TODO: Have better currency handling
+		cps := util.RoundFloatToStandardDP(*costPerShare * config.USDToSGD)
 		lu.CostPerShare = goutil.Float64(cps)
 	}
 }
@@ -290,7 +295,7 @@ func (l *Lot) GetShares() float64 {
 
 func (l *Lot) SetShares(shares *float64) {
 	if shares != nil {
-		s := util.RoundFloatToStandardDP(*shares)
+		s := util.RoundFloatToPreciseDP(*shares)
 		l.Shares = goutil.Float64(s)
 	}
 }
@@ -303,8 +308,12 @@ func (l *Lot) GetCostPerShare() float64 {
 }
 
 func (l *Lot) SetCostPerShare(costPerShare *float64) {
+	l.CostPerShare = costPerShare
+
 	if costPerShare != nil {
-		cps := util.RoundFloatToStandardDP(*costPerShare)
+		// Assume USD
+		// TODO: Have better currency handling
+		cps := util.RoundFloatToStandardDP(*costPerShare * config.USDToSGD)
 		l.CostPerShare = goutil.Float64(cps)
 	}
 }

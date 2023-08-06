@@ -272,6 +272,7 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 
 type UpdateTransactionRequest struct {
 	UserID          *string
+	AccountID       *string
 	TransactionID   *string
 	Note            *string
 	Amount          *float64
@@ -288,6 +289,13 @@ func (m *UpdateTransactionRequest) GetUserID() string {
 func (m *UpdateTransactionRequest) GetTransactionID() string {
 	if m != nil && m.TransactionID != nil {
 		return *m.TransactionID
+	}
+	return ""
+}
+
+func (m *UpdateTransactionRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
 	}
 	return ""
 }
@@ -330,6 +338,7 @@ func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpda
 		entity.WithUpdateTransactionAmount(m.Amount),
 		entity.WithUpdateTransactionTime(m.TransactionTime),
 		entity.WithUpdateTransactionNote(m.Note),
+		entity.WithUpdateTransactionAccountID(m.AccountID),
 	)
 }
 

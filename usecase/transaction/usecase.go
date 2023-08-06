@@ -177,7 +177,11 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if err != nil {
 		return nil, err
 	}
-	oldAmount := t.GetAmount()
+
+	var (
+		oldAmount    = t.GetAmount()
+		oldAccountID = t.GetAccountID()
+	)
 
 	tu, hasUpdate := t.Update(req.ToTransactionUpdate())
 	if !hasUpdate {
@@ -187,10 +191,24 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		}, nil
 	}
 
-	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
+	oldAccount, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldAccountID))
 	if err != nil {
 		log.Ctx(ctx).Info().Msgf("fail to get account from repo, err: %v", err)
 		return nil, err
+	}
+
+	newAccount := oldAccount
+	if tu.AccountID != nil {
+		newAccount, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(tu.GetAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Info().Msgf("fail to get new account from repo, err: %v", err)
+			return nil, err
+		}
+
+		_, err = t.CanTransactionUnderAccount(newAccount)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
@@ -200,19 +218,35 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 			return err
 		}
 
-		// update balance
-		if tu.Amount != nil {
-			newBalance := ac.GetBalance() + (tu.GetAmount() - oldAmount)
-			nac, hasUpdate, err := ac.Update(entity.NewAccountUpdate(
-				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
+		if tu.AccountID != nil || tu.Amount != nil {
+			// revert balance of old account
+			oldAccountBalance := oldAccount.GetBalance() - oldAmount
+			acu, hasUpdate, err := oldAccount.Update(entity.NewAccountUpdate(
+				entity.WithUpdateAccountBalance(goutil.Float64(oldAccountBalance)),
 			))
 			if err != nil {
 				return err
 			}
 
 			if hasUpdate {
-				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(t.GetAccountID()), nac); err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
+				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldAccountID), acu); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update old account balance, err: %v", err)
+					return err
+				}
+			}
+
+			// update balance of new account
+			newAccountBalance := newAccount.GetBalance() + t.GetAmount()
+			acu, hasUpdate, err = newAccount.Update(entity.NewAccountUpdate(
+				entity.WithUpdateAccountBalance(goutil.Float64(newAccountBalance)),
+			))
+			if err != nil {
+				return err
+			}
+
+			if hasUpdate {
+				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAccount.GetAccountID()), acu); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update new account balance, err: %v", err)
 					return err
 				}
 			}
