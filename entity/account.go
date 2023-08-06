@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -306,7 +307,11 @@ func (ac *Account) GetBalance() float64 {
 }
 
 func (ac *Account) SetBalance(balance *float64) {
-	ac.Balance = balance
+	var b float64
+	if balance != nil {
+		b = util.RoundFloatToStandardDP(*balance)
+	}
+	ac.Balance = goutil.Float64(b)
 }
 
 func (ac *Account) GetAccountStatus() uint32 {
@@ -352,7 +357,11 @@ func (ac *Account) GetTotalCost() float64 {
 }
 
 func (ac *Account) SetTotalCost(totalCost *float64) {
-	ac.TotalCost = totalCost
+	var tc float64
+	if totalCost != nil {
+		tc = util.RoundFloatToStandardDP(*totalCost)
+	}
+	ac.TotalCost = goutil.Float64(tc)
 }
 
 func (ac *Account) GetHoldings() []*Holding {

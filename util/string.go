@@ -25,3 +25,7 @@ func RoundFloat(f float64, dp int) float64 {
 
 	return math.Round(f*p) / p
 }
+
+func RoundFloatToStandardDP(f float64) float64 {
+	return RoundFloat(f, config.StandardDP)
+}

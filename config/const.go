@@ -41,6 +41,7 @@ const (
 	PathGetHolding    = PathV1Prefix + "get_holding"
 
 	PathCreateLot = PathV1Prefix + "create_lot"
+	PathDeleteLot = PathV1Prefix + "delete_lot"
 	PathUpdateLot = PathV1Prefix + "update_lot"
 	PathGetLot    = PathV1Prefix + "get_lot"
 	PathGetLots   = PathV1Prefix + "get_lots"
@@ -63,7 +64,6 @@ const (
 	SaltByteSize      = 24
 
 	StandardDP = 2
-	PreciseDP  = 5
 
 	USDToSGD = 1.31
 )

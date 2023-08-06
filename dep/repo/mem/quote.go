@@ -75,6 +75,7 @@ func (mc *quoteMemCache) Get(ctx context.Context, qf *repo.QuoteFilter) (*entity
 
 		return q, nil
 	} else {
+		// try again, which may already be in cache
 		time.Sleep(100 * time.Millisecond)
 		return mc.Get(ctx, qf)
 	}

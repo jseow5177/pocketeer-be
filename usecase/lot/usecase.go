@@ -3,6 +3,7 @@ package lot
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/rs/zerolog/log"
@@ -22,6 +23,30 @@ func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
 		lotRepo,
 		holdingRepo,
 	}
+}
+
+func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
+	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
+	if err != nil && err != repo.ErrLotNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == repo.ErrLotNotFound {
+		return new(DeleteLotResponse), nil
+	}
+
+	lu, _ := l.Update(req.ToLotUpdate())
+
+	fmt.Println(lu.GetLotStatus())
+
+	// mark lot as deleted
+	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
+		return nil, err
+	}
+
+	return new(DeleteLotResponse), nil
 }
 
 func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error) {

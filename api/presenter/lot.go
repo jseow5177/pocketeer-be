@@ -73,6 +73,28 @@ func (l *Lot) GetUpdateTime() uint64 {
 	return 0
 }
 
+type DeleteLotRequest struct {
+	LotID *string `json:"lot_id,omitempty"`
+}
+
+func (m *DeleteLotRequest) GetLotID() string {
+	if m != nil && m.LotID != nil {
+		return *m.LotID
+	}
+	return ""
+}
+
+func (m *DeleteLotRequest) ToUseCaseReq(userID string) *lot.DeleteLotRequest {
+	return &lot.DeleteLotRequest{
+		LotID:  m.LotID,
+		UserID: goutil.String(userID),
+	}
+}
+
+type DeleteLotResponse struct{}
+
+func (m *DeleteLotResponse) Set(useCaseRes *lot.DeleteLotResponse) {}
+
 type CreateLotRequest struct {
 	HoldingID    *string `json:"holding_id,omitempty"`
 	Shares       *string `json:"shares,omitempty"`

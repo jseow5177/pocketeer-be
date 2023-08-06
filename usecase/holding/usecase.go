@@ -8,7 +8,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -170,6 +169,7 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, &repo.LotFilter{
 		UserID:    h.UserID,
 		HoldingID: h.HoldingID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to calc lot aggr from repo, err: %v", err)
@@ -179,7 +179,7 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	// Compute avg cost per share
 	var avgCostPerShare float64
 	if aggr.GetTotalCost() != 0 {
-		avgCostPerShare = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.StandardDP)
+		avgCostPerShare = aggr.GetTotalCost() / aggr.GetTotalShares()
 	}
 	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
 	h.SetTotalShares(aggr.TotalShares)
@@ -188,7 +188,7 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	// Calculate value as Total Shares * Current Price
 	// We support only USD holdings now, so convert value from USD to SGD
 	// TODO: Have better currency handling
-	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice()*config.USDToSGD, config.StandardDP)
+	latestValue := h.GetTotalShares() * q.GetLatestPrice() * config.USDToSGD
 
 	h.SetLatestValue(goutil.Float64(latestValue))
 	h.SetQuote(q)

@@ -75,8 +75,10 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		tu, _ := t.Update(req.ToTransactionUpdate())
+
 		// mark transaction as deleted
-		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), req.ToTransactionUpdate()); err != nil {
+		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), tu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark transaction as deleted, err: %v", err)
 			return err
 		}

@@ -674,6 +674,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// delete lot
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteLotRequest),
+			Res:       new(presenter.DeleteLotResponse),
+			Validator: lh.DeleteLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.DeleteLot(ctx, req.(*presenter.DeleteLotRequest), res.(*presenter.DeleteLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// update lot
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathUpdateLot,
