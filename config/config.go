@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Server  *Server  `json:"server"`
-	Mongo   *Mongo   `json:"mongo"`
-	Tokens  *Tokens  `json:"token"`
-	FinnHub *FinnHub `json:"finnhub"`
+	Server        *Server   `json:"server"`
+	Mongo         *Mongo    `json:"mongo"`
+	Tokens        *Tokens   `json:"token"`
+	FinnHub       *FinnHub  `json:"finnhub"`
+	QuoteMemCache *MemCache `json:"quote_mem_cache"`
 }
 
 type RateLimit struct {
@@ -22,6 +23,11 @@ type Server struct {
 	LogLevel   string                `json:"log_level"`
 	Port       int                   `json:"port"`
 	RateLimits map[string]*RateLimit `json:"rate_limits"`
+}
+
+type MemCache struct {
+	ExpiryTime      string `json:"expiry_time"`
+	CleanUpInterval string `json:"clean_up_interval"`
 }
 
 type Mongo struct {
@@ -82,7 +88,7 @@ func NewConfig() *Config {
 		},
 		Tokens: &Tokens{
 			AccessToken: &Token{
-				ExpiresIn: 604_800, // 7 days
+				ExpiresIn: 31_536_000, // 365 days
 				Issuer:    "pocketeer_be",
 				Secret:    "%5jJclw22Sa91k9V4N11H^zGXkc0jw",
 			},
@@ -95,6 +101,10 @@ func NewConfig() *Config {
 		FinnHub: &FinnHub{
 			BaseURL: "https://finnhub.io/api/v1",
 			Token:   "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
+		},
+		QuoteMemCache: &MemCache{
+			ExpiryTime:      "15m",
+			CleanUpInterval: "20m",
 		},
 	}
 }

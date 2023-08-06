@@ -24,6 +24,28 @@ func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
 	}
 }
 
+func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
+	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
+	if err != nil && err != repo.ErrLotNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == repo.ErrLotNotFound {
+		return new(DeleteLotResponse), nil
+	}
+
+	lu, _ := l.Update(req.ToLotUpdate())
+
+	// mark lot as deleted
+	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
+		return nil, err
+	}
+
+	return new(DeleteLotResponse), nil
+}
+
 func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error) {
 	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
 	if err != nil {
@@ -43,7 +65,7 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 	}
 
 	return &CreateLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -67,7 +89,7 @@ func (uc *lotUseCase) UpdateLot(ctx context.Context, req *UpdateLotRequest) (*Up
 	}
 
 	return &UpdateLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -79,7 +101,7 @@ func (uc *lotUseCase) GetLot(ctx context.Context, req *GetLotRequest) (*GetLotRe
 	}
 
 	return &GetLotResponse{
-		l,
+		Lot: l,
 	}, nil
 }
 
@@ -91,6 +113,6 @@ func (uc *lotUseCase) GetLots(ctx context.Context, req *GetLotsRequest) (*GetLot
 	}
 
 	return &GetLotsResponse{
-		ls,
+		Lots: ls,
 	}, nil
 }

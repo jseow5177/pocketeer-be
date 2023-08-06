@@ -16,7 +16,6 @@ type SecurityRepo interface {
 	Get(ctx context.Context, sf *SecurityFilter) (*entity.Security, error)
 
 	CreateMany(ctx context.Context, ss []*entity.Security) error
-	Update(ctx context.Context, sf *SecurityFilter, su *entity.SecurityUpdate) error
 }
 
 type SecurityFilter struct {

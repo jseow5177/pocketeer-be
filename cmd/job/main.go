@@ -9,7 +9,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	sq "github.com/jseow5177/pockteer-be/cmd/job/save_quotes"
 	ss "github.com/jseow5177/pockteer-be/cmd/job/save_symbols"
 )
 
@@ -26,10 +25,6 @@ var cmds = map[string]struct {
 	"save_symbols": {
 		desc: "scan symbols from third party API and save into mongo",
 		job:  new(ss.SaveSymbols),
-	},
-	"save_quotes": {
-		desc: "scan user holdings and get their latest quotes",
-		job:  new(sq.SaveQuotes),
 	},
 }
 

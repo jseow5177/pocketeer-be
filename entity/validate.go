@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -18,8 +19,30 @@ var (
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
 	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
+	ErrInvalidBudgetRepeats    = errors.New("invalid budget periods")
 	ErrMustBePositive          = errors.New("must be positive")
 )
+
+func CheckBudgetRepeat(budgetPeriod uint32) error {
+	if _, ok := BudgetRepeats[budgetPeriod]; !ok {
+		return ErrInvalidBudgetRepeats
+	}
+	return nil
+}
+
+func CheckDateStr(date string) error {
+	if _, err := util.ParseDateStr(date); err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckTimezone(timezone string) error {
+	if _, err := time.LoadLocation(timezone); err != nil {
+		return err
+	}
+	return nil
+}
 
 func CheckHoldingType(holdingType uint32) error {
 	if _, ok := HoldingTypes[holdingType]; !ok {

@@ -298,6 +298,7 @@ func (m *GetTransactionsResponse) Set(useCaseRes *transaction.GetTransactionsRes
 type UpdateTransactionRequest struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
 	CategoryID      *string `json:"category_id,omitempty"`
+	AccountID       *string `json:"account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -307,6 +308,13 @@ type UpdateTransactionRequest struct {
 func (t *UpdateTransactionRequest) GetTransactionID() string {
 	if t != nil && t.TransactionID != nil {
 		return *t.TransactionID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetAccountID() string {
+	if t != nil && t.AccountID != nil {
+		return *t.AccountID
 	}
 	return ""
 }
@@ -354,6 +362,7 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 	}
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
+		AccountID:       m.AccountID,
 		TransactionID:   m.TransactionID,
 		Note:            m.Note,
 		Amount:          amount,
@@ -421,7 +430,6 @@ func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrT
 		UserID:           goutil.String(userID),
 		TransactionTypes: m.TransactionTypes,
 		CategoryIDs:      m.CategoryIDs,
-		BudgetIDs:        m.BudgetIDs,
 		TransactionTime: &common.UInt64Filter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,

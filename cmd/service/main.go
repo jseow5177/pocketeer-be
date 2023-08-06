@@ -17,6 +17,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/jseow5177/pockteer-be/pkg/router"
@@ -55,6 +56,7 @@ type server struct {
 	holdingRepo     repo.HoldingRepo
 	lotRepo         repo.LotRepo
 	securityRepo    repo.SecurityRepo
+	quoteRepo       repo.QuoteRepo
 
 	securityAPI api.SecurityAPI
 
@@ -104,7 +106,7 @@ func (s *server) Start() error {
 		}
 	}()
 
-	// init repos
+	// init mongo repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
 	s.budgetRepo = mongo.NewBudgetMongo(s.mongo)
@@ -117,14 +119,21 @@ func (s *server) Start() error {
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
+	// init mem repos
+	s.quoteRepo, err = mem.NewQuoteMemCache(s.cfg.QuoteMemCache, s.securityAPI)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init quote repo, err: %v", err)
+		return err
+	}
+
 	// init use cases
-	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo)
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
-	s.budgetUseCase = buc.NewBudgetUseCase(s.budgetRepo, s.categoryRepo)
+	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
+	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.securityAPI)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
 
@@ -234,6 +243,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// get category budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategoryBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoryBudgetRequest),
+			Res:       new(presenter.GetCategoryBudgetResponse),
+			Validator: ch.GetCategoryBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.GetCategoryBudget(ctx, req.(*presenter.GetCategoryBudgetRequest), res.(*presenter.GetCategoryBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get categories
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetCategories,
@@ -244,6 +268,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: ch.GetCategoriesValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return categoryHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// get categories budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCategoriesBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCategoriesBudgetRequest),
+			Res:       new(presenter.GetCategoriesBudgetResponse),
+			Validator: ch.GetCategoriesBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.GetCategoriesBudget(ctx, req.(*presenter.GetCategoriesBudgetRequest), res.(*presenter.GetCategoriesBudgetResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
@@ -458,6 +497,51 @@ func (s *server) registerRoutes() http.Handler {
 
 	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)
 
+	// create budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateBudgetRequest),
+			Res:       new(presenter.CreateBudgetResponse),
+			Validator: bh.CreateBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// update budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateBudgetRequest),
+			Res:       new(presenter.UpdateBudgetResponse),
+			Validator: bh.UpdateBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.UpdateBudget(ctx, req.(*presenter.UpdateBudgetRequest), res.(*presenter.UpdateBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// delete budget
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteBudget,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteBudgetRequest),
+			Res:       new(presenter.DeleteBudgetResponse),
+			Validator: bh.DeleteBudgetValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.DeleteBudget(ctx, req.(*presenter.DeleteBudgetRequest), res.(*presenter.DeleteBudgetResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get budget
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetBudget,
@@ -488,16 +572,16 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// set budget
+	// update budget
 	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathSetBudget,
+		Path:   config.PathUpdateBudget,
 		Method: http.MethodPost,
 		Handler: router.Handler{
-			Req:       new(presenter.SetBudgetRequest),
-			Res:       new(presenter.SetBudgetResponse),
-			Validator: bh.SetBudgetValidator,
+			Req:       new(presenter.UpdateBudgetRequest),
+			Res:       new(presenter.UpdateBudgetResponse),
+			Validator: bh.UpdateBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.SetBudget(ctx, req.(*presenter.SetBudgetRequest), res.(*presenter.SetBudgetResponse))
+				return budgetHandler.UpdateBudget(ctx, req.(*presenter.UpdateBudgetRequest), res.(*presenter.UpdateBudgetResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
@@ -585,6 +669,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: lh.CreateLotValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// delete lot
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteLot,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteLotRequest),
+			Res:       new(presenter.DeleteLotResponse),
+			Validator: lh.DeleteLotValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return lotHandler.DeleteLot(ctx, req.(*presenter.DeleteLotRequest), res.(*presenter.DeleteLotResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

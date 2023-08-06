@@ -5,11 +5,9 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/config"
-	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,7 +20,7 @@ type holdingUseCase struct {
 	holdingRepo  repo.HoldingRepo
 	lotRepo      repo.LotRepo
 	securityRepo repo.SecurityRepo
-	securityAPI  api.SecurityAPI
+	quoteRepo    repo.QuoteRepo
 }
 
 func NewHoldingUseCase(
@@ -30,14 +28,14 @@ func NewHoldingUseCase(
 	holdingRepo repo.HoldingRepo,
 	lotRepo repo.LotRepo,
 	securityRepo repo.SecurityRepo,
-	securityAPI api.SecurityAPI,
+	quoteRepo repo.QuoteRepo,
 ) UseCase {
 	return &holdingUseCase{
 		accountRepo,
 		holdingRepo,
 		lotRepo,
 		securityRepo,
-		securityAPI,
+		quoteRepo,
 	}
 }
 
@@ -57,7 +55,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, ErrAccountNotInvestment
 	}
 
-	if !h.IsCustom() {
+	if h.IsDefault() {
 		if _, err = uc.securityRepo.Get(ctx, req.ToSecurityFilter()); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
 			return nil, err
@@ -70,7 +68,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	}
 
 	return &CreateHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -81,13 +79,22 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 		return nil, err
 	}
 
-	if err = uc.calcHoldingValue(ctx, h); err != nil {
+	var q *entity.Quote
+	if h.IsDefault() {
+		q, err = uc.quoteRepo.Get(ctx, req.ToQuoteFilter(h.GetSymbol()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get quote from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	if err = uc.calcHoldingValue(ctx, h, q); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to compute holding value, err: %v", err)
 		return nil, err
 	}
 
 	return &GetHoldingResponse{
-		h,
+		Holding: h,
 	}, nil
 }
 
@@ -99,14 +106,24 @@ func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsReque
 	}
 
 	if err := goutil.ParallelizeWork(ctx, len(hs), 5, func(ctx context.Context, workNum int) error {
-		return uc.calcHoldingValue(ctx, hs[workNum])
+		h := hs[workNum]
+
+		var q *entity.Quote
+		if h.IsDefault() {
+			q, err = uc.quoteRepo.Get(ctx, req.ToQuoteFilter(h.GetSymbol()))
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get quote from repo, err: %v", err)
+				return err
+			}
+		}
+		return uc.calcHoldingValue(ctx, h, q)
 	}); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to compute holdings value, err: %v", err)
 		return nil, err
 	}
 
 	return &GetHoldingsResponse{
-		hs,
+		Holdings: hs,
 	}, nil
 }
 
@@ -138,16 +155,21 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 	}, nil
 }
 
-func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holding) error {
+func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holding, q *entity.Quote) error {
 	// value of custom holding is already stored in DB
 	if h.IsCustom() {
 		return nil
+	}
+
+	if q == nil {
+		q = entity.NewQuote()
 	}
 
 	// Compute total shares and cost
 	aggr, err := uc.lotRepo.CalcTotalSharesAndCost(ctx, &repo.LotFilter{
 		UserID:    h.UserID,
 		HoldingID: h.HoldingID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to calc lot aggr from repo, err: %v", err)
@@ -157,51 +179,17 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 	// Compute avg cost per share
 	var avgCostPerShare float64
 	if aggr.GetTotalCost() != 0 {
-		avgCostPerShare = util.RoundFloat(aggr.GetTotalCost()/aggr.GetTotalShares(), config.StandardDP)
+		avgCostPerShare = aggr.GetTotalCost() / aggr.GetTotalShares()
 	}
 	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
 	h.SetTotalShares(aggr.TotalShares)
 	h.SetTotalCost(aggr.TotalCost)
 
-	// Get security quote
-	s, err := uc.securityRepo.Get(ctx, &repo.SecurityFilter{
-		Symbol: h.Symbol,
-	})
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
-		return err
-	}
-
-	// If quote is not in Mongo, get from API
-	q := s.Quote
-	if q == nil {
-		q, err = uc.securityAPI.GetLatestQuote(ctx, &api.SecurityFilter{
-			Symbol: h.Symbol,
-		})
-		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to get latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
-			return err
-		}
-
-		// cache quote to Mongo, ignore error
-		go func() {
-			ctx = goutil.WithoutCancel(ctx)
-			su := entity.NewSecurityUpdate(
-				entity.WithUpdateSecurityQuote(q),
-			)
-			if err := uc.securityRepo.Update(ctx, &repo.SecurityFilter{
-				Symbol: h.Symbol,
-			}, su); err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to cache latest quote, symbol: %v, err: %v", h.GetSymbol(), err)
-			}
-		}()
-	}
-
-	// TODO: Have better currency conversion logic
-	q = q.ToSGD()
-
 	// Calculate value as Total Shares * Current Price
-	latestValue := util.RoundFloat(h.GetTotalShares()*q.GetLatestPrice(), config.StandardDP)
+	// We support only USD holdings now, so convert value from USD to SGD
+	// TODO: Have better currency handling
+	latestValue := h.GetTotalShares() * q.GetLatestPrice() * config.USDToSGD
+
 	h.SetLatestValue(goutil.Float64(latestValue))
 	h.SetQuote(q)
 

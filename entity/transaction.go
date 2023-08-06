@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -42,6 +43,7 @@ type TransactionUpdate struct {
 	Note              *string
 	TransactionStatus *uint32
 	UpdateTime        *uint64
+	AccountID         *string
 }
 
 func (tu *TransactionUpdate) GetAmount() float64 {
@@ -51,11 +53,24 @@ func (tu *TransactionUpdate) GetAmount() float64 {
 	return 0
 }
 
+func (tu *TransactionUpdate) SetAmount(amount *float64) {
+	tu.Amount = amount
+
+	if amount != nil {
+		am := util.RoundFloatToStandardDP(*amount)
+		tu.Amount = goutil.Float64(am)
+	}
+}
+
 func (tu *TransactionUpdate) GetTransactionTime() uint64 {
 	if tu != nil && tu.TransactionTime != nil {
 		return *tu.TransactionTime
 	}
 	return 0
+}
+
+func (tu *TransactionUpdate) SetTransactionTime(transactionTime *uint64) {
+	tu.TransactionTime = transactionTime
 }
 
 func (tu *TransactionUpdate) GetTransactionStatus() uint32 {
@@ -65,11 +80,19 @@ func (tu *TransactionUpdate) GetTransactionStatus() uint32 {
 	return 0
 }
 
+func (tu *TransactionUpdate) SetTransactionStatus(transactionStatus *uint32) {
+	tu.TransactionStatus = transactionStatus
+}
+
 func (tu *TransactionUpdate) GetNote() string {
 	if tu != nil && tu.Note != nil {
 		return *tu.Note
 	}
 	return ""
+}
+
+func (tu *TransactionUpdate) SetNote(note *string) {
+	tu.Note = note
 }
 
 func (tu *TransactionUpdate) GetUpdateTime() uint64 {
@@ -79,29 +102,50 @@ func (tu *TransactionUpdate) GetUpdateTime() uint64 {
 	return 0
 }
 
+func (tu *TransactionUpdate) SetUpdateTime(updateTime *uint64) {
+	tu.UpdateTime = updateTime
+}
+
+func (tu *TransactionUpdate) GetAccountID() string {
+	if tu != nil && tu.AccountID != nil {
+		return *tu.AccountID
+	}
+	return ""
+}
+
+func (tu *TransactionUpdate) SetAccountID(accountID *string) {
+	tu.AccountID = accountID
+}
+
 type TransactionUpdateOption func(acu *TransactionUpdate)
+
+func WithUpdateTransactionAccountID(accountID *string) TransactionUpdateOption {
+	return func(acu *TransactionUpdate) {
+		acu.SetAccountID(accountID)
+	}
+}
 
 func WithUpdateTransactionAmount(amount *float64) TransactionUpdateOption {
 	return func(tu *TransactionUpdate) {
-		tu.Amount = amount
+		tu.SetAmount(amount)
 	}
 }
 
 func WithUpdateTransactionTime(transactionTime *uint64) TransactionUpdateOption {
 	return func(tu *TransactionUpdate) {
-		tu.TransactionTime = transactionTime
+		tu.SetTransactionTime(transactionTime)
 	}
 }
 
 func WithUpdateTransactionNote(note *string) TransactionUpdateOption {
 	return func(tu *TransactionUpdate) {
-		tu.Note = note
+		tu.SetNote(note)
 	}
 }
 
 func WithUpdateTransactionStatus(transactionStatus *uint32) TransactionUpdateOption {
 	return func(tu *TransactionUpdate) {
-		tu.TransactionStatus = transactionStatus
+		tu.SetTransactionStatus(transactionStatus)
 	}
 }
 
@@ -131,49 +175,49 @@ type TransactionOption = func(t *Transaction)
 
 func WithTransactionID(transactionID *string) TransactionOption {
 	return func(t *Transaction) {
-		t.TransactionID = transactionID
+		t.SetTransactionID(transactionID)
 	}
 }
 
 func WithTransactionAmount(amount *float64) TransactionOption {
 	return func(t *Transaction) {
-		t.Amount = amount
+		t.SetAmount(amount)
 	}
 }
 
 func WithTransactionNote(note *string) TransactionOption {
 	return func(t *Transaction) {
-		t.Note = note
+		t.SetNote(note)
 	}
 }
 
 func WithTransactionStatus(transactionStatus *uint32) TransactionOption {
 	return func(t *Transaction) {
-		t.TransactionStatus = transactionStatus
+		t.SetTransactionStatus(transactionStatus)
 	}
 }
 
 func WithTransactionType(transactionType *uint32) TransactionOption {
 	return func(t *Transaction) {
-		t.TransactionType = transactionType
+		t.SetTransactionType(transactionType)
 	}
 }
 
 func WithTransactionTime(transactionTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.TransactionTime = transactionTime
+		t.SetTransactionTime(transactionTime)
 	}
 }
 
 func WithTransactionCreateTime(createTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.CreateTime = createTime
+		t.SetCreateTime(createTime)
 	}
 }
 
 func WithTransactionUpdateTime(updateTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.UpdateTime = updateTime
+		t.SetUpdateTime(updateTime)
 	}
 }
 
@@ -199,14 +243,14 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 }
 
 func (t *Transaction) checkOpts() {
-	if t.GetTransactionType() == uint32(TransactionTypeExpense) {
+	if t.IsExpense() {
 		if t.GetAmount() > 0 {
-			t.Amount = goutil.Float64(-t.GetAmount())
+			t.SetAmount(goutil.Float64(-t.GetAmount()))
 		}
 	}
 
-	if t.GetTransactionType() == uint32(TransactionTypeIncome) {
-		t.Amount = goutil.Float64(math.Abs(t.GetAmount()))
+	if t.IsIncome() {
+		t.SetAmount(goutil.Float64(math.Abs(t.GetAmount())))
 	}
 }
 
@@ -215,37 +259,46 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 
 	if tu.Amount != nil && tu.GetAmount() != t.GetAmount() {
 		hasUpdate = true
-		t.Amount = tu.Amount
+		t.SetAmount(tu.Amount)
 
 		defer func() {
-			transactionUpdate.Amount = t.Amount
+			transactionUpdate.SetAmount(t.Amount)
 		}()
 	}
 
 	if tu.TransactionTime != nil && tu.GetTransactionTime() != t.GetTransactionTime() {
 		hasUpdate = true
-		t.TransactionTime = tu.TransactionTime
+		t.SetTransactionTime(tu.TransactionTime)
 
 		defer func() {
-			transactionUpdate.TransactionTime = t.TransactionTime
+			transactionUpdate.SetTransactionTime(t.TransactionTime)
 		}()
 	}
 
 	if tu.Note != nil && tu.GetNote() != t.GetNote() {
 		hasUpdate = true
-		t.Note = tu.Note
+		t.SetNote(tu.Note)
 
 		defer func() {
-			transactionUpdate.Note = t.Note
+			transactionUpdate.SetNote(t.Note)
 		}()
 	}
 
 	if tu.TransactionStatus != nil && tu.GetTransactionStatus() != t.GetTransactionStatus() {
 		hasUpdate = true
-		t.TransactionStatus = tu.TransactionStatus
+		t.SetTransactionStatus(tu.TransactionStatus)
 
 		defer func() {
-			transactionUpdate.TransactionStatus = t.TransactionStatus
+			transactionUpdate.SetTransactionStatus(t.TransactionStatus)
+		}()
+	}
+
+	if tu.AccountID != nil && tu.GetAccountID() != t.GetAccountID() {
+		hasUpdate = true
+		t.SetAccountID(tu.AccountID)
+
+		defer func() {
+			transactionUpdate.SetAccountID(t.AccountID)
 		}()
 	}
 
@@ -254,12 +307,12 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
-	t.UpdateTime = now
+	t.SetUpdateTime(now)
 
 	// check
 	t.checkOpts()
 
-	transactionUpdate.UpdateTime = now
+	transactionUpdate.SetUpdateTime(now)
 
 	return
 }
@@ -296,11 +349,19 @@ func (t *Transaction) GetUserID() string {
 	return ""
 }
 
+func (t *Transaction) SetUserID(userID *string) {
+	t.UserID = userID
+}
+
 func (t *Transaction) GetCategoryID() string {
 	if t != nil && t.CategoryID != nil {
 		return *t.CategoryID
 	}
 	return ""
+}
+
+func (t *Transaction) SetCategoryID(categoryID *string) {
+	t.CategoryID = categoryID
 }
 
 func (t *Transaction) GetAccountID() string {
@@ -310,11 +371,24 @@ func (t *Transaction) GetAccountID() string {
 	return ""
 }
 
+func (t *Transaction) SetAccountID(accountID *string) {
+	t.AccountID = accountID
+}
+
 func (t *Transaction) GetAmount() float64 {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
 	}
 	return 0
+}
+
+func (t *Transaction) SetAmount(amount *float64) {
+	t.Amount = amount
+
+	if amount != nil {
+		am := util.RoundFloatToStandardDP(*amount)
+		t.Amount = goutil.Float64(am)
+	}
 }
 
 func (t *Transaction) GetNote() string {
@@ -324,11 +398,19 @@ func (t *Transaction) GetNote() string {
 	return ""
 }
 
+func (t *Transaction) SetNote(note *string) {
+	t.Note = note
+}
+
 func (t *Transaction) GetTransactionStatus() uint32 {
 	if t != nil && t.TransactionStatus != nil {
 		return *t.TransactionStatus
 	}
 	return 0
+}
+
+func (t *Transaction) SetTransactionStatus(transactionStatus *uint32) {
+	t.TransactionStatus = transactionStatus
 }
 
 func (t *Transaction) GetTransactionType() uint32 {
@@ -338,11 +420,19 @@ func (t *Transaction) GetTransactionType() uint32 {
 	return 0
 }
 
+func (t *Transaction) SetTransactionType(transactionType *uint32) {
+	t.TransactionType = transactionType
+}
+
 func (t *Transaction) GetTransactionTime() uint64 {
 	if t != nil && t.TransactionTime != nil {
 		return *t.TransactionTime
 	}
 	return 0
+}
+
+func (t *Transaction) SetTransactionTime(transactionTime *uint64) {
+	t.TransactionTime = transactionTime
 }
 
 func (t *Transaction) GetCreateTime() uint64 {
@@ -352,11 +442,27 @@ func (t *Transaction) GetCreateTime() uint64 {
 	return 0
 }
 
+func (t *Transaction) SetCreateTime(createTime *uint64) {
+	t.CreateTime = createTime
+}
+
 func (t *Transaction) GetUpdateTime() uint64 {
 	if t != nil && t.UpdateTime != nil {
 		return *t.UpdateTime
 	}
 	return 0
+}
+
+func (t *Transaction) SetUpdateTime(updateTime *uint64) {
+	t.UpdateTime = updateTime
+}
+
+func (t *Transaction) IsExpense() bool {
+	return t.GetTransactionType() == uint32(TransactionTypeExpense)
+}
+
+func (t *Transaction) IsIncome() bool {
+	return t.GetTransactionType() == uint32(TransactionTypeIncome)
 }
 
 func GetTransactionTypeByAmount(amount float64) TransactionType {

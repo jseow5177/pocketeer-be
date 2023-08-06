@@ -1,4 +1,4 @@
-package budget
+package category
 
 import (
 	"context"
@@ -10,10 +10,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var GetBudgetsValidator = validator.MustForm(map[string]validator.Validator{
-	"category_ids": &validator.Slice{
-		Optional:  false,
-		Validator: &validator.String{},
+var GetCategoryBudgetValidator = validator.MustForm(map[string]validator.Validator{
+	"category_id": &validator.String{
+		Optional: false,
 	},
 	"budget_date": &validator.String{
 		Optional:   false,
@@ -25,12 +24,16 @@ var GetBudgetsValidator = validator.MustForm(map[string]validator.Validator{
 	},
 })
 
-func (h *budgetHandler) GetBudgets(ctx context.Context, req *presenter.GetBudgetsRequest, res *presenter.GetBudgetsResponse) error {
+func (h *categoryHandler) GetCategoryBudget(
+	ctx context.Context,
+	req *presenter.GetCategoryBudgetRequest,
+	res *presenter.GetCategoryBudgetResponse,
+) error {
 	userID := util.GetUserIDFromCtx(ctx)
 
-	useCaseRes, err := h.budgetUseCase.GetBudgets(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.categoryUseCase.GetCategoryBudget(ctx, req.ToUseCaseReq(userID))
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get budget, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to get category budget, err: %v", err)
 		return err
 	}
 

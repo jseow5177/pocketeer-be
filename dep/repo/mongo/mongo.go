@@ -127,46 +127,18 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
-func (mc *MongoColl) upsert(ctx context.Context, uniqueKey string, doc interface{}) (id string, err error) {
-	keyValue := getUniqueKeyValue(doc, uniqueKey)
-
-	filter := bson.M{uniqueKey: keyValue}
-	update := bson.M{"$set": removeUniqueKeyField(doc, uniqueKey)}
-
-	upsert := mongo.NewUpdateOneModel()
-	upsert.SetFilter(filter)
-	upsert.SetUpdate(update)
-	upsert.SetUpsert(true)
-
-	opts := options.Update().SetUpsert(true)
-	result, err := mc.coll.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		return "", err
-	}
-
-	if result.UpsertedID != nil {
-		objID := result.UpsertedID.(primitive.ObjectID)
-		id = objID.Hex()
-	}
-
-	return id, nil
-}
-
-func (mc *MongoColl) get(ctx context.Context, filter interface{}, model interface{}) error {
-	f := mongoutil.BuildFilter(filter)
-
-	if err := mc.coll.FindOne(ctx, f).Decode(model); err != nil {
+func (mc *MongoColl) get(ctx context.Context, model interface{}, filter bson.D) error {
+	if err := mc.coll.FindOne(ctx, filter).Decode(model); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts filter.FilterOptions, model interface{}) ([]interface{}, error) {
-	f := mongoutil.BuildFilter(filter)
+func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts filter.FilterOptions, filter bson.D) ([]interface{}, error) {
 	opts := mongoutil.BuildFilterOptions(filterOpts)
 
-	cursor, err := mc.coll.Find(ctx, f, opts)
+	cursor, err := mc.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +157,7 @@ func (mc *MongoColl) getMany(ctx context.Context, filter interface{}, filterOpts
 	return res, nil
 }
 
-func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
+func (mc *MongoColl) aggr(ctx context.Context, filter bson.D, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
 	pipeline := mongoutil.BuildAggrPipeline(filter, groupBy, aggrs...)
 
 	cursor, err := mc.coll.Aggregate(ctx, pipeline)
@@ -213,22 +185,4 @@ func (mc *MongoColl) aggr(ctx context.Context, filter interface{}, groupBy strin
 	}
 
 	return allRes, nil
-}
-
-func getUniqueKeyValue(doc interface{}, uniqueKey string) interface{} {
-	value := bson.M{}
-	bsonBytes, _ := bson.Marshal(doc)
-	_ = bson.Unmarshal(bsonBytes, &value)
-
-	return value[uniqueKey]
-}
-
-func removeUniqueKeyField(doc interface{}, uniqueKey string) interface{} {
-	value := bson.M{}
-	bsonBytes, _ := bson.Marshal(doc)
-	_ = bson.Unmarshal(bsonBytes, &value)
-
-	delete(value, uniqueKey)
-
-	return value
 }

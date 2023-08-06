@@ -16,7 +16,43 @@ type UseCase interface {
 
 	CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error)
 	UpdateLot(ctx context.Context, req *UpdateLotRequest) (*UpdateLotResponse, error)
+	DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error)
 }
+
+type DeleteLotRequest struct {
+	UserID *string
+	LotID  *string
+}
+
+func (m *DeleteLotRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteLotRequest) GetLotID() string {
+	if m != nil && m.LotID != nil {
+		return *m.LotID
+	}
+	return ""
+}
+
+func (m *DeleteLotRequest) ToLotFilter() *repo.LotFilter {
+	return &repo.LotFilter{
+		UserID:    m.UserID,
+		LotID:     m.LotID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
+	}
+}
+
+func (m *DeleteLotRequest) ToLotUpdate() *entity.LotUpdate {
+	return entity.NewLotUpdate(
+		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
+	)
+}
+
+type DeleteLotResponse struct{}
 
 type GetLotRequest struct {
 	UserID *string
@@ -39,8 +75,9 @@ func (m *GetLotRequest) GetLotID() string {
 
 func (m *GetLotRequest) ToLotFilter() *repo.LotFilter {
 	return &repo.LotFilter{
-		UserID: m.UserID,
-		LotID:  m.LotID,
+		UserID:    m.UserID,
+		LotID:     m.LotID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
 	}
 }
 
@@ -78,6 +115,7 @@ func (m *GetLotsRequest) ToLotFilter() *repo.LotFilter {
 	return &repo.LotFilter{
 		UserID:    m.UserID,
 		HoldingID: m.HoldingID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
 		Paging: &repo.Paging{
 			Sorts: []filter.Sort{
 				&repo.Sort{
@@ -157,8 +195,9 @@ func (m *UpdateLotRequest) ToLotUpdate() *entity.LotUpdate {
 
 func (m *UpdateLotRequest) ToLotFilter() *repo.LotFilter {
 	return &repo.LotFilter{
-		UserID: m.UserID,
-		LotID:  m.LotID,
+		UserID:    m.UserID,
+		LotID:     m.LotID,
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
 	}
 }
 

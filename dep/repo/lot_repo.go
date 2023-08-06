@@ -25,6 +25,7 @@ type LotFilter struct {
 	LotID     *string `filter:"_id"`
 	UserID    *string `filter:"user_id"`
 	HoldingID *string `filter:"holding_id"`
+	LotStatus *uint32 `filter:"lot_status"`
 	Paging    *Paging `filter:"-"`
 }
 
@@ -40,6 +41,13 @@ func (f *LotFilter) GetLotID() string {
 		return *f.LotID
 	}
 	return ""
+}
+
+func (f *LotFilter) GetLotStatus() uint32 {
+	if f != nil && f.LotStatus != nil {
+		return *f.LotStatus
+	}
+	return 0
 }
 
 func (f *LotFilter) GetHoldingID() string {

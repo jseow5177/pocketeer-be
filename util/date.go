@@ -1,67 +1,132 @@
 package util
 
-import "time"
-
-type MonthType uint32
-
-const (
-	Constant_JAN MonthType = iota + 1
-	Constant_FEB
-	Constant_MAR
-	Constant_APR
-	Constant_MAY
-	Constant_JUN
-	Constant_JUL
-	Constant_AUG
-	Constant_SEP
-	Constant_OCT
-	Constant_NOV
-	Constant_DEC
+import (
+	"strconv"
+	"time"
 )
 
-var MonthTypes = map[uint32]string{
-	uint32(Constant_JAN): "JAN",
-	uint32(Constant_FEB): "FEB",
-	uint32(Constant_MAR): "MAR",
-	uint32(Constant_APR): "APR",
-	uint32(Constant_MAY): "MAY",
-	uint32(Constant_JUN): "JUN",
-	uint32(Constant_JUL): "JUL",
-	uint32(Constant_AUG): "AUG",
-	uint32(Constant_SEP): "SEP",
-	uint32(Constant_OCT): "OCT",
-	uint32(Constant_NOV): "NOV",
-	uint32(Constant_DEC): "DEC",
-}
+// YYYYMMDD
+const layout = "20060102"
 
-const layout = "2006-01-02"
-
-func IsYearMonthAfterCurrent(year, month uint32) bool {
-	currYear, currMonth, _ := time.Now().Date()
-	if year > uint32(currYear) {
-		return true
-	} else if year == uint32(currYear) && month > uint32(currMonth) {
-		return true
-	}
-	return false
-}
-
-// YYYY-MM-DD
-func ValidateDateStr(dateString string) error {
-	_, err := time.Parse(layout, dateString)
+func GetYearRangeAsDate(date, timezone string) (start, end uint64, err error) {
+	fd, ld, err := getYearRange(date, timezone)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return nil
+	start = FormatDateAsInt(fd)
+	end = FormatDateAsInt(ld)
+
+	return
 }
 
-// YYYY-MM-DD
-func DateStrToDate(dateString string) (time.Time, error) {
-	date, err := time.Parse(layout, dateString)
+func GetYearRangeAsUnix(date, timezone string) (start, end uint64, err error) {
+	fd, ld, err := getYearRange(date, timezone)
 	if err != nil {
-		return date, err
+		return 0, 0, err
 	}
 
-	return date, nil
+	start = uint64(fd.UnixMilli())
+	end = uint64(ld.UnixMilli())
+
+	return
+}
+
+func getYearRange(date, timezone string) (start, end time.Time, err error) {
+	zeroTime := time.Time{}
+
+	t, err := ParseDateStr(date)
+	if err != nil {
+		return zeroTime, zeroTime, err
+	}
+
+	l := t.Location()
+	if timezone != "" {
+		l, err = time.LoadLocation(timezone)
+		if err != nil {
+			return zeroTime, zeroTime, err
+		}
+	}
+
+	y := t.Year()
+
+	start = time.Date(y, time.January, 1, 0, 0, 0, 0, l)
+	end = time.Date(y+1, time.January, 0, 0, 0, 0, 0, l)
+
+	return
+}
+
+func GetMonthRangeAsDate(date, timezone string) (start, end uint64, err error) {
+	fd, ld, err := getMonthRange(date, timezone)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	start = FormatDateAsInt(fd)
+	end = FormatDateAsInt(ld)
+
+	return
+}
+
+func GetMonthRangeAsUnix(date, timezone string) (start, end uint64, err error) {
+	fd, ld, err := getMonthRange(date, timezone)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	start = uint64(fd.UnixMilli())
+	end = uint64(ld.UnixMilli())
+
+	return
+}
+
+func getMonthRange(date, timezone string) (start, end time.Time, err error) {
+	zeroTime := time.Time{}
+
+	t, err := ParseDateStr(date)
+	if err != nil {
+		return zeroTime, zeroTime, err
+	}
+
+	l := t.Location()
+	if timezone != "" {
+		l, err = time.LoadLocation(timezone)
+		if err != nil {
+			return zeroTime, zeroTime, err
+		}
+	}
+
+	y, m, _ := t.Date()
+
+	start = time.Date(y, m, 1, 0, 0, 0, 0, l)
+	end = start.AddDate(0, 1, -1)
+
+	return
+}
+
+func FormatDateAsStr(t time.Time) string {
+	return t.Format(layout)
+}
+
+func FormatDateAsInt(t time.Time) uint64 {
+	d, _ := ParseDateStrToInt(FormatDateAsStr(t))
+	return d
+}
+
+func ParseDateStr(s string) (time.Time, error) {
+	return time.Parse(layout, s)
+}
+
+func ParseDateStrToInt(s string) (uint64, error) {
+	_, err := ParseDateStr(s)
+	if err != nil {
+		return 0, err
+	}
+
+	di, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return di, nil
 }

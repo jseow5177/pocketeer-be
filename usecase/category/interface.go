@@ -5,14 +5,80 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/usecase/budget"
 )
 
 type UseCase interface {
 	GetCategory(ctx context.Context, req *GetCategoryRequest) (*GetCategoryResponse, error)
 	GetCategories(ctx context.Context, req *GetCategoriesRequest) (*GetCategoriesResponse, error)
 
+	GetCategoryBudget(ctx context.Context, req *GetCategoryBudgetRequest) (*GetCategoryBudgetResponse, error)
+	GetCategoriesBudget(ctx context.Context, req *GetCategoriesBudgetRequest) (*GetCategoriesBudgetResponse, error)
+
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error)
+}
+
+type GetCategoryBudgetRequest struct {
+	UserID     *string
+	CategoryID *string
+	BudgetDate *string
+	Timezone   *string
+}
+
+func (m *GetCategoryBudgetRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetCategoryBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:     m.UserID,
+		CategoryID: m.CategoryID,
+	}
+}
+
+func (m *GetCategoryBudgetRequest) ToGetBudgetRequest() *budget.GetBudgetRequest {
+	return &budget.GetBudgetRequest{
+		UserID:     m.UserID,
+		CategoryID: m.CategoryID,
+		Timezone:   m.Timezone,
+		BudgetDate: m.BudgetDate,
+	}
+}
+
+type GetCategoryBudgetResponse struct {
+	Category *entity.Category
+}
+
+func (m *GetCategoryBudgetResponse) GetCategory() *entity.Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
 }
 
 type GetCategoryRequest struct {
@@ -189,6 +255,68 @@ type GetCategoriesResponse struct {
 }
 
 func (m *GetCategoriesResponse) GetCategories() []*entity.Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+type GetCategoriesBudgetRequest struct {
+	UserID      *string
+	BudgetDate  *string
+	CategoryIDs []string
+	Timezone    *string
+}
+
+func (m *GetCategoriesBudgetRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetCategoriesBudgetRequest) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *GetCategoriesBudgetRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
+}
+
+func (m *GetCategoriesBudgetRequest) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
+func (m *GetCategoriesBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:      m.UserID,
+		CategoryIDs: m.CategoryIDs,
+	}
+}
+
+func (m *GetCategoriesBudgetRequest) ToGetBudgetsRequest() *budget.GetBudgetsRequest {
+	return &budget.GetBudgetsRequest{
+		UserID:      m.UserID,
+		CategoryIDs: m.CategoryIDs,
+		BudgetDate:  m.BudgetDate,
+		Timezone:    m.Timezone,
+	}
+}
+
+type GetCategoriesBudgetResponse struct {
+	Categories []*entity.Category
+}
+
+func (m *GetCategoriesBudgetResponse) GetCategories() []*entity.Category {
 	if m != nil && m.Categories != nil {
 		return m.Categories
 	}

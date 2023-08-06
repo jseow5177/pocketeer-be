@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -49,8 +50,10 @@ func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu 
 }
 
 func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entity.Account, error) {
+	f := mongoutil.BuildFilter(acf)
+
 	ac := new(model.Account)
-	if err := m.mColl.get(ctx, acf, &ac); err != nil {
+	if err := m.mColl.get(ctx, &ac, f); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, repo.ErrAccountNotFound
 		}
@@ -61,7 +64,9 @@ func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entit
 }
 
 func (m *accountMongo) GetMany(ctx context.Context, acf *repo.AccountFilter) ([]*entity.Account, error) {
-	res, err := m.mColl.getMany(ctx, acf, nil, new(model.Account))
+	f := mongoutil.BuildFilter(acf)
+
+	res, err := m.mColl.getMany(ctx, new(model.Account), nil, f)
 	if err != nil {
 		return nil, err
 	}
