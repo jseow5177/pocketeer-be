@@ -176,14 +176,15 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 		return err
 	}
 
+	h.SetTotalShares(aggr.TotalShares)
+	h.SetTotalCost(goutil.Float64(aggr.GetTotalCost() * config.USDToSGD))
+
 	// Compute avg cost per share
 	var avgCostPerShare float64
 	if aggr.GetTotalCost() != 0 {
 		avgCostPerShare = aggr.GetTotalCost() / aggr.GetTotalShares()
 	}
-	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
-	h.SetTotalShares(aggr.TotalShares)
-	h.SetTotalCost(aggr.TotalCost)
+	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare * config.USDToSGD))
 
 	// Calculate value as Total Shares * Current Price
 	// We support only USD holdings now, so convert value from USD to SGD
