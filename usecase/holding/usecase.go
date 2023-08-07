@@ -145,6 +145,15 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		}, nil
 	}
 
+	if hu.Symbol != nil && h.IsDefault() {
+		if _, err = uc.securityRepo.Get(ctx, &repo.SecurityFilter{
+			Symbol: hu.Symbol,
+		}); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
 	if err = uc.holdingRepo.Update(ctx, req.ToHoldingFilter(), hu); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save holding updates to repo, err: %v", err)
 		return nil, err

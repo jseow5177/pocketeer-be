@@ -154,6 +154,7 @@ func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 
 func (m *UpdateHoldingRequest) ToHoldingUpdate() *entity.HoldingUpdate {
 	return &entity.HoldingUpdate{
+		Symbol:      m.Symbol,
 		TotalCost:   m.TotalCost,
 		LatestValue: m.LatestValue,
 	}
