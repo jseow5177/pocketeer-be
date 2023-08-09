@@ -2,10 +2,15 @@ package account
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+)
+
+var (
+	ErrInvalidUpdateMode = errors.New("invalid update mode")
 )
 
 type UseCase interface {
@@ -152,12 +157,37 @@ func (m *CreateAccountResponse) GetAccount() *entity.Account {
 	return nil
 }
 
+type UpdateMode uint32
+
+const (
+	UpdateModeDefault UpdateMode = iota
+	UpdateModeOffsetTransaction
+)
+
+var UpdateModes = map[uint32]string{
+	uint32(UpdateModeDefault):           "default",
+	uint32(UpdateModeOffsetTransaction): "offset transaction",
+}
+
+func CheckUpdateMode(updateMode uint32) error {
+	checkUpdateMode := updateMode
+	for k := range UpdateModes {
+		checkUpdateMode = checkUpdateMode & ^uint32(k)
+	}
+	if checkUpdateMode == 0 {
+		return nil
+	}
+
+	return ErrInvalidUpdateMode
+}
+
 type UpdateAccountRequest struct {
 	UserID      *string
 	AccountID   *string
 	AccountName *string
 	Balance     *float64
 	Note        *string
+	UpdateMode  *uint32
 }
 
 func (m *UpdateAccountRequest) GetUserID() string {
@@ -195,6 +225,13 @@ func (m *UpdateAccountRequest) GetNote() string {
 	return ""
 }
 
+func (m *UpdateAccountRequest) GetUpdateMode() uint32 {
+	if m != nil && m.UpdateMode != nil {
+		return *m.UpdateMode
+	}
+	return 0
+}
+
 func (m *UpdateAccountRequest) ToAccountFilter() *repo.AccountFilter {
 	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
 }
@@ -205,6 +242,10 @@ func (m *UpdateAccountRequest) ToAccountUpdate() *entity.AccountUpdate {
 		entity.WithUpdateAccountBalance(m.Balance),
 		entity.WithUpdateAccountNote(m.Note),
 	)
+}
+
+func (m *UpdateAccountRequest) NeedOffsetTransaction() bool {
+	return m.GetUpdateMode()&uint32(UpdateModeOffsetTransaction) > 0
 }
 
 type UpdateAccountResponse struct {

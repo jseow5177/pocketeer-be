@@ -226,6 +226,7 @@ type UpdateAccountRequest struct {
 	AccountName *string `json:"account_name,omitempty"`
 	Balance     *string `json:"balance,omitempty"`
 	Note        *string `json:"note,omitempty"`
+	UpdateMode  *uint32 `json:"update_mode,omitempty"`
 }
 
 func (m *UpdateAccountRequest) GetAccountID() string {
@@ -256,6 +257,13 @@ func (m *UpdateAccountRequest) GetNote() string {
 	return ""
 }
 
+func (m *UpdateAccountRequest) GetUpdateMode() uint32 {
+	if m != nil && m.UpdateMode != nil {
+		return *m.UpdateMode
+	}
+	return 0
+}
+
 func (m *UpdateAccountRequest) ToUseCaseReq(userID string) *account.UpdateAccountRequest {
 	var balance *float64
 	if m.Balance != nil {
@@ -268,6 +276,7 @@ func (m *UpdateAccountRequest) ToUseCaseReq(userID string) *account.UpdateAccoun
 		AccountName: m.AccountName,
 		Balance:     balance,
 		Note:        m.Note,
+		UpdateMode:  m.UpdateMode,
 	}
 }
 
