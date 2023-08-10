@@ -13,6 +13,7 @@ import (
 type UseCase interface {
 	GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error)
 	IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error)
+	VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error)
 
 	SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error)
 	LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error)
@@ -81,7 +82,7 @@ func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
 }
 
 type SignUpResponse struct {
-	*entity.User
+	User *entity.User
 }
 
 func (m *SignUpResponse) GetUser() *entity.User {
@@ -128,6 +129,43 @@ func (m *LogInResponse) GetAccessToken() string {
 	return ""
 }
 
+type VerifyEmailRequest struct {
+	EmailToken *string
+}
+
+func (m *VerifyEmailRequest) GetEmailToken() string {
+	if m != nil && m.EmailToken != nil {
+		return *m.EmailToken
+	}
+	return ""
+}
+
+func (m *VerifyEmailRequest) ToValidateTokenRequest() (*token.ValidateTokenRequest, error) {
+	emailToken, err := goutil.Base64Decode(m.GetEmailToken())
+	if err != nil {
+		return nil, err
+	}
+	return &token.ValidateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeEmail)),
+		Token:     goutil.String(string(emailToken)),
+	}, nil
+}
+
+func (m *VerifyEmailRequest) ToUserFilter(email string) *repo.UserFilter {
+	return &repo.UserFilter{
+		Email:      goutil.String(email),
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusPending)),
+	}
+}
+
+func (m *VerifyEmailRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserStatus(goutil.Uint32(uint32(entity.UserStatusNormal))),
+	)
+}
+
+type VerifyEmailResponse struct{}
+
 type IsAuthenticatedRequest struct {
 	AccessToken *string
 }
@@ -146,13 +184,20 @@ func (m *IsAuthenticatedRequest) ToValidateTokenRequest() *token.ValidateTokenRe
 	}
 }
 
-type IsAuthenticatedResponse struct {
-	UserID *string
+func (m *IsAuthenticatedRequest) ToUserFilter(userID string) *repo.UserFilter {
+	return &repo.UserFilter{
+		UserID:     goutil.String(userID),
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
 }
 
-func (m *IsAuthenticatedResponse) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
+type IsAuthenticatedResponse struct {
+	User *entity.User
+}
+
+func (m *IsAuthenticatedResponse) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
 	}
-	return ""
+	return nil
 }

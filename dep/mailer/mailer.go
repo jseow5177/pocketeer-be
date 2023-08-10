@@ -6,6 +6,7 @@ type Template uint32
 
 const (
 	TemplateVerifyEmail Template = iota + 1
+	TemplateWelcome
 )
 
 type SendEmailRequest struct {

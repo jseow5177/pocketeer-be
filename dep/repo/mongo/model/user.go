@@ -17,7 +17,7 @@ type User struct {
 	UpdateTime *uint64            `bson:"update_time,omitempty"`
 }
 
-func ToUserModel(u *entity.User) *User {
+func ToUserModelFromEntity(u *entity.User) *User {
 	if u == nil {
 		return nil
 	}
@@ -46,6 +46,17 @@ func ToUserModel(u *entity.User) *User {
 		Salt:       encodedSalt,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
+	}
+}
+
+func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
+	if uu == nil {
+		return nil
+	}
+
+	return &User{
+		UserStatus: uu.UserStatus,
+		UpdateTime: uu.UpdateTime,
 	}
 }
 

@@ -22,6 +22,49 @@ var UserStatuses = map[uint32]string{
 	uint32(UserStatusPending): "pending",
 }
 
+type UserUpdate struct {
+	UserStatus *uint32
+	UpdateTime *uint64
+}
+
+func (uu *UserUpdate) GetUserStatus() uint32 {
+	if uu != nil && uu.UserStatus != nil {
+		return *uu.UserStatus
+	}
+	return 0
+}
+
+func (uu *UserUpdate) SetUserStatus(userStatus *uint32) {
+	uu.UserStatus = userStatus
+}
+
+func (uu *UserUpdate) GetUpdateTime() uint64 {
+	if uu != nil && uu.UpdateTime != nil {
+		return *uu.UpdateTime
+	}
+	return 0
+}
+
+func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
+	uu.UpdateTime = updateTime
+}
+
+type UserUpdateOption func(uu *UserUpdate)
+
+func WithUpdateUserStatus(userStatus *uint32) UserUpdateOption {
+	return func(uu *UserUpdate) {
+		uu.SetUserStatus(userStatus)
+	}
+}
+
+func NewUserUpdate(opts ...UserUpdateOption) *UserUpdate {
+	uu := new(UserUpdate)
+	for _, opt := range opts {
+		opt(uu)
+	}
+	return uu
+}
+
 type User struct {
 	UserID     *string
 	Email      *string
@@ -121,6 +164,32 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 }
 
 func (u *User) checkOpts() {}
+
+func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool) {
+	userUpdate = new(UserUpdate)
+
+	if uu.UserStatus != nil && uu.GetUserStatus() != u.GetUserStatus() {
+		hasUpdate = true
+		u.SetUserStatus(uu.UserStatus)
+
+		defer func() {
+			userUpdate.SetUserStatus(u.UserStatus)
+		}()
+	}
+
+	if !hasUpdate {
+		return
+	}
+
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
+	u.SetUpdateTime(now)
+
+	u.checkOpts()
+
+	userUpdate.SetUpdateTime(now)
+
+	return
+}
 
 func (u *User) IsPasswordCorrect(password string) (bool, error) {
 	hash, err := u.hashPassword(password, u.GetSalt())

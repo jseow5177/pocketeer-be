@@ -5,9 +5,10 @@ const (
 
 	PathHealthCheck = "/"
 
-	PathSignUp  = PathV1Prefix + "sign_up"
-	PathLogin   = PathV1Prefix + "log_in"
-	PathGetUser = PathV1Prefix + "get_user"
+	PathSignUp      = PathV1Prefix + "sign_up"
+	PathLogin       = PathV1Prefix + "log_in"
+	PathGetUser     = PathV1Prefix + "get_user"
+	PathVerifyEmail = PathV1Prefix + "verify_email"
 
 	PathCreateAccount = PathV1Prefix + "create_account"
 	PathGetAccount    = PathV1Prefix + "get_account"

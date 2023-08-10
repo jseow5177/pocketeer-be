@@ -13,7 +13,9 @@ var (
 
 type UserRepo interface {
 	Get(ctx context.Context, uf *UserFilter) (*entity.User, error)
+
 	Create(ctx context.Context, u *entity.User) (string, error)
+	Update(ctx context.Context, uf *UserFilter, uu *entity.UserUpdate) error
 }
 
 type UserFilter struct {

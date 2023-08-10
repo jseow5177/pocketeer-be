@@ -34,25 +34,66 @@ func NewUserUseCase(txMgr repo.TxMgr, userRepo repo.UserRepo, tokenUseCase token
 	}
 }
 
-func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
-	validateTokenRes, err := uc.tokenUseCase.ValidateToken(ctx, req.ToValidateTokenRequest())
+func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error) {
+	validateTokenReq, err := req.ToValidateTokenRequest()
 	if err != nil {
 		return nil, err
 	}
 
-	userID := validateTokenRes.CustomClaims.GetUserID()
+	res, err := uc.tokenUseCase.ValidateToken(ctx, validateTokenReq)
+	if err != nil {
+		return nil, err
+	}
+
+	uf := req.ToUserFilter(res.CustomClaims.GetEmail())
+
+	// Check if user exists
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	uu, _ := u.Update(req.ToUserUpdate())
+
+	// Update user to status normal
+	if err = uc.userRepo.Update(ctx, uf, uu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+		return nil, err
+	}
+
+	// async retry send email, no cancel
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.mailer.SendEmail(ctx, mailer.TemplateWelcome, &mailer.SendEmailRequest{
+			To: u.GetEmail(),
+		}); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send welcome email on verification, user_id: %v, err: %v", u.GetUserID(), err)
+			return err
+		}
+		return nil
+	})
+
+	return nil, nil
+}
+
+func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
+	res, err := uc.tokenUseCase.ValidateToken(ctx, req.ToValidateTokenRequest())
+	if err != nil {
+		return nil, err
+	}
+
+	userID := res.CustomClaims.GetUserID()
 
 	// check if user exists
-	u, err := uc.userRepo.Get(ctx, &repo.UserFilter{
-		UserID:     goutil.String(userID),
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
-	})
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter(userID))
 	if err != nil {
 		return nil, err
 	}
 
 	return &IsAuthenticatedResponse{
-		UserID: u.UserID,
+		User: u,
 	}, nil
 }
 
@@ -95,7 +136,7 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeEmail)),
 		CustomClaims: &entity.CustomClaims{
-			UserID: u.UserID,
+			Email: req.Email,
 		},
 	})
 	if err != nil {
@@ -148,7 +189,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
 		CustomClaims: &entity.CustomClaims{
-			UserID: u.UserID,
+			Email: u.Email,
 		},
 	})
 	if err != nil {

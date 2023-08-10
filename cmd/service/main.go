@@ -504,6 +504,20 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// verify email
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathVerifyEmail,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.VerifyEmailRequest),
+			Res:       new(presenter.VerifyEmailResponse),
+			Validator: uh.VerifyEmailValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.VerifyEmail(ctx, req.(*presenter.VerifyEmailRequest), res.(*presenter.VerifyEmailResponse))
+			},
+		},
+	})
+
 	// ========== Budget ========== //
 
 	budgetHandler := bh.NewBudgetHandler(s.budgetUseCase)

@@ -160,3 +160,24 @@ func (m *LogInResponse) GetAccessToken() string {
 	}
 	return ""
 }
+
+type VerifyEmailRequest struct {
+	EmailToken *string `json:"email_token,omitempty"`
+}
+
+func (m *VerifyEmailRequest) GetEmailToken() string {
+	if m != nil && m.EmailToken != nil {
+		return *m.EmailToken
+	}
+	return ""
+}
+
+func (m *VerifyEmailRequest) ToUseCaseReq() *user.VerifyEmailRequest {
+	return &user.VerifyEmailRequest{
+		EmailToken: m.EmailToken,
+	}
+}
+
+type VerifyEmailResponse struct{}
+
+func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {}
