@@ -3,7 +3,9 @@ package user
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/jseow5177/pockteer-be/dep/mailer"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -12,19 +14,23 @@ import (
 )
 
 var (
-	ErrUsernameAlreadyExist = errors.New("username already exists")
-	ErrUserInvalid          = errors.New("user invalid")
+	ErrEmailAlreadyExist = errors.New("email already exists")
+	ErrUserInvalid       = errors.New("user invalid")
 )
 
 type userUseCase struct {
+	txMgr        repo.TxMgr
 	userRepo     repo.UserRepo
 	tokenUseCase token.UseCase
+	mailer       mailer.Mailer
 }
 
-func NewUserUseCase(userRepo repo.UserRepo, tokenUseCase token.UseCase) UseCase {
+func NewUserUseCase(txMgr repo.TxMgr, userRepo repo.UserRepo, tokenUseCase token.UseCase, mailer mailer.Mailer) UseCase {
 	return &userUseCase{
+		txMgr,
 		userRepo,
 		tokenUseCase,
+		mailer,
 	}
 }
 
@@ -63,25 +69,55 @@ func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUs
 }
 
 func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
-	_, err := uc.userRepo.Get(ctx, req.ToUserFilter())
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
 	if err != nil && err != repo.ErrUserNotFound {
 		return nil, err
 	}
 
-	if err == nil {
-		return nil, ErrUsernameAlreadyExist
+	if u != nil && u.IsNormal() {
+		return nil, ErrEmailAlreadyExist
 	}
 
-	u, err := req.ToUserEntity()
+	if u == nil {
+		u, err = req.ToUserEntity()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = uc.userRepo.Create(ctx, u)
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	// create email token
+	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeEmail)),
+		CustomClaims: &entity.CustomClaims{
+			UserID: u.UserID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = uc.userRepo.Create(ctx, u)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
-		return nil, err
-	}
+	// async retry send email, no cancel
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.mailer.SendEmail(ctx, mailer.TemplateVerifyEmail, &mailer.SendEmailRequest{
+			To: u.GetEmail(),
+			Params: map[string]interface{}{
+				"username": u.GetUsername(),
+				"token":    goutil.Base64Encode([]byte(res.GetToken())),
+			},
+		}); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send verification email on sign up, user_id: %v, err: %v", u.GetUserID(), err)
+			return err
+		}
+		return nil
+	})
 
 	return &SignUpResponse{
 		User: u,
@@ -109,7 +145,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	}
 
 	// create access token
-	accessTokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
 		CustomClaims: &entity.CustomClaims{
 			UserID: u.UserID,
@@ -120,6 +156,6 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	}
 
 	return &LogInResponse{
-		AccessToken: accessTokenRes.Token,
+		AccessToken: res.Token,
 	}, nil
 }

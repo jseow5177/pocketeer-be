@@ -7,6 +7,7 @@ import (
 
 type User struct {
 	UserID     *string `json:"user_id,omitempty"`
+	Email      *string `json:"email,omitempty"`
 	Username   *string `json:"username,omitempty"`
 	UserStatus *uint32 `json:"user_status,omitempty"`
 	CreateTime *uint64 `json:"create_time,omitempty"`
@@ -23,6 +24,13 @@ func (u *User) GetUserID() string {
 func (u *User) GetUsername() string {
 	if u != nil && u.Username != nil {
 		return *u.Username
+	}
+	return ""
+}
+
+func (u *User) GetEmail() string {
+	if u != nil && u.Email != nil {
+		return *u.Email
 	}
 	return ""
 }
@@ -72,13 +80,13 @@ func (m *GetUserResponse) Set(useCaseRes *user.GetUserResponse) {
 }
 
 type SignUpRequest struct {
-	Username *string `json:"username,omitempty"`
+	Email    *string `json:"email,omitempty"`
 	Password *string `json:"password,omitempty"`
 }
 
-func (m *SignUpRequest) GetUsername() string {
-	if m != nil && m.Username != nil {
-		return *m.Username
+func (m *SignUpRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
 	}
 	return ""
 }
@@ -92,7 +100,7 @@ func (m *SignUpRequest) GetPassword() string {
 
 func (m *SignUpRequest) ToUseCaseReq() *user.SignUpRequest {
 	return &user.SignUpRequest{
-		Username: m.Username,
+		Email:    m.Email,
 		Password: m.Password,
 	}
 }
@@ -113,13 +121,13 @@ func (m *SignUpResponse) Set(useCaseRes *user.SignUpResponse) {
 }
 
 type LogInRequest struct {
-	Username *string `json:"username,omitempty"`
+	Email    *string `json:"email,omitempty"`
 	Password *string `json:"password,omitempty"`
 }
 
-func (m *LogInRequest) GetUsername() string {
-	if m != nil && m.Username != nil {
-		return *m.Username
+func (m *LogInRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
 	}
 	return ""
 }
@@ -133,7 +141,7 @@ func (m *LogInRequest) GetPassword() string {
 
 func (m *LogInRequest) ToUseCaseReq() *user.LogInRequest {
 	return &user.LogInRequest{
-		Username: m.Username,
+		Email:    m.Email,
 		Password: m.Password,
 	}
 }

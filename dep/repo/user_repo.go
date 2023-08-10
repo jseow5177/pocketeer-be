@@ -18,7 +18,7 @@ type UserRepo interface {
 
 type UserFilter struct {
 	UserID     *string `filter:"_id"`
-	UserName   *string `filter:"username"`
+	Email      *string `filter:"email"`
 	UserStatus *uint32 `filter:"user_status"`
 }
 
@@ -29,9 +29,9 @@ func (f *UserFilter) GetUserID() string {
 	return ""
 }
 
-func (f *UserFilter) GetUserName() string {
-	if f != nil && f.UserName != nil {
-		return *f.UserName
+func (f *UserFilter) GetEmail() string {
+	if f != nil && f.Email != nil {
+		return *f.Email
 	}
 	return ""
 }

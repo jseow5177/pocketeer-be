@@ -30,6 +30,7 @@ type TokenType uint32
 const (
 	TokenTypeAccess TokenType = iota
 	TokenTypeRefresh
+	TokenTypeEmail
 )
 
 type Token struct {

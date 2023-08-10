@@ -60,7 +60,6 @@ const (
 	MaxAccountNoteLength     = 60
 
 	PasswordMinLength = 8
-	UsernameMaxLength = 60
 	SaltByteSize      = 24
 
 	StandardDP = 2

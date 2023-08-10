@@ -113,6 +113,7 @@ func toUser(u *entity.User) *User {
 	return &User{
 		UserID:     u.UserID,
 		Username:   u.Username,
+		Email:      u.Email,
 		UserStatus: u.UserStatus,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,

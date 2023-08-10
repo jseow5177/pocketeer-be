@@ -16,6 +16,8 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
+	"github.com/jseow5177/pockteer-be/dep/mailer"
+	"github.com/jseow5177/pockteer-be/dep/mailer/brevo"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
@@ -59,6 +61,8 @@ type server struct {
 	quoteRepo       repo.QuoteRepo
 
 	securityAPI api.SecurityAPI
+
+	mailer mailer.Mailer
 
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
@@ -119,6 +123,13 @@ func (s *server) Start() error {
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
+	// init mailer
+	s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init brevo mailer, err: %v", err)
+		return err
+	}
+
 	// init mem repos
 	s.quoteRepo, err = mem.NewQuoteMemCache(s.cfg.QuoteMemCache, s.securityAPI)
 	if err != nil {
@@ -131,7 +142,7 @@ func (s *server) Start() error {
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
-	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
+	s.userUseCase = uuc.NewUserUseCase(s.mongo, s.userRepo, s.tokenUseCase, s.mailer)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)

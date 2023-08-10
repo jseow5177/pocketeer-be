@@ -8,6 +8,7 @@ import (
 
 type User struct {
 	UserID     primitive.ObjectID `bson:"_id,omitempty"`
+	Email      *string            `bson:"email,omitempty"`
 	Username   *string            `bson:"username,omitempty"`
 	UserStatus *uint32            `bson:"user_status,omitempty"`
 	Hash       *string            `bson:"hash,omitempty"`
@@ -38,6 +39,7 @@ func ToUserModel(u *entity.User) *User {
 
 	return &User{
 		UserID:     objID,
+		Email:      u.Email,
 		Username:   u.Username,
 		UserStatus: u.UserStatus,
 		Hash:       encodedHash,
@@ -71,14 +73,15 @@ func ToUserEntity(u *User) (*entity.User, error) {
 	}
 
 	return entity.NewUser(
-		u.GetUsername(),
+		u.GetEmail(),
 		"",
 		entity.WithUserID(goutil.String(u.GetUserID())),
-		entity.WithHash(decodedHash),
-		entity.WithSalt(decodedSalt),
+		entity.WithUserHash(decodedHash),
+		entity.WithUserSalt(decodedSalt),
 		entity.WithUserStatus(u.UserStatus),
 		entity.WithUserCreateTime(u.CreateTime),
 		entity.WithUserUpdateTime(u.UpdateTime),
+		entity.WithUsername(u.Username),
 	)
 }
 
@@ -92,6 +95,13 @@ func (u *User) GetUserID() string {
 func (u *User) GetUsername() string {
 	if u != nil && u.Username != nil {
 		return *u.Username
+	}
+	return ""
+}
+
+func (u *User) GetEmail() string {
+	if u != nil && u.Email != nil {
+		return *u.Email
 	}
 	return ""
 }

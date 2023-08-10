@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Finnhub-Stock-API/finnhub-go/v2 v2.0.16
+	github.com/getbrevo/brevo-go v1.0.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/iancoleman/strcase v0.2.0
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	github.com/antihax/optional v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect

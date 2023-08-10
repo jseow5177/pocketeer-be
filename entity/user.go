@@ -13,15 +13,18 @@ const (
 	UserStatusInvalid UserStatus = iota
 	UserStatusNormal
 	UserStatusDeleted
+	UserStatusPending
 )
 
 var UserStatuses = map[uint32]string{
 	uint32(UserStatusNormal):  "normal",
 	uint32(UserStatusDeleted): "deleted",
+	uint32(UserStatusPending): "pending",
 }
 
 type User struct {
 	UserID     *string
+	Email      *string
 	Username   *string
 	UserStatus *uint32
 	Hash       *string
@@ -34,51 +37,57 @@ type UserOption = func(u *User)
 
 func WithUserID(userID *string) UserOption {
 	return func(u *User) {
-		u.UserID = userID
+		u.SetUserID(userID)
 	}
 }
 
 func WithUsername(username *string) UserOption {
 	return func(u *User) {
-		u.Username = username
+		u.SetUsername(username)
 	}
 }
 
-func WithHash(hash *string) UserOption {
+func WithUserEmail(email *string) UserOption {
 	return func(u *User) {
-		u.Hash = hash
+		u.SetEmail(email)
 	}
 }
 
-func WithSalt(salt *string) UserOption {
+func WithUserHash(hash *string) UserOption {
 	return func(u *User) {
-		u.Salt = salt
+		u.SetHash(hash)
+	}
+}
+
+func WithUserSalt(salt *string) UserOption {
+	return func(u *User) {
+		u.SetSalt(salt)
 	}
 }
 
 func WithUserStatus(userStatus *uint32) UserOption {
 	return func(u *User) {
-		u.UserStatus = userStatus
+		u.SetUserStatus(userStatus)
 	}
 }
 
 func WithUserCreateTime(createTime *uint64) UserOption {
 	return func(u *User) {
-		u.CreateTime = createTime
+		u.SetCreateTime(createTime)
 	}
 }
 
 func WithUserUpdateTime(updateTime *uint64) UserOption {
 	return func(u *User) {
-		u.UpdateTime = updateTime
+		u.SetUpdateTime(updateTime)
 	}
 }
 
-func NewUser(username, password string, opts ...UserOption) (*User, error) {
+func NewUser(email, password string, opts ...UserOption) (*User, error) {
 	now := uint64(time.Now().UnixMilli())
 	u := &User{
-		Username:   goutil.String(username),
-		UserStatus: goutil.Uint32(uint32(UserStatusNormal)),
+		Email:      goutil.String(email),
+		UserStatus: goutil.Uint32(uint32(UserStatusPending)),
 		Hash:       goutil.String(""),
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
@@ -96,25 +105,19 @@ func NewUser(username, password string, opts ...UserOption) (*User, error) {
 			if err != nil {
 				return nil, err
 			}
-			setUser(u, WithSalt(goutil.String(salt)))
+			u.SetSalt(goutil.String(salt))
 		}
 
 		hash, err := u.hashPassword(password, salt)
 		if err != nil {
 			return nil, err
 		}
-		setUser(u, WithHash(goutil.String(string(hash))))
+		u.SetHash(goutil.String(string(hash)))
 	}
 
 	u.checkOpts()
 
 	return u, nil
-}
-
-func setUser(u *User, opts ...UserOption) {
-	for _, opt := range opts {
-		opt(u)
-	}
 }
 
 func (u *User) checkOpts() {}
@@ -147,7 +150,7 @@ func (u *User) GetUserID() string {
 }
 
 func (u *User) SetUserID(userID *string) {
-	setUser(u, WithUserID(userID))
+	u.UserID = userID
 }
 
 func (u *User) GetUsername() string {
@@ -157,11 +160,30 @@ func (u *User) GetUsername() string {
 	return ""
 }
 
+func (u *User) SetUsername(username *string) {
+	u.Username = username
+}
+
+func (u *User) GetEmail() string {
+	if u != nil && u.Email != nil {
+		return *u.Email
+	}
+	return ""
+}
+
+func (u *User) SetEmail(email *string) {
+	u.Email = email
+}
+
 func (u *User) GetUserStatus() uint32 {
 	if u != nil && u.UserStatus != nil {
 		return *u.UserStatus
 	}
 	return 0
+}
+
+func (u *User) SetUserStatus(userStatus *uint32) {
+	u.UserStatus = userStatus
 }
 
 func (u *User) GetHash() string {
@@ -171,11 +193,19 @@ func (u *User) GetHash() string {
 	return ""
 }
 
+func (u *User) SetHash(hash *string) {
+	u.Hash = hash
+}
+
 func (u *User) GetSalt() string {
 	if u != nil && u.Salt != nil {
 		return *u.Salt
 	}
 	return ""
+}
+
+func (u *User) SetSalt(salt *string) {
+	u.Salt = salt
 }
 
 func (u *User) GetCreateTime() uint64 {
@@ -185,9 +215,25 @@ func (u *User) GetCreateTime() uint64 {
 	return 0
 }
 
+func (u *User) SetCreateTime(createTime *uint64) {
+	u.CreateTime = createTime
+}
+
 func (u *User) GetUpdateTime() uint64 {
 	if u != nil && u.UpdateTime != nil {
 		return *u.UpdateTime
 	}
 	return 0
+}
+
+func (u *User) SetUpdateTime(updateTime *uint64) {
+	u.UpdateTime = updateTime
+}
+
+func (u *User) IsNormal() bool {
+	return u.GetUserStatus() == uint32(UserStatusNormal)
+}
+
+func (u *User) IsPendingVerification() bool {
+	return u.GetUserStatus() == uint32(UserStatusPending)
 }

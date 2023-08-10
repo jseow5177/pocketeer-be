@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/token"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 type UseCase interface {
@@ -18,9 +19,7 @@ type UseCase interface {
 }
 
 type GetUserRequest struct {
-	UserID     *string
-	UserName   *string
-	UserStatus *uint32
+	UserID *string
 }
 
 func (m *GetUserRequest) GetUserID() string {
@@ -30,25 +29,9 @@ func (m *GetUserRequest) GetUserID() string {
 	return ""
 }
 
-func (m *GetUserRequest) GetUserName() string {
-	if m != nil && m.UserName != nil {
-		return *m.UserName
-	}
-	return ""
-}
-
-func (m *GetUserRequest) GetUserStatus() uint32 {
-	if m != nil && m.UserStatus != nil {
-		return *m.UserStatus
-	}
-	return 0
-}
-
 func (m *GetUserRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
-		UserID:     m.UserID,
-		UserName:   m.UserName,
-		UserStatus: m.UserStatus,
+		UserID: m.UserID,
 	}
 }
 
@@ -64,13 +47,13 @@ func (m *GetUserResponse) GetUser() *entity.User {
 }
 
 type SignUpRequest struct {
-	Username *string
+	Email    *string
 	Password *string
 }
 
-func (m *SignUpRequest) GetUsername() string {
-	if m != nil && m.Username != nil {
-		return *m.Username
+func (m *SignUpRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
 	}
 	return ""
 }
@@ -84,13 +67,17 @@ func (m *SignUpRequest) GetPassword() string {
 
 func (m *SignUpRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
-		UserName:   m.Username,
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+		Email: m.Email,
 	}
 }
 
 func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
-	return entity.NewUser(m.GetUsername(), m.GetPassword())
+	username := util.GetEmailPrefix(m.GetEmail())
+	return entity.NewUser(
+		m.GetEmail(),
+		m.GetPassword(),
+		entity.WithUsername(goutil.String(username)),
+	)
 }
 
 type SignUpResponse struct {
@@ -105,13 +92,13 @@ func (m *SignUpResponse) GetUser() *entity.User {
 }
 
 type LogInRequest struct {
-	Username *string
+	Email    *string
 	Password *string
 }
 
-func (m *LogInRequest) GetUsername() string {
-	if m != nil && m.Username != nil {
-		return *m.Username
+func (m *LogInRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
 	}
 	return ""
 }
@@ -125,7 +112,7 @@ func (m *LogInRequest) GetPassword() string {
 
 func (m *LogInRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
-		UserName:   m.Username,
+		Email:      m.Email,
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	}
 }

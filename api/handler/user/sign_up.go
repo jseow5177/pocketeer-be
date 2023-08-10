@@ -5,14 +5,15 @@ import (
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/rs/zerolog/log"
 )
 
 var SignUpValidator = validator.MustForm(map[string]validator.Validator{
-	"username": &validator.String{
-		Optional: false,
-		MaxLen:   config.UsernameMaxLength,
+	"email": &validator.String{
+		Optional:   false,
+		Validators: []validator.StringFunc{entity.CheckEmail},
 	},
 	"password": &validator.String{
 		Optional: false,
