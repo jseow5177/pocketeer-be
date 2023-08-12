@@ -34,6 +34,33 @@ func NewUserUseCase(txMgr repo.TxMgr, userRepo repo.UserRepo, tokenUseCase token
 	}
 }
 
+func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*InitUserResponse, error) {
+	uf := req.ToUserFilter()
+
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	// no-op
+	if !u.IsNew() {
+		log.Ctx(ctx).Info().Msgf("user already init, user_id: %v", u.GetUserID())
+		return new(InitUserResponse), nil
+	}
+
+	uu, _ := u.Update(entity.NewUserUpdate(
+		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+	))
+
+	if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail update user to flag default, err: %v", err)
+		return nil, err
+	}
+
+	return new(InitUserResponse), nil
+}
+
 func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error) {
 	validateTokenReq, err := req.ToValidateTokenRequest()
 	if err != nil {
@@ -189,7 +216,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
 		CustomClaims: &entity.CustomClaims{
-			Email: u.Email,
+			UserID: u.UserID,
 		},
 	})
 	if err != nil {

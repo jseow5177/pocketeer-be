@@ -476,6 +476,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// init user
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathInitUser,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.InitUserRequest),
+			Res:       new(presenter.InitUserResponse),
+			Validator: uh.InitUserValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.InitUser(ctx, req.(*presenter.InitUserRequest), res.(*presenter.InitUserResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// sign up
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathSignUp,

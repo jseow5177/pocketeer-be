@@ -7,6 +7,13 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
+type UserFlag uint32
+
+const (
+	UserFlagDefault UserFlag = iota
+	UserFlagNewUser
+)
+
 type UserStatus uint32
 
 const (
@@ -23,8 +30,20 @@ var UserStatuses = map[uint32]string{
 }
 
 type UserUpdate struct {
+	UserFlag   *uint32
 	UserStatus *uint32
 	UpdateTime *uint64
+}
+
+func (uu *UserUpdate) GetUserFlag() uint32 {
+	if uu != nil && uu.UserFlag != nil {
+		return *uu.UserFlag
+	}
+	return 0
+}
+
+func (uu *UserUpdate) SetUserFlag(userFlag *uint32) {
+	uu.UserFlag = userFlag
 }
 
 func (uu *UserUpdate) GetUserStatus() uint32 {
@@ -51,6 +70,12 @@ func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
 
 type UserUpdateOption func(uu *UserUpdate)
 
+func WithUpdateUserFlag(userFlag *uint32) UserUpdateOption {
+	return func(uu *UserUpdate) {
+		uu.SetUserFlag(userFlag)
+	}
+}
+
 func WithUpdateUserStatus(userStatus *uint32) UserUpdateOption {
 	return func(uu *UserUpdate) {
 		uu.SetUserStatus(userStatus)
@@ -70,6 +95,7 @@ type User struct {
 	Email      *string
 	Username   *string
 	UserStatus *uint32
+	UserFlag   *uint32
 	Hash       *string
 	Salt       *string
 	CreateTime *uint64
@@ -108,6 +134,12 @@ func WithUserSalt(salt *string) UserOption {
 	}
 }
 
+func WithUserFlag(userFlag *uint32) UserOption {
+	return func(u *User) {
+		u.SetUserFlag(userFlag)
+	}
+}
+
 func WithUserStatus(userStatus *uint32) UserOption {
 	return func(u *User) {
 		u.SetUserStatus(userStatus)
@@ -130,6 +162,7 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 	now := uint64(time.Now().UnixMilli())
 	u := &User{
 		Email:      goutil.String(email),
+		UserFlag:   goutil.Uint32(uint32(UserFlagNewUser)),
 		UserStatus: goutil.Uint32(uint32(UserStatusPending)),
 		Hash:       goutil.String(""),
 		Salt:       goutil.String(""),
@@ -174,6 +207,15 @@ func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool) {
 
 		defer func() {
 			userUpdate.SetUserStatus(u.UserStatus)
+		}()
+	}
+
+	if uu.UserFlag != nil && uu.GetUserFlag() != u.GetUserFlag() {
+		hasUpdate = true
+		u.SetUserFlag(uu.UserFlag)
+
+		defer func() {
+			userUpdate.SetUserFlag(u.UserFlag)
 		}()
 	}
 
@@ -244,6 +286,17 @@ func (u *User) SetEmail(email *string) {
 	u.Email = email
 }
 
+func (u *User) GetUserFlag() uint32 {
+	if u != nil && u.UserFlag != nil {
+		return *u.UserFlag
+	}
+	return 0
+}
+
+func (u *User) SetUserFlag(userFlag *uint32) {
+	u.UserFlag = userFlag
+}
+
 func (u *User) GetUserStatus() uint32 {
 	if u != nil && u.UserStatus != nil {
 		return *u.UserStatus
@@ -305,4 +358,8 @@ func (u *User) IsNormal() bool {
 
 func (u *User) IsPendingVerification() bool {
 	return u.GetUserStatus() == uint32(UserStatusPending)
+}
+
+func (u *User) IsNew() bool {
+	return (u.GetUserFlag() & uint32(UserFlagNewUser)) > 0
 }

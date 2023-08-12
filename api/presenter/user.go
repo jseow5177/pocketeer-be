@@ -9,6 +9,7 @@ type User struct {
 	UserID     *string `json:"user_id,omitempty"`
 	Email      *string `json:"email,omitempty"`
 	Username   *string `json:"username,omitempty"`
+	UserFlag   *uint32 `json:"user_flag,omitempty"`
 	UserStatus *uint32 `json:"user_status,omitempty"`
 	CreateTime *uint64 `json:"create_time,omitempty"`
 	UpdateTime *uint64 `json:"update_time,omitempty"`
@@ -33,6 +34,13 @@ func (u *User) GetEmail() string {
 		return *u.Email
 	}
 	return ""
+}
+
+func (u *User) GetUserFlag() uint32 {
+	if u != nil && u.UserFlag != nil {
+		return *u.UserFlag
+	}
+	return 0
 }
 
 func (u *User) GetUserStatus() uint32 {
@@ -181,3 +189,15 @@ func (m *VerifyEmailRequest) ToUseCaseReq() *user.VerifyEmailRequest {
 type VerifyEmailResponse struct{}
 
 func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {}
+
+type InitUserRequest struct{}
+
+func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
+	return &user.InitUserRequest{
+		UserID: goutil.String(userID),
+	}
+}
+
+type InitUserResponse struct{}
+
+func (m *InitUserResponse) Set(useCaseRes *user.InitUserResponse) {}

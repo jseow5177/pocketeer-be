@@ -14,7 +14,7 @@ type UseCase interface {
 	GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error)
 	IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error)
 	VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error)
-
+	InitUser(ctx context.Context, req *InitUserRequest) (*InitUserResponse, error)
 	SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error)
 	LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error)
 }
@@ -201,3 +201,23 @@ func (m *IsAuthenticatedResponse) GetUser() *entity.User {
 	}
 	return nil
 }
+
+type InitUserRequest struct {
+	UserID *string
+}
+
+func (m *InitUserRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
+		UserID:     m.UserID,
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
+}
+
+type InitUserResponse struct{}

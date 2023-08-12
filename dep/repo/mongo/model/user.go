@@ -10,6 +10,7 @@ type User struct {
 	UserID     primitive.ObjectID `bson:"_id,omitempty"`
 	Email      *string            `bson:"email,omitempty"`
 	Username   *string            `bson:"username,omitempty"`
+	UserFlag   *uint32            `bson:"user_flag,omitempty"`
 	UserStatus *uint32            `bson:"user_status,omitempty"`
 	Hash       *string            `bson:"hash,omitempty"`
 	Salt       *string            `bson:"salt,omitempty"`
@@ -41,6 +42,7 @@ func ToUserModelFromEntity(u *entity.User) *User {
 		UserID:     objID,
 		Email:      u.Email,
 		Username:   u.Username,
+		UserFlag:   u.UserFlag,
 		UserStatus: u.UserStatus,
 		Hash:       encodedHash,
 		Salt:       encodedSalt,
@@ -55,6 +57,7 @@ func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
 	}
 
 	return &User{
+		UserFlag:   uu.UserFlag,
 		UserStatus: uu.UserStatus,
 		UpdateTime: uu.UpdateTime,
 	}
@@ -93,6 +96,7 @@ func ToUserEntity(u *User) (*entity.User, error) {
 		entity.WithUserCreateTime(u.CreateTime),
 		entity.WithUserUpdateTime(u.UpdateTime),
 		entity.WithUsername(u.Username),
+		entity.WithUserFlag(u.UserFlag),
 	)
 }
 
@@ -115,6 +119,13 @@ func (u *User) GetEmail() string {
 		return *u.Email
 	}
 	return ""
+}
+
+func (u *User) GetUserFlag() uint32 {
+	if u != nil && u.UserFlag != nil {
+		return *u.UserFlag
+	}
+	return 0
 }
 
 func (u *User) GetUserStatus() uint32 {

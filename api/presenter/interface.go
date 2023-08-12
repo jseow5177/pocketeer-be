@@ -114,6 +114,7 @@ func toUser(u *entity.User) *User {
 		UserID:     u.UserID,
 		Username:   u.Username,
 		Email:      u.Email,
+		UserFlag:   u.UserFlag,
 		UserStatus: u.UserStatus,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
