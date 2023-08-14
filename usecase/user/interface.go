@@ -120,6 +120,7 @@ func (m *LogInRequest) ToUserFilter() *repo.UserFilter {
 
 type LogInResponse struct {
 	AccessToken *string
+	User        *entity.User
 }
 
 func (m *LogInResponse) GetAccessToken() string {
@@ -127,6 +128,13 @@ func (m *LogInResponse) GetAccessToken() string {
 		return *m.AccessToken
 	}
 	return ""
+}
+
+func (m *LogInResponse) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
 }
 
 type VerifyEmailRequest struct {

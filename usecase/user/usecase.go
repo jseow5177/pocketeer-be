@@ -225,5 +225,6 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 
 	return &LogInResponse{
 		AccessToken: res.Token,
+		User:        u,
 	}, nil
 }

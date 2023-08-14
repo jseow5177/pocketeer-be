@@ -156,10 +156,12 @@ func (m *LogInRequest) ToUseCaseReq() *user.LogInRequest {
 
 func (m *LogInResponse) Set(useCaseRes *user.LogInResponse) {
 	m.AccessToken = useCaseRes.AccessToken
+	m.User = toUser(useCaseRes.User)
 }
 
 type LogInResponse struct {
 	AccessToken *string `json:"access_token,omitempty"`
+	User        *User   `json:"user,omitempty"`
 }
 
 func (m *LogInResponse) GetAccessToken() string {
@@ -167,6 +169,13 @@ func (m *LogInResponse) GetAccessToken() string {
 		return *m.AccessToken
 	}
 	return ""
+}
+
+func (m *LogInResponse) GetUser() *User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
 }
 
 type VerifyEmailRequest struct {
