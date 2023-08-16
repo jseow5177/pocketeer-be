@@ -3,7 +3,6 @@ package entity
 import (
 	"time"
 
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -47,13 +46,6 @@ func (lu *LotUpdate) GetCostPerShare() float64 {
 
 func (lu *LotUpdate) SetCostPerShare(costPerShare *float64) {
 	lu.CostPerShare = costPerShare
-
-	if costPerShare != nil {
-		// Assume USD
-		// TODO: Have better currency handling
-		cps := util.RoundFloatToStandardDP(*costPerShare * config.USDToSGD)
-		lu.CostPerShare = goutil.Float64(cps)
-	}
 }
 
 func (lu *LotUpdate) GetLotStatus() uint32 {
@@ -309,13 +301,6 @@ func (l *Lot) GetCostPerShare() float64 {
 
 func (l *Lot) SetCostPerShare(costPerShare *float64) {
 	l.CostPerShare = costPerShare
-
-	if costPerShare != nil {
-		// Assume USD
-		// TODO: Have better currency handling
-		cps := util.RoundFloatToStandardDP(*costPerShare * config.USDToSGD)
-		l.CostPerShare = goutil.Float64(cps)
-	}
 }
 
 func (l *Lot) GetTradeDate() uint64 {

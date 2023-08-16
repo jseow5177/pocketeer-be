@@ -53,6 +53,7 @@ func ToHoldingModelFromUpdate(hu *entity.HoldingUpdate) *Holding {
 	return &Holding{
 		TotalCost:   hu.TotalCost,
 		LatestValue: hu.LatestValue,
+		Symbol:      hu.Symbol,
 	}
 }
 

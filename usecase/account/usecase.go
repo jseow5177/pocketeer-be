@@ -117,7 +117,7 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 			return err
 		}
 
-		if acu.Balance != nil {
+		if acu.Balance != nil && req.NeedOffsetTransaction() {
 			balanceChange := acu.GetBalance() - oldBalance
 			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
 

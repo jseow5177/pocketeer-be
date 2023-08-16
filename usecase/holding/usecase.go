@@ -145,6 +145,15 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		}, nil
 	}
 
+	if hu.Symbol != nil && h.IsDefault() {
+		if _, err = uc.securityRepo.Get(ctx, &repo.SecurityFilter{
+			Symbol: hu.Symbol,
+		}); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
 	if err = uc.holdingRepo.Update(ctx, req.ToHoldingFilter(), hu); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save holding updates to repo, err: %v", err)
 		return nil, err
@@ -176,14 +185,15 @@ func (uc *holdingUseCase) calcHoldingValue(ctx context.Context, h *entity.Holdin
 		return err
 	}
 
+	h.SetTotalShares(aggr.TotalShares)
+	h.SetTotalCost(goutil.Float64(aggr.GetTotalCost() * config.USDToSGD))
+
 	// Compute avg cost per share
 	var avgCostPerShare float64
 	if aggr.GetTotalCost() != 0 {
 		avgCostPerShare = aggr.GetTotalCost() / aggr.GetTotalShares()
 	}
-	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
-	h.SetTotalShares(aggr.TotalShares)
-	h.SetTotalCost(aggr.TotalCost)
+	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare * config.USDToSGD))
 
 	// Calculate value as Total Shares * Current Price
 	// We support only USD holdings now, so convert value from USD to SGD

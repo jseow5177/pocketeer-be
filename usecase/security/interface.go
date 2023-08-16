@@ -29,9 +29,8 @@ func (m *SearchSecuritiesRequest) GetSymbol() string {
 
 func (m *SearchSecuritiesRequest) ToSecurityFilter() *repo.SecurityFilter {
 	return &repo.SecurityFilter{
-		SymbolRegex: goutil.String(fmt.Sprintf(".*%s.*", strings.ToUpper(m.GetSymbol()))),
+		SymbolRegex: goutil.String(fmt.Sprintf("^%s.*", strings.ToUpper(m.GetSymbol()))),
 		Paging: &repo.Paging{
-			Limit: goutil.Uint32(20),
 			Sorts: []filter.Sort{
 				&repo.Sort{
 					Field: goutil.String("symbol"),

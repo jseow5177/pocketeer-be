@@ -9,6 +9,8 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
+
+	auc "github.com/jseow5177/pockteer-be/usecase/account"
 )
 
 var UpdateAccountValidator = validator.MustForm(map[string]validator.Validator{
@@ -25,6 +27,10 @@ var UpdateAccountValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:  true,
 		UnsetZero: true,
 		MaxLen:    uint32(config.MaxAccountNoteLength),
+	},
+	"update_mode": &validator.UInt32{
+		Optional:   true,
+		Validators: []validator.UInt32Func{auc.CheckUpdateMode},
 	},
 })
 
