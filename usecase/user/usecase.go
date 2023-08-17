@@ -16,19 +16,29 @@ import (
 var (
 	ErrEmailAlreadyExist = errors.New("email already exists")
 	ErrUserInvalid       = errors.New("user invalid")
+	ErrOTPInit           = errors.New("otp init fail")
+	ErrOTPInvalid        = errors.New("otp invalid")
 )
 
 type userUseCase struct {
 	txMgr        repo.TxMgr
 	userRepo     repo.UserRepo
+	otpRepo      repo.OTPRepo
 	tokenUseCase token.UseCase
 	mailer       mailer.Mailer
 }
 
-func NewUserUseCase(txMgr repo.TxMgr, userRepo repo.UserRepo, tokenUseCase token.UseCase, mailer mailer.Mailer) UseCase {
+func NewUserUseCase(
+	txMgr repo.TxMgr,
+	userRepo repo.UserRepo,
+	otpRepo repo.OTPRepo,
+	tokenUseCase token.UseCase,
+	mailer mailer.Mailer,
+) UseCase {
 	return &userUseCase{
 		txMgr,
 		userRepo,
+		otpRepo,
 		tokenUseCase,
 		mailer,
 	}
@@ -62,17 +72,16 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 }
 
 func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error) {
-	validateTokenReq, err := req.ToValidateTokenRequest()
+	otp, err := uc.otpRepo.Get(ctx, req.ToOTPFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := uc.tokenUseCase.ValidateToken(ctx, validateTokenReq)
-	if err != nil {
-		return nil, err
+	if !otp.IsMatch(req.GetCode()) {
+		return nil, ErrOTPInvalid
 	}
 
-	uf := req.ToUserFilter(res.CustomClaims.GetEmail())
+	uf := req.ToUserFilter(req.GetEmail())
 
 	// Check if user exists
 	u, err := uc.userRepo.Get(ctx, uf)
@@ -89,6 +98,17 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 		return nil, err
 	}
 
+	// create access token
+	tokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
+		CustomClaims: &entity.CustomClaims{
+			UserID: u.UserID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// async retry send email, no cancel
 	async := goutil.NewAsync(time.Second, 5)
 	async.Retry(ctx, func(ctx context.Context) error {
@@ -96,13 +116,16 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 		if err := uc.mailer.SendEmail(ctx, mailer.TemplateWelcome, &mailer.SendEmailRequest{
 			To: u.GetEmail(),
 		}); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to send welcome email on verification, user_id: %v, err: %v", u.GetUserID(), err)
+			log.Ctx(ctx).Error().Msgf("fail to send welcome email, user_id: %v, err: %v", u.GetUserID(), err)
 			return err
 		}
 		return nil
 	})
 
-	return nil, nil
+	return &VerifyEmailResponse{
+		AccessToken: tokenRes.Token,
+		User:        u,
+	}, nil
 }
 
 func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
@@ -159,29 +182,24 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 		}
 	}
 
-	// create email token
-	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
-		TokenType: goutil.Uint32(uint32(entity.TokenTypeEmail)),
-		CustomClaims: &entity.CustomClaims{
-			Email: req.Email,
-		},
-	})
+	// create email otp
+	otp, err := entity.NewOTP()
 	if err != nil {
 		return nil, err
 	}
+	uc.otpRepo.Set(ctx, req.GetEmail(), otp)
 
 	// async retry send email, no cancel
 	async := goutil.NewAsync(time.Second, 5)
 	async.Retry(ctx, func(ctx context.Context) error {
 		ctx = goutil.WithoutCancel(ctx)
 		if err := uc.mailer.SendEmail(ctx, mailer.TemplateVerifyEmail, &mailer.SendEmailRequest{
-			To: u.GetEmail(),
+			To: req.GetEmail(),
 			Params: map[string]interface{}{
-				"username": u.GetUsername(),
-				"token":    goutil.Base64Encode([]byte(res.GetToken())),
+				"otp": otp.GetCode(),
 			},
 		}); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to send verification email on sign up, user_id: %v, err: %v", u.GetUserID(), err)
+			log.Ctx(ctx).Error().Msgf("fail to send verification email, email: %v, err: %v", req.GetEmail(), err)
 			return err
 		}
 		return nil

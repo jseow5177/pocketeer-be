@@ -2,7 +2,6 @@ package mem
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -15,11 +14,7 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-var (
-	ErrInvalidQuote = errors.New("invalid quote in mem cache")
-)
-
-const keyPrefix = "quote"
+const quoteKeyPrefix = "quote"
 
 type quoteMemCache struct {
 	dLock       *goutil.DLock
@@ -43,7 +38,10 @@ func (mc *quoteMemCache) Get(ctx context.Context, qf *repo.QuoteFilter) (*entity
 	key := mc.getKey(qf.GetSymbol())
 
 	v, err := mc.memCache.Get(key)
-	if err != nil && err != ErrNotFound {
+	if err != nil {
+		if err == ErrNotFound {
+			return nil, repo.ErrQuoteNotFound
+		}
 		return nil, err
 	}
 
@@ -51,7 +49,7 @@ func (mc *quoteMemCache) Get(ctx context.Context, qf *repo.QuoteFilter) (*entity
 	if err == nil {
 		qm, ok := v.(*model.Quote)
 		if !ok {
-			return nil, ErrInvalidQuote
+			return nil, repo.ErrInvalidQuote
 		}
 		return model.ToQuoteEntity(qm), nil
 	}
@@ -74,11 +72,12 @@ func (mc *quoteMemCache) Get(ctx context.Context, qf *repo.QuoteFilter) (*entity
 		mc.Set(ctx, qf.GetSymbol(), q)
 
 		return q, nil
-	} else {
-		// try again, which may already be in cache
-		time.Sleep(100 * time.Millisecond)
-		return mc.Get(ctx, qf)
 	}
+
+	// try again, which may already be in cache
+	time.Sleep(100 * time.Millisecond)
+
+	return mc.Get(ctx, qf)
 }
 
 func (mc *quoteMemCache) Set(ctx context.Context, symbol string, q *entity.Quote) {
@@ -87,5 +86,5 @@ func (mc *quoteMemCache) Set(ctx context.Context, symbol string, q *entity.Quote
 }
 
 func (mc *quoteMemCache) getKey(symbol string) string {
-	return fmt.Sprintf("%s:%s", keyPrefix, symbol)
+	return fmt.Sprintf("%s:%s", quoteKeyPrefix, symbol)
 }

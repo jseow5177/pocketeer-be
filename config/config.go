@@ -12,6 +12,7 @@ type Config struct {
 	Tokens        *Tokens   `json:"token"`
 	FinnHub       *FinnHub  `json:"finnhub"`
 	QuoteMemCache *MemCache `json:"quote_mem_cache"`
+	OTPMemCache   *MemCache `json:"otp_mem_cache"`
 	Brevo         *Brevo    `json:"brevo"`
 }
 
@@ -66,7 +67,6 @@ type Token struct {
 type Tokens struct {
 	AccessToken  *Token `json:"access_token"`
 	RefreshToken *Token `json:"refresh_token"`
-	EmailToken   *Token `json:"email_token"`
 }
 
 type FinnHub struct {
@@ -103,11 +103,6 @@ func NewConfig() *Config {
 				Issuer:    "pocketeer_be",
 				Secret:    "@w8DlsuWfSlg25W0#qbZ5CpGq#MNlB",
 			},
-			EmailToken: &Token{
-				ExpiresIn: 604_800,
-				Issuer:    "pocketeer_be",
-				Secret:    "hWjtP3Hzizi2VpaZSpchriMSJ7EqocDM",
-			},
 		},
 		FinnHub: &FinnHub{
 			BaseURL: "https://finnhub.io/api/v1",
@@ -116,6 +111,10 @@ func NewConfig() *Config {
 		QuoteMemCache: &MemCache{
 			ExpiryTime:      "15m",
 			CleanUpInterval: "20m",
+		},
+		OTPMemCache: &MemCache{
+			ExpiryTime:      "2m",
+			CleanUpInterval: "3m",
 		},
 		Brevo: &Brevo{
 			APIKey: "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",

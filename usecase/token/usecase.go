@@ -73,8 +73,6 @@ func (uc *tokenUseCase) getTokenConfigByType(tokenType uint32) (*config.Token, e
 		return uc.tokenCfg.AccessToken, nil
 	case uint32(entity.TokenTypeRefresh):
 		return uc.tokenCfg.RefreshToken, nil
-	case uint32(entity.TokenTypeEmail):
-		return uc.tokenCfg.EmailToken, nil
 	}
 	return nil, ErrUnsupportedTokenType
 }

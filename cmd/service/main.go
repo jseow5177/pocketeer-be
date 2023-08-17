@@ -59,6 +59,7 @@ type server struct {
 	lotRepo         repo.LotRepo
 	securityRepo    repo.SecurityRepo
 	quoteRepo       repo.QuoteRepo
+	otpRepo         repo.OTPRepo
 
 	securityAPI api.SecurityAPI
 
@@ -137,12 +138,18 @@ func (s *server) Start() error {
 		return err
 	}
 
+	s.otpRepo, err = mem.NewOTPMemCache(s.cfg.OTPMemCache)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init otp repo, err: %v", err)
+		return err
+	}
+
 	// init use cases
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
-	s.userUseCase = uuc.NewUserUseCase(s.mongo, s.userRepo, s.tokenUseCase, s.mailer)
+	s.userUseCase = uuc.NewUserUseCase(s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)

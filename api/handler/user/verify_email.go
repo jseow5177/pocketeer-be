@@ -4,12 +4,17 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/rs/zerolog/log"
 )
 
 var VerifyEmailValidator = validator.MustForm(map[string]validator.Validator{
-	"email_token": &validator.String{
+	"email": &validator.String{
+		Optional:   false,
+		Validators: []validator.StringFunc{entity.CheckEmail},
+	},
+	"code": &validator.String{
 		Optional: false,
 	},
 })

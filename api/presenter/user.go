@@ -179,25 +179,40 @@ func (m *LogInResponse) GetUser() *User {
 }
 
 type VerifyEmailRequest struct {
-	EmailToken *string `json:"email_token,omitempty"`
+	Email *string `json:"email,omitempty"`
+	Code  *string `json:"code,omitempty"`
 }
 
-func (m *VerifyEmailRequest) GetEmailToken() string {
-	if m != nil && m.EmailToken != nil {
-		return *m.EmailToken
+func (m *VerifyEmailRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
+	}
+	return ""
+}
+
+func (m *VerifyEmailRequest) GetCode() string {
+	if m != nil && m.Code != nil {
+		return *m.Code
 	}
 	return ""
 }
 
 func (m *VerifyEmailRequest) ToUseCaseReq() *user.VerifyEmailRequest {
 	return &user.VerifyEmailRequest{
-		EmailToken: m.EmailToken,
+		Email: m.Email,
+		Code:  m.Code,
 	}
 }
 
-type VerifyEmailResponse struct{}
+type VerifyEmailResponse struct {
+	AccessToken *string `json:"access_token,omitempty"`
+	User        *User   `json:"user,omitempty"`
+}
 
-func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {}
+func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
+	m.AccessToken = useCaseRes.AccessToken
+	m.User = toUser(useCaseRes.User)
+}
 
 type InitUserRequest struct{}
 

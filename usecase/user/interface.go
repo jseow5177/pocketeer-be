@@ -138,25 +138,28 @@ func (m *LogInResponse) GetUser() *entity.User {
 }
 
 type VerifyEmailRequest struct {
-	EmailToken *string
+	Email *string
+	Code  *string
 }
 
-func (m *VerifyEmailRequest) GetEmailToken() string {
-	if m != nil && m.EmailToken != nil {
-		return *m.EmailToken
+func (m *VerifyEmailRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
 	}
 	return ""
 }
 
-func (m *VerifyEmailRequest) ToValidateTokenRequest() (*token.ValidateTokenRequest, error) {
-	emailToken, err := goutil.Base64Decode(m.GetEmailToken())
-	if err != nil {
-		return nil, err
+func (m *VerifyEmailRequest) GetCode() string {
+	if m != nil && m.Code != nil {
+		return *m.Code
 	}
-	return &token.ValidateTokenRequest{
-		TokenType: goutil.Uint32(uint32(entity.TokenTypeEmail)),
-		Token:     goutil.String(string(emailToken)),
-	}, nil
+	return ""
+}
+
+func (m *VerifyEmailRequest) ToOTPFilter() *repo.OTPFilter {
+	return &repo.OTPFilter{
+		Email: m.Email,
+	}
 }
 
 func (m *VerifyEmailRequest) ToUserFilter(email string) *repo.UserFilter {
@@ -172,7 +175,24 @@ func (m *VerifyEmailRequest) ToUserUpdate() *entity.UserUpdate {
 	)
 }
 
-type VerifyEmailResponse struct{}
+type VerifyEmailResponse struct {
+	AccessToken *string
+	User        *entity.User
+}
+
+func (m *VerifyEmailResponse) GetAccessToken() string {
+	if m != nil && m.AccessToken != nil {
+		return *m.AccessToken
+	}
+	return ""
+}
+
+func (m *VerifyEmailResponse) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
+}
 
 type IsAuthenticatedRequest struct {
 	AccessToken *string
