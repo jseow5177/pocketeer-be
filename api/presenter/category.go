@@ -81,6 +81,13 @@ type CreateCategoriesResponse struct {
 	Categories []*Category `json:"categories,omitempty"`
 }
 
+func (m *CreateCategoriesResponse) GetCategories() []*Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
 func (m *CreateCategoriesResponse) Set(useCaseRes *category.CreateCategoriesResponse) {
 	m.Categories = toCategories(useCaseRes.Categories)
 }

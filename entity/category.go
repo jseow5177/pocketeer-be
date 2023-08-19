@@ -1,14 +1,9 @@
 package entity
 
 import (
-	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-)
-
-var (
-	ErrEmptyCategoryName = errors.New("category name cannot be empty")
 )
 
 type CategoryUpdate struct {
@@ -105,14 +100,6 @@ func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category
 }
 
 func (c *Category) checkOpts() error {
-	if c.GetCategoryName() == "" {
-		return ErrEmptyCategoryName
-	}
-
-	if err := CheckCategoryType(c.GetCategoryType()); err != nil {
-		return err
-	}
-
 	return nil
 }
 

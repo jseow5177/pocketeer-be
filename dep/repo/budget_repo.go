@@ -17,6 +17,7 @@ type BudgetRepo interface {
 	GetMany(ctx context.Context, bq *BudgetQuery) ([]*entity.Budget, error)
 
 	Create(ctx context.Context, b *entity.Budget) (string, error)
+	CreateMany(ctx context.Context, bs []*entity.Budget) ([]string, error)
 }
 
 type BudgetQuery struct {

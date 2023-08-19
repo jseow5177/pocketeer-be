@@ -527,6 +527,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// create budgets
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateBudgets,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateBudgetsRequest),
+			Res:       new(presenter.CreateBudgetsResponse),
+			Validator: bh.CreateBudgetsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return budgetHandler.CreateBudgets(ctx, req.(*presenter.CreateBudgetsRequest), res.(*presenter.CreateBudgetsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// update budget
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathUpdateBudget,

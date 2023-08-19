@@ -9,7 +9,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var CreateCategoriesValidator = validator.MustForm(map[string]validator.Validator{})
+var CreateCategoriesValidator = validator.MustForm(map[string]validator.Validator{
+	"categories": &validator.Slice{
+		Optional:  false,
+		MaxLen:    20,
+		Validator: CreateCategoryValidator,
+	},
+})
 
 func (h *categoryHandler) CreateCategories(ctx context.Context, req *presenter.CreateCategoriesRequest, res *presenter.CreateCategoriesResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
