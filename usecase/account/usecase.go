@@ -82,8 +82,14 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 		return nil, err
 	}
 
-	if _, err := uc.accountRepo.Create(ctx, ac); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if _, err := uc.accountRepo.Create(txCtx, ac); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save new account to repo, err: %v", err)
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 

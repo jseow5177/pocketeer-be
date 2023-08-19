@@ -12,7 +12,7 @@ import (
 var CreateBudgetsValidator = validator.MustForm(map[string]validator.Validator{
 	"budgets": &validator.Slice{
 		Optional:  false,
-		MaxLen:    20,
+		MaxLen:    10,
 		Validator: CreateBudgetValidator,
 	},
 })

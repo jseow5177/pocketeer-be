@@ -385,6 +385,8 @@ func (b *Budget) GetEndDate() uint64 {
 	return 0
 }
 
+//func (b *Budget) GetBudgetRepeat()
+
 func (b *Budget) CanBudgetUnderCategory(c *Category) (bool, error) {
 	if !c.CanAddBudget() {
 		return false, ErrBudgetNotAllowed

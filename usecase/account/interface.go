@@ -98,6 +98,7 @@ type CreateAccountRequest struct {
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
+	Holdings    []*entity.Holding
 }
 
 func (m *CreateAccountRequest) GetUserID() string {
@@ -133,6 +134,13 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 		return *m.AccountType
 	}
 	return 0
+}
+
+func (m *CreateAccountRequest) GetHoldings() []*entity.Holding {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
 }
 
 func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {

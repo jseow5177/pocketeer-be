@@ -27,9 +27,6 @@ func (m *categoryMongo) Create(ctx context.Context, c *entity.Category) (string,
 	cm := model.ToCategoryModelFromEntity(c)
 	id, err := m.mColl.create(ctx, cm)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return "", repo.ErrCategoryAlreadyExists
-		}
 		return "", err
 	}
 	c.SetCategoryID(goutil.String(id))
@@ -45,9 +42,6 @@ func (m *categoryMongo) CreateMany(ctx context.Context, cs []*entity.Category) (
 
 	ids, err := m.mColl.createMany(ctx, cms)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return nil, repo.ErrCategoryAlreadyExists
-		}
 		return nil, err
 	}
 
@@ -61,9 +55,6 @@ func (m *categoryMongo) CreateMany(ctx context.Context, cs []*entity.Category) (
 func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu *entity.CategoryUpdate) error {
 	cm := model.ToCategoryModelFromUpdate(cu)
 	if err := m.mColl.update(ctx, cf, cm); err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return repo.ErrCategoryAlreadyExists
-		}
 		return err
 	}
 

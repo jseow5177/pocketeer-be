@@ -178,6 +178,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32
 	TotalCost   *float64
 	LatestValue *float64
+	Lots        []*entity.Lot
 }
 
 func (m *CreateHoldingRequest) GetUserID() string {
@@ -220,6 +221,13 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 		return *m.LatestValue
 	}
 	return 0
+}
+
+func (m *CreateHoldingRequest) GetLots() []*entity.Lot {
+	if m != nil && m.Lots != nil {
+		return m.Lots
+	}
+	return nil
 }
 
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {

@@ -12,7 +12,7 @@ import (
 var CreateCategoriesValidator = validator.MustForm(map[string]validator.Validator{
 	"categories": &validator.Slice{
 		Optional:  false,
-		MaxLen:    20,
+		MaxLen:    10,
 		Validator: CreateCategoryValidator,
 	},
 })
