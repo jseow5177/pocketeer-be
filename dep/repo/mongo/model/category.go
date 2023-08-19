@@ -46,15 +46,15 @@ func ToCategoryModelFromUpdate(cu *entity.CategoryUpdate) *Category {
 	}
 }
 
-func ToCategoryEntity(c *Category) *entity.Category {
+func ToCategoryEntity(c *Category) (*entity.Category, error) {
 	if c == nil {
-		return nil
+		return nil, nil
 	}
 
 	return entity.NewCategory(
 		c.GetUserID(),
+		c.GetCategoryName(),
 		entity.WithCategoryID(goutil.String(c.GetCategoryID())),
-		entity.WithCategoryName(c.CategoryName),
 		entity.WithCategoryType(c.CategoryType),
 		entity.WithCategoryCreateTime(c.CreateTime),
 		entity.WithCategoryUpdateTime(c.UpdateTime),

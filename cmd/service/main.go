@@ -213,6 +213,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// create categories
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateCategories,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateCategoriesRequest),
+			Res:       new(presenter.CreateCategoriesResponse),
+			Validator: ch.CreateCategoriesValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.CreateCategories(ctx, req.(*presenter.CreateCategoriesRequest), res.(*presenter.CreateCategoriesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// update category
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathUpdateCategory,

@@ -2,6 +2,7 @@ package category
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -60,9 +61,22 @@ func (uc *categoryUseCase) GetCategoryBudget(ctx context.Context, req *GetCatego
 }
 
 func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error) {
-	c := req.ToCategoryEntity()
+	_, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
+	if err != nil && err != repo.ErrCategoryNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		return nil, err
+	}
 
-	_, err := uc.categoryRepo.Create(ctx, c)
+	if err == nil {
+		return nil, repo.ErrCategoryAlreadyExists
+	}
+
+	c, err := req.ToCategoryEntity()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = uc.categoryRepo.Create(ctx, c)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err
@@ -73,13 +87,57 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 	}, nil
 }
 
+func (uc *categoryUseCase) CreateCategories(ctx context.Context, req *CreateCategoriesRequest) (*CreateCategoriesResponse, error) {
+	var (
+		cs  = make([]*entity.Category, 0)
+		uks = make(map[string]bool)
+	)
+
+	for _, r := range req.Categories {
+		if _, ok := uks[fmt.Sprintf("%v-%v", r.GetCategoryName(), r.GetCategoryType())]; ok {
+			return nil, repo.ErrCategoryAlreadyExists
+		}
+
+		_, err := uc.categoryRepo.Get(ctx, r.ToCategoryFilter())
+		if err != nil && err != repo.ErrCategoryNotFound {
+			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+			return nil, err
+		}
+
+		if err == nil {
+			return nil, repo.ErrCategoryAlreadyExists
+		}
+
+		c, err := r.ToCategoryEntity()
+		if err != nil {
+			return nil, err
+		}
+
+		cs = append(cs, c)
+		uks[c.GetCategoryName()] = true
+	}
+
+	if _, err := uc.categoryRepo.CreateMany(ctx, cs); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new categories to repo, err: %v", err)
+		return nil, err
+	}
+
+	return &CreateCategoriesResponse{
+		Categories: cs,
+	}, nil
+}
+
 func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error) {
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	cu, hasUpdate := c.Update(req.ToCategoryUpdate())
+	cu, hasUpdate, err := c.Update(req.ToCategoryUpdate())
+	if err != nil {
+		return nil, err
+	}
+
 	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("category has no updates")
 		return &UpdateCategoryResponse{

@@ -15,6 +15,7 @@ const (
 	PathGetAccounts   = PathV1Prefix + "get_accounts"
 
 	PathCreateCategory      = PathV1Prefix + "create_category"
+	PathCreateCategories    = PathV1Prefix + "create_categories"
 	PathUpdateCategory      = PathV1Prefix + "update_category"
 	PathGetCategory         = PathV1Prefix + "get_category"
 	PathGetCategoryBudget   = PathV1Prefix + "get_category_budget"
