@@ -189,6 +189,7 @@ func toHolding(h *entity.Holding) *Holding {
 		TotalShares:     totalShares,
 		AvgCostPerShare: avgCostPerShare,
 		Quote:           toQuote(h.Quote),
+		Lots:            toLots(h.Lots),
 	}
 }
 
@@ -260,6 +261,14 @@ func toLot(l *entity.Lot) *Lot {
 		CreateTime:   l.CreateTime,
 		UpdateTime:   l.UpdateTime,
 	}
+}
+
+func toLots(ls []*entity.Lot) []*Lot {
+	lots := make([]*Lot, len(ls))
+	for idx, l := range ls {
+		lots[idx] = toLot(l)
+	}
+	return lots
 }
 
 func toAccount(ac *entity.Account) *Account {

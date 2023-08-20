@@ -3,11 +3,13 @@ package holding
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/lot"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,31 +18,37 @@ var (
 )
 
 type holdingUseCase struct {
+	txMgr        repo.TxMgr
 	accountRepo  repo.AccountRepo
 	holdingRepo  repo.HoldingRepo
 	lotRepo      repo.LotRepo
+	lotUseCase   lot.UseCase
 	securityRepo repo.SecurityRepo
 	quoteRepo    repo.QuoteRepo
 }
 
 func NewHoldingUseCase(
+	txMgr repo.TxMgr,
 	accountRepo repo.AccountRepo,
 	holdingRepo repo.HoldingRepo,
 	lotRepo repo.LotRepo,
+	lotUseCase lot.UseCase,
 	securityRepo repo.SecurityRepo,
 	quoteRepo repo.QuoteRepo,
 ) UseCase {
 	return &holdingUseCase{
+		txMgr,
 		accountRepo,
 		holdingRepo,
 		lotRepo,
+		lotUseCase,
 		securityRepo,
 		quoteRepo,
 	}
 }
 
 func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error) {
-	h, err := req.ToHoldingEntity()
+	h, err := req.ToHoldingEntity(req.GetAccountID())
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +70,91 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		}
 	}
 
-	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if _, err = uc.holdingRepo.Create(txCtx, h); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save new holding to repo, err: %v", err)
+			return err
+		}
+
+		if len(req.Lots) == 0 {
+			return nil
+		}
+
+		lotsRes, err := uc.lotUseCase.CreateLots(txCtx, req.ToCreateLotsRequest(h.GetHoldingID()))
+		if err != nil {
+			return err
+		}
+		h.SetLots(lotsRes.Lots)
+
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
 	return &CreateHoldingResponse{
 		Holding: h,
+	}, nil
+}
+
+func (uc *holdingUseCase) CreateHoldings(ctx context.Context, req *CreateHoldingsRequest) (*CreateHoldingsResponse, error) {
+	hs, err := req.ToHoldingEntities()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(hs) == 0 {
+		return new(CreateHoldingsResponse), nil
+	}
+
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
+	if !ac.IsInvestment() {
+		return nil, ErrAccountNotInvestment
+	}
+
+	for _, h := range hs {
+		if h.IsDefault() {
+			if _, err = uc.securityRepo.Get(ctx, req.ToSecurityFilter(h.GetSymbol())); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
+				return nil, fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
+			}
+		}
+	}
+
+	errChan := make(chan int, len(req.Holdings))
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		holdingIDs, err := uc.holdingRepo.CreateMany(txCtx, hs)
+		if err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save new holdings to repo, err: %v", err)
+			return err
+		}
+
+		return goutil.ParallelizeWork(txCtx, len(req.Holdings), 5, func(ctx context.Context, workNum int) error {
+			r := req.Holdings[workNum]
+
+			if len(r.Lots) == 0 {
+				return nil
+			}
+
+			lotsRes, err := uc.lotUseCase.CreateLots(ctx, r.ToCreateLotsRequest(holdingIDs[workNum]))
+			if err != nil {
+				errChan <- workNum
+				return err
+			}
+			hs[workNum].SetLots(lotsRes.Lots)
+
+			return nil
+		})
+	}); err != nil {
+		return nil, fmt.Errorf("holding idx %v, err: %v", <-errChan, err)
+	}
+
+	return &CreateHoldingsResponse{
+		Holdings: hs,
 	}, nil
 }
 

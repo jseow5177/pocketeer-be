@@ -37,6 +37,24 @@ func (m *holdingMongo) Create(ctx context.Context, h *entity.Holding) (string, e
 	return id, nil
 }
 
+func (m *holdingMongo) CreateMany(ctx context.Context, hs []*entity.Holding) ([]string, error) {
+	hms := make([]interface{}, 0)
+	for _, h := range hs {
+		hms = append(hms, model.ToHoldingModelFromEntity(h))
+	}
+
+	ids, err := m.mColl.createMany(ctx, hms)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, h := range hs {
+		h.SetHoldingID(goutil.String(ids[i]))
+	}
+
+	return ids, nil
+}
+
 func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *entity.HoldingUpdate) error {
 	hm := model.ToHoldingModelFromUpdate(hu)
 	if err := m.mColl.update(ctx, hf, hm); err != nil {

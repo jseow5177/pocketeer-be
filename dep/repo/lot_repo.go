@@ -16,6 +16,7 @@ type LotRepo interface {
 	GetMany(ctx context.Context, lf *LotFilter) ([]*entity.Lot, error)
 
 	Create(ctx context.Context, l *entity.Lot) (string, error)
+	CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, error)
 	Update(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
 
 	CalcTotalSharesAndCost(ctx context.Context, lf *LotFilter) (*LotAggr, error)

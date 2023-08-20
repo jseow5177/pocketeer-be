@@ -133,8 +133,8 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.lotUseCase, s.securityRepo, s.quoteRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
 
 	// start server
@@ -317,6 +317,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: ach.CreateAccountValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.CreateAccount(ctx, req.(*presenter.CreateAccountRequest), res.(*presenter.CreateAccountResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// create accounts
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateAccounts,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateAccountsRequest),
+			Res:       new(presenter.CreateAccountsResponse),
+			Validator: ach.CreateAccountsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.CreateAccounts(ctx, req.(*presenter.CreateAccountsRequest), res.(*presenter.CreateAccountsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

@@ -24,28 +24,6 @@ func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
 	}
 }
 
-func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
-	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
-	if err != nil && err != repo.ErrLotNotFound {
-		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
-		return nil, err
-	}
-
-	if err == repo.ErrLotNotFound {
-		return new(DeleteLotResponse), nil
-	}
-
-	lu, _ := l.Update(req.ToLotUpdate())
-
-	// mark lot as deleted
-	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
-		return nil, err
-	}
-
-	return new(DeleteLotResponse), nil
-}
-
 func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error) {
 	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
 	if err != nil {
@@ -57,7 +35,7 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 		return nil, ErrInvalidHolding
 	}
 
-	l := req.ToLotEntity()
+	l := req.ToLotEntity(req.GetHoldingID())
 	_, err = uc.lotRepo.Create(ctx, l)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new lot to repo, err: %v", err)
@@ -66,6 +44,33 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 
 	return &CreateLotResponse{
 		Lot: l,
+	}, nil
+}
+
+func (uc *lotUseCase) CreateLots(ctx context.Context, req *CreateLotsRequest) (*CreateLotsResponse, error) {
+	ls := req.ToLotEntities()
+
+	if len(ls) == 0 {
+		return new(CreateLotsResponse), nil
+	}
+
+	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
+		return nil, err
+	}
+
+	if h.IsCustom() {
+		return nil, ErrInvalidHolding
+	}
+
+	if _, err := uc.lotRepo.CreateMany(ctx, ls); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
+		return nil, err
+	}
+
+	return &CreateLotsResponse{
+		Lots: ls,
 	}, nil
 }
 
@@ -115,4 +120,26 @@ func (uc *lotUseCase) GetLots(ctx context.Context, req *GetLotsRequest) (*GetLot
 	return &GetLotsResponse{
 		Lots: ls,
 	}, nil
+}
+
+func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
+	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
+	if err != nil && err != repo.ErrLotNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == repo.ErrLotNotFound {
+		return new(DeleteLotResponse), nil
+	}
+
+	lu, _ := l.Update(req.ToLotUpdate())
+
+	// mark lot as deleted
+	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
+		return nil, err
+	}
+
+	return new(DeleteLotResponse), nil
 }

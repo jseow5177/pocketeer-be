@@ -188,8 +188,8 @@ func (m *CreateBudgetsRequest) GetBudgets() []*CreateBudgetRequest {
 
 func (m *CreateBudgetsRequest) ToUseCaseReq(userID string) *budget.CreateBudgetsRequest {
 	bs := make([]*budget.CreateBudgetRequest, 0)
-	for _, b := range m.Budgets {
-		bs = append(bs, b.ToUseCaseReq(userID))
+	for _, r := range m.Budgets {
+		bs = append(bs, r.ToUseCaseReq(userID))
 	}
 	return &budget.CreateBudgetsRequest{
 		Budgets: bs,

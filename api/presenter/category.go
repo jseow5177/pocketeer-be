@@ -69,8 +69,8 @@ func (m *CreateCategoriesRequest) GetCategories() []*CreateCategoryRequest {
 
 func (m *CreateCategoriesRequest) ToUseCaseReq(userID string) *category.CreateCategoriesRequest {
 	cs := make([]*category.CreateCategoryRequest, 0)
-	for _, c := range m.Categories {
-		cs = append(cs, c.ToUseCaseReq(userID))
+	for _, r := range m.Categories {
+		cs = append(cs, r.ToUseCaseReq(userID))
 	}
 	return &category.CreateCategoriesRequest{
 		Categories: cs,

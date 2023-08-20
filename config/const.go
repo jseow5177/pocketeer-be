@@ -9,10 +9,11 @@ const (
 	PathLogin   = PathV1Prefix + "log_in"
 	PathGetUser = PathV1Prefix + "get_user"
 
-	PathCreateAccount = PathV1Prefix + "create_account"
-	PathGetAccount    = PathV1Prefix + "get_account"
-	PathUpdateAccount = PathV1Prefix + "update_account"
-	PathGetAccounts   = PathV1Prefix + "get_accounts"
+	PathCreateAccount  = PathV1Prefix + "create_account"
+	PathCreateAccounts = PathV1Prefix + "create_accounts"
+	PathGetAccount     = PathV1Prefix + "get_account"
+	PathUpdateAccount  = PathV1Prefix + "update_account"
+	PathGetAccounts    = PathV1Prefix + "get_accounts"
 
 	PathCreateCategory      = PathV1Prefix + "create_category"
 	PathCreateCategories    = PathV1Prefix + "create_categories"

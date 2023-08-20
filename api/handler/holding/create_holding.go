@@ -2,7 +2,9 @@ package holding
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jseow5177/pockteer-be/api/handler/lot"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
@@ -10,9 +12,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrEmptyAccountID = errors.New("empty account_id")
+)
+
 var CreateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 	"account_id": &validator.String{
-		Optional: false,
+		Optional: true, // allow reuse in CreateAccount
 	},
 	"symbol": &validator.String{
 		Optional: false,
@@ -29,10 +35,19 @@ var CreateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:   true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
+	"lots": &validator.Slice{
+		Optional:  true,
+		MaxLen:    5,
+		Validator: lot.CreateLotValidator,
+	},
 })
 
 func (h *holdingHandler) CreateHolding(ctx context.Context, req *presenter.CreateHoldingRequest, res *presenter.CreateHoldingResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
+
+	if req.GetAccountID() == "" {
+		return ErrEmptyAccountID
+	}
 
 	useCaseRes, err := h.holdingUseCase.CreateHolding(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

@@ -17,6 +17,7 @@ type HoldingRepo interface {
 	GetMany(ctx context.Context, hf *HoldingFilter) ([]*entity.Holding, error)
 
 	Create(ctx context.Context, h *entity.Holding) (string, error)
+	CreateMany(ctx context.Context, hs []*entity.Holding) ([]string, error)
 	Update(ctx context.Context, hf *HoldingFilter, hu *entity.HoldingUpdate) error
 }
 

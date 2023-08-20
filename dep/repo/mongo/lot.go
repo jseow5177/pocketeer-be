@@ -39,6 +39,23 @@ func (m *lotMongo) Create(ctx context.Context, l *entity.Lot) (string, error) {
 	return id, nil
 }
 
+func (m *lotMongo) CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, error) {
+	lms := make([]interface{}, 0)
+	for _, l := range ls {
+		lms = append(lms, model.ToLotModelFromEntity(l))
+	}
+	ids, err := m.mColl.createMany(ctx, lms)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, l := range ls {
+		l.SetLotID(goutil.String(ids[i]))
+	}
+
+	return ids, nil
+}
+
 func (m *lotMongo) Update(ctx context.Context, lf *repo.LotFilter, lu *entity.LotUpdate) error {
 	lm := model.ToLotModelFromUpdate(lu)
 	if err := m.mColl.update(ctx, lf, lm); err != nil {
