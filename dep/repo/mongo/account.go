@@ -27,9 +27,6 @@ func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, 
 	acm := model.ToAccountModelFromEntity(ac)
 	id, err := m.mColl.create(ctx, acm)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return "", repo.ErrAccountAlreadyExists
-		}
 		return "", err
 	}
 	ac.SetAccountID(goutil.String(id))
@@ -40,9 +37,6 @@ func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, 
 func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu *entity.AccountUpdate) error {
 	acm := model.ToAccountModelFromUpdate(acu)
 	if err := m.mColl.update(ctx, acf, acm); err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return repo.ErrAccountAlreadyExists
-		}
 		return err
 	}
 

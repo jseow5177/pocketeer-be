@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/api/handler/holding"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -27,6 +28,11 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 	"account_type": &validator.UInt32{
 		Optional:   false,
 		Validators: []validator.UInt32Func{entity.CheckChildAccountType},
+	},
+	"holdings": &validator.Slice{
+		Optional:  true,
+		MaxLen:    5,
+		Validator: holding.CreateHoldingValidator,
 	},
 })
 

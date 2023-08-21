@@ -60,9 +60,12 @@ func (uc *categoryUseCase) GetCategoryBudget(ctx context.Context, req *GetCatego
 }
 
 func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error) {
-	c := req.ToCategoryEntity()
+	c, err := req.ToCategoryEntity()
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := uc.categoryRepo.Create(ctx, c)
+	_, err = uc.categoryRepo.Create(ctx, c)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err
@@ -73,13 +76,38 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 	}, nil
 }
 
+func (uc *categoryUseCase) CreateCategories(ctx context.Context, req *CreateCategoriesRequest) (*CreateCategoriesResponse, error) {
+	cs := make([]*entity.Category, 0)
+	for _, r := range req.Categories {
+		c, err := r.ToCategoryEntity()
+		if err != nil {
+			return nil, err
+		}
+
+		cs = append(cs, c)
+	}
+
+	if _, err := uc.categoryRepo.CreateMany(ctx, cs); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new categories to repo, err: %v", err)
+		return nil, err
+	}
+
+	return &CreateCategoriesResponse{
+		Categories: cs,
+	}, nil
+}
+
 func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error) {
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	cu, hasUpdate := c.Update(req.ToCategoryUpdate())
+	cu, hasUpdate, err := c.Update(req.ToCategoryUpdate())
+	if err != nil {
+		return nil, err
+	}
+
 	if !hasUpdate {
 		log.Ctx(ctx).Info().Msg("category has no updates")
 		return &UpdateCategoryResponse{

@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
@@ -16,8 +17,7 @@ type accountUseCase struct {
 	txMgr           repo.TxMgr
 	accountRepo     repo.AccountRepo
 	transactionRepo repo.TransactionRepo
-
-	holdingUseCase holding.UseCase
+	holdingUseCase  holding.UseCase
 }
 
 func NewAccountUseCase(
@@ -76,14 +76,56 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 	}, nil
 }
 
+func (uc *accountUseCase) CreateAccounts(ctx context.Context, req *CreateAccountsRequest) (*CreateAccountsResponse, error) {
+	var (
+		mu      sync.Mutex
+		acs     = make([]*entity.Account, 0)
+		errChan = make(chan int, len(req.Accounts))
+	)
+
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		return goutil.ParallelizeWork(ctx, len(req.Accounts), 5, func(ctx context.Context, workNum int) error {
+			acRes, err := uc.CreateAccount(ctx, req.Accounts[workNum])
+			if err != nil {
+				errChan <- workNum
+				return err
+			}
+			mu.Lock()
+			acs = append(acs, acRes.Account)
+			mu.Unlock()
+			return nil
+		})
+	}); err != nil {
+		return nil, fmt.Errorf("account idx %v, err: %v", <-errChan, err)
+	}
+
+	return &CreateAccountsResponse{
+		Accounts: acs,
+	}, nil
+}
+
 func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error) {
 	ac, err := req.ToAccountEntity()
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := uc.accountRepo.Create(ctx, ac); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if _, err := uc.accountRepo.Create(txCtx, ac); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save new account to repo, err: %v", err)
+			return err
+		}
+
+		if len(req.Holdings) > 0 {
+			holdingsRes, err := uc.holdingUseCase.CreateHoldings(txCtx, req.ToCreateHoldingsRequest(ac.GetAccountID()))
+			if err != nil {
+				return err
+			}
+			ac.SetHoldings(holdingsRes.Holdings)
+		}
+
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 

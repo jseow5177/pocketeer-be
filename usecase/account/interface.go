@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
 )
 
 var (
@@ -18,6 +19,7 @@ type UseCase interface {
 	GetAccounts(ctx context.Context, req *GetAccountsRequest) (*GetAccountsResponse, error)
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
+	CreateAccounts(ctx context.Context, req *CreateAccountsRequest) (*CreateAccountsResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
 }
 
@@ -98,6 +100,7 @@ type CreateAccountRequest struct {
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
+	Holdings    []*holding.CreateHoldingRequest
 }
 
 func (m *CreateAccountRequest) GetUserID() string {
@@ -146,6 +149,21 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 	)
 }
 
+func (m *CreateAccountRequest) ToCreateHoldingsRequest(accountID string) *holding.CreateHoldingsRequest {
+	return &holding.CreateHoldingsRequest{
+		UserID:    m.UserID,
+		AccountID: goutil.String(accountID),
+		Holdings:  m.Holdings,
+	}
+}
+
+func (m *CreateAccountRequest) GetHoldings() []*holding.CreateHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
+}
+
 type CreateAccountResponse struct {
 	Account *entity.Account
 }
@@ -153,6 +171,28 @@ type CreateAccountResponse struct {
 func (m *CreateAccountResponse) GetAccount() *entity.Account {
 	if m != nil && m.Account != nil {
 		return m.Account
+	}
+	return nil
+}
+
+type CreateAccountsRequest struct {
+	Accounts []*CreateAccountRequest
+}
+
+func (m *CreateAccountsRequest) GetAccounts() []*CreateAccountRequest {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
+}
+
+type CreateAccountsResponse struct {
+	Accounts []*entity.Account
+}
+
+func (m *CreateAccountsResponse) GetAccounts() []*entity.Account {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
 	}
 	return nil
 }

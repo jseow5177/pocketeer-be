@@ -2,6 +2,7 @@ package lot
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -10,9 +11,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	ErrEmptyHoldingID = errors.New("empty holding_id")
+)
+
 var CreateLotValidator = validator.MustForm(map[string]validator.Validator{
 	"holding_id": &validator.String{
-		Optional: false,
+		Optional: true, // allow reuse in CreateHolding
 	},
 	"shares": &validator.String{
 		Optional:   false,
@@ -29,6 +34,10 @@ var CreateLotValidator = validator.MustForm(map[string]validator.Validator{
 
 func (h *lotHandler) CreateLot(ctx context.Context, req *presenter.CreateLotRequest, res *presenter.CreateLotResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
+
+	if req.GetHoldingID() == "" {
+		return ErrEmptyHoldingID
+	}
 
 	useCaseRes, err := h.lotUseCase.CreateLot(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

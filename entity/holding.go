@@ -131,6 +131,8 @@ type Holding struct {
 	Quote           *Quote   // no-op for custom, computed for default from external API
 	TotalCost       *float64 // stored for custom, computed for default
 	LatestValue     *float64 // stored for custom, computed for default
+
+	Lots []*Lot
 }
 
 type HoldingOption = func(h *Holding)
@@ -207,7 +209,7 @@ func (h *Holding) checkOpts() error {
 	if h.IsDefault() {
 		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
 
-		// for non-custom type, cannot cost, value, and shares
+		// for non-custom type, set cannot cost, value, and shares
 		if h.TotalCost != nil || h.LatestValue != nil || h.TotalShares != nil {
 			return ErrSetCostValueSharesForbidden
 		}
@@ -429,6 +431,17 @@ func (h *Holding) GetQuote() *Quote {
 
 func (h *Holding) SetQuote(quote *Quote) {
 	h.Quote = quote
+}
+
+func (h *Holding) GetLots() []*Lot {
+	if h != nil && h.Lots != nil {
+		return h.Lots
+	}
+	return nil
+}
+
+func (h *Holding) SetLots(ls []*Lot) {
+	h.Lots = ls
 }
 
 func (h *Holding) IsCustom() bool {

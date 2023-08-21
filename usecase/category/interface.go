@@ -16,7 +16,30 @@ type UseCase interface {
 	GetCategoriesBudget(ctx context.Context, req *GetCategoriesBudgetRequest) (*GetCategoriesBudgetResponse, error)
 
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest) (*CreateCategoryResponse, error)
+	CreateCategories(ctx context.Context, req *CreateCategoriesRequest) (*CreateCategoriesResponse, error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error)
+}
+
+type CreateCategoriesRequest struct {
+	Categories []*CreateCategoryRequest
+}
+
+func (m *CreateCategoriesRequest) GetCategories() []*CreateCategoryRequest {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+type CreateCategoriesResponse struct {
+	Categories []*entity.Category
+}
+
+func (m *CreateCategoriesResponse) GetCategories() []*entity.Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
 }
 
 type GetCategoryBudgetRequest struct {
@@ -145,12 +168,20 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 	return 0
 }
 
-func (m *CreateCategoryRequest) ToCategoryEntity() *entity.Category {
+func (m *CreateCategoryRequest) ToCategoryEntity() (*entity.Category, error) {
 	return entity.NewCategory(
 		m.GetUserID(),
-		entity.WithCategoryName(m.CategoryName),
+		m.GetCategoryName(),
 		entity.WithCategoryType(m.CategoryType),
 	)
+}
+
+func (m *CreateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:       m.UserID,
+		CategoryName: m.CategoryName,
+		CategoryType: m.CategoryType,
+	}
 }
 
 type CreateCategoryResponse struct {

@@ -2,6 +2,7 @@ package budget
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -13,6 +14,10 @@ import (
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
+)
+
+var (
+	ErrBudgetConflict = errors.New("conflict in budget")
 )
 
 type budgetUseCase struct {
@@ -36,8 +41,32 @@ func NewBudgetUseCase(
 	}
 }
 
+func (uc *budgetUseCase) CreateBudgets(ctx context.Context, req *CreateBudgetsRequest) (*CreateBudgetsResponse, error) {
+	bs := make([]*entity.Budget, 0)
+
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		for _, r := range req.Budgets {
+			res, err := uc.CreateBudget(txCtx, r)
+			if err != nil {
+				return err
+			}
+			bs = append(bs, res.Budget)
+		}
+		return nil
+	}); err != nil {
+		if err == repo.ErrBudgetAlreadyExists {
+			return nil, ErrBudgetConflict
+		}
+		return nil, err
+	}
+
+	return &CreateBudgetsResponse{
+		Budgets: bs,
+	}, nil
+}
+
 func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error) {
-	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
+	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +103,7 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error) {
 	now := uint64(time.Now().UnixMilli())
 
-	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
+	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +118,7 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 		return nil, err
 	}
 
-	var hasUpdate bool
-	bu, hasUpdate, err = b.Update(bu)
+	bu, hasUpdate, err := b.Update(bu)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +155,7 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 	}, nil
 }
 
-// Fetch budget from repo, won't compute used amount.
-//
-// Timezone is not needed.
-func (uc *budgetUseCase) getBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
+func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
 	q, err := req.ToBudgetQuery()
 	if err != nil {
 		return nil, err
@@ -147,21 +172,17 @@ func (uc *budgetUseCase) getBudget(ctx context.Context, req *GetBudgetRequest) (
 		b = bs[0]
 	}
 
-	return &GetBudgetResponse{
-		Budget: b,
-	}, nil
-}
-
-// Fetch budget from repo and compute the used amount.
-func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
-	res, err := uc.getBudget(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	b := res.Budget
-
 	if b == nil {
 		return new(GetBudgetResponse), nil
+	}
+
+	res := &GetBudgetResponse{
+		Budget: b,
+	}
+
+	// cannot compute budget used amount without timezone
+	if req.GetTimezone() == "" {
+		return res, nil
 	}
 
 	var startTime, endTime uint64
@@ -192,11 +213,10 @@ func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (
 	if len(aggrs) > 0 {
 		usedAmount = math.Abs(aggrs[0].GetTotalAmount())
 	}
+
 	b.SetUsedAmount(goutil.Float64(usedAmount))
 
-	return &GetBudgetResponse{
-		Budget: b,
-	}, nil
+	return res, nil
 }
 
 func (uc *budgetUseCase) GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error) {
@@ -242,7 +262,7 @@ func (uc *budgetUseCase) GetBudgets(ctx context.Context, req *GetBudgetsRequest)
 }
 
 func (uc *budgetUseCase) DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error) {
-	res, err := uc.getBudget(ctx, req.ToGetBudgetRequest())
+	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
 		return nil, err
 	}

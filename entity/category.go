@@ -60,12 +60,6 @@ func WithCategoryID(categoryID *string) CategoryOption {
 	}
 }
 
-func WithCategoryName(categoryName *string) CategoryOption {
-	return func(c *Category) {
-		c.CategoryName = categoryName
-	}
-}
-
 func WithCategoryType(categoryType *uint32) CategoryOption {
 	return func(c *Category) {
 		c.CategoryType = categoryType
@@ -84,25 +78,32 @@ func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 	}
 }
 
-func NewCategory(userID string, opts ...CategoryOption) *Category {
+func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
 		UserID:       goutil.String(userID),
-		CategoryName: goutil.String(""),
+		CategoryName: goutil.String(categoryName),
 		CategoryType: goutil.Uint32(uint32(TransactionTypeExpense)),
 		CreateTime:   goutil.Uint64(now),
 		UpdateTime:   goutil.Uint64(now),
 	}
+
 	for _, opt := range opts {
 		opt(c)
 	}
-	c.checkOpts()
-	return c
+
+	if err := c.checkOpts(); err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
-func (c *Category) checkOpts() {}
+func (c *Category) checkOpts() error {
+	return nil
+}
 
-func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, hasUpdate bool) {
+func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, hasUpdate bool, err error) {
 	categoryUpdate = new(CategoryUpdate)
 
 	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
@@ -122,7 +123,9 @@ func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, h
 	c.UpdateTime = now
 
 	// check
-	c.checkOpts()
+	if err = c.checkOpts(); err != nil {
+		return nil, false, err
+	}
 
 	categoryUpdate.UpdateTime = now
 

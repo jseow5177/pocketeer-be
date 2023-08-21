@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	ErrCategoryNotFound      = errors.New("category not found")
-	ErrCategoryAlreadyExists = errors.New("category already exists")
+	ErrCategoryNotFound = errors.New("category not found")
 )
 
 type CategoryRepo interface {
@@ -17,6 +16,7 @@ type CategoryRepo interface {
 	GetMany(ctx context.Context, cf *CategoryFilter) ([]*entity.Category, error)
 
 	Create(ctx context.Context, c *entity.Category) (string, error)
+	CreateMany(ctx context.Context, cs []*entity.Category) ([]string, error)
 	Update(ctx context.Context, cf *CategoryFilter, c *entity.CategoryUpdate) error
 }
 

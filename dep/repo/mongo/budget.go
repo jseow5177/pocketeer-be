@@ -33,6 +33,24 @@ func (m *budgetMongo) Create(ctx context.Context, b *entity.Budget) (string, err
 	return id, nil
 }
 
+func (m *budgetMongo) CreateMany(ctx context.Context, bs []*entity.Budget) ([]string, error) {
+	bms := make([]interface{}, 0)
+	for _, b := range bs {
+		bms = append(bms, model.ToBudgetModelFromEntity(b))
+	}
+
+	ids, err := m.mColl.createMany(ctx, bms)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, b := range bs {
+		b.SetBudgetID(goutil.String(ids[i]))
+	}
+
+	return ids, nil
+}
+
 func (m *budgetMongo) GetMany(ctx context.Context, bq *repo.BudgetQuery) ([]*entity.Budget, error) {
 	q, err := mongoutil.BuildQuery(bq)
 	if err != nil {

@@ -56,6 +56,42 @@ func (c *Category) GetBudget() *Budget {
 	return nil
 }
 
+type CreateCategoriesRequest struct {
+	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
+}
+
+func (m *CreateCategoriesRequest) GetCategories() []*CreateCategoryRequest {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+func (m *CreateCategoriesRequest) ToUseCaseReq(userID string) *category.CreateCategoriesRequest {
+	cs := make([]*category.CreateCategoryRequest, 0)
+	for _, r := range m.Categories {
+		cs = append(cs, r.ToUseCaseReq(userID))
+	}
+	return &category.CreateCategoriesRequest{
+		Categories: cs,
+	}
+}
+
+type CreateCategoriesResponse struct {
+	Categories []*Category `json:"categories,omitempty"`
+}
+
+func (m *CreateCategoriesResponse) GetCategories() []*Category {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
+}
+
+func (m *CreateCategoriesResponse) Set(useCaseRes *category.CreateCategoriesResponse) {
+	m.Categories = toCategories(useCaseRes.Categories)
+}
+
 type CreateCategoryRequest struct {
 	CategoryName *string `json:"category_name,omitempty"`
 	CategoryType *uint32 `json:"category_type,omitempty"`

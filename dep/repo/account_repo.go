@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	ErrAccountNotFound      = errors.New("account not found")
-	ErrAccountAlreadyExists = errors.New("account already exists")
+	ErrAccountNotFound = errors.New("account not found")
 )
 
 type AccountRepo interface {

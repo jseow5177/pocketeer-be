@@ -175,6 +175,42 @@ func (m *GetBudgetResponse) Set(res *budget.GetBudgetResponse) {
 	m.Budget = toBudget(res.Budget)
 }
 
+type CreateBudgetsRequest struct {
+	Budgets []*CreateBudgetRequest `json:"budgets,omitempty"`
+}
+
+func (m *CreateBudgetsRequest) GetBudgets() []*CreateBudgetRequest {
+	if m != nil && m.Budgets != nil {
+		return m.Budgets
+	}
+	return nil
+}
+
+func (m *CreateBudgetsRequest) ToUseCaseReq(userID string) *budget.CreateBudgetsRequest {
+	bs := make([]*budget.CreateBudgetRequest, 0)
+	for _, r := range m.Budgets {
+		bs = append(bs, r.ToUseCaseReq(userID))
+	}
+	return &budget.CreateBudgetsRequest{
+		Budgets: bs,
+	}
+}
+
+type CreateBudgetsResponse struct {
+	Budgets []*Budget `json:"budgets,omitempty"`
+}
+
+func (m *CreateBudgetsResponse) GetBudgets() []*Budget {
+	if m != nil && m.Budgets != nil {
+		return m.Budgets
+	}
+	return nil
+}
+
+func (m *CreateBudgetsResponse) Set(useCaseRes *budget.CreateBudgetsResponse) {
+	m.Budgets = toBudgets(useCaseRes.Budgets)
+}
+
 type CreateBudgetRequest struct {
 	BudgetDate   *string `json:"budget_date,omitempty"`
 	CategoryID   *string `json:"category_id,omitempty"`

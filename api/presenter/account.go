@@ -3,6 +3,7 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
@@ -91,10 +92,11 @@ func (ac *Account) GetHoldings() []*Holding {
 }
 
 type CreateAccountRequest struct {
-	AccountName *string `json:"account_name,omitempty"`
-	Balance     *string `json:"balance,omitempty"`
-	Note        *string `json:"note,omitempty"`
-	AccountType *uint32 `json:"account_type,omitempty"`
+	AccountName *string                 `json:"account_name,omitempty"`
+	Balance     *string                 `json:"balance,omitempty"`
+	Note        *string                 `json:"note,omitempty"`
+	AccountType *uint32                 `json:"account_type,omitempty"`
+	Holdings    []*CreateHoldingRequest `json:"holdings,omitempty"`
 }
 
 func (m *CreateAccountRequest) GetAccountName() string {
@@ -125,18 +127,32 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
+func (m *CreateAccountRequest) GetHoldings() []*CreateHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
+}
+
 func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
 	var balance *float64
 	if m.Balance != nil {
 		b, _ := util.MonetaryStrToFloat(m.GetBalance())
 		balance = goutil.Float64(b)
 	}
+
+	hs := make([]*holding.CreateHoldingRequest, 0)
+	for _, r := range m.Holdings {
+		hs = append(hs, r.ToUseCaseReq(userID))
+	}
+
 	return &account.CreateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
 		Balance:     balance,
 		AccountType: m.AccountType,
 		Note:        m.Note,
+		Holdings:    hs,
 	}
 }
 
@@ -153,6 +169,42 @@ func (m *CreateAccountResponse) GetAccount() *Account {
 
 func (m *CreateAccountResponse) Set(useCaseRes *account.CreateAccountResponse) {
 	m.Account = toAccount(useCaseRes.Account)
+}
+
+type CreateAccountsRequest struct {
+	Accounts []*CreateAccountRequest `json:"accounts,omitempty"`
+}
+
+func (m *CreateAccountsRequest) GetAccounts() []*CreateAccountRequest {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
+}
+
+func (m *CreateAccountsRequest) ToUseCaseReq(userID string) *account.CreateAccountsRequest {
+	acs := make([]*account.CreateAccountRequest, 0)
+	for _, r := range m.Accounts {
+		acs = append(acs, r.ToUseCaseReq(userID))
+	}
+	return &account.CreateAccountsRequest{
+		Accounts: acs,
+	}
+}
+
+type CreateAccountsResponse struct {
+	Accounts []*Account `json:"accounts,omitempty"`
+}
+
+func (m *CreateAccountsResponse) GetAccounts() []*Account {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
+}
+
+func (m *CreateAccountsResponse) Set(useCaseRes *account.CreateAccountsResponse) {
+	m.Accounts = toAccounts(useCaseRes.Accounts)
 }
 
 type GetAccountRequest struct {
