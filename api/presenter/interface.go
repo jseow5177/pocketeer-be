@@ -329,12 +329,19 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 	}
 }
 
-func toSecurity(security *entity.Security) *Security {
+func toSecurity(s *entity.Security) *Security {
 	return &Security{
-		Symbol:       security.Symbol,
-		SecurityName: security.SecurityName,
-		SecurityType: security.SecurityType,
-		Region:       security.Region,
-		Currency:     security.Currency,
+		Symbol:       s.Symbol,
+		SecurityName: s.SecurityName,
+		SecurityType: s.SecurityType,
+		Region:       s.Region,
+		Currency:     s.Currency,
+	}
+}
+
+func toFeedback(f *entity.Feedback) *Feedback {
+	return &Feedback{
+		Score: f.Score,
+		Text:  f.Text,
 	}
 }

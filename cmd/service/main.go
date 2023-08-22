@@ -19,6 +19,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
+	"github.com/jseow5177/pockteer-be/dep/repo/sheet"
 	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/jseow5177/pockteer-be/pkg/router"
 	"github.com/jseow5177/pockteer-be/pkg/service"
@@ -26,6 +27,7 @@ import (
 	ach "github.com/jseow5177/pockteer-be/api/handler/account"
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
+	fh "github.com/jseow5177/pockteer-be/api/handler/feedback"
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
@@ -35,6 +37,7 @@ import (
 	acuc "github.com/jseow5177/pockteer-be/usecase/account"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
+	fuc "github.com/jseow5177/pockteer-be/usecase/feedback"
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	luc "github.com/jseow5177/pockteer-be/usecase/lot"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
@@ -57,6 +60,7 @@ type server struct {
 	lotRepo         repo.LotRepo
 	securityRepo    repo.SecurityRepo
 	quoteRepo       repo.QuoteRepo
+	feedbackRepo    repo.FeedbackRepo
 
 	securityAPI api.SecurityAPI
 
@@ -69,6 +73,7 @@ type server struct {
 	securityUseCase    suc.UseCase
 	holdingUseCase     huc.UseCase
 	lotUseCase         luc.UseCase
+	feedbackUseCase    fuc.UseCase
 }
 
 func main() {
@@ -116,6 +121,13 @@ func (s *server) Start() error {
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
 
+	// init sheet repos
+	s.feedbackRepo, err = sheet.NewFeedbackSheet(s.ctx, s.cfg.FeedbackGoogleSheet)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init feedback repo, err: %v", err)
+		return err
+	}
+
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
@@ -136,6 +148,7 @@ func (s *server) Start() error {
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.lotUseCase, s.securityRepo, s.quoteRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
+	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -192,6 +205,25 @@ func (s *server) registerRoutes() http.Handler {
 				return nil
 			},
 		},
+	})
+
+	// ========== Feedback ========== //
+
+	feedbackHandler := fh.NewFeedbackHandler(s.feedbackUseCase)
+
+	// create feedback
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathCreateFeedback,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.CreateFeedbackRequest),
+			Res:       new(presenter.CreateFeedbackResponse),
+			Validator: fh.CreateFeedbackValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return feedbackHandler.CreateFeedback(ctx, req.(*presenter.CreateFeedbackRequest), res.(*presenter.CreateFeedbackResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
 	})
 
 	// ========== Category ========== //

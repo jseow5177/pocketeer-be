@@ -48,6 +48,8 @@ const (
 	PathUpdateLot = PathV1Prefix + "update_lot"
 	PathGetLot    = PathV1Prefix + "get_lot"
 	PathGetLots   = PathV1Prefix + "get_lots"
+
+	PathCreateFeedback = PathV1Prefix + "create_feedback"
 )
 
 const (
