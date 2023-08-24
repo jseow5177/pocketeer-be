@@ -526,6 +526,20 @@ func (s *server) registerRoutes() http.Handler {
 		},
 	})
 
+	// send otp
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSendOTP,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SendOTPRequest),
+			Res:       new(presenter.SendOTPResponse),
+			Validator: uh.SendOTPValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.SendOTP(ctx, req.(*presenter.SendOTPRequest), res.(*presenter.SendOTPResponse))
+			},
+		},
+	})
+
 	// verify email
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathVerifyEmail,

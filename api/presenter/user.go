@@ -225,3 +225,24 @@ func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
 type InitUserResponse struct{}
 
 func (m *InitUserResponse) Set(useCaseRes *user.InitUserResponse) {}
+
+type SendOTPRequest struct {
+	Email *string `json:"email,omitempty"`
+}
+
+func (m *SendOTPRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
+	}
+	return ""
+}
+
+func (m *SendOTPRequest) ToUseCaseReq() *user.SendOTPRequest {
+	return &user.SendOTPRequest{
+		Email: m.Email,
+	}
+}
+
+type SendOTPResponse struct{}
+
+func (m *SendOTPResponse) Set(useCaseRes *user.SendOTPResponse) {}

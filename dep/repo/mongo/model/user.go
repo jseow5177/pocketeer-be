@@ -56,10 +56,16 @@ func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
 		return nil
 	}
 
+	var encodedHash *string
+	if uu.Hash != nil {
+		encodedHash = goutil.String(goutil.Base64Encode([]byte(uu.GetHash())))
+	}
+
 	return &User{
 		UserFlag:   uu.UserFlag,
 		UserStatus: uu.UserStatus,
 		UpdateTime: uu.UpdateTime,
+		Hash:       encodedHash,
 	}
 }
 

@@ -32,7 +32,31 @@ var UserStatuses = map[uint32]string{
 type UserUpdate struct {
 	UserFlag   *uint32
 	UserStatus *uint32
+	Password   *string
+	Hash       *string
 	UpdateTime *uint64
+}
+
+func (uu *UserUpdate) GetPassword() string {
+	if uu != nil && uu.Password != nil {
+		return *uu.Password
+	}
+	return ""
+}
+
+func (uu *UserUpdate) SetPassword(password *string) {
+	uu.Password = password
+}
+
+func (uu *UserUpdate) GetHash() string {
+	if uu != nil && uu.Hash != nil {
+		return *uu.Hash
+	}
+	return ""
+}
+
+func (uu *UserUpdate) SetHash(hash *string) {
+	uu.Hash = hash
 }
 
 func (uu *UserUpdate) GetUserFlag() uint32 {
@@ -69,6 +93,12 @@ func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
 }
 
 type UserUpdateOption func(uu *UserUpdate)
+
+func WithUpdateUserPassword(password *string) UserUpdateOption {
+	return func(uu *UserUpdate) {
+		uu.SetPassword(password)
+	}
+}
 
 func WithUpdateUserFlag(userFlag *uint32) UserUpdateOption {
 	return func(uu *UserUpdate) {
@@ -174,31 +204,52 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 	}
 
 	if password != "" {
-		salt := u.GetSalt()
-		if salt == "" {
-			var err error
-			salt, err = u.createSalt()
-			if err != nil {
-				return nil, err
-			}
-			u.SetSalt(goutil.String(salt))
-		}
-
-		hash, err := u.hashPassword(password, salt)
+		hash, err := u.getHash(password)
 		if err != nil {
 			return nil, err
 		}
 		u.SetHash(goutil.String(string(hash)))
 	}
 
-	u.checkOpts()
+	if err := u.checkOpts(); err != nil {
+		return nil, err
+	}
 
 	return u, nil
 }
 
-func (u *User) checkOpts() {}
+func (u *User) checkOpts() error {
+	return nil
+}
 
-func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool) {
+func (u *User) getHash(password string) (string, error) {
+	salt := u.GetSalt()
+	if salt == "" {
+		var err error
+		salt, err = u.createSalt()
+		if err != nil {
+			return "", err
+		}
+		u.SetSalt(goutil.String(salt))
+	}
+
+	hash, err := goutil.HMACSha256(password, []byte(salt))
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
+}
+
+func (u *User) createSalt() (string, error) {
+	salt, err := goutil.RandByte(config.SaltByteSize)
+	if err != nil {
+		return "", err
+	}
+	return string(salt), nil
+}
+
+func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool, err error) {
 	userUpdate = new(UserUpdate)
 
 	if uu.UserStatus != nil && uu.GetUserStatus() != u.GetUserStatus() {
@@ -219,6 +270,22 @@ func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool) {
 		}()
 	}
 
+	if uu.Password != nil {
+		hash, err := u.getHash(uu.GetPassword())
+		if err != nil {
+			return nil, false, err
+		}
+
+		if u.GetHash() != hash {
+			hasUpdate = true
+			u.SetHash(goutil.String(hash))
+
+			defer func() {
+				userUpdate.SetHash(u.Hash)
+			}()
+		}
+	}
+
 	if !hasUpdate {
 		return
 	}
@@ -226,31 +293,21 @@ func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool) {
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	u.SetUpdateTime(now)
 
-	u.checkOpts()
+	if err := u.checkOpts(); err != nil {
+		return nil, false, err
+	}
 
 	userUpdate.SetUpdateTime(now)
 
 	return
 }
 
-func (u *User) IsPasswordCorrect(password string) (bool, error) {
-	hash, err := u.hashPassword(password, u.GetSalt())
+func (u *User) IsSamePassword(password string) (bool, error) {
+	hash, err := u.getHash(password)
 	if err != nil {
 		return false, err
 	}
-	return u.GetHash() == string(hash), nil
-}
-
-func (u *User) hashPassword(password, salt string) ([]byte, error) {
-	return goutil.HMACSha256(password, []byte(salt))
-}
-
-func (u *User) createSalt() (string, error) {
-	salt, err := goutil.RandByte(config.SaltByteSize)
-	if err != nil {
-		return "", err
-	}
-	return string(salt), nil
+	return u.GetHash() == hash, nil
 }
 
 func (u *User) GetUserID() string {

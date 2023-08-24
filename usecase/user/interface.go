@@ -15,6 +15,7 @@ type UseCase interface {
 	IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error)
 	VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error)
 	InitUser(ctx context.Context, req *InitUserRequest) (*InitUserResponse, error)
+	SendOTP(ctx context.Context, req *SendOTPRequest) (*SendOTPResponse, error)
 	SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error)
 	LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error)
 }
@@ -72,12 +73,24 @@ func (m *SignUpRequest) ToUserFilter() *repo.UserFilter {
 	}
 }
 
+func (m *SignUpRequest) ToOTPFilter() *repo.OTPFilter {
+	return &repo.OTPFilter{
+		Email: m.Email,
+	}
+}
+
 func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
 	username := util.GetEmailPrefix(m.GetEmail())
 	return entity.NewUser(
 		m.GetEmail(),
 		m.GetPassword(),
 		entity.WithUsername(goutil.String(username)),
+	)
+}
+
+func (m *SignUpRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserPassword(m.Password),
 	)
 }
 
@@ -249,3 +262,24 @@ func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 }
 
 type InitUserResponse struct{}
+
+type SendOTPRequest struct {
+	Email *string
+}
+
+func (m *SendOTPRequest) GetEmail() string {
+	if m != nil && m.Email != nil {
+		return *m.Email
+	}
+	return ""
+}
+
+func (m *SendOTPRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
+		Email: m.Email,
+	}
+}
+
+type SendOTPResponse struct {
+	Email *string
+}

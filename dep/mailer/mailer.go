@@ -5,7 +5,7 @@ import "context"
 type Template uint32
 
 const (
-	TemplateVerifyEmail Template = iota + 1
+	TemplateOTP Template = iota + 1
 	TemplateWelcome
 )
 

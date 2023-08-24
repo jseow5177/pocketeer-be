@@ -10,6 +10,7 @@ const (
 	PathGetUser     = PathV1Prefix + "get_user"
 	PathVerifyEmail = PathV1Prefix + "verify_email"
 	PathInitUser    = PathV1Prefix + "init_user"
+	PathSendOTP     = PathV1Prefix + "send_otp"
 
 	PathCreateAccount = PathV1Prefix + "create_account"
 	PathGetAccount    = PathV1Prefix + "get_account"

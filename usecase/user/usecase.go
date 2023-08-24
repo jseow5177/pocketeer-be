@@ -59,7 +59,7 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 		return new(InitUserResponse), nil
 	}
 
-	uu, _ := u.Update(entity.NewUserUpdate(
+	uu, _, _ := u.Update(entity.NewUserUpdate(
 		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
 	))
 
@@ -90,7 +90,7 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 		return nil, err
 	}
 
-	uu, _ := u.Update(req.ToUserUpdate())
+	uu, _, _ := u.Update(req.ToUserUpdate())
 
 	// Update user to status normal
 	if err = uc.userRepo.Update(ctx, uf, uu); err != nil {
@@ -159,6 +159,25 @@ func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUs
 	}, nil
 }
 
+func (uc *userUseCase) SendOTP(ctx context.Context, req *SendOTPRequest) (*SendOTPResponse, error) {
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.sendOTP(ctx, u.GetEmail()); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
+			return err
+		}
+		return nil
+	})
+
+	return new(SendOTPResponse), nil
+}
+
 func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
 	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
 	if err != nil && err != repo.ErrUserNotFound {
@@ -170,6 +189,7 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 	}
 
 	if u == nil {
+		// create a new user
 		u, err = req.ToUserEntity()
 		if err != nil {
 			return nil, err
@@ -180,26 +200,25 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 			log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
 			return nil, err
 		}
+	} else {
+		// check if user signed up with a different password
+		uu, hasUpdate, err := u.Update(req.ToUserUpdate())
+		if err != nil {
+			return nil, err
+		}
+		if hasUpdate {
+			if err = uc.userRepo.Update(ctx, req.ToUserFilter(), uu); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+				return nil, err
+			}
+		}
 	}
 
-	// create email otp
-	otp, err := entity.NewOTP()
-	if err != nil {
-		return nil, err
-	}
-	uc.otpRepo.Set(ctx, req.GetEmail(), otp)
-
-	// async retry send email, no cancel
 	async := goutil.NewAsync(time.Second, 5)
 	async.Retry(ctx, func(ctx context.Context) error {
 		ctx = goutil.WithoutCancel(ctx)
-		if err := uc.mailer.SendEmail(ctx, mailer.TemplateVerifyEmail, &mailer.SendEmailRequest{
-			To: req.GetEmail(),
-			Params: map[string]interface{}{
-				"otp": otp.GetCode(),
-			},
-		}); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to send verification email, email: %v, err: %v", req.GetEmail(), err)
+		if err := uc.sendOTP(ctx, req.GetEmail()); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
 			return err
 		}
 		return nil
@@ -208,6 +227,34 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 	return &SignUpResponse{
 		User: u,
 	}, nil
+}
+
+func (uc *userUseCase) sendOTP(ctx context.Context, email string) error {
+	f := &repo.OTPFilter{
+		Email: goutil.String(email),
+	}
+
+	// check if there is an existing otp
+	otp, err := uc.otpRepo.Get(ctx, f)
+	if err != nil && err != repo.ErrOTPNotFound {
+		return err
+	}
+
+	if otp == nil {
+		// create new otp
+		otp, err = entity.NewOTP()
+		if err != nil {
+			return err
+		}
+		uc.otpRepo.Set(ctx, email, otp)
+	}
+
+	return uc.mailer.SendEmail(ctx, mailer.TemplateOTP, &mailer.SendEmailRequest{
+		To: email,
+		Params: map[string]interface{}{
+			"otp": otp.GetCode(),
+		},
+	})
 }
 
 func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error) {
@@ -220,7 +267,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		return nil, err
 	}
 
-	isPasswordCorrect, err := u.IsPasswordCorrect(req.GetPassword())
+	isPasswordCorrect, err := u.IsSamePassword(req.GetPassword())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to check if password is correct, err: %v", err)
 		return nil, err
