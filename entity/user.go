@@ -364,10 +364,9 @@ func (u *User) createSalt() (string, error) {
 
 func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
 	var (
-		hasUpdate  = true
+		hasUpdate  bool
 		userUpdate = new(UserUpdate)
 	)
-	userUpdate.Meta = new(UserMetaUpdate)
 
 	if uu.UserStatus != nil && uu.GetUserStatus() != u.GetUserStatus() {
 		hasUpdate = true
@@ -408,6 +407,7 @@ func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
 
 		if umu != nil {
 			hasUpdate = true
+			userUpdate.Meta = new(UserMetaUpdate)
 
 			if umu.InitStage != nil {
 				u.Meta.SetInitStage(umu.InitStage)
