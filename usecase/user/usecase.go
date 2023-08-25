@@ -44,6 +44,32 @@ func NewUserUseCase(
 	}
 }
 
+func (uc *userUseCase) UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRequest) (*UpdateUserMetaResponse, error) {
+	uf := req.ToUserFilter()
+
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	uu, err := u.Update(req.ToUserUpdate())
+	if err != nil {
+		return nil, err
+	}
+
+	if uu != nil {
+		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	return &UpdateUserMetaResponse{
+		User: u,
+	}, nil
+}
+
 func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*InitUserResponse, error) {
 	uf := req.ToUserFilter()
 
@@ -59,13 +85,16 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 		return new(InitUserResponse), nil
 	}
 
-	uu, _, _ := u.Update(entity.NewUserUpdate(
-		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
-	))
-
-	if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail update user to flag default, err: %v", err)
+	uu, err := u.Update(req.ToUserUpdate())
+	if err != nil {
 		return nil, err
+	}
+
+	if uu != nil {
+		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail update user to flag default, err: %v", err)
+			return nil, err
+		}
 	}
 
 	return new(InitUserResponse), nil
@@ -90,12 +119,17 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 		return nil, err
 	}
 
-	uu, _, _ := u.Update(req.ToUserUpdate())
-
 	// Update user to status normal
-	if err = uc.userRepo.Update(ctx, uf, uu); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+	uu, err := u.Update(req.ToUserUpdate())
+	if err != nil {
 		return nil, err
+	}
+
+	if uu != nil {
+		if err = uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+			return nil, err
+		}
 	}
 
 	// create access token
@@ -202,11 +236,12 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 		}
 	} else {
 		// check if user signed up with a different password
-		uu, hasUpdate, err := u.Update(req.ToUserUpdate())
+		uu, err := u.Update(req.ToUserUpdate())
 		if err != nil {
 			return nil, err
 		}
-		if hasUpdate {
+
+		if uu != nil {
 			if err = uc.userRepo.Update(ctx, req.ToUserFilter(), uu); err != nil {
 				log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
 				return nil, err

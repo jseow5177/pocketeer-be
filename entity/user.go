@@ -7,6 +7,91 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
+type UserInitStage uint32
+
+const (
+	InitStageOne UserInitStage = iota
+	InitStageTwo
+	InitStageThree
+	InitStageFour
+)
+
+type UserMetaUpdate struct {
+	InitStage *uint32
+}
+
+func (umu *UserMetaUpdate) GetInitStage() uint32 {
+	if umu != nil && umu.InitStage != nil {
+		return *umu.InitStage
+	}
+	return 0
+}
+
+func (umu *UserMetaUpdate) SetInitStage(initStage *uint32) {
+	umu.InitStage = initStage
+}
+
+type UserMetaUpdateOption func(uu *UserMetaUpdate)
+
+func WithUpdateUserMetaInitStage(initStage *uint32) UserMetaUpdateOption {
+	return func(umu *UserMetaUpdate) {
+		umu.SetInitStage(initStage)
+	}
+}
+
+func NewUserMetaUpdate(opts ...UserMetaUpdateOption) *UserMetaUpdate {
+	umu := new(UserMetaUpdate)
+	for _, opt := range opts {
+		opt(umu)
+	}
+	return umu
+}
+
+type UserMeta struct {
+	InitStage *uint32
+}
+
+type UserMetaOption = func(um *UserMeta)
+
+func WithUserMetaInitStage(initStage *uint32) UserMetaOption {
+	return func(um *UserMeta) {
+		um.SetInitStage(initStage)
+	}
+}
+
+func (um *UserMeta) GetInitStage() uint32 {
+	if um != nil && um.InitStage != nil {
+		return *um.InitStage
+	}
+	return 0
+}
+
+func (um *UserMeta) SetInitStage(initStage *uint32) {
+	um.InitStage = initStage
+}
+
+func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
+	var (
+		hasUpdate      bool
+		userMetaUpdate = new(UserMetaUpdate)
+	)
+
+	if umu.InitStage != nil && um.GetInitStage() != umu.GetInitStage() {
+		hasUpdate = true
+		um.SetInitStage(umu.InitStage)
+
+		defer func() {
+			userMetaUpdate.SetInitStage(um.InitStage)
+		}()
+	}
+
+	if !hasUpdate {
+		return nil
+	}
+
+	return userMetaUpdate
+}
+
 type UserFlag uint32
 
 const (
@@ -35,6 +120,7 @@ type UserUpdate struct {
 	Password   *string
 	Hash       *string
 	UpdateTime *uint64
+	Meta       *UserMetaUpdate
 }
 
 func (uu *UserUpdate) GetPassword() string {
@@ -92,6 +178,17 @@ func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
 	uu.UpdateTime = updateTime
 }
 
+func (uu *UserUpdate) GetMeta() *UserMetaUpdate {
+	if uu != nil && uu.Meta != nil {
+		return nil
+	}
+	return uu.Meta
+}
+
+func (uu *UserUpdate) SetMeta(meta *UserMetaUpdate) {
+	uu.Meta = meta
+}
+
 type UserUpdateOption func(uu *UserUpdate)
 
 func WithUpdateUserPassword(password *string) UserUpdateOption {
@@ -109,6 +206,12 @@ func WithUpdateUserFlag(userFlag *uint32) UserUpdateOption {
 func WithUpdateUserStatus(userStatus *uint32) UserUpdateOption {
 	return func(uu *UserUpdate) {
 		uu.SetUserStatus(userStatus)
+	}
+}
+
+func WithUpdateUserMeta(meta *UserMetaUpdate) UserUpdateOption {
+	return func(uu *UserUpdate) {
+		uu.SetMeta(meta)
 	}
 }
 
@@ -130,6 +233,7 @@ type User struct {
 	Salt       *string
 	CreateTime *uint64
 	UpdateTime *uint64
+	Meta       *UserMeta
 }
 
 type UserOption = func(u *User)
@@ -188,6 +292,12 @@ func WithUserUpdateTime(updateTime *uint64) UserOption {
 	}
 }
 
+func WithUserMeta(userMeta *UserMeta) UserOption {
+	return func(u *User) {
+		u.Meta = userMeta
+	}
+}
+
 func NewUser(email, password string, opts ...UserOption) (*User, error) {
 	now := uint64(time.Now().UnixMilli())
 	u := &User{
@@ -198,6 +308,9 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
+		Meta: &UserMeta{
+			InitStage: goutil.Uint32(uint32(InitStageOne)),
+		},
 	}
 	for _, opt := range opts {
 		opt(u)
@@ -249,8 +362,12 @@ func (u *User) createSalt() (string, error) {
 	return string(salt), nil
 }
 
-func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool, err error) {
-	userUpdate = new(UserUpdate)
+func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
+	var (
+		hasUpdate  = true
+		userUpdate = new(UserUpdate)
+	)
+	userUpdate.Meta = new(UserMetaUpdate)
 
 	if uu.UserStatus != nil && uu.GetUserStatus() != u.GetUserStatus() {
 		hasUpdate = true
@@ -273,7 +390,7 @@ func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool, e
 	if uu.Password != nil {
 		hash, err := u.getHash(uu.GetPassword())
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 
 		if u.GetHash() != hash {
@@ -286,20 +403,36 @@ func (u *User) Update(uu *UserUpdate) (userUpdate *UserUpdate, hasUpdate bool, e
 		}
 	}
 
+	if uu.Meta != nil {
+		umu := u.Meta.Update(uu.Meta)
+
+		if umu != nil {
+			hasUpdate = true
+
+			if umu.InitStage != nil {
+				u.Meta.SetInitStage(umu.InitStage)
+
+				defer func() {
+					userUpdate.Meta.SetInitStage(u.Meta.InitStage)
+				}()
+			}
+		}
+	}
+
 	if !hasUpdate {
-		return
+		return nil, nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	u.SetUpdateTime(now)
 
 	if err := u.checkOpts(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	userUpdate.SetUpdateTime(now)
 
-	return
+	return userUpdate, nil
 }
 
 func (u *User) IsSamePassword(password string) (bool, error) {
@@ -407,6 +540,17 @@ func (u *User) GetUpdateTime() uint64 {
 
 func (u *User) SetUpdateTime(updateTime *uint64) {
 	u.UpdateTime = updateTime
+}
+
+func (u *User) GetMeta() *UserMeta {
+	if u != nil && u.Meta != nil {
+		return nil
+	}
+	return u.Meta
+}
+
+func (u *User) SetMeta(meta *UserMeta) {
+	u.Meta = meta
 }
 
 func (u *User) IsNormal() bool {

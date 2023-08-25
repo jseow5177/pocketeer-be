@@ -5,14 +5,19 @@ import (
 	"github.com/jseow5177/pockteer-be/usecase/user"
 )
 
+type UserMeta struct {
+	InitStage *uint32 `json:"init_stage,omitempty"`
+}
+
 type User struct {
-	UserID     *string `json:"user_id,omitempty"`
-	Email      *string `json:"email,omitempty"`
-	Username   *string `json:"username,omitempty"`
-	UserFlag   *uint32 `json:"user_flag,omitempty"`
-	UserStatus *uint32 `json:"user_status,omitempty"`
-	CreateTime *uint64 `json:"create_time,omitempty"`
-	UpdateTime *uint64 `json:"update_time,omitempty"`
+	UserID     *string   `json:"user_id,omitempty"`
+	Email      *string   `json:"email,omitempty"`
+	Username   *string   `json:"username,omitempty"`
+	UserFlag   *uint32   `json:"user_flag,omitempty"`
+	UserStatus *uint32   `json:"user_status,omitempty"`
+	CreateTime *uint64   `json:"create_time,omitempty"`
+	UpdateTime *uint64   `json:"update_time,omitempty"`
+	Meta       *UserMeta `json:"meta,omitempty"`
 }
 
 func (u *User) GetUserID() string {
@@ -62,6 +67,13 @@ func (u *User) GetUpdateTime() uint64 {
 		return *u.UpdateTime
 	}
 	return 0
+}
+
+func (u *User) GetMeta() *UserMeta {
+	if u != nil && u.Meta != nil {
+		return nil
+	}
+	return u.Meta
 }
 
 type GetUserRequest struct{}
@@ -246,3 +258,36 @@ func (m *SendOTPRequest) ToUseCaseReq() *user.SendOTPRequest {
 type SendOTPResponse struct{}
 
 func (m *SendOTPResponse) Set(useCaseRes *user.SendOTPResponse) {}
+
+type UpdateUserMetaRequest struct {
+	InitStage *uint32 `json:"init_stage,omitempty"`
+}
+
+func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
+	if m != nil && m.InitStage != nil {
+		return *m.InitStage
+	}
+	return 0
+}
+
+func (m *UpdateUserMetaRequest) ToUseCaseReq(userID string) *user.UpdateUserMetaRequest {
+	return &user.UpdateUserMetaRequest{
+		UserID:    goutil.String(userID),
+		InitStage: m.InitStage,
+	}
+}
+
+type UpdateUserMetaResponse struct {
+	User *User `json:"user,omitempty"`
+}
+
+func (m *UpdateUserMetaResponse) GetUser() *User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
+}
+
+func (m *UpdateUserMetaResponse) Set(useCaseRes *user.UpdateUserMetaResponse) {
+	m.User = toUser(useCaseRes.User)
+}

@@ -18,6 +18,7 @@ type UseCase interface {
 	SendOTP(ctx context.Context, req *SendOTPRequest) (*SendOTPResponse, error)
 	SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error)
 	LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error)
+	UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRequest) (*UpdateUserMetaResponse, error)
 }
 
 type GetUserRequest struct {
@@ -254,6 +255,12 @@ func (m *InitUserRequest) GetUserID() string {
 	return ""
 }
 
+func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+	)
+}
+
 func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
 		UserID:     m.UserID,
@@ -282,4 +289,50 @@ func (m *SendOTPRequest) ToUserFilter() *repo.UserFilter {
 
 type SendOTPResponse struct {
 	Email *string
+}
+
+type UpdateUserMetaRequest struct {
+	UserID    *string
+	InitStage *uint32
+}
+
+func (m *UpdateUserMetaRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
+	if m != nil && m.InitStage != nil {
+		return *m.InitStage
+	}
+	return 0
+}
+
+func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
+		UserID: m.UserID,
+	}
+}
+
+func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserMeta(
+			entity.NewUserMetaUpdate(
+				entity.WithUpdateUserMetaInitStage(m.InitStage),
+			),
+		),
+	)
+}
+
+type UpdateUserMetaResponse struct {
+	User *entity.User
+}
+
+func (m *UpdateUserMetaResponse) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
 }

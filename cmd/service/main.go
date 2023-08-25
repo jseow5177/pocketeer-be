@@ -483,6 +483,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update user meta
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateUserMeta,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateUserMetaRequest),
+			Res:       new(presenter.UpdateUserMetaResponse),
+			Validator: uh.UpdateUserMetaValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.UpdateUserMeta(ctx, req.(*presenter.UpdateUserMetaRequest), res.(*presenter.UpdateUserMetaResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// init user
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathInitUser,

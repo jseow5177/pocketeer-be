@@ -105,6 +105,16 @@ func toCategories(cs []*entity.Category) []*Category {
 	return categories
 }
 
+func toUserMeta(um *entity.UserMeta) *UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
 func toUser(u *entity.User) *User {
 	if u == nil {
 		return nil
@@ -118,6 +128,7 @@ func toUser(u *entity.User) *User {
 		UserStatus: u.UserStatus,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
+		Meta:       toUserMeta(u.Meta),
 	}
 }
 

@@ -6,6 +6,47 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type UserMeta struct {
+	InitStage *uint32 `bson:"init_stage,omitempty"`
+}
+
+func (um *UserMeta) GetInitStage() uint32 {
+	if um != nil && um.InitStage != nil {
+		return *um.InitStage
+	}
+	return 0
+}
+
+func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
+func ToUserMetaModelFromUpdate(umu *entity.UserMetaUpdate) *UserMeta {
+	if umu == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: umu.InitStage,
+	}
+}
+
+func ToUserMetaEntity(um *UserMeta) *entity.UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &entity.UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
 type User struct {
 	UserID     primitive.ObjectID `bson:"_id,omitempty"`
 	Email      *string            `bson:"email,omitempty"`
@@ -16,6 +57,7 @@ type User struct {
 	Salt       *string            `bson:"salt,omitempty"`
 	CreateTime *uint64            `bson:"create_time,omitempty"`
 	UpdateTime *uint64            `bson:"update_time,omitempty"`
+	Meta       *UserMeta          `bson:"meta,omitempty"`
 }
 
 func ToUserModelFromEntity(u *entity.User) *User {
@@ -48,6 +90,7 @@ func ToUserModelFromEntity(u *entity.User) *User {
 		Salt:       encodedSalt,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
+		Meta:       ToUserMetaModelFromEntity(u.Meta),
 	}
 }
 
@@ -66,6 +109,7 @@ func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
 		UserStatus: uu.UserStatus,
 		UpdateTime: uu.UpdateTime,
 		Hash:       encodedHash,
+		Meta:       ToUserMetaModelFromUpdate(uu.Meta),
 	}
 }
 
@@ -103,6 +147,7 @@ func ToUserEntity(u *User) (*entity.User, error) {
 		entity.WithUserUpdateTime(u.UpdateTime),
 		entity.WithUsername(u.Username),
 		entity.WithUserFlag(u.UserFlag),
+		entity.WithUserMeta(ToUserMetaEntity(u.Meta)),
 	)
 }
 
@@ -167,4 +212,11 @@ func (u *User) GetUpdateTime() uint64 {
 		return *u.UpdateTime
 	}
 	return 0
+}
+
+func (u *User) GetMeta() *UserMeta {
+	if u != nil && u.Meta != nil {
+		return nil
+	}
+	return u.Meta
 }

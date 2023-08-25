@@ -5,12 +5,13 @@ const (
 
 	PathHealthCheck = "/"
 
-	PathSignUp      = PathV1Prefix + "sign_up"
-	PathLogin       = PathV1Prefix + "log_in"
-	PathGetUser     = PathV1Prefix + "get_user"
-	PathVerifyEmail = PathV1Prefix + "verify_email"
-	PathInitUser    = PathV1Prefix + "init_user"
-	PathSendOTP     = PathV1Prefix + "send_otp"
+	PathSignUp         = PathV1Prefix + "sign_up"
+	PathLogin          = PathV1Prefix + "log_in"
+	PathGetUser        = PathV1Prefix + "get_user"
+	PathVerifyEmail    = PathV1Prefix + "verify_email"
+	PathInitUser       = PathV1Prefix + "init_user"
+	PathSendOTP        = PathV1Prefix + "send_otp"
+	PathUpdateUserMeta = PathV1Prefix + "update_user_meta"
 
 	PathCreateAccount = PathV1Prefix + "create_account"
 	PathGetAccount    = PathV1Prefix + "get_account"
