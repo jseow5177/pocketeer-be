@@ -16,6 +16,8 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
+	"github.com/jseow5177/pockteer-be/dep/mailer"
+	"github.com/jseow5177/pockteer-be/dep/mailer/brevo"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
@@ -61,8 +63,11 @@ type server struct {
 	securityRepo    repo.SecurityRepo
 	quoteRepo       repo.QuoteRepo
 	feedbackRepo    repo.FeedbackRepo
+	otpRepo         repo.OTPRepo
 
 	securityAPI api.SecurityAPI
+
+	mailer mailer.Mailer
 
 	categoryUseCase    cuc.UseCase
 	transactionUseCase tuc.UseCase
@@ -131,10 +136,23 @@ func (s *server) Start() error {
 	// init apis
 	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
+	// init mailer
+	s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init brevo mailer, err: %v", err)
+		return err
+	}
+
 	// init mem repos
 	s.quoteRepo, err = mem.NewQuoteMemCache(s.cfg.QuoteMemCache, s.securityAPI)
 	if err != nil {
 		log.Ctx(s.ctx).Error().Msgf("fail to init quote repo, err: %v", err)
+		return err
+	}
+
+	s.otpRepo, err = mem.NewOTPMemCache(s.cfg.OTPMemCache)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init otp repo, err: %v", err)
 		return err
 	}
 
@@ -143,7 +161,7 @@ func (s *server) Start() error {
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
-	s.userUseCase = uuc.NewUserUseCase(s.userRepo, s.tokenUseCase)
+	s.userUseCase = uuc.NewUserUseCase(s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.lotUseCase, s.securityRepo, s.quoteRepo)
@@ -527,6 +545,36 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// update user meta
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathUpdateUserMeta,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.UpdateUserMetaRequest),
+			Res:       new(presenter.UpdateUserMetaResponse),
+			Validator: uh.UpdateUserMetaValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.UpdateUserMeta(ctx, req.(*presenter.UpdateUserMetaRequest), res.(*presenter.UpdateUserMetaResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// init user
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathInitUser,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.InitUserRequest),
+			Res:       new(presenter.InitUserResponse),
+			Validator: uh.InitUserValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.InitUser(ctx, req.(*presenter.InitUserRequest), res.(*presenter.InitUserResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// sign up
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathSignUp,
@@ -551,6 +599,34 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: uh.LogInValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return userHandler.LogIn(ctx, req.(*presenter.LogInRequest), res.(*presenter.LogInResponse))
+			},
+		},
+	})
+
+	// send otp
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSendOTP,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SendOTPRequest),
+			Res:       new(presenter.SendOTPResponse),
+			Validator: uh.SendOTPValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.SendOTP(ctx, req.(*presenter.SendOTPRequest), res.(*presenter.SendOTPResponse))
+			},
+		},
+	})
+
+	// verify email
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathVerifyEmail,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.VerifyEmailRequest),
+			Res:       new(presenter.VerifyEmailResponse),
+			Validator: uh.VerifyEmailValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return userHandler.VerifyEmail(ctx, req.(*presenter.VerifyEmailRequest), res.(*presenter.VerifyEmailResponse))
 			},
 		},
 	})

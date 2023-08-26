@@ -13,6 +13,8 @@ type Config struct {
 	FinnHub             *FinnHub     `json:"finnhub"`
 	QuoteMemCache       *MemCache    `json:"quote_mem_cache"`
 	FeedbackGoogleSheet *GoogleSheet `json:"feedback_google_sheet"`
+	OTPMemCache         *MemCache    `json:"otp_mem_cache"`
+	Brevo               *Brevo       `json:"brevo"`
 }
 
 type RateLimit struct {
@@ -81,6 +83,10 @@ type FinnHub struct {
 	Token   string `json:"token"`
 }
 
+type Brevo struct {
+	APIKey string `json:"api_key"`
+}
+
 func NewConfig() *Config {
 	return &Config{
 		Server: &Server{
@@ -121,6 +127,13 @@ func NewConfig() *Config {
 			Type:        "service_account",
 			SheetID:     "1xeY7_DRK0EYxEnO_3e9Wh7kNlgEZLIq0TL5EMth6juU",
 			WriteRange:  "Sheet1!A1:C2",
+		},
+		OTPMemCache: &MemCache{
+			ExpiryTime:      "2m",
+			CleanUpInterval: "3m",
+		},
+		Brevo: &Brevo{
+			APIKey: "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",
 		},
 	}
 }

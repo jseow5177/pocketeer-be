@@ -2,8 +2,14 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+)
+
+var (
+	ErrQuoteNotFound = errors.New("quote not found")
+	ErrInvalidQuote  = errors.New("invalid quote in mem cache")
 )
 
 type QuoteRepo interface {

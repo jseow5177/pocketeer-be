@@ -13,12 +13,14 @@ var (
 
 type UserRepo interface {
 	Get(ctx context.Context, uf *UserFilter) (*entity.User, error)
+
 	Create(ctx context.Context, u *entity.User) (string, error)
+	Update(ctx context.Context, uf *UserFilter, uu *entity.UserUpdate) error
 }
 
 type UserFilter struct {
 	UserID     *string `filter:"_id"`
-	UserName   *string `filter:"username"`
+	Email      *string `filter:"email"`
 	UserStatus *uint32 `filter:"user_status"`
 }
 
@@ -29,9 +31,9 @@ func (f *UserFilter) GetUserID() string {
 	return ""
 }
 
-func (f *UserFilter) GetUserName() string {
-	if f != nil && f.UserName != nil {
-		return *f.UserName
+func (f *UserFilter) GetEmail() string {
+	if f != nil && f.Email != nil {
+		return *f.Email
 	}
 	return ""
 }

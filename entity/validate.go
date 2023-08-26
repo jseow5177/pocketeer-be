@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"net/mail"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
@@ -23,8 +24,13 @@ var (
 	ErrMustBePositive          = errors.New("must be positive")
 )
 
-func CheckBudgetRepeat(budgetPeriod uint32) error {
-	if _, ok := BudgetRepeats[budgetPeriod]; !ok {
+func CheckEmail(email string) error {
+	_, err := mail.ParseAddress(email)
+	return err
+}
+
+func CheckBudgetRepeat(budgetRepeat uint32) error {
+	if _, ok := BudgetRepeats[budgetRepeat]; !ok {
 		return ErrInvalidBudgetRepeats
 	}
 	return nil

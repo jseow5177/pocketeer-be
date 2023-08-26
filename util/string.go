@@ -3,6 +3,7 @@ package util
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/jseow5177/pockteer-be/config"
 )
@@ -32,4 +33,12 @@ func RoundFloatToStandardDP(f float64) float64 {
 
 func RoundFloatToPreciseDP(f float64) float64 {
 	return roundFloat(f, config.PreciseDP)
+}
+
+func GetEmailPrefix(email string) string {
+	parts := strings.Split(email, "@")
+	if len(parts) == 2 {
+		return parts[0]
+	}
+	return ""
 }

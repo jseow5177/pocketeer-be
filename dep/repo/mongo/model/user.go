@@ -6,17 +6,61 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type UserMeta struct {
+	InitStage *uint32 `bson:"init_stage,omitempty"`
+}
+
+func (um *UserMeta) GetInitStage() uint32 {
+	if um != nil && um.InitStage != nil {
+		return *um.InitStage
+	}
+	return 0
+}
+
+func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
+func ToUserMetaModelFromUpdate(umu *entity.UserMetaUpdate) *UserMeta {
+	if umu == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: umu.InitStage,
+	}
+}
+
+func ToUserMetaEntity(um *UserMeta) *entity.UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &entity.UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
 type User struct {
 	UserID     primitive.ObjectID `bson:"_id,omitempty"`
+	Email      *string            `bson:"email,omitempty"`
 	Username   *string            `bson:"username,omitempty"`
+	UserFlag   *uint32            `bson:"user_flag,omitempty"`
 	UserStatus *uint32            `bson:"user_status,omitempty"`
 	Hash       *string            `bson:"hash,omitempty"`
 	Salt       *string            `bson:"salt,omitempty"`
 	CreateTime *uint64            `bson:"create_time,omitempty"`
 	UpdateTime *uint64            `bson:"update_time,omitempty"`
+	Meta       *UserMeta          `bson:"meta,omitempty"`
 }
 
-func ToUserModel(u *entity.User) *User {
+func ToUserModelFromEntity(u *entity.User) *User {
 	if u == nil {
 		return nil
 	}
@@ -38,12 +82,34 @@ func ToUserModel(u *entity.User) *User {
 
 	return &User{
 		UserID:     objID,
+		Email:      u.Email,
 		Username:   u.Username,
+		UserFlag:   u.UserFlag,
 		UserStatus: u.UserStatus,
 		Hash:       encodedHash,
 		Salt:       encodedSalt,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
+		Meta:       ToUserMetaModelFromEntity(u.Meta),
+	}
+}
+
+func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
+	if uu == nil {
+		return nil
+	}
+
+	var encodedHash *string
+	if uu.Hash != nil {
+		encodedHash = goutil.String(goutil.Base64Encode([]byte(uu.GetHash())))
+	}
+
+	return &User{
+		UserFlag:   uu.UserFlag,
+		UserStatus: uu.UserStatus,
+		UpdateTime: uu.UpdateTime,
+		Hash:       encodedHash,
+		Meta:       ToUserMetaModelFromUpdate(uu.Meta),
 	}
 }
 
@@ -71,14 +137,17 @@ func ToUserEntity(u *User) (*entity.User, error) {
 	}
 
 	return entity.NewUser(
-		u.GetUsername(),
+		u.GetEmail(),
 		"",
 		entity.WithUserID(goutil.String(u.GetUserID())),
-		entity.WithHash(decodedHash),
-		entity.WithSalt(decodedSalt),
+		entity.WithUserHash(decodedHash),
+		entity.WithUserSalt(decodedSalt),
 		entity.WithUserStatus(u.UserStatus),
 		entity.WithUserCreateTime(u.CreateTime),
 		entity.WithUserUpdateTime(u.UpdateTime),
+		entity.WithUsername(u.Username),
+		entity.WithUserFlag(u.UserFlag),
+		entity.WithUserMeta(ToUserMetaEntity(u.Meta)),
 	)
 }
 
@@ -94,6 +163,20 @@ func (u *User) GetUsername() string {
 		return *u.Username
 	}
 	return ""
+}
+
+func (u *User) GetEmail() string {
+	if u != nil && u.Email != nil {
+		return *u.Email
+	}
+	return ""
+}
+
+func (u *User) GetUserFlag() uint32 {
+	if u != nil && u.UserFlag != nil {
+		return *u.UserFlag
+	}
+	return 0
 }
 
 func (u *User) GetUserStatus() uint32 {
@@ -129,4 +212,11 @@ func (u *User) GetUpdateTime() uint64 {
 		return *u.UpdateTime
 	}
 	return 0
+}
+
+func (u *User) GetMeta() *UserMeta {
+	if u != nil && u.Meta != nil {
+		return nil
+	}
+	return u.Meta
 }
