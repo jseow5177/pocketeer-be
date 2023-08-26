@@ -51,7 +51,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(util.SetUserIDToCtx(ctx, res.GetUserID()))
+		r = r.WithContext(util.SetUserIDToCtx(ctx, res.User.GetUserID()))
 
 		next.ServeHTTP(w, r)
 	})

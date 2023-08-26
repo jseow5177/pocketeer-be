@@ -11,11 +11,19 @@ var signTokenMethod = jwt.SigningMethodHS256
 
 type CustomClaims struct {
 	UserID *string `json:"user_id,omitempty"`
+	Email  *string `json:"email,omitempty"`
 }
 
 func (cc *CustomClaims) GetUserID() string {
 	if cc != nil && cc.UserID != nil {
 		return *cc.UserID
+	}
+	return ""
+}
+
+func (cc *CustomClaims) GetEmail() string {
+	if cc != nil && cc.Email != nil {
+		return *cc.Email
 	}
 	return ""
 }

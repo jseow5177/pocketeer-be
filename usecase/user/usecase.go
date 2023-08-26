@@ -3,7 +3,9 @@ package user
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/jseow5177/pockteer-be/dep/mailer"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -12,41 +14,170 @@ import (
 )
 
 var (
-	ErrUsernameAlreadyExist = errors.New("username already exists")
-	ErrUserInvalid          = errors.New("user invalid")
+	ErrEmailAlreadyExist = errors.New("email already exists")
+	ErrUserInvalid       = errors.New("user invalid")
+	ErrOTPInit           = errors.New("otp init fail")
+	ErrOTPInvalid        = errors.New("otp invalid")
 )
 
 type userUseCase struct {
+	txMgr        repo.TxMgr
 	userRepo     repo.UserRepo
+	otpRepo      repo.OTPRepo
 	tokenUseCase token.UseCase
+	mailer       mailer.Mailer
 }
 
-func NewUserUseCase(userRepo repo.UserRepo, tokenUseCase token.UseCase) UseCase {
+func NewUserUseCase(
+	txMgr repo.TxMgr,
+	userRepo repo.UserRepo,
+	otpRepo repo.OTPRepo,
+	tokenUseCase token.UseCase,
+	mailer mailer.Mailer,
+) UseCase {
 	return &userUseCase{
+		txMgr,
 		userRepo,
+		otpRepo,
 		tokenUseCase,
+		mailer,
 	}
 }
 
-func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
-	validateTokenRes, err := uc.tokenUseCase.ValidateToken(ctx, req.ToValidateTokenRequest())
+func (uc *userUseCase) UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRequest) (*UpdateUserMetaResponse, error) {
+	uf := req.ToUserFilter()
+
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	uu, err := u.Update(req.ToUserUpdate())
 	if err != nil {
 		return nil, err
 	}
 
-	userID := validateTokenRes.CustomClaims.GetUserID()
+	if uu != nil {
+		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+			return nil, err
+		}
+	}
 
-	// check if user exists
-	u, err := uc.userRepo.Get(ctx, &repo.UserFilter{
-		UserID:     goutil.String(userID),
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	return &UpdateUserMetaResponse{
+		User: u,
+	}, nil
+}
+
+func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*InitUserResponse, error) {
+	uf := req.ToUserFilter()
+
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	// no-op
+	if !u.IsNew() {
+		log.Ctx(ctx).Info().Msgf("user already init, user_id: %v", u.GetUserID())
+		return new(InitUserResponse), nil
+	}
+
+	uu, err := u.Update(req.ToUserUpdate())
+	if err != nil {
+		return nil, err
+	}
+
+	if uu != nil {
+		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail update user to flag default, err: %v", err)
+			return nil, err
+		}
+	}
+
+	return new(InitUserResponse), nil
+}
+
+func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest) (*VerifyEmailResponse, error) {
+	otp, err := uc.otpRepo.Get(ctx, req.ToOTPFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	if !otp.IsMatch(req.GetCode()) {
+		return nil, ErrOTPInvalid
+	}
+
+	uf := req.ToUserFilter(req.GetEmail())
+
+	// Check if user exists
+	u, err := uc.userRepo.Get(ctx, uf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get user from repo, err: %v", err)
+		return nil, err
+	}
+
+	// Update user to status normal
+	uu, err := u.Update(req.ToUserUpdate())
+	if err != nil {
+		return nil, err
+	}
+
+	if uu != nil {
+		if err = uc.userRepo.Update(ctx, uf, uu); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	// create access token
+	tokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
+		CustomClaims: &entity.CustomClaims{
+			UserID: u.UserID,
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	// async retry send email, no cancel
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.mailer.SendEmail(ctx, mailer.TemplateWelcome, &mailer.SendEmailRequest{
+			To: u.GetEmail(),
+		}); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send welcome email, user_id: %v, err: %v", u.GetUserID(), err)
+			return err
+		}
+		return nil
+	})
+
+	return &VerifyEmailResponse{
+		AccessToken: tokenRes.Token,
+		User:        u,
+	}, nil
+}
+
+func (uc *userUseCase) IsAuthenticated(ctx context.Context, req *IsAuthenticatedRequest) (*IsAuthenticatedResponse, error) {
+	res, err := uc.tokenUseCase.ValidateToken(ctx, req.ToValidateTokenRequest())
+	if err != nil {
+		return nil, err
+	}
+
+	userID := res.CustomClaims.GetUserID()
+
+	// check if user exists
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter(userID))
+	if err != nil {
+		return nil, err
+	}
+
 	return &IsAuthenticatedResponse{
-		UserID: u.UserID,
+		User: u,
 	}, nil
 }
 
@@ -62,30 +193,103 @@ func (uc *userUseCase) GetUser(ctx context.Context, req *GetUserRequest) (*GetUs
 	}, nil
 }
 
+func (uc *userUseCase) SendOTP(ctx context.Context, req *SendOTPRequest) (*SendOTPResponse, error) {
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.sendOTP(ctx, u.GetEmail()); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
+			return err
+		}
+		return nil
+	})
+
+	return new(SendOTPResponse), nil
+}
+
 func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
-	_, err := uc.userRepo.Get(ctx, req.ToUserFilter())
+	u, err := uc.userRepo.Get(ctx, req.ToUserFilter())
 	if err != nil && err != repo.ErrUserNotFound {
 		return nil, err
 	}
 
-	if err == nil {
-		return nil, ErrUsernameAlreadyExist
+	if u != nil && u.IsNormal() {
+		return nil, ErrEmailAlreadyExist
 	}
 
-	u, err := req.ToUserEntity()
-	if err != nil {
-		return nil, err
+	if u == nil {
+		// create a new user
+		u, err = req.ToUserEntity()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = uc.userRepo.Create(ctx, u)
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
+			return nil, err
+		}
+	} else {
+		// check if user signed up with a different password
+		uu, err := u.Update(req.ToUserUpdate())
+		if err != nil {
+			return nil, err
+		}
+
+		if uu != nil {
+			if err = uc.userRepo.Update(ctx, req.ToUserFilter(), uu); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+				return nil, err
+			}
+		}
 	}
 
-	_, err = uc.userRepo.Create(ctx, u)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new user to repo, err: %v", err)
-		return nil, err
-	}
+	async := goutil.NewAsync(time.Second, 5)
+	async.Retry(ctx, func(ctx context.Context) error {
+		ctx = goutil.WithoutCancel(ctx)
+		if err := uc.sendOTP(ctx, req.GetEmail()); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
+			return err
+		}
+		return nil
+	})
 
 	return &SignUpResponse{
 		User: u,
 	}, nil
+}
+
+func (uc *userUseCase) sendOTP(ctx context.Context, email string) error {
+	f := &repo.OTPFilter{
+		Email: goutil.String(email),
+	}
+
+	// check if there is an existing otp
+	otp, err := uc.otpRepo.Get(ctx, f)
+	if err != nil && err != repo.ErrOTPNotFound {
+		return err
+	}
+
+	if otp == nil {
+		// create new otp
+		otp, err = entity.NewOTP()
+		if err != nil {
+			return err
+		}
+		uc.otpRepo.Set(ctx, email, otp)
+	}
+
+	return uc.mailer.SendEmail(ctx, mailer.TemplateOTP, &mailer.SendEmailRequest{
+		To: email,
+		Params: map[string]interface{}{
+			"otp": otp.GetCode(),
+		},
+	})
 }
 
 func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResponse, error) {
@@ -98,7 +302,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		return nil, err
 	}
 
-	isPasswordCorrect, err := u.IsPasswordCorrect(req.GetPassword())
+	isPasswordCorrect, err := u.IsSamePassword(req.GetPassword())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to check if password is correct, err: %v", err)
 		return nil, err
@@ -109,7 +313,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	}
 
 	// create access token
-	accessTokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+	res, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
 		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
 		CustomClaims: &entity.CustomClaims{
 			UserID: u.UserID,
@@ -120,6 +324,7 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 	}
 
 	return &LogInResponse{
-		AccessToken: accessTokenRes.Token,
+		AccessToken: res.Token,
+		User:        u,
 	}, nil
 }

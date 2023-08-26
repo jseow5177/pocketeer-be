@@ -105,6 +105,16 @@ func toCategories(cs []*entity.Category) []*Category {
 	return categories
 }
 
+func toUserMeta(um *entity.UserMeta) *UserMeta {
+	if um == nil {
+		return nil
+	}
+
+	return &UserMeta{
+		InitStage: um.InitStage,
+	}
+}
+
 func toUser(u *entity.User) *User {
 	if u == nil {
 		return nil
@@ -113,9 +123,12 @@ func toUser(u *entity.User) *User {
 	return &User{
 		UserID:     u.UserID,
 		Username:   u.Username,
+		Email:      u.Email,
+		UserFlag:   u.UserFlag,
 		UserStatus: u.UserStatus,
 		CreateTime: u.CreateTime,
 		UpdateTime: u.UpdateTime,
+		Meta:       toUserMeta(u.Meta),
 	}
 }
 
@@ -329,12 +342,19 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 	}
 }
 
-func toSecurity(security *entity.Security) *Security {
+func toSecurity(s *entity.Security) *Security {
 	return &Security{
-		Symbol:       security.Symbol,
-		SecurityName: security.SecurityName,
-		SecurityType: security.SecurityType,
-		Region:       security.Region,
-		Currency:     security.Currency,
+		Symbol:       s.Symbol,
+		SecurityName: s.SecurityName,
+		SecurityType: s.SecurityType,
+		Region:       s.Region,
+		Currency:     s.Currency,
+	}
+}
+
+func toFeedback(f *entity.Feedback) *Feedback {
+	return &Feedback{
+		Score: f.Score,
+		Text:  f.Text,
 	}
 }

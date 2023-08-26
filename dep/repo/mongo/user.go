@@ -24,7 +24,7 @@ func NewUserMongo(mongo *Mongo) repo.UserRepo {
 }
 
 func (m *userMongo) Create(ctx context.Context, u *entity.User) (string, error) {
-	um := model.ToUserModel(u)
+	um := model.ToUserModelFromEntity(u)
 	id, err := m.mColl.create(ctx, um)
 	if err != nil {
 		return "", err
@@ -46,4 +46,13 @@ func (m *userMongo) Get(ctx context.Context, uf *repo.UserFilter) (*entity.User,
 	}
 
 	return model.ToUserEntity(u)
+}
+
+func (m *userMongo) Update(ctx context.Context, uf *repo.UserFilter, uu *entity.UserUpdate) error {
+	um := model.ToUserModelFromUpdate(uu)
+	if err := m.mColl.update(ctx, uf, um); err != nil {
+		return err
+	}
+
+	return nil
 }

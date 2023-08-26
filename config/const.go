@@ -5,9 +5,13 @@ const (
 
 	PathHealthCheck = "/"
 
-	PathSignUp  = PathV1Prefix + "sign_up"
-	PathLogin   = PathV1Prefix + "log_in"
-	PathGetUser = PathV1Prefix + "get_user"
+	PathSignUp         = PathV1Prefix + "sign_up"
+	PathLogin          = PathV1Prefix + "log_in"
+	PathGetUser        = PathV1Prefix + "get_user"
+	PathVerifyEmail    = PathV1Prefix + "verify_email"
+	PathInitUser       = PathV1Prefix + "init_user"
+	PathSendOTP        = PathV1Prefix + "send_otp"
+	PathUpdateUserMeta = PathV1Prefix + "update_user_meta"
 
 	PathCreateAccount  = PathV1Prefix + "create_account"
 	PathCreateAccounts = PathV1Prefix + "create_accounts"
@@ -48,6 +52,8 @@ const (
 	PathUpdateLot = PathV1Prefix + "update_lot"
 	PathGetLot    = PathV1Prefix + "get_lot"
 	PathGetLots   = PathV1Prefix + "get_lots"
+
+	PathCreateFeedback = PathV1Prefix + "create_feedback"
 )
 
 const (
@@ -63,7 +69,6 @@ const (
 	MaxAccountNoteLength     = 60
 
 	PasswordMinLength = 8
-	UsernameMaxLength = 60
 	SaltByteSize      = 24
 
 	StandardDP = 2
