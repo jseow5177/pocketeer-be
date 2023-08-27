@@ -117,18 +117,18 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 			return err
 		}
 
-		// TODO: change user flag
-		// uu, err := u.Update(req.ToUserUpdate())
-		// if err != nil {
-		// 	return err
-		// }
+		// change user flag
+		uu, err := u.Update(req.ToUserUpdate())
+		if err != nil {
+			return err
+		}
 
-		// if uu != nil {
-		// 	if err := uc.userRepo.Update(txCtx, uf, uu); err != nil {
-		// 		log.Ctx(txCtx).Error().Msgf("fail update user to flag default, err: %v", err)
-		// 		return err
-		// 	}
-		// }
+		if uu != nil {
+			if err := uc.userRepo.Update(txCtx, uf, uu); err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail update user to flag default, err: %v", err)
+				return err
+			}
+		}
 
 		return nil
 	}); err != nil {
