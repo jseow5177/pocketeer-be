@@ -3,13 +3,26 @@ package user
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/api/handler/account"
+	"github.com/jseow5177/pockteer-be/api/handler/category"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
-var InitUserValidator = validator.MustForm(map[string]validator.Validator{})
+var InitUserValidator = validator.MustForm(map[string]validator.Validator{
+	"categories": &validator.Slice{
+		Optional:  true,
+		MaxLen:    20,
+		Validator: category.CreateCategoryValidator,
+	},
+	"accounts": &validator.Slice{
+		Optional:  true,
+		MaxLen:    10,
+		Validator: account.CreateAccountValidator,
+	},
+})
 
 func (h *userHandler) InitUser(ctx context.Context, req *presenter.InitUserRequest, res *presenter.InitUserResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)

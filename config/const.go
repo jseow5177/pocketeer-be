@@ -13,14 +13,12 @@ const (
 	PathSendOTP        = PathV1Prefix + "send_otp"
 	PathUpdateUserMeta = PathV1Prefix + "update_user_meta"
 
-	PathCreateAccount  = PathV1Prefix + "create_account"
-	PathCreateAccounts = PathV1Prefix + "create_accounts"
-	PathGetAccount     = PathV1Prefix + "get_account"
-	PathUpdateAccount  = PathV1Prefix + "update_account"
-	PathGetAccounts    = PathV1Prefix + "get_accounts"
+	PathCreateAccount = PathV1Prefix + "create_account"
+	PathGetAccount    = PathV1Prefix + "get_account"
+	PathUpdateAccount = PathV1Prefix + "update_account"
+	PathGetAccounts   = PathV1Prefix + "get_accounts"
 
 	PathCreateCategory      = PathV1Prefix + "create_category"
-	PathCreateCategories    = PathV1Prefix + "create_categories"
 	PathUpdateCategory      = PathV1Prefix + "update_category"
 	PathGetCategory         = PathV1Prefix + "get_category"
 	PathGetCategoryBudget   = PathV1Prefix + "get_category_budget"
@@ -34,12 +32,11 @@ const (
 	PathGetTransactions   = PathV1Prefix + "get_transactions"
 	PathAggrTransactions  = PathV1Prefix + "aggr_transactions"
 
-	PathGetBudget     = PathV1Prefix + "get_budget"
-	PathUpdateBudget  = PathV1Prefix + "update_budget"
-	PathGetBudgets    = PathV1Prefix + "get_budgets"
-	PathCreateBudget  = PathV1Prefix + "create_budget"
-	PathCreateBudgets = PathV1Prefix + "create_budgets"
-	PathDeleteBudget  = PathV1Prefix + "delete_budget"
+	PathGetBudget    = PathV1Prefix + "get_budget"
+	PathUpdateBudget = PathV1Prefix + "update_budget"
+	PathGetBudgets   = PathV1Prefix + "get_budgets"
+	PathCreateBudget = PathV1Prefix + "create_budget"
+	PathDeleteBudget = PathV1Prefix + "delete_budget"
 
 	PathSearchSecurities = PathV1Prefix + "search_securities"
 

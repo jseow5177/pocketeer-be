@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/mailer"
@@ -26,6 +27,12 @@ type userUseCase struct {
 	otpRepo      repo.OTPRepo
 	tokenUseCase token.UseCase
 	mailer       mailer.Mailer
+	categoryRepo repo.CategoryRepo
+	budgetRepo   repo.BudgetRepo
+	accountRepo  repo.AccountRepo
+	securityRepo repo.SecurityRepo
+	holdingRepo  repo.HoldingRepo
+	lotRepo      repo.LotRepo
 }
 
 func NewUserUseCase(
@@ -34,6 +41,12 @@ func NewUserUseCase(
 	otpRepo repo.OTPRepo,
 	tokenUseCase token.UseCase,
 	mailer mailer.Mailer,
+	categoryRepo repo.CategoryRepo,
+	budgetRepo repo.BudgetRepo,
+	accountRepo repo.AccountRepo,
+	securityRepo repo.SecurityRepo,
+	holdingRepo repo.HoldingRepo,
+	lotRepo repo.LotRepo,
 ) UseCase {
 	return &userUseCase{
 		txMgr,
@@ -41,6 +54,12 @@ func NewUserUseCase(
 		otpRepo,
 		tokenUseCase,
 		mailer,
+		categoryRepo,
+		budgetRepo,
+		accountRepo,
+		securityRepo,
+		holdingRepo,
+		lotRepo,
 	}
 }
 
@@ -85,16 +104,35 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 		return new(InitUserResponse), nil
 	}
 
-	uu, err := u.Update(req.ToUserUpdate())
-	if err != nil {
-		return nil, err
-	}
-
-	if uu != nil {
-		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail update user to flag default, err: %v", err)
-			return nil, err
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		// add new categories
+		if err := uc.initCategoriesAndBudgets(txCtx, req); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to init new categories, err: %v", err)
+			return err
 		}
+
+		// add new accounts
+		if err := uc.initAccounts(txCtx, req); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to init new accounts, err: %v", err)
+			return err
+		}
+
+		// TODO: change user flag
+		// uu, err := u.Update(req.ToUserUpdate())
+		// if err != nil {
+		// 	return err
+		// }
+
+		// if uu != nil {
+		// 	if err := uc.userRepo.Update(txCtx, uf, uu); err != nil {
+		// 		log.Ctx(txCtx).Error().Msgf("fail update user to flag default, err: %v", err)
+		// 		return err
+		// 	}
+		// }
+
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return new(InitUserResponse), nil
@@ -327,4 +365,97 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 		AccessToken: res.Token,
 		User:        u,
 	}, nil
+}
+
+func (uc *userUseCase) initCategoriesAndBudgets(ctx context.Context, req *InitUserRequest) error {
+	if len(req.Categories) == 0 {
+		return nil
+	}
+
+	cs, err := req.ToCategoryEntities()
+	if err != nil {
+		return err
+	}
+
+	if _, err := uc.categoryRepo.CreateMany(ctx, cs); err != nil {
+		return err
+	}
+
+	bs := make([]*entity.Budget, 0)
+	for _, c := range cs {
+		if c.Budget == nil {
+			continue
+		}
+		c.Budget.SetCategoryID(c.CategoryID)
+		bs = append(bs, c.Budget)
+	}
+
+	if len(bs) == 0 {
+		return nil
+	}
+
+	if _, err := uc.budgetRepo.CreateMany(ctx, bs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) error {
+	if len(req.Accounts) == 0 {
+		return nil
+	}
+
+	acs, err := req.ToAccountEntities()
+	if err != nil {
+		return err
+	}
+
+	if _, err := uc.accountRepo.CreateMany(ctx, acs); err != nil {
+		return err
+	}
+
+	for i, ac := range acs {
+		var (
+			hrs = req.Accounts[i].Holdings
+			hs  = ac.Holdings
+		)
+
+		if len(hs) == 0 {
+			continue
+		}
+
+		for j, h := range hs {
+			if h.IsDefault() {
+				if _, err = uc.securityRepo.Get(ctx, hrs[j].ToSecurityFilter()); err != nil {
+					return fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
+				}
+			}
+			h.SetAccountID(ac.AccountID)
+		}
+
+		_, err = uc.holdingRepo.CreateMany(ctx, hs)
+		if err != nil {
+			return err
+		}
+
+		for _, h := range hs {
+			ls := h.Lots
+
+			if len(ls) == 0 {
+				continue
+			}
+
+			for _, l := range ls {
+				l.SetHoldingID(h.HoldingID)
+			}
+
+			_, err := uc.lotRepo.CreateMany(ctx, ls)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

@@ -17,6 +17,7 @@ type AccountRepo interface {
 	GetMany(ctx context.Context, acf *AccountFilter) ([]*entity.Account, error)
 
 	Create(ctx context.Context, ac *entity.Account) (string, error)
+	CreateMany(ctx context.Context, acs []*entity.Account) ([]string, error)
 	Update(ctx context.Context, acf *AccountFilter, acu *entity.AccountUpdate) error
 }
 

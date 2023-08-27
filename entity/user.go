@@ -308,9 +308,6 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
-		Meta: &UserMeta{
-			InitStage: goutil.Uint32(uint32(InitStageOne)),
-		},
 	}
 	for _, opt := range opts {
 		opt(u)

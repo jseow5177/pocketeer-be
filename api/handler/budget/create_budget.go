@@ -2,6 +2,7 @@ package budget
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -10,9 +11,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var CreateBudgetValidator = validator.MustForm(map[string]validator.Validator{
+var (
+	ErrEmptyCategoryID = errors.New("empty category_id")
+)
+
+var CreateBudgetValidator = validator.OptionalForm(map[string]validator.Validator{
 	"category_id": &validator.String{
-		Optional: false,
+		Optional: true, // allow reuse in InitUser and CreateCategory
 	},
 	"budget_date": &validator.String{
 		Optional:   false,
@@ -34,6 +39,10 @@ var CreateBudgetValidator = validator.MustForm(map[string]validator.Validator{
 
 func (h *budgetHandler) CreateBudget(ctx context.Context, req *presenter.CreateBudgetRequest, res *presenter.CreateBudgetResponse) error {
 	userID := util.GetUserIDFromCtx(ctx)
+
+	if req.GetCategoryID() == "" {
+		return ErrEmptyCategoryID
+	}
 
 	useCaseRes, err := h.budgetUseCase.CreateBudget(ctx, req.ToUseCaseReq(userID))
 	if err != nil {

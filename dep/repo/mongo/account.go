@@ -34,6 +34,24 @@ func (m *accountMongo) Create(ctx context.Context, ac *entity.Account) (string, 
 	return id, nil
 }
 
+func (m *accountMongo) CreateMany(ctx context.Context, acs []*entity.Account) ([]string, error) {
+	acms := make([]interface{}, 0)
+	for _, ac := range acs {
+		acms = append(acms, model.ToAccountModelFromEntity(ac))
+	}
+
+	ids, err := m.mColl.createMany(ctx, acms)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, ac := range acs {
+		ac.SetAccountID(goutil.String(ids[i]))
+	}
+
+	return ids, nil
+}
+
 func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu *entity.AccountUpdate) error {
 	acm := model.ToAccountModelFromUpdate(acu)
 	if err := m.mColl.update(ctx, acf, acm); err != nil {

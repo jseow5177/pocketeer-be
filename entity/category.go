@@ -18,6 +18,10 @@ func (cu *CategoryUpdate) GetCategoryName() string {
 	return ""
 }
 
+func (cu *CategoryUpdate) SetCategoryName(categoryName *string) {
+	cu.CategoryName = categoryName
+}
+
 func (cu *CategoryUpdate) GetUpdateTime() uint64 {
 	if cu != nil && cu.UpdateTime != nil {
 		return *cu.UpdateTime
@@ -25,11 +29,15 @@ func (cu *CategoryUpdate) GetUpdateTime() uint64 {
 	return 0
 }
 
+func (cu *CategoryUpdate) SetUpdateTime(updateTime *uint64) {
+	cu.UpdateTime = updateTime
+}
+
 type CategoryUpdateOption func(cu *CategoryUpdate)
 
 func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
 	return func(cu *CategoryUpdate) {
-		cu.CategoryName = categoryName
+		cu.SetCategoryName(categoryName)
 	}
 }
 
@@ -56,25 +64,31 @@ type CategoryOption = func(c *Category)
 
 func WithCategoryID(categoryID *string) CategoryOption {
 	return func(c *Category) {
-		c.CategoryID = categoryID
+		c.SetCategoryID(categoryID)
 	}
 }
 
 func WithCategoryType(categoryType *uint32) CategoryOption {
 	return func(c *Category) {
-		c.CategoryType = categoryType
+		c.SetCategoryType(categoryType)
 	}
 }
 
 func WithCategoryCreateTime(createTime *uint64) CategoryOption {
 	return func(c *Category) {
-		c.CreateTime = createTime
+		c.SetCreateTime(createTime)
 	}
 }
 
 func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 	return func(c *Category) {
-		c.UpdateTime = updateTime
+		c.SetUpdateTime(updateTime)
+	}
+}
+
+func WithCategoryBudget(budget *Budget) CategoryOption {
+	return func(c *Category) {
+		c.SetBudget(budget)
 	}
 }
 
@@ -103,33 +117,36 @@ func (c *Category) checkOpts() error {
 	return nil
 }
 
-func (c *Category) Update(cu *CategoryUpdate) (categoryUpdate *CategoryUpdate, hasUpdate bool, err error) {
-	categoryUpdate = new(CategoryUpdate)
+func (c *Category) Update(cu *CategoryUpdate) (*CategoryUpdate, error) {
+	var (
+		hasUpdate      bool
+		categoryUpdate = new(CategoryUpdate)
+	)
 
 	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
 		hasUpdate = true
-		c.CategoryName = cu.CategoryName
+		c.SetCategoryName(cu.CategoryName)
 
 		defer func() {
-			categoryUpdate.CategoryName = c.CategoryName
+			categoryUpdate.SetCategoryName(c.CategoryName)
 		}()
 	}
 
 	if !hasUpdate {
-		return
+		return nil, nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
-	c.UpdateTime = now
+	c.SetUpdateTime(now)
 
 	// check
-	if err = c.checkOpts(); err != nil {
-		return nil, false, err
+	if err := c.checkOpts(); err != nil {
+		return nil, err
 	}
 
-	categoryUpdate.UpdateTime = now
+	categoryUpdate.SetUpdateTime(now)
 
-	return
+	return categoryUpdate, nil
 }
 
 func (c *Category) GetUserID() string {
@@ -137,6 +154,10 @@ func (c *Category) GetUserID() string {
 		return *c.UserID
 	}
 	return ""
+}
+
+func (c *Category) SetUserID(userID *string) {
+	c.UserID = userID
 }
 
 func (c *Category) GetCategoryID() string {
@@ -157,11 +178,19 @@ func (c *Category) GetCategoryName() string {
 	return ""
 }
 
+func (c *Category) SetCategoryName(categoryName *string) {
+	c.CategoryName = categoryName
+}
+
 func (f *Category) GetCategoryType() uint32 {
 	if f != nil && f.CategoryType != nil {
 		return *f.CategoryType
 	}
 	return 0
+}
+
+func (c *Category) SetCategoryType(categoryType *uint32) {
+	c.CategoryType = categoryType
 }
 
 func (c *Category) GetCreateTime() uint64 {
@@ -171,11 +200,19 @@ func (c *Category) GetCreateTime() uint64 {
 	return 0
 }
 
+func (c *Category) SetCreateTime(createTime *uint64) {
+	c.CreateTime = createTime
+}
+
 func (c *Category) GetUpdateTime() uint64 {
 	if c != nil && c.UpdateTime != nil {
 		return *c.UpdateTime
 	}
 	return 0
+}
+
+func (c *Category) SetUpdateTime(updateTime *uint64) {
+	c.UpdateTime = updateTime
 }
 
 func (c *Category) GetBudget() *Budget {

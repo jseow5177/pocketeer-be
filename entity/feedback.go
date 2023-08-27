@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
@@ -41,16 +42,18 @@ func WithFeedbackText(text *string) FeedbackOption {
 }
 
 type Feedback struct {
-	UserID *string
-	Score  *uint32
-	Text   *string
+	UserID     *string
+	Score      *uint32
+	Text       *string
+	CreateTime *uint64
 }
 
 func NewFeedback(userID string, opts ...FeedbackOption) (*Feedback, error) {
 	f := &Feedback{
-		UserID: goutil.String(userID),
-		Score:  goutil.Uint32(uint32(FeedbackScoreFive)),
-		Text:   goutil.String(""),
+		UserID:     goutil.String(userID),
+		Score:      goutil.Uint32(uint32(FeedbackScoreFive)),
+		Text:       goutil.String(""),
+		CreateTime: goutil.Uint64(uint64(time.Now().Unix())),
 	}
 	for _, opt := range opts {
 		opt(f)
@@ -107,4 +110,15 @@ func (f *Feedback) GetText() string {
 
 func (f *Feedback) SetText(text *string) {
 	f.Text = text
+}
+
+func (f *Feedback) GetCreateTime() uint64 {
+	if f != nil && f.CreateTime != nil {
+		return *f.CreateTime
+	}
+	return 0
+}
+
+func (f *Feedback) SetCreateTime(createTime *uint64) {
+	f.CreateTime = createTime
 }

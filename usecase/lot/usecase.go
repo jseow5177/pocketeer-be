@@ -2,14 +2,10 @@ package lot
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	ErrInvalidHolding = errors.New("invalid holding")
 )
 
 type lotUseCase struct {
@@ -27,15 +23,15 @@ func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
 func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error) {
 	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
 		return nil, err
 	}
 
-	if h.IsCustom() {
-		return nil, ErrInvalidHolding
+	if !h.IsDefault() {
+		return nil, entity.ErrHoldingCannotHaveLots
 	}
 
-	l := req.ToLotEntity(req.GetHoldingID())
+	l := req.ToLotEntity()
 	_, err = uc.lotRepo.Create(ctx, l)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new lot to repo, err: %v", err)
@@ -47,41 +43,15 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 	}, nil
 }
 
-func (uc *lotUseCase) CreateLots(ctx context.Context, req *CreateLotsRequest) (*CreateLotsResponse, error) {
-	ls := req.ToLotEntities()
-
-	if len(ls) == 0 {
-		return new(CreateLotsResponse), nil
-	}
-
-	h, err := uc.holdingRepo.Get(ctx, req.ToHoldingFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
-		return nil, err
-	}
-
-	if h.IsCustom() {
-		return nil, ErrInvalidHolding
-	}
-
-	if _, err := uc.lotRepo.CreateMany(ctx, ls); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
-		return nil, err
-	}
-
-	return &CreateLotsResponse{
-		Lots: ls,
-	}, nil
-}
-
 func (uc *lotUseCase) UpdateLot(ctx context.Context, req *UpdateLotRequest) (*UpdateLotResponse, error) {
 	l, err := uc.lotRepo.Get(ctx, req.ToLotFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	lu, hasUpdate := l.Update(req.ToLotUpdate())
-	if !hasUpdate {
+	lu := l.Update(req.ToLotUpdate())
+
+	if lu == nil {
 		log.Ctx(ctx).Info().Msg("lot has no updates")
 		return &UpdateLotResponse{
 			l,
@@ -133,7 +103,7 @@ func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*De
 		return new(DeleteLotResponse), nil
 	}
 
-	lu, _ := l.Update(req.ToLotUpdate())
+	lu := l.Update(req.ToLotUpdate())
 
 	// mark lot as deleted
 	if err := uc.lotRepo.Update(ctx, req.ToLotFilter(), lu); err != nil {

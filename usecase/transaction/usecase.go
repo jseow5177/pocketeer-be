@@ -75,7 +75,7 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 	}
 
 	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		tu, _ := t.Update(req.ToTransactionUpdate())
+		tu := t.Update(req.ToTransactionUpdate())
 
 		// mark transaction as deleted
 		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), tu); err != nil {
@@ -93,14 +93,14 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 
 			// reset account balance
 			newBalance := ac.GetBalance() - t.GetAmount()
-			nac, hasUpdate, err := ac.Update(entity.NewAccountUpdate(
+			nac, err := ac.Update(entity.NewAccountUpdate(
 				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 			))
 			if err != nil {
 				return err
 			}
 
-			if hasUpdate {
+			if nac != nil {
 				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(t), nac); err != nil {
 					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
 					return err
@@ -151,15 +151,18 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 		// update account balance
 		newBalance := ac.GetBalance() + t.GetAmount()
-		nac, _, err := ac.Update(entity.NewAccountUpdate(
+		nac, err := ac.Update(entity.NewAccountUpdate(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 		))
 		if err != nil {
 			return err
 		}
-		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), nac); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
-			return err
+
+		if nac != nil {
+			if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), nac); err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
+				return err
+			}
 		}
 
 		return nil
@@ -183,8 +186,8 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		oldAccountID = t.GetAccountID()
 	)
 
-	tu, hasUpdate := t.Update(req.ToTransactionUpdate())
-	if !hasUpdate {
+	tu := t.Update(req.ToTransactionUpdate())
+	if tu == nil {
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
 			Transaction: t,
@@ -221,14 +224,14 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		if tu.AccountID != nil || tu.Amount != nil {
 			// revert balance of old account
 			oldAccountBalance := oldAccount.GetBalance() - oldAmount
-			acu, hasUpdate, err := oldAccount.Update(entity.NewAccountUpdate(
+			acu, err := oldAccount.Update(entity.NewAccountUpdate(
 				entity.WithUpdateAccountBalance(goutil.Float64(oldAccountBalance)),
 			))
 			if err != nil {
 				return err
 			}
 
-			if hasUpdate {
+			if acu != nil {
 				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldAccountID), acu); err != nil {
 					log.Ctx(txCtx).Error().Msgf("fail to update old account balance, err: %v", err)
 					return err
@@ -237,14 +240,14 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 			// update balance of new account
 			newAccountBalance := newAccount.GetBalance() + t.GetAmount()
-			acu, hasUpdate, err = newAccount.Update(entity.NewAccountUpdate(
+			acu, err = newAccount.Update(entity.NewAccountUpdate(
 				entity.WithUpdateAccountBalance(goutil.Float64(newAccountBalance)),
 			))
 			if err != nil {
 				return err
 			}
 
-			if hasUpdate {
+			if acu != nil {
 				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAccount.GetAccountID()), acu); err != nil {
 					log.Ctx(txCtx).Error().Msgf("fail to update new account balance, err: %v", err)
 					return err

@@ -19,7 +19,6 @@ type UseCase interface {
 	GetAccounts(ctx context.Context, req *GetAccountsRequest) (*GetAccountsResponse, error)
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
-	CreateAccounts(ctx context.Context, req *CreateAccountsRequest) (*CreateAccountsResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
 }
 
@@ -44,6 +43,24 @@ func (m *GetAccountRequest) GetAccountID() string {
 
 func (m *GetAccountRequest) ToAccountFilter() *repo.AccountFilter {
 	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
+}
+
+func (m *GetAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
+	return &repo.HoldingFilter{
+		AccountID: m.AccountID,
+	}
+}
+
+func (m *GetAccountRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
+	return &repo.QuoteFilter{
+		Symbol: goutil.String(symbol),
+	}
+}
+
+func (m *GetAccountRequest) ToLotFilter(holdingID string) *repo.LotFilter {
+	return &repo.LotFilter{
+		HoldingID: goutil.String(holdingID),
+	}
 }
 
 type GetAccountResponse struct {
@@ -81,6 +98,25 @@ func (m *GetAccountsRequest) ToAccountFilter() *repo.AccountFilter {
 		m.GetUserID(),
 		repo.WitAccountType(m.AccountType),
 	)
+}
+
+func (m *GetAccountsRequest) ToHoldingFilter(accountID string) *repo.HoldingFilter {
+	return &repo.HoldingFilter{
+		UserID:    m.UserID,
+		AccountID: goutil.String(accountID),
+	}
+}
+
+func (m *GetAccountsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
+	return &repo.QuoteFilter{
+		Symbol: goutil.String(symbol),
+	}
+}
+
+func (m *GetAccountsRequest) ToLotFilter(holdingID string) *repo.LotFilter {
+	return &repo.LotFilter{
+		HoldingID: goutil.String(holdingID),
+	}
 }
 
 type GetAccountsResponse struct {
@@ -138,7 +174,18 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
+func (m *CreateAccountRequest) GetHoldings() []*holding.CreateHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
+}
+
 func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
+	hs, err := m.ToHoldingEntities()
+	if err != nil {
+		return nil, err
+	}
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),
@@ -146,22 +193,20 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
 		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
+		entity.WithAccountHoldings(hs),
 	)
 }
 
-func (m *CreateAccountRequest) ToCreateHoldingsRequest(accountID string) *holding.CreateHoldingsRequest {
-	return &holding.CreateHoldingsRequest{
-		UserID:    m.UserID,
-		AccountID: goutil.String(accountID),
-		Holdings:  m.Holdings,
+func (m *CreateAccountRequest) ToHoldingEntities() ([]*entity.Holding, error) {
+	hs := make([]*entity.Holding, 0)
+	for _, r := range m.Holdings {
+		h, err := r.ToHoldingEntity()
+		if err != nil {
+			return nil, err
+		}
+		hs = append(hs, h)
 	}
-}
-
-func (m *CreateAccountRequest) GetHoldings() []*holding.CreateHoldingRequest {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
-	}
-	return nil
+	return hs, nil
 }
 
 type CreateAccountResponse struct {
@@ -171,28 +216,6 @@ type CreateAccountResponse struct {
 func (m *CreateAccountResponse) GetAccount() *entity.Account {
 	if m != nil && m.Account != nil {
 		return m.Account
-	}
-	return nil
-}
-
-type CreateAccountsRequest struct {
-	Accounts []*CreateAccountRequest
-}
-
-func (m *CreateAccountsRequest) GetAccounts() []*CreateAccountRequest {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
-	}
-	return nil
-}
-
-type CreateAccountsResponse struct {
-	Accounts []*entity.Account
-}
-
-func (m *CreateAccountsResponse) GetAccounts() []*entity.Account {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
 	}
 	return nil
 }

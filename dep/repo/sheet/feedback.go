@@ -55,7 +55,7 @@ func NewFeedbackSheet(ctx context.Context, cfg *config.GoogleSheet) (repo.Feedba
 func (fs *feedbackSheet) Create(ctx context.Context, f *entity.Feedback) error {
 	var (
 		fm = model.ToFeedbackModelFromEntity(f)
-		vs = [][]interface{}{{fm.GetUserID(), fm.GetScore(), fm.GetText()}}
+		vs = [][]interface{}{{fm.GetUserID(), fm.GetScore(), fm.GetText(), fm.GetCreateTime()}}
 	)
 
 	vr := &sheets.ValueRange{

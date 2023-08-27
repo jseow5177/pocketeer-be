@@ -351,10 +351,3 @@ func toSecurity(s *entity.Security) *Security {
 		Currency:     s.Currency,
 	}
 }
-
-func toFeedback(f *entity.Feedback) *Feedback {
-	return &Feedback{
-		Score: f.Score,
-		Text:  f.Text,
-	}
-}

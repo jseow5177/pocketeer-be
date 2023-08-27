@@ -10,16 +10,26 @@ import (
 )
 
 type categoryUseCase struct {
+	txMgr           repo.TxMgr
 	categoryRepo    repo.CategoryRepo
 	transactionRepo repo.TransactionRepo
 	budgetUseCase   budget.UseCase
+	budgetRepo      repo.BudgetRepo
 }
 
-func NewCategoryUseCase(categoryRepo repo.CategoryRepo, transactionRepo repo.TransactionRepo, budgetUseCase budget.UseCase) UseCase {
+func NewCategoryUseCase(
+	txMgr repo.TxMgr,
+	categoryRepo repo.CategoryRepo,
+	transactionRepo repo.TransactionRepo,
+	budgetUseCase budget.UseCase,
+	budgetRepo repo.BudgetRepo,
+) UseCase {
 	return &categoryUseCase{
+		txMgr,
 		categoryRepo,
 		transactionRepo,
 		budgetUseCase,
+		budgetRepo,
 	}
 }
 
@@ -65,35 +75,30 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 		return nil, err
 	}
 
-	_, err = uc.categoryRepo.Create(ctx, c)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		_, err = uc.categoryRepo.Create(txCtx, c)
+		if err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save new category to repo, err: %v", err)
+			return err
+		}
+
+		b := c.Budget
+		b.SetCategoryID(c.CategoryID)
+
+		_, err := uc.budgetRepo.Create(txCtx, b)
+		if err != nil {
+			return err
+		}
+
+		c.SetBudget(b)
+
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
 	return &CreateCategoryResponse{
 		Category: c,
-	}, nil
-}
-
-func (uc *categoryUseCase) CreateCategories(ctx context.Context, req *CreateCategoriesRequest) (*CreateCategoriesResponse, error) {
-	cs := make([]*entity.Category, 0)
-	for _, r := range req.Categories {
-		c, err := r.ToCategoryEntity()
-		if err != nil {
-			return nil, err
-		}
-
-		cs = append(cs, c)
-	}
-
-	if _, err := uc.categoryRepo.CreateMany(ctx, cs); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new categories to repo, err: %v", err)
-		return nil, err
-	}
-
-	return &CreateCategoriesResponse{
-		Categories: cs,
 	}, nil
 }
 
@@ -103,12 +108,12 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 		return nil, err
 	}
 
-	cu, hasUpdate, err := c.Update(req.ToCategoryUpdate())
+	cu, err := c.Update(req.ToCategoryUpdate())
 	if err != nil {
 		return nil, err
 	}
 
-	if !hasUpdate {
+	if cu == nil {
 		log.Ctx(ctx).Info().Msg("category has no updates")
 		return &UpdateCategoryResponse{
 			c,

@@ -159,14 +159,17 @@ func (s *server) Start() error {
 	// init use cases
 	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
-	s.categoryUseCase = cuc.NewCategoryUseCase(s.categoryRepo, s.transactionRepo, s.budgetUseCase)
+	s.categoryUseCase = cuc.NewCategoryUseCase(s.mongo, s.categoryRepo, s.transactionRepo, s.budgetUseCase, s.budgetRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
-	s.userUseCase = uuc.NewUserUseCase(s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.lotUseCase, s.securityRepo, s.quoteRepo)
-	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingUseCase)
+	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
+	s.userUseCase = uuc.NewUserUseCase(
+		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,
+		s.categoryRepo, s.budgetRepo, s.accountRepo, s.securityRepo, s.holdingRepo, s.lotRepo,
+	)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
@@ -263,21 +266,6 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// create categories
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathCreateCategories,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.CreateCategoriesRequest),
-			Res:       new(presenter.CreateCategoriesResponse),
-			Validator: ch.CreateCategoriesValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return categoryHandler.CreateCategories(ctx, req.(*presenter.CreateCategoriesRequest), res.(*presenter.CreateCategoriesResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
 	// update category
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathUpdateCategory,
@@ -367,21 +355,6 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: ach.CreateAccountValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.CreateAccount(ctx, req.(*presenter.CreateAccountRequest), res.(*presenter.CreateAccountResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
-	// create accounts
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathCreateAccounts,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.CreateAccountsRequest),
-			Res:       new(presenter.CreateAccountsResponse),
-			Validator: ach.CreateAccountsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return accountHandler.CreateAccounts(ctx, req.(*presenter.CreateAccountsRequest), res.(*presenter.CreateAccountsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},
@@ -645,21 +618,6 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: bh.CreateBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
-	// create budgets
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathCreateBudgets,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.CreateBudgetsRequest),
-			Res:       new(presenter.CreateBudgetsResponse),
-			Validator: bh.CreateBudgetsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.CreateBudgets(ctx, req.(*presenter.CreateBudgetsRequest), res.(*presenter.CreateBudgetsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

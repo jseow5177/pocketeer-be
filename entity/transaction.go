@@ -254,8 +254,11 @@ func (t *Transaction) checkOpts() {
 	}
 }
 
-func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *TransactionUpdate, hasUpdate bool) {
-	transactionUpdate = new(TransactionUpdate)
+func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
+	var (
+		hasUpdate         bool
+		transactionUpdate = new(TransactionUpdate)
+	)
 
 	if tu.Amount != nil && tu.GetAmount() != t.GetAmount() {
 		hasUpdate = true
@@ -303,7 +306,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 	}
 
 	if !hasUpdate {
-		return
+		return nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
@@ -314,7 +317,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) (transactionUpdate *Transact
 
 	transactionUpdate.SetUpdateTime(now)
 
-	return
+	return transactionUpdate
 }
 
 func (t *Transaction) CanTransactionUnderCategory(c *Category) (bool, error) {

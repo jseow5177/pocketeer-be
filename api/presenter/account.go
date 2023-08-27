@@ -8,17 +8,16 @@ import (
 )
 
 type Account struct {
-	AccountID     *string `json:"account_id,omitempty"`
-	AccountName   *string `json:"account_name,omitempty"`
-	Balance       *string `json:"balance,omitempty"`
-	AccountType   *uint32 `json:"account_type,omitempty"`
-	AccountStatus *uint32 `json:"account_status,omitempty"`
-	Note          *string `json:"note,omitempty"`
-	CreateTime    *uint64 `json:"create_time,omitempty"`
-	UpdateTime    *uint64 `json:"update_time,omitempty"`
-
-	TotalCost *string    `json:"total_cost,omitempty"`
-	Holdings  []*Holding `json:"holdings,omitempty"`
+	AccountID     *string    `json:"account_id,omitempty"`
+	AccountName   *string    `json:"account_name,omitempty"`
+	Balance       *string    `json:"balance,omitempty"`
+	AccountType   *uint32    `json:"account_type,omitempty"`
+	AccountStatus *uint32    `json:"account_status,omitempty"`
+	Note          *string    `json:"note,omitempty"`
+	CreateTime    *uint64    `json:"create_time,omitempty"`
+	UpdateTime    *uint64    `json:"update_time,omitempty"`
+	TotalCost     *string    `json:"total_cost,omitempty"`
+	Holdings      []*Holding `json:"holdings,omitempty"`
 }
 
 func (ac *Account) GetAccountID() string {
@@ -169,42 +168,6 @@ func (m *CreateAccountResponse) GetAccount() *Account {
 
 func (m *CreateAccountResponse) Set(useCaseRes *account.CreateAccountResponse) {
 	m.Account = toAccount(useCaseRes.Account)
-}
-
-type CreateAccountsRequest struct {
-	Accounts []*CreateAccountRequest `json:"accounts,omitempty"`
-}
-
-func (m *CreateAccountsRequest) GetAccounts() []*CreateAccountRequest {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
-	}
-	return nil
-}
-
-func (m *CreateAccountsRequest) ToUseCaseReq(userID string) *account.CreateAccountsRequest {
-	acs := make([]*account.CreateAccountRequest, 0)
-	for _, r := range m.Accounts {
-		acs = append(acs, r.ToUseCaseReq(userID))
-	}
-	return &account.CreateAccountsRequest{
-		Accounts: acs,
-	}
-}
-
-type CreateAccountsResponse struct {
-	Accounts []*Account `json:"accounts,omitempty"`
-}
-
-func (m *CreateAccountsResponse) GetAccounts() []*Account {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
-	}
-	return nil
-}
-
-func (m *CreateAccountsResponse) Set(useCaseRes *account.CreateAccountsResponse) {
-	m.Accounts = toAccounts(useCaseRes.Accounts)
 }
 
 type GetAccountRequest struct {
