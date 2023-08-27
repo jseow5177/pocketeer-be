@@ -2,7 +2,6 @@ package budget
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -14,10 +13,6 @@ import (
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
-)
-
-var (
-	ErrBudgetConflict = errors.New("conflict in budget")
 )
 
 type budgetUseCase struct {
@@ -41,30 +36,6 @@ func NewBudgetUseCase(
 	}
 }
 
-func (uc *budgetUseCase) CreateBudgets(ctx context.Context, req *CreateBudgetsRequest) (*CreateBudgetsResponse, error) {
-	bs := make([]*entity.Budget, 0)
-
-	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		for _, r := range req.Budgets {
-			res, err := uc.CreateBudget(txCtx, r)
-			if err != nil {
-				return err
-			}
-			bs = append(bs, res.Budget)
-		}
-		return nil
-	}); err != nil {
-		if err == repo.ErrBudgetAlreadyExists {
-			return nil, ErrBudgetConflict
-		}
-		return nil, err
-	}
-
-	return &CreateBudgetsResponse{
-		Budgets: bs,
-	}, nil
-}
-
 func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error) {
 	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
 	if err != nil {
@@ -86,7 +57,7 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 		return nil, err
 	}
 
-	if _, err := b.CanBudgetUnderCategory(c); err != nil {
+	if err := b.CanBudgetUnderCategory(c); err != nil {
 		return nil, err
 	}
 
@@ -118,12 +89,12 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 		return nil, err
 	}
 
-	bu, hasUpdate, err := b.Update(bu)
+	bu, err = b.Update(bu)
 	if err != nil {
 		return nil, err
 	}
 
-	if !hasUpdate {
+	if bu == nil {
 		log.Ctx(ctx).Info().Msg("budget has no updates")
 		return &UpdateBudgetResponse{
 			Budget: b,

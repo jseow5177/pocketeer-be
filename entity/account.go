@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	ErrSetBalanceForbidden = errors.New("set balance forbidden")
-	ErrMustSetBalance      = errors.New("balance must be set")
+	ErrSetBalanceForbidden       = errors.New("set balance forbidden")
+	ErrMustSetBalance            = errors.New("balance must be set")
+	ErrAccountCannotHaveHoldings = errors.New("account cannot have holdings")
 )
 
 type AccountStatus uint32
@@ -209,6 +210,12 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	}
 }
 
+func WithAccountHoldings(holdings []*Holding) AccountOption {
+	return func(ac *Account) {
+		ac.SetHoldings(holdings)
+	}
+}
+
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
@@ -246,11 +253,18 @@ func (ac *Account) checkOpts() error {
 		}
 	}
 
+	if !ac.IsInvestment() && len(ac.Holdings) > 0 {
+		return ErrAccountCannotHaveHoldings
+	}
+
 	return nil
 }
 
-func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, hasUpdate bool, err error) {
-	accountUpdate = new(AccountUpdate)
+func (ac *Account) Update(acu *AccountUpdate) (*AccountUpdate, error) {
+	var (
+		hasUpdate     bool
+		accountUpdate = new(AccountUpdate)
+	)
 
 	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
 		hasUpdate = true
@@ -280,19 +294,19 @@ func (ac *Account) Update(acu *AccountUpdate) (accountUpdate *AccountUpdate, has
 	}
 
 	if !hasUpdate {
-		return
+		return nil, nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	ac.SetUpdateTime(now)
 
-	if err = ac.checkOpts(); err != nil {
-		return nil, false, err
+	if err := ac.checkOpts(); err != nil {
+		return nil, err
 	}
 
 	accountUpdate.SetUpdateTime(now)
 
-	return
+	return accountUpdate, nil
 }
 
 func (ac *Account) GetUserID() string {
@@ -440,4 +454,22 @@ func (ac *Account) IsInvestment() bool {
 
 func (ac *Account) CanSetBalance() bool {
 	return ac.GetAccountType() != uint32(AssetInvestment)
+}
+
+func (ac *Account) ComputeCostAndBalance() {
+	if !ac.IsInvestment() {
+		return
+	}
+
+	var (
+		totalCost    float64
+		totalBalance float64
+	)
+	for _, h := range ac.Holdings {
+		totalCost += h.GetTotalCost()
+		totalBalance += h.GetLatestValue()
+	}
+
+	ac.SetBalance(goutil.Float64(totalBalance))
+	ac.SetTotalCost(goutil.Float64(totalCost))
 }

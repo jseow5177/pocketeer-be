@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -12,6 +13,7 @@ import (
 var (
 	ErrSetCostValueSharesForbidden = errors.New("set total_cost or latest_value or total_shares forbidden")
 	ErrMustSetCostAndValue         = errors.New("total_cost and latest_value must be set")
+	ErrHoldingCannotHaveLots       = errors.New("holding cannot have lots")
 )
 
 type HoldingStatus uint32
@@ -185,6 +187,12 @@ func WithHoldingTotalShares(totalShares *float64) HoldingOption {
 	}
 }
 
+func WithHoldingLots(lots []*Lot) HoldingOption {
+	return func(h *Holding) {
+		h.SetLots(lots)
+	}
+}
+
 func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holding, error) {
 	now := uint64(time.Now().UnixMilli())
 	h := &Holding{
@@ -219,13 +227,20 @@ func (h *Holding) checkOpts() error {
 		if h.TotalCost == nil || h.LatestValue == nil {
 			return ErrMustSetCostAndValue
 		}
+
+		if len(h.Lots) > 0 {
+			return ErrHoldingCannotHaveLots
+		}
 	}
 
 	return nil
 }
 
-func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUpdate bool, err error) {
-	holdingUpdate = new(HoldingUpdate)
+func (h *Holding) Update(hu *HoldingUpdate) (*HoldingUpdate, error) {
+	var (
+		hasUpdate     bool
+		holdingUpdate = new(HoldingUpdate)
+	)
 
 	if hu.TotalCost != nil && hu.GetTotalCost() != h.GetTotalCost() {
 		hasUpdate = true
@@ -255,19 +270,19 @@ func (h *Holding) Update(hu *HoldingUpdate) (holdingUpdate *HoldingUpdate, hasUp
 	}
 
 	if !hasUpdate {
-		return
+		return nil, nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	h.SetUpdateTime(now)
 
-	if err = h.checkOpts(); err != nil {
-		return nil, false, err
+	if err := h.checkOpts(); err != nil {
+		return nil, err
 	}
 
 	holdingUpdate.SetUpdateTime(now)
 
-	return
+	return holdingUpdate, nil
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -450,4 +465,38 @@ func (h *Holding) IsCustom() bool {
 
 func (h *Holding) IsDefault() bool {
 	return h.GetHoldingType() == uint32(HoldingTypeDefault)
+}
+
+func (h *Holding) CanHaveLots() bool {
+	return h.IsDefault()
+}
+
+func (h *Holding) ComputeSharesCostAndValue() {
+	if !h.IsDefault() {
+		return
+	}
+
+	// TODO
+	conv := config.USDToSGD
+
+	var (
+		totalCost   float64
+		totalShares float64
+	)
+	for _, l := range h.Lots {
+		totalCost += l.GetCostPerShare() * l.GetShares()
+		totalShares += l.GetShares()
+	}
+
+	var avgCostPerShare float64
+	if totalShares > 0 {
+		avgCostPerShare = totalCost / totalShares
+	}
+
+	latestValue := totalShares * h.Quote.GetLatestPrice()
+
+	h.SetTotalShares(goutil.Float64(totalShares))
+	h.SetTotalCost(goutil.Float64(totalCost * conv))
+	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare * conv))
+	h.SetLatestValue(goutil.Float64(latestValue * conv))
 }

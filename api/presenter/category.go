@@ -2,6 +2,7 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/category"
 )
 
@@ -56,45 +57,10 @@ func (c *Category) GetBudget() *Budget {
 	return nil
 }
 
-type CreateCategoriesRequest struct {
-	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
-}
-
-func (m *CreateCategoriesRequest) GetCategories() []*CreateCategoryRequest {
-	if m != nil && m.Categories != nil {
-		return m.Categories
-	}
-	return nil
-}
-
-func (m *CreateCategoriesRequest) ToUseCaseReq(userID string) *category.CreateCategoriesRequest {
-	cs := make([]*category.CreateCategoryRequest, 0)
-	for _, r := range m.Categories {
-		cs = append(cs, r.ToUseCaseReq(userID))
-	}
-	return &category.CreateCategoriesRequest{
-		Categories: cs,
-	}
-}
-
-type CreateCategoriesResponse struct {
-	Categories []*Category `json:"categories,omitempty"`
-}
-
-func (m *CreateCategoriesResponse) GetCategories() []*Category {
-	if m != nil && m.Categories != nil {
-		return m.Categories
-	}
-	return nil
-}
-
-func (m *CreateCategoriesResponse) Set(useCaseRes *category.CreateCategoriesResponse) {
-	m.Categories = toCategories(useCaseRes.Categories)
-}
-
 type CreateCategoryRequest struct {
-	CategoryName *string `json:"category_name,omitempty"`
-	CategoryType *uint32 `json:"category_type,omitempty"`
+	CategoryName *string              `json:"category_name,omitempty"`
+	CategoryType *uint32              `json:"category_type,omitempty"`
+	Budget       *CreateBudgetRequest `json:"budget,omitempty"`
 }
 
 func (m *CreateCategoryRequest) GetCategoryName() string {
@@ -111,11 +77,23 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 	return 0
 }
 
+func (m *CreateCategoryRequest) GetBudget() *CreateBudgetRequest {
+	if m != nil && m.Budget != nil {
+		return m.Budget
+	}
+	return nil
+}
+
 func (m *CreateCategoryRequest) ToUseCaseReq(userID string) *category.CreateCategoryRequest {
+	var b *budget.CreateBudgetRequest
+	if m.Budget != nil {
+		b = m.Budget.ToUseCaseReq(userID)
+	}
 	return &category.CreateCategoryRequest{
 		UserID:       goutil.String(userID),
 		CategoryName: m.CategoryName,
 		CategoryType: m.CategoryType,
+		Budget:       b,
 	}
 }
 

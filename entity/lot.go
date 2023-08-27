@@ -45,7 +45,10 @@ func (lu *LotUpdate) GetCostPerShare() float64 {
 }
 
 func (lu *LotUpdate) SetCostPerShare(costPerShare *float64) {
-	lu.CostPerShare = costPerShare
+	if costPerShare != nil {
+		cps := util.RoundFloatToPreciseDP(*costPerShare)
+		lu.CostPerShare = goutil.Float64(cps)
+	}
 }
 
 func (lu *LotUpdate) GetLotStatus() uint32 {
@@ -192,8 +195,11 @@ func NewLot(userID, holdingID string, opts ...LotOption) *Lot {
 
 func (l *Lot) checkOpts() {}
 
-func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
-	lotUpdate = new(LotUpdate)
+func (l *Lot) Update(lu *LotUpdate) *LotUpdate {
+	var (
+		hasUpdate bool
+		lotUpdate = new(LotUpdate)
+	)
 
 	if lu.Shares != nil && lu.GetShares() != l.GetShares() {
 		hasUpdate = true
@@ -232,7 +238,7 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 	}
 
 	if !hasUpdate {
-		return
+		return nil
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
@@ -242,7 +248,7 @@ func (l *Lot) Update(lu *LotUpdate) (lotUpdate *LotUpdate, hasUpdate bool) {
 
 	lotUpdate.SetUpdateTime(now)
 
-	return
+	return lotUpdate
 }
 
 func (l *Lot) GetLotID() string {
@@ -300,7 +306,10 @@ func (l *Lot) GetCostPerShare() float64 {
 }
 
 func (l *Lot) SetCostPerShare(costPerShare *float64) {
-	l.CostPerShare = costPerShare
+	if costPerShare != nil {
+		cps := util.RoundFloatToPreciseDP(*costPerShare)
+		l.CostPerShare = goutil.Float64(cps)
+	}
 }
 
 func (l *Lot) GetTradeDate() uint64 {

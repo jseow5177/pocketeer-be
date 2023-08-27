@@ -31,7 +31,7 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 	},
 	"holdings": &validator.Slice{
 		Optional:  true,
-		MaxLen:    5,
+		MaxLen:    20,
 		Validator: holding.CreateHoldingValidator,
 	},
 })

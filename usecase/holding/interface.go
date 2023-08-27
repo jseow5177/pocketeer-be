@@ -14,7 +14,6 @@ type UseCase interface {
 	GetHoldings(ctx context.Context, req *GetHoldingsRequest) (*GetHoldingsResponse, error)
 
 	CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error)
-	CreateHoldings(ctx context.Context, req *CreateHoldingsRequest) (*CreateHoldingsResponse, error)
 	UpdateHolding(ctx context.Context, req *UpdateHoldingRequest) (*UpdateHoldingResponse, error)
 }
 
@@ -47,6 +46,12 @@ func (m *GetHoldingsRequest) ToHoldingFilter() *repo.HoldingFilter {
 func (m *GetHoldingsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 	return &repo.QuoteFilter{
 		Symbol: goutil.String(symbol),
+	}
+}
+
+func (m *GetHoldingsRequest) ToLotFilter(holdingID string) *repo.LotFilter {
+	return &repo.LotFilter{
+		HoldingID: goutil.String(holdingID),
 	}
 }
 
@@ -90,6 +95,12 @@ func (m *GetHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 func (m *GetHoldingRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 	return &repo.QuoteFilter{
 		Symbol: goutil.String(symbol),
+	}
+}
+
+func (m *GetHoldingRequest) ToLotFilter() *repo.LotFilter {
+	return &repo.LotFilter{
+		HoldingID: m.HoldingID,
 	}
 }
 
@@ -242,23 +253,30 @@ func (m *CreateHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {
 	}
 }
 
-func (m *CreateHoldingRequest) ToCreateLotsRequest(holdingID string) *lot.CreateLotsRequest {
-	return &lot.CreateLotsRequest{
-		UserID:    m.UserID,
-		HoldingID: goutil.String(holdingID),
-		Lots:      m.Lots,
+func (m *CreateHoldingRequest) ToQuoteFilter() *repo.QuoteFilter {
+	return &repo.QuoteFilter{
+		Symbol: m.Symbol,
 	}
 }
 
-func (m *CreateHoldingRequest) ToHoldingEntity(accountID string) (*entity.Holding, error) {
+func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
 	return entity.NewHolding(
 		m.GetUserID(),
-		accountID,
+		m.GetAccountID(),
 		m.GetSymbol(),
 		entity.WithHoldingType(m.HoldingType),
 		entity.WithHoldingTotalCost(m.TotalCost),
 		entity.WithHoldingLatestValue(m.LatestValue),
+		entity.WithHoldingLots(m.ToLotEntities()),
 	)
+}
+
+func (m *CreateHoldingRequest) ToLotEntities() []*entity.Lot {
+	ls := make([]*entity.Lot, 0)
+	for _, r := range m.Lots {
+		ls = append(ls, r.ToLotEntity())
+	}
+	return ls
 }
 
 type CreateHoldingResponse struct {
@@ -268,70 +286,6 @@ type CreateHoldingResponse struct {
 func (m *CreateHoldingResponse) GetHolding() *entity.Holding {
 	if m != nil && m.Holding != nil {
 		return m.Holding
-	}
-	return nil
-}
-
-type CreateHoldingsRequest struct {
-	UserID    *string
-	AccountID *string
-	Holdings  []*CreateHoldingRequest
-}
-
-func (m *CreateHoldingsRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *CreateHoldingsRequest) GetAccountID() string {
-	if m != nil && m.AccountID != nil {
-		return *m.AccountID
-	}
-	return ""
-}
-
-func (m *CreateHoldingsRequest) GetHoldings() []*CreateHoldingRequest {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
-	}
-	return nil
-}
-
-func (m *CreateHoldingsRequest) ToHoldingEntities() ([]*entity.Holding, error) {
-	hs := make([]*entity.Holding, 0)
-	for _, r := range m.Holdings {
-		h, err := r.ToHoldingEntity(m.GetAccountID()) // use parent account ID
-		if err != nil {
-			return nil, err
-		}
-		hs = append(hs, h)
-	}
-
-	return hs, nil
-}
-
-func (m *CreateHoldingsRequest) ToAccountFilter() *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: m.AccountID,
-	}
-}
-
-func (m *CreateHoldingsRequest) ToSecurityFilter(symbol string) *repo.SecurityFilter {
-	return &repo.SecurityFilter{
-		Symbol: goutil.String(symbol),
-	}
-}
-
-type CreateHoldingsResponse struct {
-	Holdings []*entity.Holding
-}
-
-func (m *CreateHoldingsResponse) GetHoldings() []*entity.Holding {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
 	}
 	return nil
 }

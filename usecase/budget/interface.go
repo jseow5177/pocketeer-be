@@ -17,31 +17,8 @@ type UseCase interface {
 	GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error)
 
 	CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error)
-	CreateBudgets(ctx context.Context, req *CreateBudgetsRequest) (*CreateBudgetsResponse, error)
 	UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error)
 	DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error)
-}
-
-type CreateBudgetsRequest struct {
-	Budgets []*CreateBudgetRequest
-}
-
-func (m *CreateBudgetsRequest) GetBudgets() []*CreateBudgetRequest {
-	if m != nil && m.Budgets != nil {
-		return m.Budgets
-	}
-	return nil
-}
-
-type CreateBudgetsResponse struct {
-	Budgets []*entity.Budget
-}
-
-func (m *CreateBudgetsResponse) GetBudgets() []*entity.Budget {
-	if m != nil && m.Budgets != nil {
-		return m.Budgets
-	}
-	return nil
 }
 
 type CreateBudgetRequest struct {
@@ -109,7 +86,7 @@ func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
 		m.GetUserID(),
 		m.GetCategoryID(),
 		entity.WithBudgetAmount(m.Amount),
-		entity.WithBudgetType(m.BudgetType),
+		entity.WithBudgetType(goutil.Uint32(m.GetBudgetType())),
 		entity.WithBudgetStartDate(goutil.Uint64(startDate)),
 		entity.WithBudgetEndDate(goutil.Uint64(endDate)),
 	)

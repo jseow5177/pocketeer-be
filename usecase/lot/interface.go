@@ -15,7 +15,6 @@ type UseCase interface {
 	GetLots(ctx context.Context, req *GetLotsRequest) (*GetLotsResponse, error)
 
 	CreateLot(ctx context.Context, req *CreateLotRequest) (*CreateLotResponse, error)
-	CreateLots(ctx context.Context, req *CreateLotsRequest) (*CreateLotsResponse, error)
 	UpdateLot(ctx context.Context, req *UpdateLotRequest) (*UpdateLotResponse, error)
 	DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error)
 }
@@ -263,10 +262,10 @@ func (m *CreateLotRequest) ToHoldingFilter() *repo.HoldingFilter {
 	}
 }
 
-func (m *CreateLotRequest) ToLotEntity(holdingID string) *entity.Lot {
+func (m *CreateLotRequest) ToLotEntity() *entity.Lot {
 	return entity.NewLot(
 		m.GetUserID(),
-		holdingID,
+		m.GetHoldingID(),
 		entity.WithLotShares(m.Shares),
 		entity.WithLotCostPerShare(m.CostPerShare),
 		entity.WithLotTradeDate(m.TradeDate),
@@ -281,59 +280,6 @@ type CreateLotResponse struct {
 func (m *CreateLotResponse) GetLot() *entity.Lot {
 	if m != nil && m.Lot != nil {
 		return m.Lot
-	}
-	return nil
-}
-
-type CreateLotsRequest struct {
-	UserID    *string
-	HoldingID *string
-	Lots      []*CreateLotRequest
-}
-
-func (m *CreateLotsRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *CreateLotsRequest) GetHoldingID() string {
-	if m != nil && m.HoldingID != nil {
-		return *m.HoldingID
-	}
-	return ""
-}
-
-func (m *CreateLotsRequest) GetLots() []*CreateLotRequest {
-	if m != nil && m.Lots != nil {
-		return m.Lots
-	}
-	return nil
-}
-
-func (m *CreateLotsRequest) ToLotEntities() []*entity.Lot {
-	ls := make([]*entity.Lot, 0)
-	for _, r := range m.Lots {
-		ls = append(ls, r.ToLotEntity(m.GetHoldingID())) // use parent holding ID
-	}
-	return ls
-}
-
-func (m *CreateLotsRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-	}
-}
-
-type CreateLotsResponse struct {
-	Lots []*entity.Lot
-}
-
-func (m *CreateLotsResponse) GetLots() []*entity.Lot {
-	if m != nil && m.Lots != nil {
-		return m.Lots
 	}
 	return nil
 }

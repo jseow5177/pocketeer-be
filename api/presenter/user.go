@@ -2,6 +2,8 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/account"
+	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/user"
 )
 
@@ -226,11 +228,25 @@ func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
 	m.User = toUser(useCaseRes.User)
 }
 
-type InitUserRequest struct{}
+type InitUserRequest struct {
+	Accounts   []*CreateAccountRequest  `json:"accounts,omitempty"`
+	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
+}
 
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
+	acs := make([]*account.CreateAccountRequest, 0)
+	for _, r := range m.Accounts {
+		acs = append(acs, r.ToUseCaseReq(userID))
+	}
+
+	cs := make([]*category.CreateCategoryRequest, 0)
+	for _, r := range m.Categories {
+		cs = append(cs, r.ToUseCaseReq(userID))
+	}
 	return &user.InitUserRequest{
-		UserID: goutil.String(userID),
+		UserID:     goutil.String(userID),
+		Accounts:   acs,
+		Categories: cs,
 	}
 }
 
