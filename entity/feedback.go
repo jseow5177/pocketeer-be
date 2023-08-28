@@ -22,9 +22,6 @@ const (
 	FeedbackScoreZero FeedbackScore = iota
 	FeedbackScoreOne
 	FeedbackScoreTwo
-	FeedbackScoreThree
-	FeedbackScoreFour
-	FeedbackScoreFive
 )
 
 type FeedbackOption = func(f *Feedback)
@@ -51,7 +48,7 @@ type Feedback struct {
 func NewFeedback(userID string, opts ...FeedbackOption) (*Feedback, error) {
 	f := &Feedback{
 		UserID:     goutil.String(userID),
-		Score:      goutil.Uint32(uint32(FeedbackScoreFive)),
+		Score:      goutil.Uint32(uint32(FeedbackScoreTwo)),
 		Text:       goutil.String(""),
 		CreateTime: goutil.Uint64(uint64(time.Now().Unix())),
 	}
@@ -68,7 +65,7 @@ func NewFeedback(userID string, opts ...FeedbackOption) (*Feedback, error) {
 
 func (f *Feedback) checkOpts() error {
 	if f.GetScore() < uint32(FeedbackScoreZero) ||
-		f.GetScore() > uint32(FeedbackScoreFive) {
+		f.GetScore() > uint32(FeedbackScoreTwo) {
 		return ErrScoreOutOfRange
 	}
 
