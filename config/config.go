@@ -96,8 +96,8 @@ func NewConfig() *Config {
 		},
 		Mongo: &Mongo{
 			Username:       "pocketeer-test",
-			Password:       "eTSvssKfSWCzRylk",
-			Host:           "mongodb-test.djhnkbj.mongodb.net",
+			Password:       "twvD8CaUMd03WkdB",
+			Host:           "pocketeer-test.aepotln.mongodb.net",
 			Database:       "pocketeer",
 			ConnectTimeout: "5s",
 		},
@@ -115,7 +115,7 @@ func NewConfig() *Config {
 		},
 		FinnHub: &FinnHub{
 			BaseURL: "https://finnhub.io/api/v1",
-			Token:   "cifs8bpr01qhvakk86n0cifs8bpr01qhvakk86ng",
+			Token:   "cjman89r01qmdd9ps06gcjman89r01qmdd9ps070",
 		},
 		QuoteMemCache: &MemCache{
 			ExpiryTime:      "15m",
@@ -133,7 +133,7 @@ func NewConfig() *Config {
 			CleanUpInterval: "3m",
 		},
 		Brevo: &Brevo{
-			APIKey: "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",
+			APIKey: "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",
 		},
 	}
 }
