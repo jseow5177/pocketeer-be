@@ -668,21 +668,6 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
-	// get budgets
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetBudgets,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.GetBudgetsRequest),
-			Res:       new(presenter.GetBudgetsResponse),
-			Validator: bh.GetBudgetsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.GetBudgets(ctx, req.(*presenter.GetBudgetsRequest), res.(*presenter.GetBudgetsResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
 	// update budget
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathUpdateBudget,

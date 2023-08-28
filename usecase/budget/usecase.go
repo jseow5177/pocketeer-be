@@ -2,17 +2,11 @@ package budget
 
 import (
 	"context"
-	"fmt"
-	"math"
-	"sync"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/sync/errgroup"
 )
 
 type budgetUseCase struct {
@@ -37,16 +31,19 @@ func NewBudgetUseCase(
 }
 
 func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequest) (*CreateBudgetResponse, error) {
-	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
-	if err != nil {
+	f := req.ToGetBudgetFilter()
+
+	b, err := uc.budgetRepo.Get(ctx, f)
+	if err != nil && err != repo.ErrBudgetNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get budget from repo, err: %v", err)
 		return nil, err
 	}
 
-	if res.Budget != nil {
+	if b != nil {
 		return nil, repo.ErrBudgetAlreadyExists
 	}
 
-	b, err := req.ToBudgetEntity()
+	b, err = req.ToBudgetEntity()
 	if err != nil {
 		return nil, err
 	}
@@ -72,17 +69,14 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 }
 
 func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequest) (*UpdateBudgetResponse, error) {
-	now := uint64(time.Now().UnixMilli())
+	f := req.ToGetBudgetFilter()
 
-	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
+	b, err := uc.budgetRepo.Get(ctx, f)
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get budget from repo, err: %v", err)
 		return nil, err
 	}
-	b := res.Budget
-
-	if b == nil {
-		return nil, repo.ErrBudgetNotFound
-	}
+	obt := b.GetBudgetType()
 
 	bu, err := req.ToBudgetUpdate()
 	if err != nil {
@@ -105,12 +99,15 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 		// if there is a change in budget type, wipe all old records
 		// delete time must be before update time
 		if bu.BudgetType != nil {
-			if _, err := uc.DeleteBudget(txCtx, req.ToDeleteBudgetRequest(now)); err != nil {
+			if err := uc.budgetRepo.Delete(txCtx, req.ToDeleteBudgetFilter(obt)); err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to delete budget from repo, err: %v", err)
 				return err
 			}
 		}
 
-		b.BudgetID = nil
+		b.SetBudgetID(nil)
+		b.SetUpdateTime(goutil.Uint64(uint64(time.Now().UnixMilli())))
+
 		if _, err := uc.budgetRepo.Create(txCtx, b); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to create new updated budget to repo, err: %v", err)
 			return err
@@ -127,129 +124,31 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 }
 
 func (uc *budgetUseCase) GetBudget(ctx context.Context, req *GetBudgetRequest) (*GetBudgetResponse, error) {
-	q, err := req.ToBudgetQuery()
+	f := req.ToGetBudgetFilter()
+
+	b, err := uc.budgetRepo.Get(ctx, f)
 	if err != nil {
 		return nil, err
 	}
 
-	bs, err := uc.budgetRepo.GetMany(ctx, q)
+	return &GetBudgetResponse{
+		Budget: b,
+	}, nil
+}
+
+func (uc *budgetUseCase) DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error) {
+	gf := req.ToGetBudgetFilter()
+
+	b, err := uc.budgetRepo.Get(ctx, gf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get budget from repo, err: %v", err)
 		return nil, err
 	}
 
-	var b *entity.Budget
-	if len(bs) > 0 && !bs[0].IsDeleted() {
-		b = bs[0]
-	}
+	df := req.ToDeleteBudgetFilter(b.GetBudgetType())
 
-	if b == nil {
-		return new(GetBudgetResponse), nil
-	}
-
-	res := &GetBudgetResponse{
-		Budget: b,
-	}
-
-	// cannot compute budget used amount without timezone
-	if req.GetTimezone() == "" {
-		return res, nil
-	}
-
-	var startTime, endTime uint64
-
-	if b.IsMonth() {
-		startTime, endTime, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
-	} else if b.IsYear() {
-		startTime, endTime, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
-	} else {
-		return nil, fmt.Errorf("invalid budget type, budget ID: %v", b.GetBudgetID())
-	}
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get budget date range, err: %v", err)
-		return nil, err
-	}
-
-	aggrs, err := uc.transactionRepo.CalcTotalAmount(
-		ctx,
-		"category_id",
-		req.ToTransactionFilter(req.GetUserID(), startTime, endTime),
-	)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum transactions by category ID, err: %v", err)
-		return nil, err
-	}
-
-	var usedAmount float64
-	if len(aggrs) > 0 {
-		usedAmount = math.Abs(aggrs[0].GetTotalAmount())
-	}
-
-	b.SetUsedAmount(goutil.Float64(usedAmount))
-
-	return res, nil
-}
-
-func (uc *budgetUseCase) GetBudgets(ctx context.Context, req *GetBudgetsRequest) (*GetBudgetsResponse, error) {
-	var (
-		mu     sync.Mutex
-		g      = new(errgroup.Group)
-		wgChan = make(chan struct{}, 10)
-	)
-	reqs := req.ToGetBudgetRequests(req.GetUserID())
-	budgets := make([]*entity.Budget, 0)
-
-	for _, req := range reqs {
-		wgChan <- struct{}{}
-		req := req
-		g.Go(func() error {
-			defer func() {
-				<-wgChan
-			}()
-
-			res, err := uc.GetBudget(ctx, req)
-			if err != nil {
-				return err
-			}
-
-			if res.Budget == nil {
-				return nil
-			}
-
-			mu.Lock()
-			budgets = append(budgets, res.Budget)
-			mu.Unlock()
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	return &GetBudgetsResponse{
-		Budgets: budgets,
-	}, nil
-}
-
-func (uc *budgetUseCase) DeleteBudget(ctx context.Context, req *DeleteBudgetRequest) (*DeleteBudgetResponse, error) {
-	res, err := uc.GetBudget(ctx, req.ToGetBudgetRequest())
-	if err != nil {
-		return nil, err
-	}
-
-	if res.Budget == nil {
-		return new(DeleteBudgetResponse), nil
-	}
-
-	// create a dummy, deleted budget
-	b, err := req.ToBudgetEntity(res.Budget.GetBudgetType(), req.GetDeleteTime())
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := uc.budgetRepo.Create(ctx, b); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save dummy budget to repo, err: %v", err)
+	if err := uc.budgetRepo.Delete(ctx, df); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to delete budget from repo, err: %v", err)
 		return nil, err
 	}
 

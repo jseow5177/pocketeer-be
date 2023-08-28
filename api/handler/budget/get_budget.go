@@ -18,10 +18,6 @@ var GetBudgetValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:   false,
 		Validators: []validator.StringFunc{entity.CheckDateStr},
 	},
-	"timezone": &validator.String{
-		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckTimezone},
-	},
 })
 
 func (h *budgetHandler) GetBudget(ctx context.Context, req *presenter.GetBudgetRequest, res *presenter.GetBudgetResponse) error {

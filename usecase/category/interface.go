@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 )
 
@@ -61,11 +62,19 @@ func (m *GetCategoryBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 	}
 }
 
-func (m *GetCategoryBudgetRequest) ToGetBudgetRequest() *budget.GetBudgetRequest {
-	return &budget.GetBudgetRequest{
+func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, startUnix, endUnix uint64) *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:             goutil.String(userID),
+		CategoryID:         m.CategoryID,
+		TransactionTimeGte: goutil.Uint64(startUnix),
+		TransactionTimeLte: goutil.Uint64(endUnix),
+	}
+}
+
+func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
+	return &repo.GetBudgetFilter{
 		UserID:     m.UserID,
 		CategoryID: m.CategoryID,
-		Timezone:   m.Timezone,
 		BudgetDate: m.BudgetDate,
 	}
 }
@@ -328,12 +337,11 @@ func (m *GetCategoriesBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 	}
 }
 
-func (m *GetCategoriesBudgetRequest) ToGetBudgetsRequest() *budget.GetBudgetsRequest {
-	return &budget.GetBudgetsRequest{
-		UserID:      m.UserID,
-		CategoryIDs: m.CategoryIDs,
-		BudgetDate:  m.BudgetDate,
-		Timezone:    m.Timezone,
+func (m *GetCategoriesBudgetRequest) ToGetCategoryBudgetRequest(categoryID string) *GetCategoryBudgetRequest {
+	return &GetCategoryBudgetRequest{
+		CategoryID: goutil.String(categoryID),
+		BudgetDate: m.BudgetDate,
+		Timezone:   m.Timezone,
 	}
 }
 

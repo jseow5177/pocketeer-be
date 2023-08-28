@@ -2,10 +2,14 @@ package category
 
 import (
 	"context"
+	"fmt"
+	"math"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -13,7 +17,6 @@ type categoryUseCase struct {
 	txMgr           repo.TxMgr
 	categoryRepo    repo.CategoryRepo
 	transactionRepo repo.TransactionRepo
-	budgetUseCase   budget.UseCase
 	budgetRepo      repo.BudgetRepo
 }
 
@@ -28,7 +31,6 @@ func NewCategoryUseCase(
 		txMgr,
 		categoryRepo,
 		transactionRepo,
-		budgetUseCase,
 		budgetRepo,
 	}
 }
@@ -58,11 +60,13 @@ func (uc *categoryUseCase) GetCategoryBudget(ctx context.Context, req *GetCatego
 		}, nil
 	}
 
-	res, err := uc.budgetUseCase.GetBudget(ctx, req.ToGetBudgetRequest())
+	b, err := uc.getBudgetWithUsage(ctx, req)
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get budget usage, err: %v", err)
 		return nil, err
 	}
-	c.SetBudget(res.Budget)
+
+	c.SetBudget(b)
 
 	return &GetCategoryBudgetResponse{
 		Category: c,
@@ -80,6 +84,10 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 		if err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to save new category to repo, err: %v", err)
 			return err
+		}
+
+		if c.Budget == nil {
+			return nil
 		}
 
 		b := c.Budget
@@ -155,6 +163,10 @@ func (uc *categoryUseCase) GetCategoriesBudget(ctx context.Context, req *GetCate
 	)
 	for _, c := range cs {
 		if c.CanAddBudget() {
+			if _, ok := cbs[c.GetCategoryID()]; ok {
+				// deduplicate
+				continue
+			}
 			catIDs = append(catIDs, c.GetCategoryID())
 			cbs[c.GetCategoryID()] = c
 		}
@@ -166,18 +178,62 @@ func (uc *categoryUseCase) GetCategoriesBudget(ctx context.Context, req *GetCate
 		}, nil
 	}
 
-	res, err := uc.budgetUseCase.GetBudgets(ctx, req.ToGetBudgetsRequest())
-	if err != nil {
-		return nil, err
-	}
-
-	for _, b := range res.Budgets {
-		if c, ok := cbs[b.GetCategoryID()]; ok {
-			c.SetBudget(b)
+	if err := goutil.ParallelizeWork(ctx, len(catIDs), 10, func(ctx context.Context, workNum int) error {
+		b, err := uc.getBudgetWithUsage(ctx, req.ToGetCategoryBudgetRequest(catIDs[workNum]))
+		if err != nil {
+			return err
 		}
+		if b != nil {
+			cbs[b.GetCategoryID()].SetBudget(b)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &GetCategoriesBudgetResponse{
 		Categories: cs,
 	}, nil
+}
+
+func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCategoryBudgetRequest) (*entity.Budget, error) {
+	f := req.ToGetBudgetFilter()
+
+	b, err := uc.budgetRepo.Get(ctx, f)
+	if err != nil && err != repo.ErrBudgetNotFound {
+		return nil, err
+	}
+
+	// no budget
+	if b == nil {
+		return nil, nil
+	}
+
+	var start, end uint64
+	if b.IsMonth() {
+		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+	} else if b.IsYear() {
+		start, end, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+	} else {
+		return nil, fmt.Errorf("invalid budget type, budget ID: %v", b.GetBudgetID())
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	tf := req.ToTransactionFilter(req.GetUserID(), start, end)
+	aggrs, err := uc.transactionRepo.CalcTotalAmount(ctx, "category_id", tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to sum transactions by category ID, err: %v", err)
+		return nil, err
+	}
+
+	var usedAmount float64
+	if len(aggrs) > 0 {
+		usedAmount = math.Abs(aggrs[0].GetTotalAmount())
+	}
+
+	b.SetUsedAmount(goutil.Float64(usedAmount))
+
+	return b, nil
 }
