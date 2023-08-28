@@ -15,7 +15,7 @@ var CreateFeedbackValidator = validator.MustForm(map[string]validator.Validator{
 	"score": &validator.UInt32{
 		Optional: true,
 		Min:      goutil.Uint32(uint32(entity.FeedbackScoreZero)),
-		Max:      goutil.Uint32(uint32(entity.FeedbackScoreFive)),
+		Max:      goutil.Uint32(uint32(entity.FeedbackScoreTwo)),
 	},
 	"text": &validator.String{
 		Optional: true,
