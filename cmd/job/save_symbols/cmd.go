@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
@@ -29,7 +30,9 @@ type JobConfig struct {
 type SaveSymbols struct {
 	jobCfg JobConfig
 
-	cfg   *config.Config
+	cfg *config.Config
+	opt *config.Option
+
 	mongo *mongo.Mongo
 
 	securityAPI  api.SecurityAPI
@@ -42,15 +45,42 @@ func (c *SaveSymbols) initFlags() {
 	flagSet.StringVar(&c.jobCfg.Exchange, "exchange", DefaultExchange, "exchange of symbols")
 }
 
+func (c *SaveSymbols) initOpt() *config.Option {
+	opt := config.NewOptions()
+
+	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
+		opt.LogLevel = logLevel
+	}
+
+	if configFile := os.Getenv("CONFIG_FILE"); configFile != "" {
+		opt.ConfigFile = configFile
+	}
+
+	if serverPort := os.Getenv("PORT"); serverPort != "" {
+		if port, err := strconv.Atoi(serverPort); err == nil {
+			opt.Port = port
+		}
+	}
+
+	return opt
+}
+
 func (c *SaveSymbols) Init(ctx context.Context) (context.Context, error) {
 	var err error
 
+	c.opt = c.initOpt()
+
 	c.initFlags()
 
-	c.cfg = config.NewConfig()
-
 	// init logger
-	ctx = logger.InitZeroLog(ctx, c.cfg.Server.LogLevel)
+	ctx = logger.InitZeroLog(ctx, c.opt.LogLevel)
+
+	// init config
+	c.cfg = config.NewConfig()
+	if err := c.cfg.Subscribe(ctx, c.opt.ConfigFile); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail subscribe to config, err: %v", err)
+		return ctx, err
+	}
 
 	// init mongo
 	c.mongo, err = mongo.NewMongo(ctx, c.cfg.Mongo)
