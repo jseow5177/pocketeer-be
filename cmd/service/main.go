@@ -309,6 +309,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// delete category
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteCategory,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteCategoryRequest),
+			Res:       new(presenter.DeleteCategoryResponse),
+			Validator: ch.DeleteCategoryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.DeleteCategory(ctx, req.(*presenter.DeleteCategoryRequest), res.(*presenter.DeleteCategoryResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// get category
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetCategory,

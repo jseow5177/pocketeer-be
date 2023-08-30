@@ -47,14 +47,6 @@ func (uv *UInt64Filter) GetLte() uint64 {
 	return 0
 }
 
-func toBudgets(bs []*entity.Budget) []*Budget {
-	budgets := make([]*Budget, len(bs))
-	for idx, b := range bs {
-		budgets[idx] = toBudget(b)
-	}
-	return budgets
-}
-
 func toBudget(b *entity.Budget) *Budget {
 	if b == nil {
 		return nil
@@ -88,12 +80,13 @@ func toCategory(c *entity.Category) *Category {
 	}
 
 	return &Category{
-		CategoryID:   c.CategoryID,
-		CategoryName: c.CategoryName,
-		CategoryType: c.CategoryType,
-		CreateTime:   c.CreateTime,
-		UpdateTime:   c.UpdateTime,
-		Budget:       toBudget(c.Budget),
+		CategoryID:     c.CategoryID,
+		CategoryName:   c.CategoryName,
+		CategoryType:   c.CategoryType,
+		CategoryStatus: c.CategoryStatus,
+		CreateTime:     c.CreateTime,
+		UpdateTime:     c.UpdateTime,
+		Budget:         toBudget(c.Budget),
 	}
 }
 
@@ -146,7 +139,9 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		TransactionID:     t.TransactionID,
 		Amount:            amount,
 		CategoryID:        t.CategoryID,
+		Category:          toCategory(t.Category),
 		AccountID:         t.AccountID,
+		Account:           toAccount(t.Account),
 		Note:              t.Note,
 		TransactionStatus: t.TransactionStatus,
 		TransactionType:   t.TransactionType,

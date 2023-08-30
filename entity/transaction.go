@@ -169,6 +169,9 @@ type Transaction struct {
 	TransactionTime   *uint64
 	CreateTime        *uint64
 	UpdateTime        *uint64
+
+	Category *Category
+	Account  *Account
 }
 
 type TransactionOption = func(t *Transaction)
@@ -458,6 +461,28 @@ func (t *Transaction) GetUpdateTime() uint64 {
 
 func (t *Transaction) SetUpdateTime(updateTime *uint64) {
 	t.UpdateTime = updateTime
+}
+
+func (t *Transaction) GetCategory() *Category {
+	if t != nil && t.Category != nil {
+		return t.Category
+	}
+	return nil
+}
+
+func (t *Transaction) SetCategory(c *Category) {
+	t.Category = c
+}
+
+func (t *Transaction) GetAccount() *Account {
+	if t != nil && t.Account != nil {
+		return t.Account
+	}
+	return nil
+}
+
+func (t *Transaction) SetAccount(ac *Account) {
+	t.Account = ac
 }
 
 func (t *Transaction) IsExpense() bool {

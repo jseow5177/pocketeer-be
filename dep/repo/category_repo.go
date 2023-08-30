@@ -21,11 +21,12 @@ type CategoryRepo interface {
 }
 
 type CategoryFilter struct {
-	UserID       *string  `filter:"user_id"`
-	CategoryID   *string  `filter:"_id"`
-	CategoryIDs  []string `filter:"_id__in"`
-	CategoryType *uint32  `filter:"category_type"`
-	CategoryName *string  `filter:"category_name"`
+	UserID         *string  `filter:"user_id"`
+	CategoryID     *string  `filter:"_id"`
+	CategoryIDs    []string `filter:"_id__in"`
+	CategoryType   *uint32  `filter:"category_type"`
+	CategoryStatus *uint32  `filter:"category_status"`
+	CategoryName   *string  `filter:"category_name"`
 }
 
 func (f *CategoryFilter) GetUserID() string {
@@ -59,6 +60,13 @@ func (f *CategoryFilter) GetCategoryIDs() []string {
 func (f *CategoryFilter) GetCategoryType() uint32 {
 	if f != nil && f.CategoryType != nil {
 		return *f.CategoryType
+	}
+	return 0
+}
+
+func (f *CategoryFilter) GetCategoryStatus() uint32 {
+	if f != nil && f.CategoryStatus != nil {
+		return *f.CategoryStatus
 	}
 	return 0
 }

@@ -45,6 +45,30 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
+	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
+	if err != nil && err != repo.ErrCategoryNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		return nil, err
+	}
+
+	if c != nil {
+		t.SetCategory(c)
+	} else {
+		t.SetCategoryID(goutil.String(""))
+	}
+
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
+	if err != nil && err != repo.ErrAccountNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
+	if ac != nil {
+		t.SetAccount(ac)
+	} else {
+		t.SetAccountID(goutil.String(""))
+	}
+
 	return &GetTransactionResponse{
 		Transaction: t,
 	}, nil
@@ -55,6 +79,51 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
+	}
+
+	var (
+		categoryIDs = make([]string, 0)
+		accountIDs  = make([]string, 0)
+	)
+	for _, t := range ts {
+		categoryIDs = append(categoryIDs, t.GetCategoryID())
+		accountIDs = append(accountIDs, t.GetAccountID())
+	}
+
+	csMap := make(map[string]*entity.Category)
+	cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(categoryIDs))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
+		return nil, err
+	}
+
+	for _, c := range cs {
+		csMap[c.GetCategoryID()] = c
+	}
+
+	acsMap := make(map[string]*entity.Account)
+	acs, err := uc.accountRepo.GetMany(ctx, req.ToAccountFilter(accountIDs))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get accounts from repo, err: %v", err)
+		return nil, err
+	}
+
+	for _, ac := range acs {
+		acsMap[ac.GetAccountID()] = ac
+	}
+
+	for _, t := range ts {
+		if ac, ok := acsMap[t.GetAccountID()]; ok {
+			t.SetAccount(ac)
+		} else {
+			t.SetAccountID(goutil.String(""))
+		}
+
+		if c, ok := csMap[t.GetCategoryID()]; ok {
+			t.SetCategory(c)
+		} else {
+			t.SetCategoryID(goutil.String(""))
+		}
 	}
 
 	return &GetTransactionsResponse{
@@ -169,6 +238,9 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	}); err != nil {
 		return nil, err
 	}
+
+	t.SetCategory(c)
+	t.SetAccount(ac)
 
 	return &CreateTransactionResponse{
 		Transaction: t,

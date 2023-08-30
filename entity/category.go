@@ -7,8 +7,9 @@ import (
 )
 
 type CategoryUpdate struct {
-	CategoryName *string
-	UpdateTime   *uint64
+	CategoryName   *string
+	CategoryStatus *uint32
+	UpdateTime     *uint64
 }
 
 func (cu *CategoryUpdate) GetCategoryName() string {
@@ -20,6 +21,17 @@ func (cu *CategoryUpdate) GetCategoryName() string {
 
 func (cu *CategoryUpdate) SetCategoryName(categoryName *string) {
 	cu.CategoryName = categoryName
+}
+
+func (cu *CategoryUpdate) GetCategoryStatus() uint32 {
+	if cu != nil && cu.CategoryStatus != nil {
+		return *cu.CategoryStatus
+	}
+	return 0
+}
+
+func (cu *CategoryUpdate) SetCategoryStatus(categoryStatus *uint32) {
+	cu.CategoryStatus = categoryStatus
 }
 
 func (cu *CategoryUpdate) GetUpdateTime() uint64 {
@@ -41,6 +53,12 @@ func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
 	}
 }
 
+func WithUpdateCategoryStatus(categoryStatus *uint32) CategoryUpdateOption {
+	return func(cu *CategoryUpdate) {
+		cu.SetCategoryStatus(categoryStatus)
+	}
+}
+
 func NewCategoryUpdate(opts ...CategoryUpdateOption) *CategoryUpdate {
 	cu := new(CategoryUpdate)
 	for _, opt := range opts {
@@ -49,13 +67,22 @@ func NewCategoryUpdate(opts ...CategoryUpdateOption) *CategoryUpdate {
 	return cu
 }
 
+type CategoryStatus uint32
+
+const (
+	CategoryStatusInvalid CategoryStatus = iota
+	CategoryStatusNormal
+	CategoryStatusDeleted
+)
+
 type Category struct {
-	UserID       *string
-	CategoryID   *string
-	CategoryName *string
-	CategoryType *uint32
-	CreateTime   *uint64
-	UpdateTime   *uint64
+	UserID         *string
+	CategoryID     *string
+	CategoryName   *string
+	CategoryType   *uint32
+	CategoryStatus *uint32
+	CreateTime     *uint64
+	UpdateTime     *uint64
 
 	Budget *Budget
 }
@@ -71,6 +98,12 @@ func WithCategoryID(categoryID *string) CategoryOption {
 func WithCategoryType(categoryType *uint32) CategoryOption {
 	return func(c *Category) {
 		c.SetCategoryType(categoryType)
+	}
+}
+
+func WithCategoryStatus(categoryStatus *uint32) CategoryOption {
+	return func(c *Category) {
+		c.SetCategoryStatus(categoryStatus)
 	}
 }
 
@@ -95,11 +128,12 @@ func WithCategoryBudget(budget *Budget) CategoryOption {
 func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
-		UserID:       goutil.String(userID),
-		CategoryName: goutil.String(categoryName),
-		CategoryType: goutil.Uint32(uint32(TransactionTypeExpense)),
-		CreateTime:   goutil.Uint64(now),
-		UpdateTime:   goutil.Uint64(now),
+		UserID:         goutil.String(userID),
+		CategoryName:   goutil.String(categoryName),
+		CategoryType:   goutil.Uint32(uint32(TransactionTypeExpense)),
+		CategoryStatus: goutil.Uint32(uint32(CategoryStatusNormal)),
+		CreateTime:     goutil.Uint64(now),
+		UpdateTime:     goutil.Uint64(now),
 	}
 
 	for _, opt := range opts {
@@ -129,6 +163,15 @@ func (c *Category) Update(cu *CategoryUpdate) (*CategoryUpdate, error) {
 
 		defer func() {
 			categoryUpdate.SetCategoryName(c.CategoryName)
+		}()
+	}
+
+	if cu.CategoryStatus != nil && cu.GetCategoryStatus() != c.GetCategoryStatus() {
+		hasUpdate = true
+		c.SetCategoryStatus(cu.CategoryStatus)
+
+		defer func() {
+			categoryUpdate.SetCategoryStatus(c.CategoryStatus)
 		}()
 	}
 
@@ -191,6 +234,17 @@ func (f *Category) GetCategoryType() uint32 {
 
 func (c *Category) SetCategoryType(categoryType *uint32) {
 	c.CategoryType = categoryType
+}
+
+func (c *Category) GetCategoryStatus() uint32 {
+	if c != nil && c.CategoryStatus != nil {
+		return *c.CategoryStatus
+	}
+	return 0
+}
+
+func (c *Category) SetCategoryStatus(categoryStatus *uint32) {
+	c.CategoryStatus = categoryStatus
 }
 
 func (c *Category) GetCreateTime() uint64 {

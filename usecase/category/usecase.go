@@ -138,6 +138,33 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 	}, nil
 }
 
+func (uc *categoryUseCase) DeleteCategory(ctx context.Context, req *DeleteCategoryRequest) (*DeleteCategoryResponse, error) {
+	f := req.ToCategoryFilter()
+
+	c, err := uc.categoryRepo.Get(ctx, f)
+	if err != nil && err != repo.ErrCategoryNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err == repo.ErrCategoryNotFound {
+		return new(DeleteCategoryResponse), nil
+	}
+
+	cu, err := c.Update(req.ToCategoryUpdate())
+	if err != nil {
+		return nil, err
+	}
+
+	// mark category as deleted
+	if err := uc.categoryRepo.Update(ctx, f, cu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to mark category as deleted, err: %v", err)
+		return nil, err
+	}
+
+	return new(DeleteCategoryResponse), nil
+}
+
 func (uc *categoryUseCase) GetCategories(ctx context.Context, req *GetCategoriesRequest) (*GetCategoriesResponse, error) {
 	cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter())
 	if err != nil {

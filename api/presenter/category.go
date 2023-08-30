@@ -7,12 +7,13 @@ import (
 )
 
 type Category struct {
-	CategoryID   *string `json:"category_id,omitempty"`
-	CategoryName *string `json:"category_name,omitempty"`
-	CategoryType *uint32 `json:"category_type,omitempty"`
-	CreateTime   *uint64 `json:"create_time,omitempty"`
-	UpdateTime   *uint64 `json:"update_time,omitempty"`
-	Budget       *Budget `json:"budget,omitempty"`
+	CategoryID     *string `json:"category_id,omitempty"`
+	CategoryName   *string `json:"category_name,omitempty"`
+	CategoryType   *uint32 `json:"category_type,omitempty"`
+	CategoryStatus *uint32 `json:"category_status,omitempty"`
+	CreateTime     *uint64 `json:"create_time,omitempty"`
+	UpdateTime     *uint64 `json:"update_time,omitempty"`
+	Budget         *Budget `json:"budget,omitempty"`
 }
 
 func (c *Category) GetCategoryID() string {
@@ -32,6 +33,13 @@ func (c *Category) GetCategoryName() string {
 func (c *Category) GetCategoryType() uint32 {
 	if c != nil && c.CategoryType != nil {
 		return *c.CategoryType
+	}
+	return 0
+}
+
+func (c *Category) GetCategoryStatus() uint32 {
+	if c != nil && c.CategoryStatus != nil {
+		return *c.CategoryStatus
 	}
 	return 0
 }
@@ -330,3 +338,25 @@ func (m *GetCategoriesBudgetResponse) GetCategories() []*Category {
 func (m *GetCategoriesBudgetResponse) Set(res *category.GetCategoriesBudgetResponse) {
 	m.Categories = toCategories(res.Categories)
 }
+
+type DeleteCategoryRequest struct {
+	CategoryID *string `json:"category_id"`
+}
+
+func (m *DeleteCategoryRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *DeleteCategoryRequest) ToUseCaseReq(userID string) *category.DeleteCategoryRequest {
+	return &category.DeleteCategoryRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+	}
+}
+
+type DeleteCategoryResponse struct{}
+
+func (m *DeleteCategoryResponse) Set(res *category.DeleteCategoryResponse) {}

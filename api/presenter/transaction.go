@@ -9,16 +9,18 @@ import (
 )
 
 type Transaction struct {
-	TransactionID     *string `json:"transaction_id,omitempty"`
-	CategoryID        *string `json:"category_id,omitempty"`
-	AccountID         *string `json:"account_id,omitempty"`
-	Amount            *string `json:"amount,omitempty"`
-	Note              *string `json:"note,omitempty"`
-	TransactionStatus *uint32 `json:"transaction_status,omitempty"`
-	TransactionType   *uint32 `json:"transaction_type,omitempty"`
-	TransactionTime   *uint64 `json:"transaction_time,omitempty"`
-	CreateTime        *uint64 `json:"create_time,omitempty"`
-	UpdateTime        *uint64 `json:"update_time,omitempty"`
+	TransactionID     *string   `json:"transaction_id,omitempty"`
+	CategoryID        *string   `json:"category_id,omitempty"`
+	Category          *Category `json:"category,omitempty"`
+	AccountID         *string   `json:"account_id,omitempty"`
+	Account           *Account  `json:"account,omitempty"`
+	Amount            *string   `json:"amount,omitempty"`
+	Note              *string   `json:"note,omitempty"`
+	TransactionStatus *uint32   `json:"transaction_status,omitempty"`
+	TransactionType   *uint32   `json:"transaction_type,omitempty"`
+	TransactionTime   *uint64   `json:"transaction_time,omitempty"`
+	CreateTime        *uint64   `json:"create_time,omitempty"`
+	UpdateTime        *uint64   `json:"update_time,omitempty"`
 }
 
 func (t *Transaction) GetTransactionID() string {
@@ -75,6 +77,20 @@ func (t *Transaction) GetUpdateTime() uint64 {
 		return *t.UpdateTime
 	}
 	return 0
+}
+
+func (t *Transaction) GetCategory() *Category {
+	if t != nil && t.Category != nil {
+		return t.Category
+	}
+	return nil
+}
+
+func (t *Transaction) GetAccount() *Account {
+	if t != nil && t.Account != nil {
+		return t.Account
+	}
+	return nil
 }
 
 type CreateTransactionRequest struct {

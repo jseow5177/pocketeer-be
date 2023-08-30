@@ -76,7 +76,7 @@ func (uc *budgetUseCase) UpdateBudget(ctx context.Context, req *UpdateBudgetRequ
 		log.Ctx(ctx).Error().Msgf("fail to get budget from repo, err: %v", err)
 		return nil, err
 	}
-	obt := b.GetBudgetType()
+	obt := b.GetBudgetType() // old budget type
 
 	bu, err := req.ToBudgetUpdate()
 	if err != nil {
