@@ -12,8 +12,7 @@ import (
 
 var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator{
 	"category_id": &validator.String{
-		Optional:  true,
-		UnsetZero: true,
+		Optional: true,
 	},
 	"account_id": &validator.String{
 		Optional:  true,

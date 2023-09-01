@@ -176,6 +176,7 @@ type GetTransactionsRequest struct {
 	UserID          *string
 	AccountID       *string
 	CategoryID      *string
+	CategoryIDs     []string
 	TransactionType *uint32
 	TransactionTime *common.UInt64Filter
 	Paging          *common.Paging
@@ -200,6 +201,13 @@ func (m *GetTransactionsRequest) GetCategoryID() string {
 		return *m.CategoryID
 	}
 	return ""
+}
+
+func (m *GetTransactionsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
 }
 
 func (m *GetTransactionsRequest) GetTransactionType() uint32 {
@@ -238,6 +246,7 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		UserID:             m.UserID,
 		AccountID:          m.AccountID,
 		CategoryID:         m.CategoryID,
+		CategoryIDs:        m.CategoryIDs,
 		TransactionType:    m.TransactionType,
 		TransactionTimeGte: tt.Gte,
 		TransactionTimeLte: tt.Lte,
@@ -259,11 +268,11 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 	}
 }
 
-func (m *GetTransactionsRequest) ToCategoryFilter(categoryIDs []string) *repo.CategoryFilter {
+func (m *GetTransactionsRequest) ToCategoryFilter(categoryIDs []string, categoryStatus uint32) *repo.CategoryFilter {
 	return &repo.CategoryFilter{
 		UserID:         m.UserID,
 		CategoryIDs:    categoryIDs,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
+		CategoryStatus: goutil.Uint32(categoryStatus),
 	}
 }
 
