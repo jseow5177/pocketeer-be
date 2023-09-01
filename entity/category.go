@@ -283,3 +283,7 @@ func (c *Category) SetBudget(b *Budget) {
 func (c *Category) CanAddBudget() bool {
 	return c.GetCategoryType() == uint32(TransactionTypeExpense)
 }
+
+func (c *Category) IsDeleted() bool {
+	return c.GetCategoryStatus() == uint32(CategoryStatusDeleted)
+}

@@ -20,7 +20,7 @@ type UseCase interface {
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error)
 	DeleteCategory(ctx context.Context, req *DeleteCategoryRequest) (*DeleteCategoryResponse, error)
 
-	//SumTransactions(ctx context.Context, req *SumTransactionsRequest) (*SumTransactionsResponse, error)
+	SumCategoryTransactions(ctx context.Context, req *SumCategoryTransactionsRequest) (*SumCategoryTransactionsResponse, error)
 }
 
 type GetCategoryBudgetRequest struct {
@@ -391,13 +391,47 @@ func (m *DeleteCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
 
 type DeleteCategoryResponse struct{}
 
-type SumTransactionsRequest struct{}
-
-type SumTransactionsResponse struct {
-	Sums map[*entity.Category]string
+type SumCategoryTransactionsRequest struct {
+	UserID *string
 }
 
-func (m *SumTransactionsResponse) GetSums() map[*entity.Category]string {
+func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+	return &repo.TransactionFilter{
+		UserID:            m.UserID,
+		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
+	}
+}
+
+func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID: m.UserID,
+	}
+}
+
+type CategoryTransactionSum struct {
+	Category *entity.Category
+	Sum      *string
+}
+
+func (m *CategoryTransactionSum) GetCategory() *entity.Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
+}
+
+func (m *CategoryTransactionSum) GetSum() string {
+	if m != nil && m.Sum != nil {
+		return *m.Sum
+	}
+	return ""
+}
+
+type SumCategoryTransactionsResponse struct {
+	Sums []*CategoryTransactionSum
+}
+
+func (m *SumCategoryTransactionsResponse) GetSums() []*CategoryTransactionSum {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}

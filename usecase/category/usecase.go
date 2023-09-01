@@ -264,3 +264,40 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 
 	return b, nil
 }
+
+func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *SumCategoryTransactionsRequest) (*SumCategoryTransactionsResponse, error) {
+	cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
+		return nil, err
+	}
+
+	tf := req.ToTransactionFilter()
+
+	aggrs, err := uc.transactionRepo.Sum(ctx, "category_id", tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to sum transactions, err: %v", err)
+		return nil, err
+	}
+
+	sums := make(map[*entity.Category]float64)
+	for _, c := range cs {
+		if c.IsDeleted() {
+			sums[nil] += aggrs[c.GetCategoryID()]
+		} else {
+			sums[c] += aggrs[c.GetCategoryID()]
+		}
+	}
+
+	res := make([]*CategoryTransactionSum, 0)
+	for c, sum := range sums {
+		res = append(res, &CategoryTransactionSum{
+			Category: c,
+			Sum:      goutil.String(fmt.Sprint(util.RoundFloatToStandardDP(sum))),
+		})
+	}
+
+	return &SumCategoryTransactionsResponse{
+		Sums: res,
+	}, nil
+}

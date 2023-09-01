@@ -384,6 +384,25 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// sum category transactions
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSumCategoryTransactions,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SumCategoryTransactionsRequest),
+			Res:       new(presenter.SumCategoryTransactionsResponse),
+			Validator: ch.SumCategoryTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return categoryHandler.SumCategoryTransactions(
+					ctx,
+					req.(*presenter.SumCategoryTransactionsRequest),
+					res.(*presenter.SumCategoryTransactionsResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// ========== Account ========== //
 
 	accountHandler := ach.NewAccountHandler(s.accountUseCase)

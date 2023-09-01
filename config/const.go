@@ -25,7 +25,7 @@ const (
 	PathGetCategories           = PathV1Prefix + "get_categories"
 	PathGetCategoriesBudget     = PathV1Prefix + "get_categories_budget"
 	PathDeleteCategory          = PathV1Prefix + "delete_category"
-	PathSumCategoryTransactions = PathV1Prefix + "category/sum_transactions"
+	PathSumCategoryTransactions = PathV1Prefix + "sum_category_transactions"
 
 	PathCreateTransaction = PathV1Prefix + "create_transaction"
 	PathUpdateTransaction = PathV1Prefix + "update_transaction"
