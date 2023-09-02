@@ -339,6 +339,7 @@ func (m *GetCategoriesBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 
 func (m *GetCategoriesBudgetRequest) ToGetCategoryBudgetRequest(categoryID string) *GetCategoryBudgetRequest {
 	return &GetCategoryBudgetRequest{
+		UserID:     m.UserID,
 		CategoryID: goutil.String(categoryID),
 		BudgetDate: m.BudgetDate,
 		Timezone:   m.Timezone,
