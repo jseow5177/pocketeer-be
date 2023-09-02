@@ -50,3 +50,17 @@ func ContainString(slice []string, target string) bool {
 
 	return false
 }
+
+func RemoveDuplicateString(slice []string) []string {
+	var (
+		m   = make(map[string]bool)
+		arr = make([]string, 0)
+	)
+	for _, s := range slice {
+		if _, ok := m[s]; !ok {
+			m[s] = true
+			arr = append(arr, s)
+		}
+	}
+	return arr
+}

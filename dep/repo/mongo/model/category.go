@@ -7,12 +7,13 @@ import (
 )
 
 type Category struct {
-	UserID       *string            `bson:"user_id,omitempty"`
-	CategoryID   primitive.ObjectID `bson:"_id,omitempty"`
-	CategoryName *string            `bson:"category_name,omitempty"`
-	CategoryType *uint32            `bson:"category_type,omitempty"`
-	CreateTime   *uint64            `bson:"create_time,omitempty"`
-	UpdateTime   *uint64            `bson:"update_time,omitempty"`
+	UserID         *string            `bson:"user_id,omitempty"`
+	CategoryID     primitive.ObjectID `bson:"_id,omitempty"`
+	CategoryName   *string            `bson:"category_name,omitempty"`
+	CategoryType   *uint32            `bson:"category_type,omitempty"`
+	CategoryStatus *uint32            `bson:"category_status,omitempty"`
+	CreateTime     *uint64            `bson:"create_time,omitempty"`
+	UpdateTime     *uint64            `bson:"update_time,omitempty"`
 }
 
 func ToCategoryModelFromEntity(c *entity.Category) *Category {
@@ -26,12 +27,13 @@ func ToCategoryModelFromEntity(c *entity.Category) *Category {
 	}
 
 	return &Category{
-		CategoryID:   objID,
-		UserID:       c.UserID,
-		CategoryName: c.CategoryName,
-		CategoryType: c.CategoryType,
-		CreateTime:   c.CreateTime,
-		UpdateTime:   c.UpdateTime,
+		CategoryID:     objID,
+		UserID:         c.UserID,
+		CategoryName:   c.CategoryName,
+		CategoryType:   c.CategoryType,
+		CategoryStatus: c.CategoryStatus,
+		CreateTime:     c.CreateTime,
+		UpdateTime:     c.UpdateTime,
 	}
 }
 
@@ -41,8 +43,9 @@ func ToCategoryModelFromUpdate(cu *entity.CategoryUpdate) *Category {
 	}
 
 	return &Category{
-		CategoryName: cu.CategoryName,
-		UpdateTime:   cu.UpdateTime,
+		CategoryName:   cu.CategoryName,
+		CategoryStatus: cu.CategoryStatus,
+		UpdateTime:     cu.UpdateTime,
 	}
 }
 
@@ -56,6 +59,7 @@ func ToCategoryEntity(c *Category) (*entity.Category, error) {
 		c.GetCategoryName(),
 		entity.WithCategoryID(goutil.String(c.GetCategoryID())),
 		entity.WithCategoryType(c.CategoryType),
+		entity.WithCategoryStatus(c.CategoryStatus),
 		entity.WithCategoryCreateTime(c.CreateTime),
 		entity.WithCategoryUpdateTime(c.UpdateTime),
 	)
@@ -85,6 +89,13 @@ func (c *Category) GetCategoryName() string {
 func (c *Category) GetCategoryType() uint32 {
 	if c != nil && c.CategoryType != nil {
 		return *c.CategoryType
+	}
+	return 0
+}
+
+func (c *Category) GetCategoryStatus() uint32 {
+	if c != nil && c.CategoryStatus != nil {
+		return *c.CategoryStatus
 	}
 	return 0
 }

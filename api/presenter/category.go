@@ -7,12 +7,13 @@ import (
 )
 
 type Category struct {
-	CategoryID   *string `json:"category_id,omitempty"`
-	CategoryName *string `json:"category_name,omitempty"`
-	CategoryType *uint32 `json:"category_type,omitempty"`
-	CreateTime   *uint64 `json:"create_time,omitempty"`
-	UpdateTime   *uint64 `json:"update_time,omitempty"`
-	Budget       *Budget `json:"budget,omitempty"`
+	CategoryID     *string `json:"category_id,omitempty"`
+	CategoryName   *string `json:"category_name,omitempty"`
+	CategoryType   *uint32 `json:"category_type,omitempty"`
+	CategoryStatus *uint32 `json:"category_status,omitempty"`
+	CreateTime     *uint64 `json:"create_time,omitempty"`
+	UpdateTime     *uint64 `json:"update_time,omitempty"`
+	Budget         *Budget `json:"budget,omitempty"`
 }
 
 func (c *Category) GetCategoryID() string {
@@ -32,6 +33,13 @@ func (c *Category) GetCategoryName() string {
 func (c *Category) GetCategoryType() uint32 {
 	if c != nil && c.CategoryType != nil {
 		return *c.CategoryType
+	}
+	return 0
+}
+
+func (c *Category) GetCategoryStatus() uint32 {
+	if c != nil && c.CategoryStatus != nil {
+		return *c.CategoryStatus
 	}
 	return 0
 }
@@ -276,8 +284,8 @@ func (m *GetCategoryBudgetResponse) GetCategory() *Category {
 	return nil
 }
 
-func (m *GetCategoryBudgetResponse) Set(res *category.GetCategoryBudgetResponse) {
-	m.Category = toCategory(res.Category)
+func (m *GetCategoryBudgetResponse) Set(useCaseRes *category.GetCategoryBudgetResponse) {
+	m.Category = toCategory(useCaseRes.Category)
 }
 
 type GetCategoriesBudgetRequest struct {
@@ -327,6 +335,55 @@ func (m *GetCategoriesBudgetResponse) GetCategories() []*Category {
 	return nil
 }
 
-func (m *GetCategoriesBudgetResponse) Set(res *category.GetCategoriesBudgetResponse) {
-	m.Categories = toCategories(res.Categories)
+func (m *GetCategoriesBudgetResponse) Set(useCaseRes *category.GetCategoriesBudgetResponse) {
+	m.Categories = toCategories(useCaseRes.Categories)
+}
+
+type DeleteCategoryRequest struct {
+	CategoryID *string `json:"category_id"`
+}
+
+func (m *DeleteCategoryRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *DeleteCategoryRequest) ToUseCaseReq(userID string) *category.DeleteCategoryRequest {
+	return &category.DeleteCategoryRequest{
+		UserID:     goutil.String(userID),
+		CategoryID: m.CategoryID,
+	}
+}
+
+type DeleteCategoryResponse struct{}
+
+func (m *DeleteCategoryResponse) Set(useCaseRes *category.DeleteCategoryResponse) {}
+
+type SumCategoryTransactionsRequest struct{}
+
+func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.SumCategoryTransactionsRequest {
+	return &category.SumCategoryTransactionsRequest{
+		UserID: goutil.String(userID),
+	}
+}
+
+type CategoryTransactionSum struct {
+	Category *Category `json:"category"`
+	Sum      *string   `json:"sum,omitempty"`
+}
+
+type SumCategoryTransactionsResponse struct {
+	Sums []*CategoryTransactionSum `json:"sums,omitempty"`
+}
+
+func (m *SumCategoryTransactionsResponse) Set(useCaseRes *category.SumCategoryTransactionsResponse) {
+	m.Sums = make([]*CategoryTransactionSum, 0)
+	for _, r := range useCaseRes.Sums {
+		m.Sums = append(m.Sums, &CategoryTransactionSum{
+			Category: toCategory(r.Category),
+			Sum:      r.Sum,
+		})
+	}
 }

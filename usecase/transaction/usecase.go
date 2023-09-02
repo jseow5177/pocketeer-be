@@ -45,16 +45,117 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
+	var c *entity.Category
+	if t.GetCategoryID() != "" {
+		c, err = uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
+		if err != nil && err != repo.ErrCategoryNotFound {
+			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	if c != nil {
+		t.SetCategory(c)
+	} else {
+		t.SetCategoryID(goutil.String(""))
+	}
+
+	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
+	if err != nil && err != repo.ErrAccountNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
+	if ac != nil {
+		t.SetAccount(ac)
+	} else {
+		t.SetAccountID(goutil.String(""))
+	}
+
 	return &GetTransactionResponse{
 		Transaction: t,
 	}, nil
 }
 
 func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
+	// convert empty category ID to query of deleted categories
+	if req.CategoryID != nil && req.GetCategoryID() == "" {
+		cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(nil, uint32(entity.CategoryStatusDeleted)))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get deleted categories from repo, err: %v", err)
+			return nil, err
+		}
+
+		categoryIDs := make([]string, 0)
+		for _, c := range cs {
+			categoryIDs = append(categoryIDs, c.GetCategoryID())
+		}
+
+		req.CategoryID = nil
+		req.CategoryIDs = categoryIDs
+	}
+
+	// get transactions
 	ts, err := uc.transactionRepo.GetMany(ctx, req.ToTransactionFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
+	}
+
+	var (
+		categoryIDs = make([]string, 0)
+		accountIDs  = make([]string, 0)
+	)
+	for _, t := range ts {
+		categoryIDs = append(categoryIDs, t.GetCategoryID())
+		accountIDs = append(accountIDs, t.GetAccountID())
+	}
+	categoryIDs = goutil.RemoveDuplicateString(categoryIDs)
+	accountIDs = goutil.RemoveDuplicateString(accountIDs)
+
+	// get categories
+	var cs []*entity.Category
+	if len(categoryIDs) > 0 {
+		cs, err = uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(categoryIDs, uint32(entity.CategoryStatusNormal)))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get categories from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	csMap := make(map[string]*entity.Category)
+	for _, c := range cs {
+		csMap[c.GetCategoryID()] = c
+	}
+
+	// get accounts
+	var acs []*entity.Account
+	if len(accountIDs) > 0 {
+		acs, err = uc.accountRepo.GetMany(ctx, req.ToAccountFilter(accountIDs))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get accounts from repo, err: %v", err)
+			return nil, err
+		}
+	}
+
+	acsMap := make(map[string]*entity.Account)
+	for _, ac := range acs {
+		acsMap[ac.GetAccountID()] = ac
+	}
+
+	// set accounts and categories
+	for _, t := range ts {
+		if ac, ok := acsMap[t.GetAccountID()]; ok {
+			t.SetAccount(ac)
+		} else {
+			t.SetAccountID(goutil.String(""))
+		}
+
+		if c, ok := csMap[t.GetCategoryID()]; ok {
+			t.SetCategory(c)
+		} else {
+			t.SetCategoryID(goutil.String(""))
+		}
 	}
 
 	return &GetTransactionsResponse{
@@ -169,6 +270,9 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 	}); err != nil {
 		return nil, err
 	}
+
+	t.SetCategory(c)
+	t.SetAccount(ac)
 
 	return &CreateTransactionResponse{
 		Transaction: t,

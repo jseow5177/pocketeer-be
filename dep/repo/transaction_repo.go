@@ -18,6 +18,8 @@ type TransactionRepo interface {
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
 	Update(ctx context.Context, tf *TransactionFilter, t *entity.TransactionUpdate) error
 
+	Sum(ctx context.Context, sumBy string, tf *TransactionFilter) (map[string]float64, error)
+
 	CalcTotalAmount(ctx context.Context, totalBy string, tf *TransactionFilter) ([]*TransactionAggr, error)
 }
 

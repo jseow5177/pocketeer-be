@@ -77,6 +77,25 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 	return ets, nil
 }
 
+func (m *transactionMongo) Sum(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
+	f := mongoutil.BuildFilter(tf)
+
+	sumAmountAggr := mongoutil.NewAggr("sum", mongoutil.AggrSum, &mongoutil.AggrOpt{
+		Field: "amount",
+	})
+	res, err := m.mColl.aggrV2(ctx, f, sumBy, sumAmountAggr)
+	if err != nil {
+		return nil, err
+	}
+
+	sums := make(map[string]float64)
+	for f, aggr := range res {
+		sums[f] = mongoutil.ToFloat64(aggr["sum"])
+	}
+
+	return sums, nil
+}
+
 func (m *transactionMongo) CalcTotalAmount(ctx context.Context, groupBy string, tf *repo.TransactionFilter) ([]*repo.TransactionAggr, error) {
 	f := mongoutil.BuildFilter(tf)
 

@@ -89,8 +89,9 @@ func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
 
 func (m *CreateBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID:     m.UserID,
-		CategoryID: m.CategoryID,
+		UserID:         m.UserID,
+		CategoryID:     m.CategoryID,
+		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
 	}
 }
 
