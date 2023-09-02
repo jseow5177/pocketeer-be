@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 type UseCase interface {
@@ -393,13 +394,35 @@ func (m *DeleteCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
 type DeleteCategoryResponse struct{}
 
 type SumCategoryTransactionsRequest struct {
-	UserID *string
+	UserID          *string
+	TransactionTime *common.RangeFilter
+}
+
+func (m *SumCategoryTransactionsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *SumCategoryTransactionsRequest) GetTransactionTime() *common.RangeFilter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
 }
 
 func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(common.RangeFilter)
+	}
+
 	return &repo.TransactionFilter{
-		UserID:            m.UserID,
-		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
+		UserID:             m.UserID,
+		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
+		TransactionTimeGte: tt.Gte,
+		TransactionTimeLte: tt.Lte,
 	}
 }
 

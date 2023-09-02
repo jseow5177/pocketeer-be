@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
-var SumCategoryTransactionsValidator = validator.MustForm(map[string]validator.Validator{})
+var SumCategoryTransactionsValidator = validator.MustForm(map[string]validator.Validator{
+	"transaction_time": entity.RangeFilterValidator(true),
+})
 
 func (h *categoryHandler) SumCategoryTransactions(
 	ctx context.Context,

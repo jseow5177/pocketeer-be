@@ -79,6 +79,7 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 
 func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
 	// convert empty category ID to query of deleted categories
+	isDeletedCategory := make(map[string]bool)
 	if req.CategoryID != nil && req.GetCategoryID() == "" {
 		cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(nil, uint32(entity.CategoryStatusDeleted)))
 		if err != nil {
@@ -89,6 +90,7 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		categoryIDs := make([]string, 0)
 		for _, c := range cs {
 			categoryIDs = append(categoryIDs, c.GetCategoryID())
+			isDeletedCategory[c.GetCategoryID()] = true
 		}
 
 		req.CategoryID = nil
@@ -107,7 +109,9 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		accountIDs  = make([]string, 0)
 	)
 	for _, t := range ts {
-		categoryIDs = append(categoryIDs, t.GetCategoryID())
+		if !isDeletedCategory[t.GetCategoryID()] {
+			categoryIDs = append(categoryIDs, t.GetCategoryID())
+		}
 		accountIDs = append(accountIDs, t.GetAccountID())
 	}
 	categoryIDs = goutil.RemoveDuplicateString(categoryIDs)
@@ -226,8 +230,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	_, err = t.CanTransactionUnderCategory(c)
-	if err != nil {
+	if err := t.CanTransactionUnderCategory(c); err != nil {
 		return nil, err
 	}
 
@@ -237,8 +240,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	_, err = t.CanTransactionUnderAccount(ac)
-	if err != nil {
+	if err := t.CanTransactionUnderAccount(ac); err != nil {
 		return nil, err
 	}
 
@@ -300,7 +302,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 	oldAccount, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldAccountID))
 	if err != nil {
-		log.Ctx(ctx).Info().Msgf("fail to get account from repo, err: %v", err)
+		log.Ctx(ctx).Info().Msgf("fail to get old account from repo, err: %v", err)
 		return nil, err
 	}
 
@@ -312,8 +314,19 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 			return nil, err
 		}
 
-		_, err = t.CanTransactionUnderAccount(newAccount)
+		if err := t.CanTransactionUnderAccount(newAccount); err != nil {
+			return nil, err
+		}
+	}
+
+	if tu.CategoryID != nil {
+		newCategory, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 		if err != nil {
+			log.Ctx(ctx).Info().Msgf("fail to get new category from repo, err: %v", err)
+			return nil, err
+		}
+
+		if err := t.CanTransactionUnderCategory(newCategory); err != nil {
 			return nil, err
 		}
 	}

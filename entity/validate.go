@@ -130,7 +130,7 @@ func PagingValidator(optional bool) validator.Validator {
 	}
 }
 
-func UInt64FilterValidator(optional bool) validator.Validator {
+func RangeFilterValidator(optional bool) validator.Validator {
 	return &validator.Form{
 		Optional: optional,
 		Validators: map[string]validator.Validator{

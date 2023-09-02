@@ -28,19 +28,19 @@ func (p *Paging) GetPage() uint32 {
 	return 0
 }
 
-type UInt64Filter struct {
+type RangeFilter struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func (uv *UInt64Filter) GetGte() uint64 {
+func (uv *RangeFilter) GetGte() uint64 {
 	if uv != nil && uv.Gte != nil {
 		return *uv.Gte
 	}
 	return 0
 }
 
-func (uv *UInt64Filter) GetLte() uint64 {
+func (uv *RangeFilter) GetLte() uint64 {
 	if uv != nil && uv.Lte != nil {
 		return *uv.Lte
 	}

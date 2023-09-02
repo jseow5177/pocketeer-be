@@ -11,7 +11,7 @@ import (
 )
 
 var AggrTransactionsValidator = validator.MustForm(map[string]validator.Validator{
-	"transaction_time": entity.UInt64FilterValidator(true),
+	"transaction_time": entity.RangeFilterValidator(true),
 	"category_ids": &validator.Slice{
 		Optional:  true,
 		Validator: &validator.String{},
