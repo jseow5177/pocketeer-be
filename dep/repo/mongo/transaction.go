@@ -96,6 +96,7 @@ func (m *transactionMongo) Sum(ctx context.Context, sumBy string, tf *repo.Trans
 	return sums, nil
 }
 
+// Deprecated
 func (m *transactionMongo) CalcTotalAmount(ctx context.Context, groupBy string, tf *repo.TransactionFilter) ([]*repo.TransactionAggr, error) {
 	f := mongoutil.BuildFilter(tf)
 

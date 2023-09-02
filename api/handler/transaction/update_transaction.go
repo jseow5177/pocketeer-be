@@ -28,6 +28,15 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 		Optional:  true,
 		UnsetZero: true,
 	},
+	"category_id": &validator.String{
+		Optional:  true,
+		UnsetZero: true,
+	},
+	"transaction_type": &validator.UInt32{
+		Optional:   true,
+		UnsetZero:  true,
+		Validators: []validator.UInt32Func{entity.CheckTransactionType},
+	},
 	"note": &validator.String{
 		Optional:  true,
 		UnsetZero: true,

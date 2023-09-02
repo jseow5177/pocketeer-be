@@ -230,8 +230,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	_, err = t.CanTransactionUnderCategory(c)
-	if err != nil {
+	if err := t.CanTransactionUnderCategory(c); err != nil {
 		return nil, err
 	}
 
@@ -241,8 +240,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	_, err = t.CanTransactionUnderAccount(ac)
-	if err != nil {
+	if err := t.CanTransactionUnderAccount(ac); err != nil {
 		return nil, err
 	}
 
@@ -304,7 +302,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 	oldAccount, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldAccountID))
 	if err != nil {
-		log.Ctx(ctx).Info().Msgf("fail to get account from repo, err: %v", err)
+		log.Ctx(ctx).Info().Msgf("fail to get old account from repo, err: %v", err)
 		return nil, err
 	}
 
@@ -316,8 +314,19 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 			return nil, err
 		}
 
-		_, err = t.CanTransactionUnderAccount(newAccount)
+		if err := t.CanTransactionUnderAccount(newAccount); err != nil {
+			return nil, err
+		}
+	}
+
+	if tu.CategoryID != nil {
+		newCategory, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 		if err != nil {
+			log.Ctx(ctx).Info().Msgf("fail to get new category from repo, err: %v", err)
+			return nil, err
+		}
+
+		if err := t.CanTransactionUnderCategory(newCategory); err != nil {
 			return nil, err
 		}
 	}
