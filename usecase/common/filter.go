@@ -19,19 +19,19 @@ func (p *Paging) GetPage() uint32 {
 	return 0
 }
 
-type UInt64Filter struct {
+type RangeFilter struct {
 	Gte *uint64
 	Lte *uint64
 }
 
-func (m *UInt64Filter) GetGte() uint64 {
+func (m *RangeFilter) GetGte() uint64 {
 	if m != nil && m.Gte != nil {
 		return *m.Gte
 	}
 	return 0
 }
 
-func (m *UInt64Filter) GetLte() uint64 {
+func (m *RangeFilter) GetLte() uint64 {
 	if m != nil && m.Lte != nil {
 		return *m.Lte
 	}

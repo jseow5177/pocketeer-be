@@ -247,12 +247,6 @@ func (ac *Account) checkOpts() error {
 		return ErrSetBalanceForbidden
 	}
 
-	if ac.IsDebt() {
-		if ac.GetBalance() > 0 {
-			ac.SetBalance(goutil.Float64(-ac.GetBalance()))
-		}
-	}
-
 	if !ac.IsInvestment() && len(ac.Holdings) > 0 {
 		return ErrAccountCannotHaveHoldings
 	}

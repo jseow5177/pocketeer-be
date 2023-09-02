@@ -111,8 +111,8 @@ func (m *GetBudgetResponse) GetBudget() *Budget {
 	return nil
 }
 
-func (m *GetBudgetResponse) Set(res *budget.GetBudgetResponse) {
-	m.Budget = toBudget(res.Budget)
+func (m *GetBudgetResponse) Set(useCaseRes *budget.GetBudgetResponse) {
+	m.Budget = toBudget(useCaseRes.Budget)
 }
 
 type CreateBudgetRequest struct {
@@ -185,8 +185,8 @@ func (m *CreateBudgetResponse) GetBudget() *Budget {
 	return nil
 }
 
-func (m *CreateBudgetResponse) Set(res *budget.CreateBudgetResponse) {
-	m.Budget = toBudget(res.Budget)
+func (m *CreateBudgetResponse) Set(useCaseRes *budget.CreateBudgetResponse) {
+	m.Budget = toBudget(useCaseRes.Budget)
 }
 
 type DeleteBudgetRequest struct {
@@ -227,7 +227,7 @@ func (m *DeleteBudgetRequest) ToUseCaseReq(userID string) *budget.DeleteBudgetRe
 
 type DeleteBudgetResponse struct{}
 
-func (m *DeleteBudgetResponse) Set(res *budget.DeleteBudgetResponse) {}
+func (m *DeleteBudgetResponse) Set(useCaseRes *budget.DeleteBudgetResponse) {}
 
 type UpdateBudgetRequest struct {
 	BudgetDate   *string `json:"budget_date,omitempty"`
@@ -299,6 +299,6 @@ func (m *UpdateBudgetResponse) GetBudget() *Budget {
 	return nil
 }
 
-func (m *UpdateBudgetResponse) Set(res *budget.UpdateBudgetResponse) {
-	m.Budget = toBudget(res.Budget)
+func (m *UpdateBudgetResponse) Set(useCaseRes *budget.UpdateBudgetResponse) {
+	m.Budget = toBudget(useCaseRes.Budget)
 }

@@ -12,8 +12,7 @@ import (
 
 var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator{
 	"category_id": &validator.String{
-		Optional:  true,
-		UnsetZero: true,
+		Optional: true,
 	},
 	"account_id": &validator.String{
 		Optional:  true,
@@ -24,7 +23,7 @@ var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator
 		UnsetZero:  true,
 		Validators: []validator.UInt32Func{entity.CheckTransactionType},
 	},
-	"transaction_time": entity.UInt64FilterValidator(true),
+	"transaction_time": entity.RangeFilterValidator(true),
 	"paging":           entity.PagingValidator(true),
 })
 

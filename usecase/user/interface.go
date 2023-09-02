@@ -272,12 +272,6 @@ func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 	}
 }
 
-func (m *InitUserRequest) ToCategoryFilter(categoryID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		CategoryID: goutil.String(categoryID),
-	}
-}
-
 func (m *InitUserRequest) GetCategories() []*category.CreateCategoryRequest {
 	if m != nil && m.Categories != nil {
 		return m.Categories
@@ -295,6 +289,13 @@ func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
 		cs = append(cs, c)
 	}
 	return cs, nil
+}
+
+func (m *InitUserRequest) GetAccounts() []*account.CreateAccountRequest {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
 }
 
 func (m *InitUserRequest) ToAccountEntities() ([]*entity.Account, error) {

@@ -1,11 +1,16 @@
 package mongoutil
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+var (
+	ErrAggrTooDeep = errors.New("aggr too deep")
 )
 
 const maxAggrDepth = 2
@@ -93,7 +98,7 @@ func NewAggr(name string, op aggrOp, opt *AggrOpt) *Aggr {
 	}
 }
 
-func BuildAggrPipeline(filter bson.D, groupBy string, aggrs ...*Aggr) primitive.A {
+func BuildAggrPipeline(filter bson.D, groupBy string, aggrs ...*Aggr) (primitive.A, error) {
 	pipeline := make(bson.A, 0)
 
 	if filter != nil {
@@ -105,15 +110,17 @@ func BuildAggrPipeline(filter bson.D, groupBy string, aggrs ...*Aggr) primitive.
 	}
 	group := make(bson.D, 0)
 
+	// field to group by
 	var val interface{}
 	if groupBy != "" {
 		val = Prefix(groupBy)
 	}
 	group = append(group, bson.E{Key: "_id", Value: val})
 
+	// aggr on the group by field
 	for _, aggr := range aggrs {
 		if aggr.isTooDeep(0, maxAggrDepth) {
-			continue
+			return nil, ErrAggrTooDeep
 		}
 		group = append(group, aggr.buildPipe())
 	}
@@ -122,7 +129,7 @@ func BuildAggrPipeline(filter bson.D, groupBy string, aggrs ...*Aggr) primitive.
 
 	pipeline = append(pipeline, bson.D{be})
 
-	return pipeline
+	return pipeline, nil
 }
 
 func ToFloat64(i interface{}) float64 {

@@ -24,6 +24,7 @@ type AccountRepo interface {
 type AccountFilter struct {
 	UserID            *string  `filter:"user_id"`
 	AccountID         *string  `filter:"_id"`
+	AccountIDs        []string `filter:"_id__in"`
 	AccountName       *string  `filter:"account_name"`
 	AccountType       *uint32  `filter:"account_type"`
 	AccountTypeBitPos []uint32 `filter:"account_type__bitsAllSet"` // bit pos
@@ -40,6 +41,12 @@ func WithAccountID(accountID *string) AccountFilterOption {
 func WithAccountName(accountName *string) AccountFilterOption {
 	return func(acf *AccountFilter) {
 		acf.AccountName = accountName
+	}
+}
+
+func WithAccountIDs(accountIDs []string) AccountFilterOption {
+	return func(acf *AccountFilter) {
+		acf.AccountIDs = accountIDs
 	}
 }
 
@@ -86,6 +93,13 @@ func (f *AccountFilter) GetAccountID() string {
 		return *f.AccountID
 	}
 	return ""
+}
+
+func (f *AccountFilter) GetCategoryIDs() []string {
+	if f != nil && f.AccountIDs != nil {
+		return f.AccountIDs
+	}
+	return nil
 }
 
 func (f *AccountFilter) GetAccountType() uint32 {

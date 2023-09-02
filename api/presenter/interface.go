@@ -28,31 +28,23 @@ func (p *Paging) GetPage() uint32 {
 	return 0
 }
 
-type UInt64Filter struct {
+type RangeFilter struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func (uv *UInt64Filter) GetGte() uint64 {
+func (uv *RangeFilter) GetGte() uint64 {
 	if uv != nil && uv.Gte != nil {
 		return *uv.Gte
 	}
 	return 0
 }
 
-func (uv *UInt64Filter) GetLte() uint64 {
+func (uv *RangeFilter) GetLte() uint64 {
 	if uv != nil && uv.Lte != nil {
 		return *uv.Lte
 	}
 	return 0
-}
-
-func toBudgets(bs []*entity.Budget) []*Budget {
-	budgets := make([]*Budget, len(bs))
-	for idx, b := range bs {
-		budgets[idx] = toBudget(b)
-	}
-	return budgets
 }
 
 func toBudget(b *entity.Budget) *Budget {
@@ -88,12 +80,13 @@ func toCategory(c *entity.Category) *Category {
 	}
 
 	return &Category{
-		CategoryID:   c.CategoryID,
-		CategoryName: c.CategoryName,
-		CategoryType: c.CategoryType,
-		CreateTime:   c.CreateTime,
-		UpdateTime:   c.UpdateTime,
-		Budget:       toBudget(c.Budget),
+		CategoryID:     c.CategoryID,
+		CategoryName:   c.CategoryName,
+		CategoryType:   c.CategoryType,
+		CategoryStatus: c.CategoryStatus,
+		CreateTime:     c.CreateTime,
+		UpdateTime:     c.UpdateTime,
+		Budget:         toBudget(c.Budget),
 	}
 }
 
@@ -146,7 +139,9 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		TransactionID:     t.TransactionID,
 		Amount:            amount,
 		CategoryID:        t.CategoryID,
+		Category:          toCategory(t.Category),
 		AccountID:         t.AccountID,
+		Account:           toAccount(t.Account),
 		Note:              t.Note,
 		TransactionStatus: t.TransactionStatus,
 		TransactionType:   t.TransactionType,
