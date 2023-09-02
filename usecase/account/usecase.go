@@ -239,9 +239,10 @@ func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accou
 }
 
 func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *entity.Account) error {
-	hs, err := uc.holdingRepo.GetMany(ctx, &repo.HoldingFilter{
-		AccountID: ac.AccountID,
-	})
+	hs, err := uc.holdingRepo.GetMany(ctx, repo.NewHoldingFilter(
+		ac.GetUserID(),
+		repo.WithHoldingAccountID(ac.AccountID),
+	))
 	if err != nil {
 		return fmt.Errorf("fail to get holdings from repo, err: %v", err)
 	}
@@ -259,9 +260,10 @@ func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *ent
 		}
 		h.SetQuote(q)
 
-		ls, err := uc.lotRepo.GetMany(ctx, &repo.LotFilter{
-			HoldingID: h.HoldingID,
-		})
+		ls, err := uc.lotRepo.GetMany(ctx, repo.NewLotFilter(
+			ac.GetUserID(),
+			repo.WithLotHoldingID(h.HoldingID),
+		))
 		if err != nil {
 			return fmt.Errorf("fail to get lots from repo, err: %v", err)
 		}

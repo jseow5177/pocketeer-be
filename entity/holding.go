@@ -38,10 +38,11 @@ var HoldingTypes = map[uint32]string{
 }
 
 type HoldingUpdate struct {
-	TotalCost   *float64
-	LatestValue *float64
-	Symbol      *string
-	UpdateTime  *uint64
+	TotalCost     *float64
+	LatestValue   *float64
+	Symbol        *string
+	UpdateTime    *uint64
+	HoldingStatus *uint32
 }
 
 func (hu *HoldingUpdate) GetTotalCost() float64 {
@@ -98,6 +99,17 @@ func (hu *HoldingUpdate) SetUpdateTime(updateTime *uint64) {
 	hu.UpdateTime = updateTime
 }
 
+func (hu *HoldingUpdate) GetHoldingStatus() uint32 {
+	if hu != nil && hu.HoldingStatus != nil {
+		return *hu.HoldingStatus
+	}
+	return 0
+}
+
+func (hu *HoldingUpdate) SetHoldingStatus(holdingStatus *uint32) {
+	hu.HoldingStatus = holdingStatus
+}
+
 func WithUpdateHoldingTotalCost(totalCost *float64) HoldingUpdateOption {
 	return func(hu *HoldingUpdate) {
 		hu.SetTotalCost(totalCost)
@@ -116,7 +128,21 @@ func WithUpdateHoldingSymbol(symbol *string) HoldingUpdateOption {
 	}
 }
 
+func WithUpdateHoldingStatus(holdingStatus *uint32) HoldingUpdateOption {
+	return func(hu *HoldingUpdate) {
+		hu.SetHoldingStatus(holdingStatus)
+	}
+}
+
 type HoldingUpdateOption = func(hu *HoldingUpdate)
+
+func NewHoldingUpdate(opts ...HoldingUpdateOption) *HoldingUpdate {
+	hu := new(HoldingUpdate)
+	for _, opt := range opts {
+		opt(hu)
+	}
+	return hu
+}
 
 type Holding struct {
 	UserID        *string

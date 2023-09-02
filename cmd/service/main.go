@@ -813,6 +813,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// delete holding
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteHoldingRequest),
+			Res:       new(presenter.DeleteHoldingResponse),
+			Validator: hh.DeleteHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.DeleteHolding(ctx, req.(*presenter.DeleteHoldingRequest), res.(*presenter.DeleteHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// ========== Lot ========== //
 
 	lotHandler := lh.NewLotHandler(s.lotUseCase)

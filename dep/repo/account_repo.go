@@ -28,6 +28,7 @@ type AccountFilter struct {
 	AccountName       *string  `filter:"account_name"`
 	AccountType       *uint32  `filter:"account_type"`
 	AccountTypeBitPos []uint32 `filter:"account_type__bitsAllSet"` // bit pos
+	AccountStatus     *uint32  `filter:"account_status"`
 }
 
 type AccountFilterOption = func(acf *AccountFilter)
@@ -50,6 +51,12 @@ func WithAccountIDs(accountIDs []string) AccountFilterOption {
 	}
 }
 
+func WithAccountStatus(accountStatus *uint32) AccountFilterOption {
+	return func(acf *AccountFilter) {
+		acf.AccountStatus = accountStatus
+	}
+}
+
 func WitAccountType(accountType *uint32) AccountFilterOption {
 	return func(acf *AccountFilter) {
 		if accountType == nil {
@@ -66,7 +73,8 @@ func WitAccountType(accountType *uint32) AccountFilterOption {
 
 func NewAccountFilter(userID string, opts ...AccountFilterOption) *AccountFilter {
 	acf := &AccountFilter{
-		UserID: goutil.String(userID),
+		UserID:        goutil.String(userID),
+		AccountStatus: goutil.Uint32(uint32(entity.AccountStatusNormal)),
 	}
 	for _, opt := range opts {
 		opt(acf)
@@ -105,6 +113,13 @@ func (f *AccountFilter) GetCategoryIDs() []string {
 func (f *AccountFilter) GetAccountType() uint32 {
 	if f != nil && f.AccountType != nil {
 		return *f.AccountType
+	}
+	return 0
+}
+
+func (f *AccountFilter) GetAccountStatus() uint32 {
+	if f != nil && f.AccountStatus != nil {
+		return *f.AccountStatus
 	}
 	return 0
 }

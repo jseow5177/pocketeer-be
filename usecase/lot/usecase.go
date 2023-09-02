@@ -93,9 +93,9 @@ func (uc *lotUseCase) GetLots(ctx context.Context, req *GetLotsRequest) (*GetLot
 }
 
 func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
-	f := req.ToLotFilter()
+	lf := req.ToLotFilter()
 
-	l, err := uc.lotRepo.Get(ctx, f)
+	_, err := uc.lotRepo.Get(ctx, lf)
 	if err != nil && err != repo.ErrLotNotFound {
 		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
 		return nil, err
@@ -105,11 +105,8 @@ func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*De
 		return new(DeleteLotResponse), nil
 	}
 
-	lu := l.Update(req.ToLotUpdate())
-
-	// mark lot as deleted
-	if err := uc.lotRepo.Update(ctx, f, lu); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
+	if err := uc.lotRepo.Delete(ctx, lf); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to delete lot, err: %v", err)
 		return nil, err
 	}
 

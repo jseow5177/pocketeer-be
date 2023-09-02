@@ -45,6 +45,7 @@ const (
 	PathCreateHolding = PathV1Prefix + "create_holding"
 	PathUpdateHolding = PathV1Prefix + "update_holding"
 	PathGetHolding    = PathV1Prefix + "get_holding"
+	PathDeleteHolding = PathV1Prefix + "delete_holding"
 
 	PathCreateLot = PathV1Prefix + "create_lot"
 	PathDeleteLot = PathV1Prefix + "delete_lot"
