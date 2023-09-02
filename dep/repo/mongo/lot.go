@@ -13,9 +13,6 @@ import (
 
 const (
 	lotCollName = "lot"
-
-	aggrTotalShares = "totalShares"
-	aggrTotalCost   = "totalCost"
 )
 
 type lotMongo struct {
@@ -93,43 +90,4 @@ func (m *lotMongo) GetMany(ctx context.Context, lf *repo.LotFilter) ([]*entity.L
 	}
 
 	return els, nil
-}
-
-func (m *lotMongo) CalcTotalSharesAndCost(ctx context.Context, lf *repo.LotFilter) (*repo.LotAggr, error) {
-	// sum of shares
-	totalSharesAggr := mongoutil.NewAggr(aggrTotalShares, mongoutil.AggrSum, &mongoutil.AggrOpt{
-		Field: "shares",
-	})
-
-	// sum of (shares * cost_per_share)
-	totalCostAggr := mongoutil.NewAggr(aggrTotalCost, mongoutil.AggrSum, &mongoutil.AggrOpt{
-		Aggr: mongoutil.NewAggr("", mongoutil.AggrMultiply, &mongoutil.AggrOpt{
-			Field: []string{"shares", "cost_per_share"},
-		}),
-	})
-
-	f := mongoutil.BuildFilter(lf)
-
-	res, err := m.mColl.aggr(ctx, f, "", totalSharesAggr, totalCostAggr)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(res) == 0 {
-		return &repo.LotAggr{
-			TotalShares: goutil.Float64(0),
-			TotalCost:   goutil.Float64(0),
-		}, nil
-	}
-
-	aggrRes := res[0]
-	var (
-		totalShares = mongoutil.ToFloat64(aggrRes[aggrTotalShares])
-		totalCost   = mongoutil.ToFloat64(aggrRes[aggrTotalCost])
-	)
-
-	return &repo.LotAggr{
-		TotalShares: goutil.Float64(totalShares),
-		TotalCost:   goutil.Float64(totalCost),
-	}, nil
 }

@@ -73,61 +73,9 @@ func (b *Budget) GetUpdateTime() uint64 {
 	return 0
 }
 
-type GetBudgetsRequest struct {
-	CategoryIDs []string `json:"category_ids,omitempty"`
-	BudgetDate  *string  `json:"budget_date,omitempty"`
-	Timezone    *string  `json:"timezone,omitempty"`
-}
-
-func (m *GetBudgetsRequest) GetBudgetDate() string {
-	if m != nil && m.BudgetDate != nil {
-		return *m.BudgetDate
-	}
-	return ""
-}
-
-func (m *GetBudgetsRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
-}
-
-func (m *GetBudgetsRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
-	}
-	return ""
-}
-
-func (m *GetBudgetsRequest) ToUseCaseReq(userID string) *budget.GetBudgetsRequest {
-	return &budget.GetBudgetsRequest{
-		UserID:      goutil.String(userID),
-		Timezone:    m.Timezone,
-		BudgetDate:  m.BudgetDate,
-		CategoryIDs: m.CategoryIDs,
-	}
-}
-
-type GetBudgetsResponse struct {
-	Budgets []*Budget `json:"budgets,omitempty"`
-}
-
-func (m *GetBudgetsResponse) GetBudgets() []*Budget {
-	if m != nil && m.Budgets != nil {
-		return m.Budgets
-	}
-	return nil
-}
-
-func (m *GetBudgetsResponse) Set(res *budget.GetBudgetsResponse) {
-	m.Budgets = toBudgets(res.Budgets)
-}
-
 type GetBudgetRequest struct {
 	CategoryID *string `json:"category_id,omitempty"`
 	BudgetDate *string `json:"budget_date,omitempty"`
-	Timezone   *string `json:"timezone,omitempty"`
 }
 
 func (m *GetBudgetRequest) GetBudgetDate() string {
@@ -144,19 +92,11 @@ func (m *GetBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
-func (m *GetBudgetRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
-	}
-	return ""
-}
-
 func (m *GetBudgetRequest) ToUseCaseReq(userID string) *budget.GetBudgetRequest {
 	return &budget.GetBudgetRequest{
 		UserID:     goutil.String(userID),
 		CategoryID: m.CategoryID,
 		BudgetDate: m.BudgetDate,
-		Timezone:   m.Timezone,
 	}
 }
 

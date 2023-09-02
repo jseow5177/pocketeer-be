@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -49,8 +51,10 @@ import (
 )
 
 type server struct {
-	ctx   context.Context
-	cfg   *config.Config
+	ctx context.Context
+	cfg *config.Config
+	opt *config.Option
+
 	mongo *mongo.Mongo
 
 	categoryRepo    repo.CategoryRepo
@@ -91,7 +95,24 @@ func main() {
 }
 
 func (s *server) Init() error {
-	s.cfg = config.NewConfig()
+	opt := config.NewOptions()
+
+	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
+		opt.LogLevel = logLevel
+	}
+
+	if configFile := os.Getenv("CONFIG_FILE"); configFile != "" {
+		opt.ConfigFile = configFile
+	}
+
+	if serverPort := os.Getenv("PORT"); serverPort != "" {
+		if port, err := strconv.Atoi(serverPort); err == nil {
+			opt.Port = port
+		}
+	}
+
+	s.opt = opt
+
 	return nil
 }
 
@@ -99,10 +120,17 @@ func (s *server) Start() error {
 	var err error
 
 	// init logger
-	s.ctx = logger.InitZeroLog(context.Background(), s.cfg.Server.LogLevel)
+	s.ctx = logger.InitZeroLog(context.Background(), s.opt.LogLevel)
+
+	// init config
+	s.cfg = config.NewConfig()
+	if err := s.cfg.Subscribe(s.ctx, s.opt.ConfigFile); err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail subscribe to config, err: %v", err)
+		return err
+	}
 
 	// init rate limiter
-	limiter := middleware.NewRateLimiter(s.cfg.Server.RateLimits)
+	limiter := middleware.NewRateLimiter(s.cfg.RateLimits)
 
 	// init mongo
 	s.mongo, err = mongo.NewMongo(s.ctx, s.cfg.Mongo)
@@ -172,7 +200,7 @@ func (s *server) Start() error {
 	)
 
 	// start server
-	addr := fmt.Sprintf(":%d", s.cfg.Server.Port)
+	addr := fmt.Sprintf(":%d", s.opt.Port)
 	go func() {
 		log.Info().Msgf("starting HTTP server at %s", addr)
 
@@ -663,21 +691,6 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: bh.GetBudgetValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.GetBudget(ctx, req.(*presenter.GetBudgetRequest), res.(*presenter.GetBudgetResponse))
-			},
-		},
-		Middlewares: []router.Middleware{authMiddleware},
-	})
-
-	// get budgets
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetBudgets,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.GetBudgetsRequest),
-			Res:       new(presenter.GetBudgetsResponse),
-			Validator: bh.GetBudgetsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return budgetHandler.GetBudgets(ctx, req.(*presenter.GetBudgetsRequest), res.(*presenter.GetBudgetsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

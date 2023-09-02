@@ -14,10 +14,81 @@ var (
 )
 
 type BudgetRepo interface {
-	GetMany(ctx context.Context, bq *BudgetQuery) ([]*entity.Budget, error)
+	Get(ctx context.Context, f *GetBudgetFilter) (*entity.Budget, error)
 
 	Create(ctx context.Context, b *entity.Budget) (string, error)
 	CreateMany(ctx context.Context, bs []*entity.Budget) ([]string, error)
+	Delete(ctx context.Context, f *DeleteBudgetFilter) error
+}
+
+type DeleteBudgetFilter struct {
+	UserID       *string
+	CategoryID   *string
+	BudgetDate   *string
+	BudgetRepeat *uint32
+	BudgetType   *uint32
+}
+
+func (m *DeleteBudgetFilter) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteBudgetFilter) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *DeleteBudgetFilter) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
+}
+
+func (m *DeleteBudgetFilter) GetBudgetRepeat() uint32 {
+	if m != nil && m.BudgetRepeat != nil {
+		return *m.BudgetRepeat
+	}
+	return 0
+}
+
+func (m *DeleteBudgetFilter) GetBudgetType() uint32 {
+	if m != nil && m.BudgetType != nil {
+		return *m.BudgetType
+	}
+	return 0
+}
+
+type GetBudgetFilter struct {
+	UserID     *string
+	CategoryID *string
+	BudgetDate *string
+}
+
+func (m *GetBudgetFilter) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *GetBudgetFilter) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *GetBudgetFilter) GetBudgetDate() string {
+	if m != nil && m.BudgetDate != nil {
+		return *m.BudgetDate
+	}
+	return ""
 }
 
 type BudgetQuery struct {

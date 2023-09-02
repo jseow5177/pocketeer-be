@@ -25,9 +25,9 @@ const (
 )
 
 var BudgetRepeats = map[uint32]string{
+	uint32(BudgetRepeatAllTime):     "for all periods past and future",
 	uint32(BudgetRepeatNow):         "for a period only",
 	uint32(BudgetRepeatNowToFuture): "for a period and all future periods",
-	uint32(BudgetRepeatAllTime):     "for all periods past and future",
 }
 
 type BudgetType uint32
@@ -44,7 +44,7 @@ var BudgetTypes = map[uint32]string{
 
 type getDateRangeFn func(date, timezone string) (startDate, endDate uint64, err error)
 
-var DateRangeFuncs = map[uint32]getDateRangeFn{
+var dateRangeFuncs = map[uint32]getDateRangeFn{
 	uint32(BudgetTypeMonth): util.GetMonthRangeAsDate,
 	uint32(BudgetTypeYear):  util.GetYearRangeAsDate,
 }
@@ -151,6 +151,12 @@ func WithUpdateBudgetStartDate(startDate *uint64) BudgetUpdateOption {
 func WithUpdateBudgetEndDate(endDate *uint64) BudgetUpdateOption {
 	return func(bu *BudgetUpdate) {
 		bu.SetEndDate(endDate)
+	}
+}
+
+func WithUpdateBudgetUpdateTime(updateTime *uint64) BudgetUpdateOption {
+	return func(bu *BudgetUpdate) {
+		bu.SetUpdateTime(updateTime)
 	}
 }
 
@@ -307,8 +313,8 @@ func (b *Budget) checkOpts() error {
 	return nil
 }
 
-func GetBudgetDateRange(date string, budgetType, budgetRepeat uint32) (startDate, endDate uint64, err error) {
-	fn := DateRangeFuncs[budgetType]
+func GetBudgetStartEnd(date string, budgetType, budgetRepeat uint32) (startDate, endDate uint64, err error) {
+	fn := dateRangeFuncs[budgetType]
 	if fn == nil {
 		return 0, 0, ErrInvalidBudgetType
 	}

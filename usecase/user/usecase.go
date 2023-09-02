@@ -181,19 +181,6 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 		return nil, err
 	}
 
-	// async retry send email, no cancel
-	async := goutil.NewAsync(time.Second, 5)
-	async.Retry(ctx, func(ctx context.Context) error {
-		ctx = goutil.WithoutCancel(ctx)
-		if err := uc.mailer.SendEmail(ctx, mailer.TemplateWelcome, &mailer.SendEmailRequest{
-			To: u.GetEmail(),
-		}); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to send welcome email, user_id: %v, err: %v", u.GetUserID(), err)
-			return err
-		}
-		return nil
-	})
-
 	return &VerifyEmailResponse{
 		AccessToken: tokenRes.Token,
 		User:        u,
