@@ -79,6 +79,7 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 
 func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
 	// convert empty category ID to query of deleted categories
+	isDeletedCategory := make(map[string]bool)
 	if req.CategoryID != nil && req.GetCategoryID() == "" {
 		cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(nil, uint32(entity.CategoryStatusDeleted)))
 		if err != nil {
@@ -89,6 +90,7 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		categoryIDs := make([]string, 0)
 		for _, c := range cs {
 			categoryIDs = append(categoryIDs, c.GetCategoryID())
+			isDeletedCategory[c.GetCategoryID()] = true
 		}
 
 		req.CategoryID = nil
@@ -107,7 +109,9 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		accountIDs  = make([]string, 0)
 	)
 	for _, t := range ts {
-		categoryIDs = append(categoryIDs, t.GetCategoryID())
+		if !isDeletedCategory[t.GetCategoryID()] {
+			categoryIDs = append(categoryIDs, t.GetCategoryID())
+		}
 		accountIDs = append(accountIDs, t.GetAccountID())
 	}
 	categoryIDs = goutil.RemoveDuplicateString(categoryIDs)
