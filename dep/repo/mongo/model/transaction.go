@@ -57,6 +57,8 @@ func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 		TransactionStatus: tu.TransactionStatus,
 		UpdateTime:        tu.UpdateTime,
 		AccountID:         tu.AccountID,
+		CategoryID:        tu.CategoryID,
+		TransactionType:   tu.TransactionType,
 	}
 }
 

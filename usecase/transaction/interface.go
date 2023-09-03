@@ -178,7 +178,7 @@ type GetTransactionsRequest struct {
 	CategoryID      *string
 	CategoryIDs     []string
 	TransactionType *uint32
-	TransactionTime *common.UInt64Filter
+	TransactionTime *common.RangeFilter
 	Paging          *common.Paging
 }
 
@@ -217,7 +217,7 @@ func (m *GetTransactionsRequest) GetTransactionType() uint32 {
 	return 0
 }
 
-func (m *GetTransactionsRequest) GetTransactionTime() *common.UInt64Filter {
+func (m *GetTransactionsRequest) GetTransactionTime() *common.RangeFilter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
@@ -234,7 +234,7 @@ func (m *GetTransactionsRequest) GetPaging() *common.Paging {
 func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
-		tt = new(common.UInt64Filter)
+		tt = new(common.RangeFilter)
 	}
 
 	paging := m.Paging
@@ -304,8 +304,10 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 
 type UpdateTransactionRequest struct {
 	UserID          *string
-	AccountID       *string
 	TransactionID   *string
+	AccountID       *string
+	CategoryID      *string
+	TransactionType *uint32
 	Note            *string
 	Amount          *float64
 	TransactionTime *uint64
@@ -330,6 +332,20 @@ func (m *UpdateTransactionRequest) GetAccountID() string {
 		return *m.AccountID
 	}
 	return ""
+}
+
+func (m *UpdateTransactionRequest) GetCategoryID() string {
+	if m != nil && m.CategoryID != nil {
+		return *m.CategoryID
+	}
+	return ""
+}
+
+func (m *UpdateTransactionRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
 }
 
 func (m *UpdateTransactionRequest) GetAmount() float64 {
@@ -361,6 +377,14 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 	}
 }
 
+func (m *UpdateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
+	return &repo.CategoryFilter{
+		UserID:         m.UserID,
+		CategoryID:     m.CategoryID,
+		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
+	}
+}
+
 func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
 	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(goutil.String(accountID)))
 }
@@ -371,6 +395,8 @@ func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpda
 		entity.WithUpdateTransactionTime(m.TransactionTime),
 		entity.WithUpdateTransactionNote(m.Note),
 		entity.WithUpdateTransactionAccountID(m.AccountID),
+		entity.WithUpdateTransactionCategoryID(m.CategoryID),
+		entity.WithUpdateTransactionType(m.TransactionType),
 	)
 }
 
@@ -387,7 +413,7 @@ func (m *UpdateTransactionResponse) GetTransaction() *entity.Transaction {
 
 type AggrTransactionsRequest struct {
 	UserID           *string
-	TransactionTime  *common.UInt64Filter
+	TransactionTime  *common.RangeFilter
 	CategoryIDs      []string
 	TransactionTypes []uint32
 }
@@ -399,7 +425,7 @@ func (m *AggrTransactionsRequest) GetUserID() string {
 	return ""
 }
 
-func (m *AggrTransactionsRequest) GetTransactionTime() *common.UInt64Filter {
+func (m *AggrTransactionsRequest) GetTransactionTime() *common.RangeFilter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
@@ -423,7 +449,7 @@ func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
 func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
-		tt = new(common.UInt64Filter)
+		tt = new(common.RangeFilter)
 	}
 
 	return &repo.TransactionFilter{

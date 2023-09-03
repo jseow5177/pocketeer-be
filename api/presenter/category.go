@@ -4,6 +4,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/category"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 type Category struct {
@@ -361,11 +362,29 @@ type DeleteCategoryResponse struct{}
 
 func (m *DeleteCategoryResponse) Set(useCaseRes *category.DeleteCategoryResponse) {}
 
-type SumCategoryTransactionsRequest struct{}
+type SumCategoryTransactionsRequest struct {
+	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
+}
+
+func (m *SumCategoryTransactionsRequest) GetTransactionTime() *RangeFilter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
+}
 
 func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.SumCategoryTransactionsRequest {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(RangeFilter)
+	}
+
 	return &category.SumCategoryTransactionsRequest{
 		UserID: goutil.String(userID),
+		TransactionTime: &common.RangeFilter{
+			Gte: tt.Gte,
+			Lte: tt.Lte,
+		},
 	}
 }
 

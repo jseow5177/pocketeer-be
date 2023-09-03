@@ -210,11 +210,11 @@ func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionRespo
 }
 
 type GetTransactionsRequest struct {
-	CategoryID      *string       `json:"category_id,omitempty"`
-	AccountID       *string       `json:"account_id,omitempty"`
-	TransactionType *uint32       `json:"transaction_type,omitempty"`
-	TransactionTime *UInt64Filter `json:"transaction_time,omitempty"`
-	Paging          *Paging       `json:"paging,omitempty"`
+	CategoryID      *string      `json:"category_id,omitempty"`
+	AccountID       *string      `json:"account_id,omitempty"`
+	TransactionType *uint32      `json:"transaction_type,omitempty"`
+	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
+	Paging          *Paging      `json:"paging,omitempty"`
 }
 
 func (m *GetTransactionsRequest) GetCategoryID() string {
@@ -238,7 +238,7 @@ func (m *GetTransactionsRequest) GetTransactionType() uint32 {
 	return 0
 }
 
-func (m *GetTransactionsRequest) GetTransactionTime() *UInt64Filter {
+func (m *GetTransactionsRequest) GetTransactionTime() *RangeFilter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
@@ -268,7 +268,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 
 	tt := m.TransactionTime
 	if tt == nil {
-		tt = new(UInt64Filter)
+		tt = new(RangeFilter)
 	}
 
 	return &transaction.GetTransactionsRequest{
@@ -280,7 +280,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 			Limit: paging.Limit,
 			Page:  paging.Page,
 		},
-		TransactionTime: &common.UInt64Filter{
+		TransactionTime: &common.RangeFilter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,
 		},
@@ -383,6 +383,8 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 		Note:            m.Note,
 		Amount:          amount,
 		TransactionTime: m.TransactionTime,
+		CategoryID:      m.CategoryID,
+		TransactionType: m.TransactionType,
 	}
 }
 
@@ -402,13 +404,13 @@ func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactio
 }
 
 type AggrTransactionsRequest struct {
-	TransactionTime  *UInt64Filter `json:"transaction_time,omitempty"`
-	CategoryIDs      []string      `json:"category_ids,omitempty"`
-	BudgetIDs        []string      `json:"budget_ids,omitempty"`
-	TransactionTypes []uint32      `json:"transaction_types,omitempty"`
+	TransactionTime  *RangeFilter `json:"transaction_time,omitempty"`
+	CategoryIDs      []string     `json:"category_ids,omitempty"`
+	BudgetIDs        []string     `json:"budget_ids,omitempty"`
+	TransactionTypes []uint32     `json:"transaction_types,omitempty"`
 }
 
-func (m *AggrTransactionsRequest) GetTransactionTime() *UInt64Filter {
+func (m *AggrTransactionsRequest) GetTransactionTime() *RangeFilter {
 	if m != nil && m.TransactionTime != nil {
 		return m.TransactionTime
 	}
@@ -439,14 +441,14 @@ func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
 func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
 	tt := m.TransactionTime
 	if tt == nil {
-		tt = new(UInt64Filter)
+		tt = new(RangeFilter)
 	}
 
 	return &transaction.AggrTransactionsRequest{
 		UserID:           goutil.String(userID),
 		TransactionTypes: m.TransactionTypes,
 		CategoryIDs:      m.CategoryIDs,
-		TransactionTime: &common.UInt64Filter{
+		TransactionTime: &common.RangeFilter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,
 		},
