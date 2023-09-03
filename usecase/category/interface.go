@@ -436,7 +436,8 @@ func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.Transaction
 
 func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID: m.UserID,
+		UserID:       m.UserID,
+		CategoryType: m.TransactionType,
 	}
 }
 

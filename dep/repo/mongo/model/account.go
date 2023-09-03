@@ -47,10 +47,11 @@ func ToAccountModelFromUpdate(acu *entity.AccountUpdate) *Account {
 	}
 
 	return &Account{
-		AccountName: acu.AccountName,
-		Balance:     acu.Balance,
-		Note:        acu.Note,
-		UpdateTime:  acu.UpdateTime,
+		AccountName:   acu.AccountName,
+		Balance:       acu.Balance,
+		Note:          acu.Note,
+		UpdateTime:    acu.UpdateTime,
+		AccountStatus: acu.AccountStatus,
 	}
 }
 
