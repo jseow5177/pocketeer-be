@@ -19,6 +19,7 @@ type BudgetRepo interface {
 	Create(ctx context.Context, b *entity.Budget) (string, error)
 	CreateMany(ctx context.Context, bs []*entity.Budget) ([]string, error)
 	Delete(ctx context.Context, f *DeleteBudgetFilter) error
+	DeleteMany(ctx context.Context, f *BudgetFilter) error
 }
 
 type DeleteBudgetFilter struct {

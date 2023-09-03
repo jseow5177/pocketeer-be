@@ -49,11 +49,10 @@ func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 func (m *GetTransactionRequest) ToCategoryFilter(categoryID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     goutil.String(categoryID),
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(goutil.String(categoryID)),
+	)
 }
 
 func (m *GetTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
@@ -147,11 +146,10 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 }
 
 func (m *CreateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
@@ -268,11 +266,11 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 func (m *GetTransactionsRequest) ToCategoryFilter(categoryIDs []string, categoryStatus uint32) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryIDs:    categoryIDs,
-		CategoryStatus: goutil.Uint32(categoryStatus),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+		repo.WithCategoryStatus(goutil.Uint32(categoryStatus)),
+	)
 }
 
 func (m *GetTransactionsRequest) ToAccountFilter(accountIDs []string) *repo.AccountFilter {
@@ -377,11 +375,10 @@ func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 }
 
 func (m *UpdateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
@@ -464,10 +461,10 @@ func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.Trans
 }
 
 func (m *AggrTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		CategoryIDs:    m.CategoryIDs,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+	)
 }
 
 type Aggr struct {

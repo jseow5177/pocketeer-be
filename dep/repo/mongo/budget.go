@@ -100,6 +100,10 @@ func (m *budgetMongo) GetMany(ctx context.Context, bq *repo.BudgetQuery) ([]*ent
 	return bs, nil
 }
 
+func (m *budgetMongo) DeleteMany(ctx context.Context, f *repo.BudgetFilter) error {
+	return m.mColl.deleteMany(ctx, f)
+}
+
 func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) error {
 	startDate, endDate, err := entity.GetBudgetStartEnd(
 		f.GetBudgetDate(),

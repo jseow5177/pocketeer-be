@@ -142,6 +142,17 @@ func (mc *MongoColl) updateMany(ctx context.Context, filter, update interface{})
 	return nil
 }
 
+func (mc *MongoColl) deleteMany(ctx context.Context, filter interface{}) error {
+	f := mongoutil.BuildFilter(filter)
+
+	_, err := mc.coll.DeleteMany(ctx, f)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (mc *MongoColl) get(ctx context.Context, model interface{}, filter bson.D) error {
 	if err := mc.coll.FindOne(ctx, filter).Decode(model); err != nil {
 		return err
