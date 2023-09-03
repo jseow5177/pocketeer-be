@@ -439,6 +439,7 @@ func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter
 	return repo.NewCategoryFilter(
 		m.GetUserID(),
 		repo.WithCategoryType(m.TransactionType),
+		repo.WithCategoryStatus(nil),
 	)
 }
 
