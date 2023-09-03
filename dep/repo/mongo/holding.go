@@ -27,9 +27,6 @@ func (m *holdingMongo) Create(ctx context.Context, h *entity.Holding) (string, e
 	hm := model.ToHoldingModelFromEntity(h)
 	id, err := m.mColl.create(ctx, hm)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return "", repo.ErrHoldingAlreadyExists
-		}
 		return "", err
 	}
 	h.SetHoldingID(goutil.String(id))
@@ -58,9 +55,6 @@ func (m *holdingMongo) CreateMany(ctx context.Context, hs []*entity.Holding) ([]
 func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *entity.HoldingUpdate) error {
 	hm := model.ToHoldingModelFromUpdate(hu)
 	if err := m.mColl.update(ctx, hf, hm); err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return repo.ErrHoldingAlreadyExists
-		}
 		return err
 	}
 
@@ -79,6 +73,20 @@ func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity
 	}
 
 	return model.ToHoldingEntity(h)
+}
+
+func (m *holdingMongo) Delete(ctx context.Context, hf *repo.HoldingFilter) error {
+	return m.Update(ctx, hf, entity.NewHoldingUpdate(
+		entity.WithUpdateHoldingStatus(goutil.Uint32(uint32(entity.HoldingStatusDeleted))),
+	))
+}
+
+func (m *holdingMongo) DeleteMany(ctx context.Context, hf *repo.HoldingFilter) error {
+	hm := model.ToHoldingModelFromUpdate(entity.NewHoldingUpdate(
+		entity.WithUpdateHoldingStatus(goutil.Uint32(uint32(entity.HoldingStatusDeleted))),
+	))
+
+	return m.mColl.updateMany(ctx, hf, hm)
 }
 
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {

@@ -398,50 +398,46 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 		return err
 	}
 
+	// create accounts
 	if _, err := uc.accountRepo.CreateMany(ctx, acs); err != nil {
 		return err
 	}
 
+	hs := make([]*entity.Holding, 0)
 	for i, ac := range acs {
-		var (
-			hrs = req.Accounts[i].Holdings
-			hs  = ac.Holdings
-		)
+		for j, h := range ac.Holdings {
+			hrs := req.Accounts[i].Holdings
 
-		if len(hs) == 0 {
-			continue
-		}
-
-		for j, h := range hs {
 			if h.IsDefault() {
 				if _, err = uc.securityRepo.Get(ctx, hrs[j].ToSecurityFilter()); err != nil {
 					return fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
 				}
 			}
+
 			h.SetAccountID(ac.AccountID)
 		}
 
-		_, err = uc.holdingRepo.CreateMany(ctx, hs)
-		if err != nil {
-			return err
+		hs = append(hs, ac.Holdings...)
+	}
+
+	// create holdings
+	_, err = uc.holdingRepo.CreateMany(ctx, hs)
+	if err != nil {
+		return err
+	}
+
+	ls := make([]*entity.Lot, 0)
+	for _, h := range hs {
+		for _, l := range h.Lots {
+			l.SetHoldingID(h.HoldingID)
 		}
+		ls = append(ls, h.Lots...)
+	}
 
-		for _, h := range hs {
-			ls := h.Lots
-
-			if len(ls) == 0 {
-				continue
-			}
-
-			for _, l := range ls {
-				l.SetHoldingID(h.HoldingID)
-			}
-
-			_, err := uc.lotRepo.CreateMany(ctx, ls)
-			if err != nil {
-				return err
-			}
-		}
+	// create lots
+	_, err = uc.lotRepo.CreateMany(ctx, ls)
+	if err != nil {
+		return err
 	}
 
 	return nil

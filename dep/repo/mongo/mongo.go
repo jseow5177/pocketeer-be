@@ -128,6 +128,20 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
+func (mc *MongoColl) updateMany(ctx context.Context, filter, update interface{}) error {
+	var (
+		f = mongoutil.BuildFilter(filter)
+		u = mongoutil.BuildUpdate(update)
+	)
+
+	_, err := mc.coll.UpdateMany(ctx, f, u)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (mc *MongoColl) get(ctx context.Context, model interface{}, filter bson.D) error {
 	if err := mc.coll.FindOne(ctx, filter).Decode(model); err != nil {
 		return err

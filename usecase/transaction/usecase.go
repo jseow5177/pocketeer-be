@@ -45,15 +45,13 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
-	var c *entity.Category
-	if t.GetCategoryID() != "" {
-		c, err = uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
-		if err != nil && err != repo.ErrCategoryNotFound {
-			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-			return nil, err
-		}
+	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
+	if err != nil && err != repo.ErrCategoryNotFound {
+		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+		return nil, err
 	}
 
+	// hide deleted category
 	if c != nil {
 		t.SetCategory(c)
 	} else {
@@ -66,11 +64,8 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
-	if ac != nil {
-		t.SetAccount(ac)
-	} else {
-		t.SetAccountID(goutil.String(""))
-	}
+	// deleted account can be shown
+	t.SetAccount(ac)
 
 	return &GetTransactionResponse{
 		Transaction: t,
@@ -78,8 +73,9 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 }
 
 func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
-	// convert empty category ID to query of deleted categories
 	isDeletedCategory := make(map[string]bool)
+
+	// convert empty category ID to query of deleted categories
 	if req.CategoryID != nil && req.GetCategoryID() == "" {
 		cs, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter(nil, uint32(entity.CategoryStatusDeleted)))
 		if err != nil {
@@ -109,10 +105,11 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 		accountIDs  = make([]string, 0)
 	)
 	for _, t := range ts {
+		accountIDs = append(accountIDs, t.GetAccountID())
+
 		if !isDeletedCategory[t.GetCategoryID()] {
 			categoryIDs = append(categoryIDs, t.GetCategoryID())
 		}
-		accountIDs = append(accountIDs, t.GetAccountID())
 	}
 	categoryIDs = goutil.RemoveDuplicateString(categoryIDs)
 	accountIDs = goutil.RemoveDuplicateString(accountIDs)
@@ -149,12 +146,11 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 
 	// set accounts and categories
 	for _, t := range ts {
-		if ac, ok := acsMap[t.GetAccountID()]; ok {
-			t.SetAccount(ac)
-		} else {
-			t.SetAccountID(goutil.String(""))
-		}
+		// deleted account can be shown
+		ac := acsMap[t.GetAccountID()]
+		t.SetAccount(ac)
 
+		// hide deleted category
 		if c, ok := csMap[t.GetCategoryID()]; ok {
 			t.SetCategory(c)
 		} else {
@@ -169,21 +165,16 @@ func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTrans
 }
 
 func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error) {
-	t, err := uc.transactionRepo.Get(ctx, req.ToTransactionFilter())
-	if err != nil && err != repo.ErrTransactionNotFound {
+	tf := req.ToTransactionFilter()
+
+	t, err := uc.transactionRepo.Get(ctx, tf)
+	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction from repo, err: %v", err)
 		return nil, err
 	}
 
-	if err == repo.ErrTransactionNotFound {
-		return new(DeleteTransactionResponse), nil
-	}
-
-	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		tu := t.Update(req.ToTransactionUpdate())
-
-		// mark transaction as deleted
-		if err = uc.transactionRepo.Update(txCtx, req.ToTransactionFilter(), tu); err != nil {
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.transactionRepo.Delete(txCtx, tf); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark transaction as deleted, err: %v", err)
 			return err
 		}
@@ -191,9 +182,14 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 		if t.GetAmount() != 0 {
 			// get account
 			ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t))
-			if err != nil {
+			if err != nil && err != repo.ErrAccountNotFound {
 				log.Ctx(txCtx).Error().Msgf("fail to get account from repo, err: %v", err)
 				return err
+			}
+
+			if err == repo.ErrAccountNotFound {
+				log.Ctx(txCtx).Error().Msgf("account has been deleted, account ID: %v", ac.GetAccountID())
+				return nil
 			}
 
 			// reset account balance
@@ -301,7 +297,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	}
 
 	oldAccount, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldAccountID))
-	if err != nil {
+	if err != nil && err != repo.ErrAccountNotFound {
 		log.Ctx(ctx).Info().Msgf("fail to get old account from repo, err: %v", err)
 		return nil, err
 	}
@@ -340,34 +336,38 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 		if tu.AccountID != nil || tu.Amount != nil {
 			// revert balance of old account
-			oldAccountBalance := oldAccount.GetBalance() - oldAmount
-			acu, err := oldAccount.Update(entity.NewAccountUpdate(
-				entity.WithUpdateAccountBalance(goutil.Float64(oldAccountBalance)),
-			))
-			if err != nil {
-				return err
-			}
-
-			if acu != nil {
-				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldAccountID), acu); err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to update old account balance, err: %v", err)
+			if oldAccount != nil {
+				oldAccountBalance := oldAccount.GetBalance() - oldAmount
+				acu, err := oldAccount.Update(entity.NewAccountUpdate(
+					entity.WithUpdateAccountBalance(goutil.Float64(oldAccountBalance)),
+				))
+				if err != nil {
 					return err
+				}
+
+				if acu != nil {
+					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldAccountID), acu); err != nil {
+						log.Ctx(txCtx).Error().Msgf("fail to update old account balance, err: %v", err)
+						return err
+					}
 				}
 			}
 
 			// update balance of new account
-			newAccountBalance := newAccount.GetBalance() + t.GetAmount()
-			acu, err = newAccount.Update(entity.NewAccountUpdate(
-				entity.WithUpdateAccountBalance(goutil.Float64(newAccountBalance)),
-			))
-			if err != nil {
-				return err
-			}
-
-			if acu != nil {
-				if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAccount.GetAccountID()), acu); err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to update new account balance, err: %v", err)
+			if newAccount != nil {
+				newAccountBalance := newAccount.GetBalance() + t.GetAmount()
+				acu, err := newAccount.Update(entity.NewAccountUpdate(
+					entity.WithUpdateAccountBalance(goutil.Float64(newAccountBalance)),
+				))
+				if err != nil {
 					return err
+				}
+
+				if acu != nil {
+					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAccount.GetAccountID()), acu); err != nil {
+						log.Ctx(txCtx).Error().Msgf("fail to update new account balance, err: %v", err)
+						return err
+					}
 				}
 			}
 		}

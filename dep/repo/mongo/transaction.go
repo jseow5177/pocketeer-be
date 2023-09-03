@@ -61,6 +61,12 @@ func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) 
 	return model.ToTransactionEntity(t), nil
 }
 
+func (m *transactionMongo) Delete(ctx context.Context, tf *repo.TransactionFilter) error {
+	return m.Update(ctx, tf, entity.NewTransactionUpdate(
+		entity.WithUpdateTransactionStatus(goutil.Uint32(uint32(entity.TransactionStatusDeleted))),
+	))
+}
+
 func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilter) ([]*entity.Transaction, error) {
 	f := mongoutil.BuildFilter(tf)
 

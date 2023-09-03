@@ -467,6 +467,21 @@ func (s *server) registerRoutes() http.Handler {
 		Middlewares: []router.Middleware{authMiddleware},
 	})
 
+	// delete account
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteAccount,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteAccountRequest),
+			Res:       new(presenter.DeleteAccountResponse),
+			Validator: ach.DeleteAccountValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.DeleteAccount(ctx, req.(*presenter.DeleteAccountRequest), res.(*presenter.DeleteAccountResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
 	// ========== Transaction ========== //
 
 	transactionHandler := th.NewTransactionHandler(s.transactionUseCase)
@@ -808,6 +823,21 @@ func (s *server) registerRoutes() http.Handler {
 			Validator: hh.GetHoldingValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return holdingHandler.GetHolding(ctx, req.(*presenter.GetHoldingRequest), res.(*presenter.GetHoldingResponse))
+			},
+		},
+		Middlewares: []router.Middleware{authMiddleware},
+	})
+
+	// delete holding
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathDeleteHolding,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.DeleteHoldingRequest),
+			Res:       new(presenter.DeleteHoldingResponse),
+			Validator: hh.DeleteHoldingValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return holdingHandler.DeleteHolding(ctx, req.(*presenter.DeleteHoldingRequest), res.(*presenter.DeleteHoldingResponse))
 			},
 		},
 		Middlewares: []router.Middleware{authMiddleware},

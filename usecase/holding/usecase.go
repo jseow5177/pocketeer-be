@@ -210,3 +210,31 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		Holding: h,
 	}, nil
 }
+
+func (uc *holdingUseCase) DeleteHolding(ctx context.Context, req *DeleteHoldingRequest) (*DeleteHoldingResponse, error) {
+	hf := req.ToHoldingFilter()
+
+	_, err := uc.holdingRepo.Get(ctx, hf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.holdingRepo.Delete(txCtx, hf); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to delete holding, err: %v", err)
+			return err
+		}
+
+		if err := uc.lotRepo.Delete(txCtx, req.ToLotFilter()); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to delete lots, err: %v", err)
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return new(DeleteHoldingResponse), nil
+}

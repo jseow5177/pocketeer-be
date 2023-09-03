@@ -68,12 +68,12 @@ func (m *GetCategoryBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 }
 
 func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end uint64) *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:             goutil.String(userID),
-		CategoryID:         m.CategoryID,
-		TransactionTimeGte: goutil.Uint64(start),
-		TransactionTimeLte: goutil.Uint64(end),
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionCategoryID(m.CategoryID),
+		repo.WithTransactionTimeGte(goutil.Uint64(start)),
+		repo.WithTransactionTimeLte(goutil.Uint64(end)),
+	)
 }
 
 func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
@@ -396,6 +396,7 @@ type DeleteCategoryResponse struct{}
 type SumCategoryTransactionsRequest struct {
 	UserID          *string
 	TransactionTime *common.RangeFilter
+	TransactionType *uint32
 }
 
 func (m *SumCategoryTransactionsRequest) GetUserID() string {
@@ -412,23 +413,31 @@ func (m *SumCategoryTransactionsRequest) GetTransactionTime() *common.RangeFilte
 	return nil
 }
 
+func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
 func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.RangeFilter)
 	}
 
-	return &repo.TransactionFilter{
-		UserID:             m.UserID,
-		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-		TransactionTimeGte: tt.Gte,
-		TransactionTimeLte: tt.Lte,
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionTimeGte(tt.Gte),
+		repo.WithTransactionTimeLte(tt.Lte),
+		repo.WithTransactionType(m.TransactionType),
+	)
 }
 
 func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return &repo.CategoryFilter{
-		UserID: m.UserID,
+		UserID:       m.UserID,
+		CategoryType: m.TransactionType,
 	}
 }
 
