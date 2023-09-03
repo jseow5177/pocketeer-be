@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	ErrHoldingNotFound      = errors.New("holding not found")
-	ErrHoldingAlreadyExists = errors.New("holding already exists")
+	ErrHoldingNotFound = errors.New("holding not found")
 )
 
 type HoldingRepo interface {
@@ -20,6 +19,7 @@ type HoldingRepo interface {
 	Create(ctx context.Context, h *entity.Holding) (string, error)
 	CreateMany(ctx context.Context, hs []*entity.Holding) ([]string, error)
 	Update(ctx context.Context, hf *HoldingFilter, hu *entity.HoldingUpdate) error
+	DeleteMany(ctx context.Context, hf *HoldingFilter) error
 	Delete(ctx context.Context, hf *HoldingFilter) error
 }
 

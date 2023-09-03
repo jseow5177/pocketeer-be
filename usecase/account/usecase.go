@@ -155,16 +155,15 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 			return err
 		}
 
-		for _, h := range hs {
-			h.ComputeSharesCostAndValue()
-		}
-
-		ac.ComputeCostAndBalance()
-
 		return nil
 	}); err != nil {
 		return nil, err
 	}
+
+	for _, h := range ac.Holdings {
+		h.ComputeSharesCostAndValue()
+	}
+	ac.ComputeCostAndBalance()
 
 	return &CreateAccountResponse{
 		Account: ac,
@@ -246,12 +245,12 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 			holdingIDs = append(holdingIDs, h.GetHoldingID())
 		}
 
-		if err := uc.holdingRepo.Delete(txCtx, req.ToHoldingFilter()); err != nil {
+		if err := uc.holdingRepo.DeleteMany(txCtx, req.ToHoldingFilter()); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark account holdings as deleted, err: %v", err)
 			return err
 		}
 
-		if err := uc.lotRepo.Delete(txCtx, req.ToLotFilter(holdingIDs)); err != nil {
+		if err := uc.lotRepo.DeleteMany(txCtx, req.ToLotFilter(holdingIDs)); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark lots as deleted, err: %v", err)
 			return err
 		}

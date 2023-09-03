@@ -68,6 +68,14 @@ func (m *lotMongo) Delete(ctx context.Context, lf *repo.LotFilter) error {
 	))
 }
 
+func (m *lotMongo) DeleteMany(ctx context.Context, lf *repo.LotFilter) error {
+	lm := model.ToLotModelFromUpdate(entity.NewLotUpdate(
+		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
+	))
+
+	return m.mColl.updateMany(ctx, lf, lm)
+}
+
 func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, error) {
 	f := mongoutil.BuildFilter(lf)
 

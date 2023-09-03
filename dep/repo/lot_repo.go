@@ -20,6 +20,7 @@ type LotRepo interface {
 	CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, error)
 	Update(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
 	Delete(ctx context.Context, lf *LotFilter) error
+	DeleteMany(ctx context.Context, lf *LotFilter) error
 }
 
 type LotFilter struct {
