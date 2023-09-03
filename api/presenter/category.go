@@ -364,6 +364,7 @@ func (m *DeleteCategoryResponse) Set(useCaseRes *category.DeleteCategoryResponse
 
 type SumCategoryTransactionsRequest struct {
 	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
+	TransactionType *uint32      `json:"transaction_type,omitempty"`
 }
 
 func (m *SumCategoryTransactionsRequest) GetTransactionTime() *RangeFilter {
@@ -373,6 +374,13 @@ func (m *SumCategoryTransactionsRequest) GetTransactionTime() *RangeFilter {
 	return nil
 }
 
+func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
 func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.SumCategoryTransactionsRequest {
 	tt := m.TransactionTime
 	if tt == nil {
@@ -380,7 +388,8 @@ func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.S
 	}
 
 	return &category.SumCategoryTransactionsRequest{
-		UserID: goutil.String(userID),
+		UserID:          goutil.String(userID),
+		TransactionType: m.TransactionType,
 		TransactionTime: &common.RangeFilter{
 			Gte: tt.Gte,
 			Lte: tt.Lte,

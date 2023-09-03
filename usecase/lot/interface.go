@@ -39,16 +39,9 @@ func (m *DeleteLotRequest) GetLotID() string {
 }
 
 func (m *DeleteLotRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		UserID:    m.UserID,
-		LotID:     m.LotID,
-		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
-	}
-}
-
-func (m *DeleteLotRequest) ToLotUpdate() *entity.LotUpdate {
-	return entity.NewLotUpdate(
-		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WitLotID(m.LotID),
 	)
 }
 
@@ -74,11 +67,10 @@ func (m *GetLotRequest) GetLotID() string {
 }
 
 func (m *GetLotRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		UserID:    m.UserID,
-		LotID:     m.LotID,
-		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
-	}
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WitLotID(m.LotID),
+	)
 }
 
 type GetLotResponse struct {
@@ -112,23 +104,24 @@ func (m *GetLotsRequest) GetHoldingID() string {
 }
 
 func (m *GetLotsRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
-		Paging: &repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("trade_date"),
-					Order: goutil.String(config.OrderDesc),
-				},
-				&repo.Sort{
-					Field: goutil.String("create_time"),
-					Order: goutil.String(config.OrderDesc),
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingID(m.HoldingID),
+		repo.WithLotPaging(
+			&repo.Paging{
+				Sorts: []filter.Sort{
+					&repo.Sort{
+						Field: goutil.String("trade_date"),
+						Order: goutil.String(config.OrderDesc),
+					},
+					&repo.Sort{
+						Field: goutil.String("create_time"),
+						Order: goutil.String(config.OrderDesc),
+					},
 				},
 			},
-		},
-	}
+		),
+	)
 }
 
 type GetLotsResponse struct {
@@ -194,11 +187,10 @@ func (m *UpdateLotRequest) ToLotUpdate() *entity.LotUpdate {
 }
 
 func (m *UpdateLotRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		UserID:    m.UserID,
-		LotID:     m.LotID,
-		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
-	}
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WitLotID(m.LotID),
+	)
 }
 
 type UpdateLotResponse struct {
@@ -256,10 +248,10 @@ func (m *CreateLotRequest) GetTradeDate() uint64 {
 }
 
 func (m *CreateLotRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingID(m.HoldingID),
+	)
 }
 
 func (m *CreateLotRequest) ToLotEntity() *entity.Lot {

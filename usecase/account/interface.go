@@ -20,6 +20,7 @@ type UseCase interface {
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
+	DeleteAccount(ctx context.Context, req *DeleteAccountRequest) (*DeleteAccountResponse, error)
 }
 
 type GetAccountRequest struct {
@@ -42,24 +43,22 @@ func (m *GetAccountRequest) GetAccountID() string {
 }
 
 func (m *GetAccountRequest) ToAccountFilter() *repo.AccountFilter {
-	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(m.AccountID),
+	)
 }
 
 func (m *GetAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		AccountID: m.AccountID,
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingAccountID(m.AccountID),
+	)
 }
 
 func (m *GetAccountRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 	return &repo.QuoteFilter{
 		Symbol: goutil.String(symbol),
-	}
-}
-
-func (m *GetAccountRequest) ToLotFilter(holdingID string) *repo.LotFilter {
-	return &repo.LotFilter{
-		HoldingID: goutil.String(holdingID),
 	}
 }
 
@@ -101,21 +100,15 @@ func (m *GetAccountsRequest) ToAccountFilter() *repo.AccountFilter {
 }
 
 func (m *GetAccountsRequest) ToHoldingFilter(accountID string) *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		AccountID: goutil.String(accountID),
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingAccountID(goutil.String(accountID)),
+	)
 }
 
 func (m *GetAccountsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 	return &repo.QuoteFilter{
 		Symbol: goutil.String(symbol),
-	}
-}
-
-func (m *GetAccountsRequest) ToLotFilter(holdingID string) *repo.LotFilter {
-	return &repo.LotFilter{
-		HoldingID: goutil.String(holdingID),
 	}
 }
 
@@ -296,7 +289,10 @@ func (m *UpdateAccountRequest) GetUpdateMode() uint32 {
 }
 
 func (m *UpdateAccountRequest) ToAccountFilter() *repo.AccountFilter {
-	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(m.AccountID),
+	)
 }
 
 func (m *UpdateAccountRequest) ToAccountUpdate() *entity.AccountUpdate {
@@ -321,3 +317,45 @@ func (m *UpdateAccountResponse) GetAccount() *entity.Account {
 	}
 	return nil
 }
+
+type DeleteAccountRequest struct {
+	UserID    *string
+	AccountID *string
+}
+
+func (m *DeleteAccountRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteAccountRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *DeleteAccountRequest) ToAccountFilter() *repo.AccountFilter {
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(m.AccountID),
+	)
+}
+
+func (m *DeleteAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingAccountID(m.AccountID),
+	)
+}
+
+func (m *DeleteAccountRequest) ToLotFilter(holdingIDs []string) *repo.LotFilter {
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingIDs(holdingIDs),
+	)
+}
+
+type DeleteAccountResponse struct{}

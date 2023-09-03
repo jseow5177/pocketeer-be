@@ -15,6 +15,7 @@ type UseCase interface {
 
 	CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error)
 	UpdateHolding(ctx context.Context, req *UpdateHoldingRequest) (*UpdateHoldingResponse, error)
+	DeleteHolding(ctx context.Context, req *DeleteHoldingRequest) (*DeleteHoldingResponse, error)
 }
 
 type GetHoldingsRequest struct {
@@ -37,10 +38,10 @@ func (m *GetHoldingsRequest) GetAccountID() string {
 }
 
 func (m *GetHoldingsRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		AccountID: m.AccountID,
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingAccountID(m.AccountID),
+	)
 }
 
 func (m *GetHoldingsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
@@ -50,9 +51,10 @@ func (m *GetHoldingsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 }
 
 func (m *GetHoldingsRequest) ToLotFilter(holdingID string) *repo.LotFilter {
-	return &repo.LotFilter{
-		HoldingID: goutil.String(holdingID),
-	}
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingID(goutil.String(holdingID)),
+	)
 }
 
 type GetHoldingsResponse struct {
@@ -86,10 +88,10 @@ func (m *GetHoldingRequest) GetHoldingID() string {
 }
 
 func (m *GetHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingID(m.HoldingID),
+	)
 }
 
 func (m *GetHoldingRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
@@ -99,9 +101,10 @@ func (m *GetHoldingRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 }
 
 func (m *GetHoldingRequest) ToLotFilter() *repo.LotFilter {
-	return &repo.LotFilter{
-		HoldingID: m.HoldingID,
-	}
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingID(m.HoldingID),
+	)
 }
 
 type GetHoldingResponse struct {
@@ -159,18 +162,18 @@ func (m *UpdateHoldingRequest) GetSymbol() string {
 }
 
 func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return &repo.HoldingFilter{
-		UserID:    m.UserID,
-		HoldingID: m.HoldingID,
-	}
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingID(m.HoldingID),
+	)
 }
 
 func (m *UpdateHoldingRequest) ToHoldingUpdate() *entity.HoldingUpdate {
-	return &entity.HoldingUpdate{
-		Symbol:      m.Symbol,
-		TotalCost:   m.TotalCost,
-		LatestValue: m.LatestValue,
-	}
+	return entity.NewHoldingUpdate(
+		entity.WithUpdateHoldingSymbol(m.Symbol),
+		entity.WithUpdateHoldingTotalCost(m.TotalCost),
+		entity.WithUpdateHoldingLatestValue(m.LatestValue),
+	)
 }
 
 type UpdateHoldingResponse struct {
@@ -289,3 +292,38 @@ func (m *CreateHoldingResponse) GetHolding() *entity.Holding {
 	}
 	return nil
 }
+
+type DeleteHoldingRequest struct {
+	UserID    *string
+	HoldingID *string
+}
+
+func (m *DeleteHoldingRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteHoldingRequest) GetAccountID() string {
+	if m != nil && m.HoldingID != nil {
+		return *m.HoldingID
+	}
+	return ""
+}
+
+func (m *DeleteHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingID(m.HoldingID),
+	)
+}
+
+func (m *DeleteHoldingRequest) ToLotFilter() *repo.LotFilter {
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingID(m.HoldingID),
+	)
+}
+
+type DeleteHoldingResponse struct{}

@@ -17,6 +17,7 @@ const (
 	PathGetAccount    = PathV1Prefix + "get_account"
 	PathUpdateAccount = PathV1Prefix + "update_account"
 	PathGetAccounts   = PathV1Prefix + "get_accounts"
+	PathDeleteAccount = PathV1Prefix + "delete_account"
 
 	PathCreateCategory          = PathV1Prefix + "create_category"
 	PathUpdateCategory          = PathV1Prefix + "update_category"
@@ -45,6 +46,7 @@ const (
 	PathCreateHolding = PathV1Prefix + "create_holding"
 	PathUpdateHolding = PathV1Prefix + "update_holding"
 	PathGetHolding    = PathV1Prefix + "get_holding"
+	PathDeleteHolding = PathV1Prefix + "delete_holding"
 
 	PathCreateLot = PathV1Prefix + "create_lot"
 	PathDeleteLot = PathV1Prefix + "delete_lot"

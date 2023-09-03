@@ -309,3 +309,25 @@ func (m *UpdateAccountResponse) GetAccount() *Account {
 func (m *UpdateAccountResponse) Set(useCaseRes *account.UpdateAccountResponse) {
 	m.Account = toAccount(useCaseRes.Account)
 }
+
+type DeleteAccountRequest struct {
+	AccountID *string `json:"account_id,omitempty"`
+}
+
+func (m *DeleteAccountRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *DeleteAccountRequest) ToUseCaseReq(userID string) *account.DeleteAccountRequest {
+	return &account.DeleteAccountRequest{
+		UserID:    goutil.String(userID),
+		AccountID: m.AccountID,
+	}
+}
+
+type DeleteAccountResponse struct{}
+
+func (m *DeleteAccountResponse) Set(useCaseRes *account.DeleteAccountResponse) {}

@@ -84,6 +84,8 @@ func (lu *LotUpdate) SetUpdateTime(updateTime *uint64) {
 	lu.UpdateTime = updateTime
 }
 
+type LotUpdateOption = func(lu *LotUpdate)
+
 func WithUpdateLotShares(shares *float64) LotUpdateOption {
 	return func(lu *LotUpdate) {
 		lu.SetShares(shares)
@@ -115,8 +117,6 @@ func NewLotUpdate(opts ...LotUpdateOption) *LotUpdate {
 	}
 	return lu
 }
-
-type LotUpdateOption = func(lu *LotUpdate)
 
 type Lot struct {
 	UserID       *string

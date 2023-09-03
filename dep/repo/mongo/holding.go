@@ -81,6 +81,12 @@ func (m *holdingMongo) Get(ctx context.Context, hf *repo.HoldingFilter) (*entity
 	return model.ToHoldingEntity(h)
 }
 
+func (m *holdingMongo) Delete(ctx context.Context, hf *repo.HoldingFilter) error {
+	return m.Update(ctx, hf, entity.NewHoldingUpdate(
+		entity.WithUpdateHoldingStatus(goutil.Uint32(uint32(entity.HoldingStatusDeleted))),
+	))
+}
+
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {
 	f := mongoutil.BuildFilter(hf)
 
