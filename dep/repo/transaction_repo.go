@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
@@ -17,6 +18,7 @@ type TransactionRepo interface {
 
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
 	Update(ctx context.Context, tf *TransactionFilter, t *entity.TransactionUpdate) error
+	Delete(ctx context.Context, tf *TransactionFilter) error
 
 	Sum(ctx context.Context, sumBy string, tf *TransactionFilter) (map[string]float64, error)
 
@@ -35,6 +37,79 @@ type TransactionFilter struct {
 	TransactionTimeGte *uint64  `filter:"transaction_time__gte"`
 	TransactionTimeLte *uint64  `filter:"transaction_time__lte"`
 	Paging             *Paging  `filter:"-"`
+}
+
+type TransactionFilterOption = func(tf *TransactionFilter)
+
+func WithTransactionID(transactionID *string) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionID = transactionID
+	}
+}
+
+func WithTransactionAccountID(accountID *string) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.AccountID = accountID
+	}
+}
+
+func WithTransactionCategoryID(categoryID *string) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.CategoryID = categoryID
+	}
+}
+
+func WithTransactionCategoryIDs(categoryIDs []string) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.CategoryIDs = categoryIDs
+	}
+}
+
+func WithTransactionStatus(transactionStatus *uint32) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionStatus = transactionStatus
+	}
+}
+
+func WithTransactionType(transactionType *uint32) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionType = transactionType
+	}
+}
+
+func WithTransactionTypes(transactionTypes []uint32) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionTypes = transactionTypes
+	}
+}
+
+func WithTransactionTimeGte(transactionTimeGte *uint64) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionTimeGte = transactionTimeGte
+	}
+}
+
+func WithTransactionTimeLte(transactionTimeLte *uint64) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.TransactionTimeLte = transactionTimeLte
+	}
+}
+
+func WithTransactionPaging(paging *Paging) TransactionFilterOption {
+	return func(tf *TransactionFilter) {
+		tf.Paging = paging
+	}
+}
+
+func NewTransactionFilter(userID string, opts ...TransactionFilterOption) *TransactionFilter {
+	tf := &TransactionFilter{
+		UserID:            goutil.String(userID),
+		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
+	}
+	for _, opt := range opts {
+		opt(tf)
+	}
+	return tf
 }
 
 func (f *TransactionFilter) GetUserID() string {

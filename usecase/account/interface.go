@@ -20,6 +20,7 @@ type UseCase interface {
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
+	DeleteAccount(ctx context.Context, req *DeleteAccountRequest) (*DeleteAccountResponse, error)
 }
 
 type GetAccountRequest struct {
@@ -316,3 +317,45 @@ func (m *UpdateAccountResponse) GetAccount() *entity.Account {
 	}
 	return nil
 }
+
+type DeleteAccountRequest struct {
+	UserID    *string
+	AccountID *string
+}
+
+func (m *DeleteAccountRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *DeleteAccountRequest) GetAccountID() string {
+	if m != nil && m.AccountID != nil {
+		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *DeleteAccountRequest) ToAccountFilter() *repo.AccountFilter {
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(m.AccountID),
+	)
+}
+
+func (m *DeleteAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
+	return repo.NewHoldingFilter(
+		m.GetUserID(),
+		repo.WithHoldingAccountID(m.AccountID),
+	)
+}
+
+func (m *DeleteAccountRequest) ToLotFilter(holdingIDs []string) *repo.LotFilter {
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingIDs(holdingIDs),
+	)
+}
+
+type DeleteAccountResponse struct{}

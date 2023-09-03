@@ -24,12 +24,13 @@ type HoldingRepo interface {
 }
 
 type HoldingFilter struct {
-	HoldingID     *string `filter:"_id"`
-	AccountID     *string `filter:"account_id"`
-	UserID        *string `filter:"user_id"`
-	Symbol        *string `filter:"symbol"`
-	HoldingType   *uint32 `filter:"holding_type"`
-	HoldingStatus *uint32 `filter:"holding_status"`
+	HoldingID     *string  `filter:"_id"`
+	HoldingIDs    []string `filter:"_id__in"`
+	AccountID     *string  `filter:"account_id"`
+	UserID        *string  `filter:"user_id"`
+	Symbol        *string  `filter:"symbol"`
+	HoldingType   *uint32  `filter:"holding_type"`
+	HoldingStatus *uint32  `filter:"holding_status"`
 }
 
 type HoldingFilterOption = func(hf *HoldingFilter)
@@ -61,6 +62,12 @@ func WithHoldingType(holdingType *uint32) HoldingFilterOption {
 func WithHoldingStatus(holdingStatus *uint32) HoldingFilterOption {
 	return func(hf *HoldingFilter) {
 		hf.HoldingStatus = holdingStatus
+	}
+}
+
+func WithHoldingIDs(holdingIDs []string) HoldingFilterOption {
+	return func(hf *HoldingFilter) {
+		hf.HoldingIDs = holdingIDs
 	}
 }
 
@@ -108,4 +115,11 @@ func (f *HoldingFilter) GetHoldingType() uint32 {
 		return *f.HoldingType
 	}
 	return 0
+}
+
+func (f *HoldingFilter) GetHoldingIDs() []string {
+	if f != nil && f.HoldingIDs != nil {
+		return f.HoldingIDs
+	}
+	return nil
 }

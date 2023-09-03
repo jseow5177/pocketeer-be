@@ -23,11 +23,12 @@ type LotRepo interface {
 }
 
 type LotFilter struct {
-	LotID     *string `filter:"_id"`
-	UserID    *string `filter:"user_id"`
-	HoldingID *string `filter:"holding_id"`
-	LotStatus *uint32 `filter:"lot_status"`
-	Paging    *Paging `filter:"-"`
+	LotID      *string  `filter:"_id"`
+	UserID     *string  `filter:"user_id"`
+	HoldingID  *string  `filter:"holding_id"`
+	HoldingIDs []string `filter:"holding_id__in"`
+	LotStatus  *uint32  `filter:"lot_status"`
+	Paging     *Paging  `filter:"-"`
 }
 
 type LotFilterOption = func(lf *LotFilter)
@@ -53,6 +54,12 @@ func WithLotStatus(lotStatus *uint32) LotFilterOption {
 func WithLotPaging(paging *Paging) LotFilterOption {
 	return func(lf *LotFilter) {
 		lf.Paging = paging
+	}
+}
+
+func WithLotHoldingIDs(holdingIDs []string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.HoldingIDs = holdingIDs
 	}
 }
 
@@ -98,6 +105,13 @@ func (f *LotFilter) GetHoldingID() string {
 func (f *LotFilter) GetPaging() *Paging {
 	if f != nil && f.Paging != nil {
 		return f.Paging
+	}
+	return nil
+}
+
+func (f *LotFilter) GetHoldingIDs() []string {
+	if f != nil && f.HoldingIDs != nil {
+		return f.HoldingIDs
 	}
 	return nil
 }

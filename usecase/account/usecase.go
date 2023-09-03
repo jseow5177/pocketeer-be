@@ -126,6 +126,7 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 					log.Ctx(txCtx).Error().Msgf("fail to get quote from repo, err: %v", err)
 					return err
 				}
+
 				h.SetQuote(q)
 			}
 		}
@@ -136,33 +137,28 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 			return err
 		}
 
-		if err := goutil.ParallelizeWork(txCtx, len(hs), 5, func(ctx context.Context, workNum int) error {
-			h := hs[workNum]
-
-			if len(h.Lots) == 0 {
-				return nil
-			}
-
-			ls := h.Lots
-			for _, l := range ls {
+		ls := make([]*entity.Lot, 0)
+		for _, h := range hs {
+			for _, l := range h.Lots {
 				l.SetHoldingID(h.HoldingID)
 			}
+			ls = append(ls, h.Lots...)
+		}
 
-			_, err := uc.lotRepo.CreateMany(ctx, ls)
-			if err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
-				return err
-			}
-
-			h.SetLots(ls)
-			h.ComputeSharesCostAndValue()
-
+		if len(ls) == 0 {
 			return nil
-		}); err != nil {
+		}
+
+		_, err := uc.lotRepo.CreateMany(ctx, ls)
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
 			return err
 		}
 
-		ac.SetHoldings(hs)
+		for _, h := range hs {
+			h.ComputeSharesCostAndValue()
+		}
+
 		ac.ComputeCostAndBalance()
 
 		return nil
@@ -218,6 +214,54 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	return &UpdateAccountResponse{
 		Account: ac,
 	}, nil
+}
+
+func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountRequest) (*DeleteAccountResponse, error) {
+	acf := req.ToAccountFilter()
+
+	ac, err := uc.accountRepo.Get(ctx, acf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+		return nil, err
+	}
+
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.accountRepo.Delete(txCtx, acf); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark account as deleted, err: %v", err)
+			return err
+		}
+
+		if !ac.IsInvestment() {
+			return nil
+		}
+
+		hs, err := uc.holdingRepo.GetMany(txCtx, req.ToHoldingFilter())
+		if err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail get holdings from repo, err: %v", err)
+			return err
+		}
+
+		holdingIDs := make([]string, 0)
+		for _, h := range hs {
+			holdingIDs = append(holdingIDs, h.GetHoldingID())
+		}
+
+		if err := uc.holdingRepo.Delete(txCtx, req.ToHoldingFilter()); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark account holdings as deleted, err: %v", err)
+			return err
+		}
+
+		if err := uc.lotRepo.Delete(txCtx, req.ToLotFilter(holdingIDs)); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark lots as deleted, err: %v", err)
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return new(DeleteAccountResponse), nil
 }
 
 func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accountID string) *entity.Transaction {

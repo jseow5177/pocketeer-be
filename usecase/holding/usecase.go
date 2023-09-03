@@ -215,13 +215,9 @@ func (uc *holdingUseCase) DeleteHolding(ctx context.Context, req *DeleteHoldingR
 	hf := req.ToHoldingFilter()
 
 	_, err := uc.holdingRepo.Get(ctx, hf)
-	if err != nil && err != repo.ErrHoldingNotFound {
+	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
 		return nil, err
-	}
-
-	if err == repo.ErrHoldingNotFound {
-		return new(DeleteHoldingResponse), nil
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {

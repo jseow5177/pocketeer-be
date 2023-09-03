@@ -61,10 +61,11 @@ var ChildAccountTypes = map[uint32]string{
 }
 
 type AccountUpdate struct {
-	AccountName *string
-	Balance     *float64
-	Note        *string
-	UpdateTime  *uint64
+	AccountName   *string
+	Balance       *float64
+	Note          *string
+	UpdateTime    *uint64
+	AccountStatus *uint32
 }
 
 func (acu *AccountUpdate) GetAccountName() string {
@@ -116,6 +117,17 @@ func (acu *AccountUpdate) SetUpdateTime(updateTime *uint64) {
 	acu.UpdateTime = updateTime
 }
 
+func (acu *AccountUpdate) GetAccountStatus() uint32 {
+	if acu != nil && acu.AccountStatus != nil {
+		return *acu.AccountStatus
+	}
+	return 0
+}
+
+func (acu *AccountUpdate) SetAccountStatus(accountStatus *uint32) {
+	acu.AccountStatus = accountStatus
+}
+
 type AccountUpdateOption func(acu *AccountUpdate)
 
 func WithUpdateAccountName(accountName *string) AccountUpdateOption {
@@ -133,6 +145,12 @@ func WithUpdateAccountBalance(balance *float64) AccountUpdateOption {
 func WithUpdateAccountNote(note *string) AccountUpdateOption {
 	return func(acu *AccountUpdate) {
 		acu.SetNote(note)
+	}
+}
+
+func WithUpdateAccountStatus(accountStatus *uint32) AccountUpdateOption {
+	return func(acu *AccountUpdate) {
+		acu.SetAccountStatus(accountStatus)
 	}
 }
 

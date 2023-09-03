@@ -12,6 +12,10 @@ import (
 
 var SumCategoryTransactionsValidator = validator.MustForm(map[string]validator.Validator{
 	"transaction_time": entity.RangeFilterValidator(true),
+	"transaction_type": &validator.UInt32{
+		Optional:   false,
+		Validators: []validator.UInt32Func{entity.CheckCategoryType},
+	},
 })
 
 func (h *categoryHandler) SumCategoryTransactions(
