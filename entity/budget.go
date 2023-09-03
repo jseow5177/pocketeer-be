@@ -26,8 +26,8 @@ const (
 
 var BudgetRepeats = map[uint32]string{
 	uint32(BudgetRepeatAllTime):     "for all periods past and future",
-	uint32(BudgetRepeatNow):         "for a period only",
 	uint32(BudgetRepeatNowToFuture): "for a period and all future periods",
+	uint32(BudgetRepeatNow):         "for a period only",
 }
 
 type BudgetType uint32
