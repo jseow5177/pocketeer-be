@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
@@ -18,14 +19,60 @@ type LotRepo interface {
 	Create(ctx context.Context, l *entity.Lot) (string, error)
 	CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, error)
 	Update(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
+	Delete(ctx context.Context, lf *LotFilter) error
+	DeleteMany(ctx context.Context, lf *LotFilter) error
 }
 
 type LotFilter struct {
-	LotID     *string `filter:"_id"`
-	UserID    *string `filter:"user_id"`
-	HoldingID *string `filter:"holding_id"`
-	LotStatus *uint32 `filter:"lot_status"`
-	Paging    *Paging `filter:"-"`
+	LotID      *string  `filter:"_id"`
+	UserID     *string  `filter:"user_id"`
+	HoldingID  *string  `filter:"holding_id"`
+	HoldingIDs []string `filter:"holding_id__in"`
+	LotStatus  *uint32  `filter:"lot_status"`
+	Paging     *Paging  `filter:"-"`
+}
+
+type LotFilterOption = func(lf *LotFilter)
+
+func WitLotID(lotID *string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.LotID = lotID
+	}
+}
+
+func WithLotHoldingID(holdingID *string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.HoldingID = holdingID
+	}
+}
+
+func WithLotStatus(lotStatus *uint32) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.LotStatus = lotStatus
+	}
+}
+
+func WithLotPaging(paging *Paging) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.Paging = paging
+	}
+}
+
+func WithLotHoldingIDs(holdingIDs []string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.HoldingIDs = holdingIDs
+	}
+}
+
+func NewLotFilter(userID string, opts ...LotFilterOption) *LotFilter {
+	lf := &LotFilter{
+		UserID:    goutil.String(userID),
+		LotStatus: goutil.Uint32(uint32(entity.LotStatusNormal)),
+	}
+	for _, opt := range opts {
+		opt(lf)
+	}
+	return lf
 }
 
 func (f *LotFilter) GetUserID() string {
@@ -63,29 +110,9 @@ func (f *LotFilter) GetPaging() *Paging {
 	return nil
 }
 
-type LotAggr struct {
-	GroupBy     *string
-	TotalShares *float64
-	TotalCost   *float64
-}
-
-func (ag *LotAggr) GetGroupBy() string {
-	if ag != nil && ag.GroupBy != nil {
-		return *ag.GroupBy
+func (f *LotFilter) GetHoldingIDs() []string {
+	if f != nil && f.HoldingIDs != nil {
+		return f.HoldingIDs
 	}
-	return ""
-}
-
-func (ag *LotAggr) GetTotalShares() float64 {
-	if ag != nil && ag.TotalShares != nil {
-		return *ag.TotalShares
-	}
-	return 0
-}
-
-func (ag *LotAggr) GetTotalCost() float64 {
-	if ag != nil && ag.TotalCost != nil {
-		return *ag.TotalCost
-	}
-	return 0
+	return nil
 }

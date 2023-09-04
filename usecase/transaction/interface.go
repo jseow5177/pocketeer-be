@@ -42,25 +42,24 @@ func (m *GetTransactionRequest) GetTransactionID() string {
 }
 
 func (m *GetTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:            m.UserID,
-		TransactionID:     m.TransactionID,
-		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionID(m.TransactionID),
+	)
 }
 
 func (m *GetTransactionRequest) ToCategoryFilter(categoryID string) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     goutil.String(categoryID),
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(goutil.String(categoryID)),
+	)
 }
 
 func (m *GetTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
 		repo.WithAccountID(goutil.String(accountID)),
+		repo.WithAccountStatus(nil), // any status is ok
 	)
 }
 
@@ -147,11 +146,10 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 }
 
 func (m *CreateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
@@ -242,16 +240,15 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		paging = new(common.Paging)
 	}
 
-	return &repo.TransactionFilter{
-		UserID:             m.UserID,
-		AccountID:          m.AccountID,
-		CategoryID:         m.CategoryID,
-		CategoryIDs:        m.CategoryIDs,
-		TransactionType:    m.TransactionType,
-		TransactionTimeGte: tt.Gte,
-		TransactionTimeLte: tt.Lte,
-		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-		Paging: &repo.Paging{
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionAccountID(m.AccountID),
+		repo.WithTransactionCategoryID(m.CategoryID),
+		repo.WithTransactionCategoryIDs(m.CategoryIDs),
+		repo.WithTransactionType(m.TransactionType),
+		repo.WithTransactionTimeGte(tt.Gte),
+		repo.WithTransactionTimeLte(tt.Lte),
+		repo.WithTransactionPaging(&repo.Paging{
 			Limit: paging.Limit,
 			Page:  paging.Page,
 			Sorts: []filter.Sort{
@@ -264,22 +261,23 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 					Order: goutil.String(config.OrderDesc),
 				},
 			},
-		},
-	}
+		}),
+	)
 }
 
 func (m *GetTransactionsRequest) ToCategoryFilter(categoryIDs []string, categoryStatus uint32) *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryIDs:    categoryIDs,
-		CategoryStatus: goutil.Uint32(categoryStatus),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+		repo.WithCategoryStatus(goutil.Uint32(categoryStatus)),
+	)
 }
 
 func (m *GetTransactionsRequest) ToAccountFilter(accountIDs []string) *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
 		repo.WithAccountIDs(accountIDs),
+		repo.WithAccountStatus(nil), // any status is ok
 	)
 }
 
@@ -370,23 +368,24 @@ func (m *UpdateTransactionRequest) GetTransactionTime() uint64 {
 }
 
 func (m *UpdateTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:            m.UserID,
-		TransactionID:     m.TransactionID,
-		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionID(m.TransactionID),
+	)
 }
 
 func (m *UpdateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
-	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(goutil.String(accountID)))
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(goutil.String(accountID)),
+	)
 }
 
 func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
@@ -452,21 +451,20 @@ func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.Trans
 		tt = new(common.RangeFilter)
 	}
 
-	return &repo.TransactionFilter{
-		UserID:             goutil.String(userID),
-		CategoryIDs:        m.CategoryIDs,
-		TransactionTypes:   m.TransactionTypes,
-		TransactionStatus:  goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-		TransactionTimeGte: tt.Gte,
-		TransactionTimeLte: tt.Lte,
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionCategoryIDs(m.CategoryIDs),
+		repo.WithTransactionTypes(m.TransactionTypes),
+		repo.WithTransactionTimeGte(tt.Gte),
+		repo.WithTransactionTimeLte(tt.Lte),
+	)
 }
 
 func (m *AggrTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		CategoryIDs:    m.CategoryIDs,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+	)
 }
 
 type Aggr struct {
@@ -504,23 +502,16 @@ func (m *DeleteTransactionRequest) GetTransactionID() string {
 }
 
 func (m *DeleteTransactionRequest) ToTransactionFilter() *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:            m.UserID,
-		TransactionID:     m.TransactionID,
-		TransactionStatus: goutil.Uint32(uint32(entity.TransactionStatusNormal)),
-	}
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionID(m.TransactionID),
+	)
 }
 
 func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.AccountFilter {
-	return &repo.AccountFilter{
-		UserID:    m.UserID,
-		AccountID: t.AccountID,
-	}
-}
-
-func (m *DeleteTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
-	return entity.NewTransactionUpdate(
-		entity.WithUpdateTransactionStatus(goutil.Uint32(uint32(entity.TransactionStatusDeleted))),
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(t.AccountID),
 	)
 }
 

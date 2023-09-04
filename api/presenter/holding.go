@@ -299,3 +299,25 @@ func (m *GetHoldingResponse) GetHolding() *Holding {
 func (m *GetHoldingResponse) Set(useCaseRes *holding.GetHoldingResponse) {
 	m.Holding = toHolding(useCaseRes.Holding)
 }
+
+type DeleteHoldingRequest struct {
+	HoldingID *string `json:"holding_id,omitempty"`
+}
+
+func (m *DeleteHoldingRequest) GetAccountID() string {
+	if m != nil && m.HoldingID != nil {
+		return *m.HoldingID
+	}
+	return ""
+}
+
+func (m *DeleteHoldingRequest) ToUseCaseReq(userID string) *holding.DeleteHoldingRequest {
+	return &holding.DeleteHoldingRequest{
+		UserID:    goutil.String(userID),
+		HoldingID: m.HoldingID,
+	}
+}
+
+type DeleteHoldingResponse struct{}
+
+func (m *DeleteHoldingResponse) Set(useCaseRes *holding.DeleteHoldingResponse) {}

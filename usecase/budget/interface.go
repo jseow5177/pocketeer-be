@@ -88,11 +88,10 @@ func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
 }
 
 func (m *CreateBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *CreateBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
@@ -194,15 +193,6 @@ func (m *GetBudgetRequest) GetCategoryID() string {
 		return *m.CategoryID
 	}
 	return ""
-}
-
-func (m *GetBudgetRequest) ToTransactionFilter(userID string, startUnix, endUnix uint64) *repo.TransactionFilter {
-	return &repo.TransactionFilter{
-		UserID:             goutil.String(userID),
-		CategoryID:         m.CategoryID,
-		TransactionTimeGte: goutil.Uint64(startUnix),
-		TransactionTimeLte: goutil.Uint64(endUnix),
-	}
 }
 
 func (m *GetBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
