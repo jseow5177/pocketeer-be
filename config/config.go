@@ -63,6 +63,8 @@ func (m *Mongo) String() string {
 		}
 	}
 
+	q.Set("authSource", "admin")
+
 	return dsn.String()
 }
 
