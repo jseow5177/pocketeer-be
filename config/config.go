@@ -53,7 +53,7 @@ func (m *Mongo) String() string {
 		Scheme:     "mongodb+srv",
 		User:       url.UserPassword(m.Username, m.Password),
 		Host:       m.Host,
-		Path:       "/",
+		Path:       fmt.Sprintf("/%s", m.Database),
 		ForceQuery: false,
 	}
 
