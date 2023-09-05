@@ -50,9 +50,11 @@ type GoogleSheet struct {
 
 func (m *Mongo) String() string {
 	dsn := &url.URL{
-		Scheme: "mongodb+srv",
-		User:   url.UserPassword(m.Username, m.Password),
-		Host:   m.Host,
+		Scheme:     "mongodb+srv",
+		User:       url.UserPassword(m.Username, m.Password),
+		Host:       m.Host,
+		Path:       fmt.Sprintf("/%s", m.Database),
+		ForceQuery: false,
 	}
 
 	q := dsn.Query()
@@ -64,6 +66,8 @@ func (m *Mongo) String() string {
 	}
 
 	q.Set("authSource", "admin")
+
+	dsn.RawQuery = q.Encode()
 
 	return dsn.String()
 }
