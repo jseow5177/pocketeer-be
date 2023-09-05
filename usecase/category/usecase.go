@@ -292,6 +292,11 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		}
 	}
 
+	// remove uncategorized if it has no sum
+	if sum, ok := sums[nil]; ok && sum == 0 {
+		delete(sums, nil)
+	}
+
 	res := make([]*CategoryTransactionSum, 0)
 	for c, sum := range sums {
 		res = append(res, &CategoryTransactionSum{
