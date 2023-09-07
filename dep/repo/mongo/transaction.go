@@ -39,8 +39,10 @@ func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (s
 }
 
 func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, tu *entity.TransactionUpdate) error {
+	f := mongoutil.BuildFilter(tf)
+
 	tm := model.ToTransactionModelFromUpdate(tu)
-	if err := m.mColl.update(ctx, tf, tm); err != nil {
+	if err := m.mColl.update(ctx, f, tm); err != nil {
 		return err
 	}
 

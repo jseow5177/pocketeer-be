@@ -20,9 +20,17 @@ var (
 	ErrInvalidBudgetType       = errors.New("invalid budget type")
 	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
 	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
-	ErrInvalidBudgetRepeats    = errors.New("invalid budget periods")
+	ErrInvalidBudgetRepeat     = errors.New("invalid budget repeat")
+	ErrInvalidCurrency         = errors.New("invalid currency")
 	ErrMustBePositive          = errors.New("must be positive")
 )
+
+func CheckCurrency(currency string) error {
+	if _, ok := Currencies[currency]; !ok {
+		return ErrInvalidCurrency
+	}
+	return nil
+}
 
 func CheckEmail(email string) error {
 	_, err := mail.ParseAddress(email)
@@ -31,13 +39,13 @@ func CheckEmail(email string) error {
 
 func CheckBudgetRepeat(budgetRepeat uint32) error {
 	if _, ok := BudgetRepeats[budgetRepeat]; !ok {
-		return ErrInvalidBudgetRepeats
+		return ErrInvalidBudgetRepeat
 	}
 	return nil
 }
 
 func CheckDateStr(date string) error {
-	if _, err := util.ParseDateStr(date); err != nil {
+	if _, err := util.ParseDate(date); err != nil {
 		return err
 	}
 	return nil

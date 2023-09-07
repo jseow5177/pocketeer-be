@@ -114,13 +114,8 @@ func (mc *MongoColl) createMany(ctx context.Context, docs []interface{}) ([]stri
 	return ids, nil
 }
 
-func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) error {
-	var (
-		f = mongoutil.BuildFilter(filter)
-		u = mongoutil.BuildUpdate(update)
-	)
-
-	_, err := mc.coll.UpdateOne(ctx, f, u)
+func (mc *MongoColl) update(ctx context.Context, filter bson.D, update interface{}) error {
+	_, err := mc.coll.UpdateOne(ctx, filter, mongoutil.BuildUpdate(update))
 	if err != nil {
 		return err
 	}
@@ -128,13 +123,8 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
-func (mc *MongoColl) updateMany(ctx context.Context, filter, update interface{}) error {
-	var (
-		f = mongoutil.BuildFilter(filter)
-		u = mongoutil.BuildUpdate(update)
-	)
-
-	_, err := mc.coll.UpdateMany(ctx, f, u)
+func (mc *MongoColl) updateMany(ctx context.Context, filter bson.D, update interface{}) error {
+	_, err := mc.coll.UpdateMany(ctx, filter, mongoutil.BuildUpdate(update))
 	if err != nil {
 		return err
 	}

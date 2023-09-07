@@ -338,6 +338,10 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 }
 
 func toSecurity(s *entity.Security) *Security {
+	if s == nil {
+		return nil
+	}
+
 	return &Security{
 		Symbol:       s.Symbol,
 		SecurityName: s.SecurityName,
@@ -345,4 +349,26 @@ func toSecurity(s *entity.Security) *Security {
 		Region:       s.Region,
 		Currency:     s.Currency,
 	}
+}
+
+func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
+	if er == nil {
+		return nil
+	}
+
+	return &ExchangeRate{
+		ExchangeRateID: er.ExchangeRateID,
+		From:           er.From,
+		To:             er.To,
+		Timestamp:      er.Timestamp,
+		CreateTime:     er.CreateTime,
+	}
+}
+
+func toExchangeRates(ers []*entity.ExchangeRate) []*ExchangeRate {
+	exchangeRates := make([]*ExchangeRate, len(ers))
+	for idx, er := range ers {
+		exchangeRates[idx] = toExchangeRate(er)
+	}
+	return exchangeRates
 }

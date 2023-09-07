@@ -135,7 +135,7 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 }
 
 func (m *budgetMongo) toGetBudgetQuery(f *repo.GetBudgetFilter) (*repo.BudgetQuery, error) {
-	t, err := util.ParseDateStrToInt(f.GetBudgetDate())
+	t, err := util.ParseDateToInt(f.GetBudgetDate())
 	if err != nil {
 		return nil, err
 	}

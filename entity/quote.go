@@ -2,12 +2,6 @@ package entity
 
 import "github.com/jseow5177/pockteer-be/pkg/goutil"
 
-type Currency string
-
-const (
-	CurrencyUSD Currency = "USD"
-)
-
 type Quote struct {
 	LatestPrice   *float64
 	Change        *float64 // LatestPrice - PreviousClose
