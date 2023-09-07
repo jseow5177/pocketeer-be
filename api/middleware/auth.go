@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"strings"
@@ -36,9 +37,9 @@ func (am *AdminAuthMiddleware) Handle(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		s := am.stripBasicPrefix(authHeader)
 
-		creds, err := goutil.Base64Decode(s)
+		creds, err := goutil.Base64Decode(s, base64.StdPadding)
 		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to decode credentials, err: %v", err)
+			log.Ctx(ctx).Error().Msgf("fail to decode credentials, str: %v, err: %v", s, err)
 			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrAdminNotAuthenticated))
 			return
 		}
