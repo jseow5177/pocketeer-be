@@ -126,6 +126,7 @@ func (m *GetAccountsResponse) GetAccounts() []*entity.Account {
 type CreateAccountRequest struct {
 	UserID      *string
 	AccountName *string
+	Currency    *string
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
@@ -142,6 +143,13 @@ func (m *CreateAccountRequest) GetUserID() string {
 func (m *CreateAccountRequest) GetAccountName() string {
 	if m != nil && m.AccountName != nil {
 		return *m.AccountName
+	}
+	return ""
+}
+
+func (m *CreateAccountRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -185,6 +193,7 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
+		entity.WithAccountCurrency(m.Currency),
 		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
 		entity.WithAccountHoldings(hs),
 	)

@@ -10,6 +10,7 @@ type Account struct {
 	AccountID     primitive.ObjectID `bson:"_id,omitempty"`
 	UserID        *string            `bson:"user_id,omitempty"`
 	AccountName   *string            `bson:"account_name,omitempty"`
+	Currency      *string            `bson:"currency,omitempty"`
 	Balance       *float64           `bson:"balance,omitempty"`
 	AccountType   *uint32            `bson:"account_type,omitempty"`
 	AccountStatus *uint32            `bson:"account_status,omitempty"`
@@ -32,6 +33,7 @@ func ToAccountModelFromEntity(ac *entity.Account) *Account {
 		AccountID:     objID,
 		UserID:        ac.UserID,
 		AccountName:   ac.AccountName,
+		Currency:      ac.Currency,
 		Balance:       ac.Balance,
 		Note:          ac.Note,
 		AccountType:   ac.AccountType,
@@ -65,6 +67,7 @@ func ToAccountEntity(ac *Account) (*entity.Account, error) {
 		entity.WithAccountID(goutil.String(ac.GetAccountID())),
 		entity.WithAccountName(ac.AccountName),
 		entity.WithAccountBalance(ac.Balance),
+		entity.WithAccountCurrency(ac.Currency),
 		entity.WithAccountStatus(ac.AccountStatus),
 		entity.WithAccountType(ac.AccountType),
 		entity.WithAccountNote(ac.Note),
@@ -90,6 +93,13 @@ func (ac *Account) GetAccountID() string {
 func (ac *Account) GetAccountName() string {
 	if ac != nil && ac.AccountName != nil {
 		return *ac.AccountName
+	}
+	return ""
+}
+
+func (ac *Account) GetCurrency() string {
+	if ac != nil && ac.Currency != nil {
+		return *ac.Currency
 	}
 	return ""
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,9 +32,9 @@ func (h *transactionHandler) AggrTransactions(
 	req *presenter.AggrTransactionsRequest,
 	res *presenter.AggrTransactionsResponse,
 ) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.transactionUseCase.AggrTransactions(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.transactionUseCase.AggrTransactions(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to aggr transaction, err: %v", err)
 		return err

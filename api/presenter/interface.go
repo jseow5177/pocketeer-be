@@ -297,6 +297,7 @@ func toAccount(ac *entity.Account) *Account {
 	return &Account{
 		AccountID:     ac.AccountID,
 		AccountName:   ac.AccountName,
+		Currency:      ac.Currency,
 		Balance:       balance,
 		AccountType:   ac.AccountType,
 		AccountStatus: ac.AccountStatus,

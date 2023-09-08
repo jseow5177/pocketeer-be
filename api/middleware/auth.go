@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
 	"github.com/jseow5177/pockteer-be/usecase/user"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -96,7 +96,7 @@ func (am *UserAuthMiddleware) Handle(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(util.SetUserIDToCtx(ctx, res.User.GetUserID()))
+		r = r.WithContext(entity.SetUserToCtx(ctx, res.User))
 
 		next.ServeHTTP(w, r)
 	})

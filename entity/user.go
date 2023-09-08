@@ -1,11 +1,33 @@
 package entity
 
 import (
+	"context"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
+
+type ctxKey string
+
+const ctxKeyUser ctxKey = "ctx:user"
+
+func SetUserToCtx(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, ctxKeyUser, user)
+}
+
+func GetUserFromCtx(ctx context.Context) *User {
+	val := ctx.Value(ctxKeyUser)
+	if val == nil {
+		return nil
+	}
+
+	if user, ok := val.(*User); ok {
+		return user
+	}
+
+	return nil
+}
 
 type UserMetaUpdate struct {
 	Currency *string

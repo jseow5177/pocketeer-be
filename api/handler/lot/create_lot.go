@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,13 +32,13 @@ var CreateLotValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *lotHandler) CreateLot(ctx context.Context, req *presenter.CreateLotRequest, res *presenter.CreateLotResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
 	if req.GetHoldingID() == "" {
 		return ErrEmptyHoldingID
 	}
 
-	useCaseRes, err := h.lotUseCase.CreateLot(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.lotUseCase.CreateLot(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create lot, err: %v", err)
 		return err

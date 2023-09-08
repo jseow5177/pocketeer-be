@@ -8,7 +8,6 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -37,9 +36,9 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *accountHandler) CreateAccount(ctx context.Context, req *presenter.CreateAccountRequest, res *presenter.CreateAccountResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(user.GetUserID(), user.Meta.GetCurrency()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create account, err: %v", err)
 		return err

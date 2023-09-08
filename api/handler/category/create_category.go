@@ -9,7 +9,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 )
 
 var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
@@ -24,9 +23,9 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *categoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.categoryUseCase.CreateCategory(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.categoryUseCase.CreateCategory(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create category, err: %v", err)
 		return err

@@ -198,6 +198,7 @@ type Transaction struct {
 	UserID            *string
 	CategoryID        *string
 	AccountID         *string
+	Currency          *string
 	Amount            *float64
 	Note              *string
 	TransactionStatus *uint32
