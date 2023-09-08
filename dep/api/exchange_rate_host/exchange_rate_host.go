@@ -60,6 +60,7 @@ func NewExchangeRateHostMgr(cfg *config.ExchangeRateHost) api.ExchangeRateAPI {
 }
 
 // Doc: https://exchangerate.host/#/docs
+// API works in UTC time: https://github.com/Formicka/exchangerate.host/issues/74
 func (mgr *exchangeRateHostMgr) GetExchangeRates(ctx context.Context, erf *api.ExchangeRateFilter) ([]*entity.ExchangeRate, error) {
 	ep := "latest"
 	if erf.GetDate() != "" {
@@ -91,6 +92,7 @@ func (mgr *exchangeRateHostMgr) GetExchangeRates(ctx context.Context, erf *api.E
 		return nil, err
 	}
 
+	// UTC
 	t, err := time.Parse(layout, er.GetDate())
 	if err != nil {
 		return nil, err

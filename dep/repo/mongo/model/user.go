@@ -9,14 +9,14 @@ import (
 )
 
 type UserMeta struct {
-	InitStage *uint32 `bson:"init_stage,omitempty"`
+	Currency *string `bson:"currency,omitempty"`
 }
 
-func (um *UserMeta) GetInitStage() uint32 {
-	if um != nil && um.InitStage != nil {
-		return *um.InitStage
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
 	}
-	return 0
+	return ""
 }
 
 func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
@@ -25,7 +25,7 @@ func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
 	}
 }
 
@@ -35,7 +35,7 @@ func ToUserMetaModelFromUpdate(umu *entity.UserMetaUpdate) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: umu.InitStage,
+		Currency: umu.Currency,
 	}
 }
 
@@ -45,7 +45,7 @@ func ToUserMetaEntity(um *UserMeta) *entity.UserMeta {
 	}
 
 	return &entity.UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
 	}
 }
 

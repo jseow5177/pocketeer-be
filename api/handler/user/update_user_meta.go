@@ -5,18 +5,16 @@ import (
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
 var UpdateUserMetaValidator = validator.MustForm(map[string]validator.Validator{
-	"init_stage": &validator.UInt32{
-		Optional:  true,
-		UnsetZero: true,
-		Min:       goutil.Uint32(uint32(entity.InitStageOne)),
-		Max:       goutil.Uint32(uint32(entity.InitStageFour)),
+	"currency": &validator.String{
+		Optional:   true,
+		UnsetZero:  true,
+		Validators: []validator.StringFunc{entity.CheckCurrency},
 	},
 })
 

@@ -104,7 +104,7 @@ func toUserMeta(um *entity.UserMeta) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
 	}
 }
 

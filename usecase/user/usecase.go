@@ -77,11 +77,16 @@ func (uc *userUseCase) UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRe
 		return nil, err
 	}
 
-	if uu != nil {
-		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
-			return nil, err
-		}
+	if uu == nil {
+		log.Ctx(ctx).Info().Msg("user meta has no updates")
+		return &UpdateUserMetaResponse{
+			User: u,
+		}, err
+	}
+
+	if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+		return nil, err
 	}
 
 	return &UpdateUserMetaResponse{

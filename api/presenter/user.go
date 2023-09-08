@@ -8,7 +8,7 @@ import (
 )
 
 type UserMeta struct {
-	InitStage *uint32 `json:"init_stage,omitempty"`
+	Currency *string `json:"currency,omitempty"`
 }
 
 type User struct {
@@ -229,8 +229,30 @@ func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
 }
 
 type InitUserRequest struct {
+	Currency   *string                  `json:"currency,omitempty"`
 	Accounts   []*CreateAccountRequest  `json:"accounts,omitempty"`
 	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
+}
+
+func (m *InitUserRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
+func (m *InitUserRequest) GetAccounts() []*CreateAccountRequest {
+	if m != nil && m.Accounts != nil {
+		return m.Accounts
+	}
+	return nil
+}
+
+func (m *InitUserRequest) GetCategories() []*CreateCategoryRequest {
+	if m != nil && m.Categories != nil {
+		return m.Categories
+	}
+	return nil
 }
 
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
@@ -243,8 +265,10 @@ func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
 	for _, r := range m.Categories {
 		cs = append(cs, r.ToUseCaseReq(userID))
 	}
+
 	return &user.InitUserRequest{
 		UserID:     goutil.String(userID),
+		Currency:   m.Currency,
 		Accounts:   acs,
 		Categories: cs,
 	}
@@ -276,20 +300,20 @@ type SendOTPResponse struct{}
 func (m *SendOTPResponse) Set(useCaseRes *user.SendOTPResponse) {}
 
 type UpdateUserMetaRequest struct {
-	InitStage *uint32 `json:"init_stage,omitempty"`
+	Currency *string `json:"currency,omitempty"`
 }
 
-func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
-	if m != nil && m.InitStage != nil {
-		return *m.InitStage
+func (m *UpdateUserMetaRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
-	return 0
+	return ""
 }
 
 func (m *UpdateUserMetaRequest) ToUseCaseReq(userID string) *user.UpdateUserMetaRequest {
 	return &user.UpdateUserMetaRequest{
-		UserID:    goutil.String(userID),
-		InitStage: m.InitStage,
+		UserID:   goutil.String(userID),
+		Currency: m.Currency,
 	}
 }
 

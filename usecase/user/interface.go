@@ -248,6 +248,7 @@ func (m *IsAuthenticatedResponse) GetUser() *entity.User {
 
 type InitUserRequest struct {
 	UserID     *string
+	Currency   *string
 	Categories []*category.CreateCategoryRequest
 	Accounts   []*account.CreateAccountRequest
 }
@@ -259,9 +260,21 @@ func (m *InitUserRequest) GetUserID() string {
 	return ""
 }
 
+func (m *InitUserRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
 	return entity.NewUserUpdate(
 		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+		entity.WithUpdateUserMeta(
+			entity.NewUserMetaUpdate(
+				entity.WithUpdateUserMetaCurrency(m.Currency),
+			),
+		),
 	)
 }
 
@@ -335,8 +348,8 @@ type SendOTPResponse struct {
 }
 
 type UpdateUserMetaRequest struct {
-	UserID    *string
-	InitStage *uint32
+	UserID   *string
+	Currency *string
 }
 
 func (m *UpdateUserMetaRequest) GetUserID() string {
@@ -346,11 +359,11 @@ func (m *UpdateUserMetaRequest) GetUserID() string {
 	return ""
 }
 
-func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
-	if m != nil && m.InitStage != nil {
-		return *m.InitStage
+func (m *UpdateUserMetaRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
-	return 0
+	return ""
 }
 
 func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
@@ -363,7 +376,7 @@ func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
 	return entity.NewUserUpdate(
 		entity.WithUpdateUserMeta(
 			entity.NewUserMetaUpdate(
-				entity.WithUpdateUserMetaInitStage(m.InitStage),
+				entity.WithUpdateUserMetaCurrency(m.Currency),
 			),
 		),
 	)
