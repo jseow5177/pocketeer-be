@@ -196,16 +196,10 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 			}
 
 			// make currency conversion if necessary
-			amount := t.GetAmount()
-			if t.GetCurrency() != ac.GetCurrency() {
-				erf := req.ToGetExchangeRateFilter(t.GetCurrency(), ac.GetCurrency(), t.GetTransactionTime())
-
-				er, err := uc.exchangeRateRepo.Get(txCtx, erf)
-				if err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
-					return err
-				}
-				amount *= er.GetRate()
+			amount, err := uc.getAmountAfterConversion(txCtx, t, ac)
+			if err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
+				return err
 			}
 
 			// reset account balance
@@ -265,14 +259,10 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		}
 
 		// make currency conversion if necessary
-		amount := t.GetAmount()
-		if t.GetCurrency() != ac.GetCurrency() {
-			er, err := uc.exchangeRateRepo.Get(txCtx, req.ToGetExchangeRateFilter(ac.GetCurrency()))
-			if err != nil {
-				log.Ctx(txCtx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
-				return err
-			}
-			amount *= er.GetRate()
+		amount, err := uc.getAmountAfterConversion(txCtx, t, ac)
+		if err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
+			return err
 		}
 
 		// update account balance
@@ -309,11 +299,7 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if err != nil {
 		return nil, err
 	}
-
-	var (
-		oldAmount    = t.GetAmount()
-		oldAccountID = t.GetAccountID()
-	)
+	oldT := *t
 
 	tu := t.Update(req.ToTransactionUpdate())
 	if tu == nil {
@@ -323,21 +309,21 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		}, nil
 	}
 
-	oldAccount, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldAccountID))
+	oldAc, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(oldT.GetAccountID()))
 	if err != nil && err != repo.ErrAccountNotFound {
 		log.Ctx(ctx).Info().Msgf("fail to get old account from repo, err: %v", err)
 		return nil, err
 	}
 
-	newAccount := oldAccount
+	newAc := oldAc
 	if tu.AccountID != nil {
-		newAccount, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(tu.GetAccountID()))
+		newAc, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(tu.GetAccountID()))
 		if err != nil {
 			log.Ctx(ctx).Info().Msgf("fail to get new account from repo, err: %v", err)
 			return nil, err
 		}
 
-		if err := t.CanTransactionUnderAccount(newAccount); err != nil {
+		if err := t.CanTransactionUnderAccount(newAc); err != nil {
 			return nil, err
 		}
 	}
@@ -363,17 +349,23 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 		if tu.AccountID != nil || tu.Amount != nil {
 			// revert balance of old account
-			if oldAccount != nil {
-				oldAccountBalance := oldAccount.GetBalance() - oldAmount
-				acu, err := oldAccount.Update(entity.NewAccountUpdate(
-					entity.WithUpdateAccountBalance(goutil.Float64(oldAccountBalance)),
+			if oldAc != nil {
+				amount, err := uc.getAmountAfterConversion(txCtx, &oldT, oldAc)
+				if err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
+					return err
+				}
+
+				oldAcBalance := oldAc.GetBalance() - amount
+				acu, err := oldAc.Update(entity.NewAccountUpdate(
+					entity.WithUpdateAccountBalance(goutil.Float64(oldAcBalance)),
 				))
 				if err != nil {
 					return err
 				}
 
 				if acu != nil {
-					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldAccountID), acu); err != nil {
+					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(oldT.GetAccountID()), acu); err != nil {
 						log.Ctx(txCtx).Error().Msgf("fail to update old account balance, err: %v", err)
 						return err
 					}
@@ -381,17 +373,23 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 			}
 
 			// update balance of new account
-			if newAccount != nil {
-				newAccountBalance := newAccount.GetBalance() + t.GetAmount()
-				acu, err := newAccount.Update(entity.NewAccountUpdate(
-					entity.WithUpdateAccountBalance(goutil.Float64(newAccountBalance)),
+			if newAc != nil {
+				amount, err := uc.getAmountAfterConversion(txCtx, t, newAc)
+				if err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
+					return err
+				}
+
+				newAcBalance := newAc.GetBalance() + amount
+				acu, err := newAc.Update(entity.NewAccountUpdate(
+					entity.WithUpdateAccountBalance(goutil.Float64(newAcBalance)),
 				))
 				if err != nil {
 					return err
 				}
 
 				if acu != nil {
-					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAccount.GetAccountID()), acu); err != nil {
+					if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(newAc.GetAccountID()), acu); err != nil {
 						log.Ctx(txCtx).Error().Msgf("fail to update new account balance, err: %v", err)
 						return err
 					}
@@ -445,4 +443,24 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 	return &AggrTransactionsResponse{
 		Results: results,
 	}, nil
+}
+
+func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *entity.Transaction, ac *entity.Account) (float64, error) {
+	amount := t.GetAmount()
+
+	if t.GetCurrency() == ac.GetCurrency() {
+		return amount, nil
+	}
+
+	er, err := uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
+		Timestamp: t.TransactionTime,
+		From:      t.Currency,
+		To:        ac.Currency,
+	})
+	if err != nil {
+		return 0, err
+	}
+	amount *= er.GetRate()
+
+	return amount, nil
 }

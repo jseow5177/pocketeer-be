@@ -61,6 +61,7 @@ func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 		AccountID:         tu.AccountID,
 		CategoryID:        tu.CategoryID,
 		TransactionType:   tu.TransactionType,
+		Currency:          tu.Currency,
 	}
 }
 

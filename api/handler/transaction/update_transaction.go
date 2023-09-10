@@ -41,6 +41,11 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 		UnsetZero: true,
 		MaxLen:    uint32(config.MaxTransactionNoteLength),
 	},
+	"currency": &validator.String{
+		Optional:   true,
+		UnsetZero:  true,
+		Validators: []validator.StringFunc{entity.CheckCurrency},
+	},
 })
 
 func (h *transactionHandler) UpdateTransaction(ctx context.Context, req *presenter.UpdateTransactionRequest, res *presenter.UpdateTransactionResponse) error {

@@ -168,14 +168,6 @@ func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
 	)
 }
 
-func (m *CreateTransactionRequest) ToGetExchangeRateFilter(to string) *repo.GetExchangeRateFilter {
-	return &repo.GetExchangeRateFilter{
-		From:      m.Currency,
-		To:        goutil.String(to),
-		Timestamp: m.TransactionTime,
-	}
-}
-
 type CreateTransactionResponse struct {
 	Transaction *entity.Transaction
 }
@@ -326,6 +318,7 @@ type UpdateTransactionRequest struct {
 	Note            *string
 	Amount          *float64
 	TransactionTime *uint64
+	Currency        *string
 }
 
 func (m *UpdateTransactionRequest) GetUserID() string {
@@ -413,6 +406,7 @@ func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpda
 		entity.WithUpdateTransactionAccountID(m.AccountID),
 		entity.WithUpdateTransactionCategoryID(m.CategoryID),
 		entity.WithUpdateTransactionType(m.TransactionType),
+		entity.WithUpdateTransactionCurrency(m.Currency),
 	)
 }
 
@@ -530,14 +524,6 @@ func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.
 		m.GetUserID(),
 		repo.WithAccountID(t.AccountID),
 	)
-}
-
-func (m *DeleteTransactionRequest) ToGetExchangeRateFilter(from, to string, transactionTime uint64) *repo.GetExchangeRateFilter {
-	return &repo.GetExchangeRateFilter{
-		From:      goutil.String(from),
-		To:        goutil.String(to),
-		Timestamp: goutil.Uint64(transactionTime),
-	}
 }
 
 type DeleteTransactionResponse struct{}

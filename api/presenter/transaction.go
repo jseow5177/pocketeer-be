@@ -337,6 +337,7 @@ type UpdateTransactionRequest struct {
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
 }
 
 func (t *UpdateTransactionRequest) GetTransactionID() string {
@@ -388,6 +389,13 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
+func (t *UpdateTransactionRequest) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
+	}
+	return ""
+}
+
 func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.UpdateTransactionRequest {
 	var amount *float64
 	if m.Amount != nil {
@@ -403,6 +411,7 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 		TransactionTime: m.TransactionTime,
 		CategoryID:      m.CategoryID,
 		TransactionType: m.TransactionType,
+		Currency:        m.Currency,
 	}
 }
 

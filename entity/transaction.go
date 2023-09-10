@@ -46,6 +46,7 @@ type TransactionUpdate struct {
 	AccountID         *string
 	CategoryID        *string
 	TransactionType   *uint32
+	Currency          *string
 }
 
 func (tu *TransactionUpdate) GetAmount() float64 {
@@ -141,6 +142,17 @@ func (tu *TransactionUpdate) SetCategoryID(categoryID *string) {
 	tu.CategoryID = categoryID
 }
 
+func (tu *TransactionUpdate) GetCurrency() string {
+	if tu != nil && tu.Currency != nil {
+		return *tu.Currency
+	}
+	return ""
+}
+
+func (tu *TransactionUpdate) SetCurrency(currency *string) {
+	tu.Currency = currency
+}
+
 type TransactionUpdateOption func(acu *TransactionUpdate)
 
 func WithUpdateTransactionAccountID(accountID *string) TransactionUpdateOption {
@@ -182,6 +194,12 @@ func WithUpdateTransactionStatus(transactionStatus *uint32) TransactionUpdateOpt
 func WithUpdateTransactionType(transactionType *uint32) TransactionUpdateOption {
 	return func(tu *TransactionUpdate) {
 		tu.SetTransactionType(transactionType)
+	}
+}
+
+func WithUpdateTransactionCurrency(currency *string) TransactionUpdateOption {
+	return func(tu *TransactionUpdate) {
+		tu.SetCurrency(currency)
 	}
 }
 
@@ -314,7 +332,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 		t.SetTransactionType(tu.TransactionType)
 
 		defer func() {
-			// a change in transaction type may need to reset amount
+			// a change in transaction type need to reset amount
 			transactionUpdate.SetAmount(t.Amount)
 			transactionUpdate.SetTransactionType(t.TransactionType)
 		}()
@@ -343,6 +361,9 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 		t.SetTransactionTime(tu.TransactionTime)
 
 		defer func() {
+			// a change in transaction time may result in different exchange rates
+			// amount may (implicitly) need to change
+			transactionUpdate.SetAmount(t.Amount)
 			transactionUpdate.SetTransactionTime(t.TransactionTime)
 		}()
 	}
@@ -371,6 +392,18 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 
 		defer func() {
 			transactionUpdate.SetAccountID(t.AccountID)
+		}()
+	}
+
+	if tu.Currency != nil && tu.GetCurrency() != t.GetCurrency() {
+		hasUpdate = true
+		t.SetCurrency(tu.Currency)
+
+		defer func() {
+			// a change in currency will result in different exchange rates
+			// amount (implicitly) need to change
+			transactionUpdate.SetAmount(t.Amount)
+			transactionUpdate.SetCurrency(t.Currency)
 		}()
 	}
 
