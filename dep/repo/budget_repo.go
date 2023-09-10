@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -90,6 +93,53 @@ func (m *GetBudgetFilter) GetBudgetDate() string {
 		return *m.BudgetDate
 	}
 	return ""
+}
+
+func (m *GetBudgetFilter) ToBudgetQuery() (*BudgetQuery, error) {
+	t, err := util.ParseDateToInt(m.GetBudgetDate())
+	if err != nil {
+		return nil, err
+	}
+
+	return &BudgetQuery{
+		Queries: []*BudgetQuery{
+			{
+				Filters: []*BudgetFilter{
+					{
+						StartDateLte: goutil.Uint64(t),
+						EndDateGte:   goutil.Uint64(t),
+					},
+					{
+						StartDateLte: goutil.Uint64(t),
+						EndDate:      goutil.Uint64(0),
+					},
+					{
+						StartDate: goutil.Uint64(0),
+						EndDate:   goutil.Uint64(0),
+					},
+				},
+				Op: filter.Or,
+			},
+			{
+				Filters: []*BudgetFilter{
+					{
+						UserID:     goutil.String(m.GetUserID()),
+						CategoryID: goutil.String(m.GetCategoryID()),
+					},
+				},
+			},
+		},
+		Op: filter.And,
+		Paging: &Paging{
+			Limit: goutil.Uint32(1),
+			Sorts: []filter.Sort{
+				&Sort{
+					Field: goutil.String("update_time"),
+					Order: goutil.String(config.OrderDesc),
+				},
+			},
+		},
+	}, nil
 }
 
 type BudgetQuery struct {

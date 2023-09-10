@@ -78,6 +78,7 @@ type CreateTransactionRequest struct {
 	UserID          *string
 	AccountID       *string
 	CategoryID      *string
+	Currency        *string
 	Amount          *float64
 	Note            *string
 	TransactionType *uint32
@@ -101,6 +102,13 @@ func (m *CreateTransactionRequest) GetCategoryID() string {
 func (m *CreateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *CreateTransactionRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -142,6 +150,7 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 		entity.WithTransactionNote(m.Note),
 		entity.WithTransactionType(m.TransactionType),
 		entity.WithTransactionTime(m.TransactionTime),
+		entity.WithTransactionCurrency(m.Currency),
 	)
 }
 
@@ -157,6 +166,14 @@ func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
 		m.GetUserID(),
 		repo.WithAccountID(m.AccountID),
 	)
+}
+
+func (m *CreateTransactionRequest) ToGetExchangeRateFilter(to string) *repo.GetExchangeRateFilter {
+	return &repo.GetExchangeRateFilter{
+		From:      m.Currency,
+		To:        goutil.String(to),
+		Timestamp: m.TransactionTime,
+	}
 }
 
 type CreateTransactionResponse struct {
@@ -513,6 +530,14 @@ func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.
 		m.GetUserID(),
 		repo.WithAccountID(t.AccountID),
 	)
+}
+
+func (m *DeleteTransactionRequest) ToGetExchangeRateFilter(from, to string, transactionTime uint64) *repo.GetExchangeRateFilter {
+	return &repo.GetExchangeRateFilter{
+		From:      goutil.String(from),
+		To:        goutil.String(to),
+		Timestamp: goutil.Uint64(transactionTime),
+	}
 }
 
 type DeleteTransactionResponse struct{}

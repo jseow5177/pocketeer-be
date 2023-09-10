@@ -104,12 +104,12 @@ func getMonthRange(date, timezone string) (start, end time.Time, err error) {
 	return
 }
 
-func FormatDateAsStr(t time.Time) string {
+func FormatDate(t time.Time) string {
 	return t.Format(layout)
 }
 
 func FormatDateAsInt(t time.Time) uint64 {
-	d, _ := ParseDateToInt(FormatDateAsStr(t))
+	d, _ := ParseDateToInt(FormatDate(t))
 	return d
 }
 
@@ -129,4 +129,10 @@ func ParseDateToInt(s string) (uint64, error) {
 	}
 
 	return di, nil
+}
+
+func ToUnixStartOfMonth(ts uint64) uint64 {
+	t := time.UnixMilli(int64(ts))
+	start := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return uint64(start.UnixMilli())
 }

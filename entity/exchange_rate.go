@@ -12,13 +12,13 @@ type Currency string
 const (
 	CurrencySGD Currency = "SGD"
 	CurrencyUSD Currency = "USD"
-	CurrencyRM  Currency = "MYR"
+	CurrencyMYR Currency = "MYR"
 )
 
 var Currencies = map[string]string{
 	string(CurrencySGD): "SGD",
 	string(CurrencyUSD): "USD",
-	string(CurrencyRM):  "MYR",
+	string(CurrencyMYR): "MYR",
 }
 
 type ExchangeRate struct {

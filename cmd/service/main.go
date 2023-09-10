@@ -150,6 +150,10 @@ func (s *server) Start() error {
 		}
 	}()
 
+	// init apis
+	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
+	s.exchangeRateAPI = exchangeratehost.NewExchangeRateHostMgr(s.cfg.ExchangeRateHost)
+
 	// init mongo repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
@@ -167,10 +171,6 @@ func (s *server) Start() error {
 		log.Ctx(s.ctx).Error().Msgf("fail to init feedback repo, err: %v", err)
 		return err
 	}
-
-	// init apis
-	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
-	s.exchangeRateAPI = exchangeratehost.NewExchangeRateHostMgr(s.cfg.ExchangeRateHost)
 
 	// init mailer
 	s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
@@ -193,14 +193,18 @@ func (s *server) Start() error {
 	}
 
 	// init use cases
-	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
+	s.transactionUseCase = tuc.NewTransactionUseCase(
+		s.mongo, s.categoryRepo, s.accountRepo,
+		s.transactionRepo, s.budgetRepo, s.exchangeRateRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
 	s.categoryUseCase = cuc.NewCategoryUseCase(s.mongo, s.categoryRepo, s.transactionRepo, s.budgetUseCase, s.budgetRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
-	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(
+		s.mongo, s.accountRepo, s.transactionRepo,
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
 		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,
@@ -965,6 +969,29 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: lh.GetLotsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.GetLots(ctx, req.(*presenter.GetLotsRequest), res.(*presenter.GetLotsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// ========== Exchange Rate ========== //
+
+	exchangeRateHandler := erh.NewExchangeRateHandler(s.exchangeRateUseCase)
+
+	// create exchange rates
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetExchangeRate,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetExchangeRateRequest),
+			Res:       new(presenter.GetExchangeRateResponse),
+			Validator: erh.GetExchangeRateValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return exchangeRateHandler.GetExchangeRate(
+					ctx,
+					req.(*presenter.GetExchangeRateRequest),
+					res.(*presenter.GetExchangeRateResponse),
+				)
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},

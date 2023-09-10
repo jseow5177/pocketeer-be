@@ -15,11 +15,12 @@ var (
 )
 
 type transactionUseCase struct {
-	txMgr           repo.TxMgr
-	categoryRepo    repo.CategoryRepo
-	accountRepo     repo.AccountRepo
-	transactionRepo repo.TransactionRepo
-	budgetRepo      repo.BudgetRepo
+	txMgr            repo.TxMgr
+	categoryRepo     repo.CategoryRepo
+	accountRepo      repo.AccountRepo
+	transactionRepo  repo.TransactionRepo
+	budgetRepo       repo.BudgetRepo
+	exchangeRateRepo repo.ExchangeRateRepo
 }
 
 func NewTransactionUseCase(
@@ -28,6 +29,7 @@ func NewTransactionUseCase(
 	accountRepo repo.AccountRepo,
 	transactionRepo repo.TransactionRepo,
 	budgetRepo repo.BudgetRepo,
+	exchangeRateRepo repo.ExchangeRateRepo,
 ) UseCase {
 	return &transactionUseCase{
 		txMgr,
@@ -35,6 +37,7 @@ func NewTransactionUseCase(
 		accountRepo,
 		transactionRepo,
 		budgetRepo,
+		exchangeRateRepo,
 	}
 }
 
@@ -192,8 +195,21 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 				return nil
 			}
 
+			// make currency conversion if necessary
+			amount := t.GetAmount()
+			if t.GetCurrency() != ac.GetCurrency() {
+				erf := req.ToGetExchangeRateFilter(t.GetCurrency(), ac.GetCurrency(), t.GetTransactionTime())
+
+				er, err := uc.exchangeRateRepo.Get(txCtx, erf)
+				if err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+					return err
+				}
+				amount *= er.GetRate()
+			}
+
 			// reset account balance
-			newBalance := ac.GetBalance() - t.GetAmount()
+			newBalance := ac.GetBalance() - amount
 			nac, err := ac.Update(entity.NewAccountUpdate(
 				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 			))
@@ -248,8 +264,19 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 			return err
 		}
 
+		// make currency conversion if necessary
+		amount := t.GetAmount()
+		if t.GetCurrency() != ac.GetCurrency() {
+			er, err := uc.exchangeRateRepo.Get(txCtx, req.ToGetExchangeRateFilter(ac.GetCurrency()))
+			if err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return err
+			}
+			amount *= er.GetRate()
+		}
+
 		// update account balance
-		newBalance := ac.GetBalance() + t.GetAmount()
+		newBalance := ac.GetBalance() + amount
 		nac, err := ac.Update(entity.NewAccountUpdate(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
 		))

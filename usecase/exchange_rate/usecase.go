@@ -23,7 +23,7 @@ func NewExchangeRateUseCase(
 	}
 }
 
-func (uc *exchangeRateUseCase) CreateExchangeRate(ctx context.Context, req *CreateExchangeRatesRequest) (*CreateExchangeRatesResponse, error) {
+func (uc *exchangeRateUseCase) CreateExchangeRates(ctx context.Context, req *CreateExchangeRatesRequest) (*CreateExchangeRatesResponse, error) {
 	ers, err := uc.exchangeRateAPI.GetExchangeRates(ctx, req.ToExchangeRateFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get exchange rates, err: %v", err)
@@ -37,5 +37,17 @@ func (uc *exchangeRateUseCase) CreateExchangeRate(ctx context.Context, req *Crea
 
 	return &CreateExchangeRatesResponse{
 		ExchangeRates: ers,
+	}, nil
+}
+
+func (uc *exchangeRateUseCase) GetExchangeRate(ctx context.Context, req *GetExchangeRateRequest) (*GetExchangeRateResponse, error) {
+	er, err := uc.exchangeRateRepo.Get(ctx, req.ToGetExchangeRateFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+		return nil, err
+	}
+
+	return &GetExchangeRateResponse{
+		ExchangeRate: er,
 	}, nil
 }

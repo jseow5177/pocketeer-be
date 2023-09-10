@@ -21,10 +21,9 @@ var CreateExchangeRatesValidator = validator.MustForm(map[string]validator.Valid
 			Validators: []validator.StringFunc{entity.CheckCurrency},
 		},
 	},
-	"date": &validator.String{
-		Optional:   true,
-		UnsetZero:  true,
-		Validators: []validator.StringFunc{entity.CheckDateStr},
+	"timestamp": &validator.UInt64{
+		Optional:  true,
+		UnsetZero: true,
 	},
 })
 
@@ -33,7 +32,7 @@ func (h *exchangeRateHandler) CreateExchangeRates(
 	req *presenter.CreateExchangeRatesRequest,
 	res *presenter.CreateExchangeRatesResponse,
 ) error {
-	useCaseRes, err := h.exchangeRateUseCase.CreateExchangeRate(ctx, req.ToUseCaseReq())
+	useCaseRes, err := h.exchangeRateUseCase.CreateExchangeRates(ctx, req.ToUseCaseReq())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create exchange rates, err: %v", err)
 		return err

@@ -21,7 +21,7 @@ import (
 	exchangeratehost "github.com/jseow5177/pockteer-be/dep/api/exchange_rate_host"
 )
 
-const DefaultStartDate = "20200101"
+const DefaultStartDate = config.MinCurrencyDate
 
 type JobConfig struct {
 	StartDate string
@@ -138,7 +138,7 @@ func (c *InitExchangeRates) Run(ctx context.Context) error {
 				continue
 			}
 
-			sd := util.FormatDateAsStr(startDate)
+			sd := util.FormatDate(startDate)
 
 			log.Ctx(ctx).Info().Msgf("date: %v, from: %v, to: %v", sd, fromCurrency, symbols)
 

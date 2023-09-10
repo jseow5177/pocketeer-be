@@ -142,6 +142,7 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		Category:          toCategory(t.Category),
 		AccountID:         t.AccountID,
 		Account:           toAccount(t.Account),
+		Currency:          t.Currency,
 		Note:              t.Note,
 		TransactionStatus: t.TransactionStatus,
 		TransactionType:   t.TransactionType,
@@ -357,10 +358,16 @@ func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
 		return nil
 	}
 
+	var rate *string
+	if er.Rate != nil {
+		rate = goutil.String(fmt.Sprint(er.GetRate()))
+	}
+
 	return &ExchangeRate{
 		ExchangeRateID: er.ExchangeRateID,
 		From:           er.From,
 		To:             er.To,
+		Rate:           rate,
 		Timestamp:      er.Timestamp,
 		CreateTime:     er.CreateTime,
 	}

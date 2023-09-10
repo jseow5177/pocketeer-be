@@ -25,7 +25,7 @@ func NewExchangeRateMongo(mongo *Mongo) repo.ExchangeRateRepo {
 func (m *exchangeRateMongo) GetMany(ctx context.Context, erf *repo.ExchangeRateFilter) ([]*entity.ExchangeRate, error) {
 	f := mongoutil.BuildFilter(erf)
 
-	res, err := m.mColl.getMany(ctx, new(model.ExchangeRate), nil, f)
+	res, err := m.mColl.getMany(ctx, new(model.ExchangeRate), erf.Paging, f)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +36,35 @@ func (m *exchangeRateMongo) GetMany(ctx context.Context, erf *repo.ExchangeRateF
 	}
 
 	return ers, nil
+}
+
+func (m *exchangeRateMongo) Get(ctx context.Context, erf *repo.GetExchangeRateFilter) (*entity.ExchangeRate, error) {
+	ers, err := m.GetMany(ctx, erf.ToExchangeRateFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	var er *entity.ExchangeRate
+	if len(ers) > 0 {
+		er = ers[0]
+	}
+
+	if er == nil {
+		return nil, repo.ErrExchangeRateNotFound
+	}
+
+	return er, nil
+}
+
+func (m *exchangeRateMongo) Create(ctx context.Context, er *entity.ExchangeRate) (string, error) {
+	erm := model.ToExchangeRateModelFromEntity(er)
+	id, err := m.mColl.create(ctx, erm)
+	if err != nil {
+		return "", err
+	}
+	er.SetExchangeRateID(goutil.String(id))
+
+	return id, nil
 }
 
 func (m *exchangeRateMongo) CreateMany(ctx context.Context, ers []*entity.ExchangeRate) ([]string, error) {

@@ -14,6 +14,7 @@ type Transaction struct {
 	Category          *Category `json:"category,omitempty"`
 	AccountID         *string   `json:"account_id,omitempty"`
 	Account           *Account  `json:"account,omitempty"`
+	Currency          *string   `json:"currency,omitempty"`
 	Amount            *string   `json:"amount,omitempty"`
 	Note              *string   `json:"note,omitempty"`
 	TransactionStatus *uint32   `json:"transaction_status,omitempty"`
@@ -33,6 +34,13 @@ func (t *Transaction) GetTransactionID() string {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
 	}
 	return ""
 }
@@ -97,6 +105,7 @@ type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
 	Note            *string `json:"note,omitempty"`
@@ -119,6 +128,13 @@ func (m *CreateTransactionRequest) GetCategoryID() string {
 func (m *CreateTransactionRequest) GetAmount() string {
 	if m != nil && m.Amount != nil {
 		return *m.Amount
+	}
+	return ""
+}
+
+func (m *CreateTransactionRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -150,11 +166,13 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 		a, _ := util.MonetaryStrToFloat(m.GetAmount())
 		amount = goutil.Float64(a)
 	}
+
 	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
 		Amount:          amount,
+		Currency:        m.Currency,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 		Note:            m.Note,

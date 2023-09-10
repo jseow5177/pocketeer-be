@@ -225,6 +225,12 @@ func WithTransactionAmount(amount *float64) TransactionOption {
 	}
 }
 
+func WithTransactionCurrency(currency *string) TransactionOption {
+	return func(t *Transaction) {
+		t.SetCurrency(currency)
+	}
+}
+
 func WithTransactionNote(note *string) TransactionOption {
 	return func(t *Transaction) {
 		t.SetNote(note)
@@ -267,6 +273,7 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 		UserID:            goutil.String(userID),
 		CategoryID:        goutil.String(categoryID),
 		AccountID:         goutil.String(accountID),
+		Currency:          goutil.String(string(CurrencySGD)),
 		Amount:            goutil.Float64(0),
 		Note:              goutil.String(""),
 		TransactionStatus: goutil.Uint32(uint32(TransactionStatusNormal)),
@@ -278,7 +285,9 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 	for _, opt := range opts {
 		opt(t)
 	}
+
 	t.checkOpts()
+
 	return t
 }
 
@@ -436,6 +445,17 @@ func (t *Transaction) GetAccountID() string {
 
 func (t *Transaction) SetAccountID(accountID *string) {
 	t.AccountID = accountID
+}
+
+func (t *Transaction) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
+	}
+	return ""
+}
+
+func (t *Transaction) SetCurrency(currency *string) {
+	t.Currency = currency
 }
 
 func (t *Transaction) GetAmount() float64 {

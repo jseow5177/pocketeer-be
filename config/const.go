@@ -47,6 +47,7 @@ const (
 	PathGetLot                  = PathV1Prefix + "get_lot"
 	PathGetLots                 = PathV1Prefix + "get_lots"
 	PathCreateFeedback          = PathV1Prefix + "create_feedback"
+	PathGetExchangeRate         = PathV1Prefix + "get_exchange_rate"
 
 	// Admin APIs
 	PathAdminV1Prefix       = "/api/admin/v1/"
@@ -75,4 +76,6 @@ const (
 
 	LogLevelDebug = "DEBUG"
 	LogLevelInfo  = "INFO"
+
+	MinCurrencyDate = "20180101"
 )
