@@ -443,30 +443,11 @@ func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter
 	)
 }
 
-type CategoryTransactionSum struct {
-	Category *entity.Category
-	Sum      *string
-}
-
-func (m *CategoryTransactionSum) GetCategory() *entity.Category {
-	if m != nil && m.Category != nil {
-		return m.Category
-	}
-	return nil
-}
-
-func (m *CategoryTransactionSum) GetSum() string {
-	if m != nil && m.Sum != nil {
-		return *m.Sum
-	}
-	return ""
-}
-
 type SumCategoryTransactionsResponse struct {
-	Sums []*CategoryTransactionSum
+	Sums []*common.TransactionSummary
 }
 
-func (m *SumCategoryTransactionsResponse) GetSums() []*CategoryTransactionSum {
+func (m *SumCategoryTransactionsResponse) GetSums() []*common.TransactionSummary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}

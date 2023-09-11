@@ -628,6 +628,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
+	// sum transactions
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSumTransactions,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SumTransactionsRequest),
+			Res:       new(presenter.SumTransactionsResponse),
+			Validator: th.SumTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.SumTransactions(ctx, req.(*presenter.SumTransactionsRequest), res.(*presenter.SumTransactionsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
 	// ========== User ========== //
 
 	userHandler := uh.NewUserHandler(s.userUseCase)

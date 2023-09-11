@@ -145,8 +145,8 @@ func NewConfig() *Config {
 			WriteRange:  "Sheet1!A1:D2",
 		},
 		OTPMemCache: &MemCache{
-			ExpiryTime:      "2m",
-			CleanUpInterval: "3m",
+			ExpiryTime:      "10m",
+			CleanUpInterval: "15m",
 		},
 		Brevo: &Brevo{
 			APIKey: "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",

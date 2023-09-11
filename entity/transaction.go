@@ -28,13 +28,11 @@ const (
 	TransactionTypeInvalid TransactionType = iota
 	TransactionTypeExpense
 	TransactionTypeIncome
-	TransactionTypeTransfer
 )
 
 var TransactionTypes = map[uint32]string{
-	uint32(TransactionTypeExpense):  "expense",
-	uint32(TransactionTypeIncome):   "income",
-	uint32(TransactionTypeTransfer): "transfer",
+	uint32(TransactionTypeExpense): "expense",
+	uint32(TransactionTypeIncome):  "income",
 }
 
 type TransactionUpdate struct {

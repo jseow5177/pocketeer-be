@@ -1,4 +1,4 @@
-package category
+package transaction
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var SumCategoryTransactionsValidator = validator.MustForm(map[string]validator.Validator{
+var SumTransactionsValidator = validator.MustForm(map[string]validator.Validator{
 	"transaction_time": validator.MustForm(map[string]validator.Validator{
 		"gte": &validator.UInt64{
 			Optional: false,
@@ -19,21 +19,21 @@ var SumCategoryTransactionsValidator = validator.MustForm(map[string]validator.V
 		},
 	}),
 	"transaction_type": &validator.UInt32{
-		Optional:   false,
-		Validators: []validator.UInt32Func{entity.CheckCategoryType},
+		Optional:   true,
+		Validators: []validator.UInt32Func{entity.CheckTransactionType},
 	},
 })
 
-func (h *categoryHandler) SumCategoryTransactions(
+func (h *transactionHandler) SumTransactions(
 	ctx context.Context,
-	req *presenter.SumCategoryTransactionsRequest,
-	res *presenter.SumCategoryTransactionsResponse,
+	req *presenter.SumTransactionsRequest,
+	res *presenter.SumTransactionsResponse,
 ) error {
 	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.categoryUseCase.SumCategoryTransactions(ctx, req.ToUseCaseReq(user.GetUserID()))
+	useCaseRes, err := h.transactionUseCase.SumTransactions(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum category transactions, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to sum transaction, err: %v", err)
 		return err
 	}
 

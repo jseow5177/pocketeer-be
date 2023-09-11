@@ -97,16 +97,21 @@ func WithTimestampLte(timestampLte *uint64) ExchangeRateFilterOption {
 	}
 }
 
+func WithExchangeRateFrom(from *string) ExchangeRateFilterOption {
+	return func(erf *ExchangeRateFilter) {
+		erf.From = from
+	}
+}
+
 func WithExchangeRatePaging(paging *Paging) ExchangeRateFilterOption {
 	return func(erf *ExchangeRateFilter) {
 		erf.Paging = paging
 	}
 }
 
-func NewExchangeRateFilter(from, to string, opts ...ExchangeRateFilterOption) *ExchangeRateFilter {
+func NewExchangeRateFilter(to string, opts ...ExchangeRateFilterOption) *ExchangeRateFilter {
 	erf := &ExchangeRateFilter{
-		From: goutil.String(from),
-		To:   goutil.String(to),
+		To: goutil.String(to),
 	}
 	for _, opt := range opts {
 		opt(erf)

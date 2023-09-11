@@ -7,6 +7,8 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/common"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -405,6 +407,85 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	return &UpdateTransactionResponse{
 		Transaction: t,
 	}, nil
+}
+
+func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTransactionsRequest) (*SumTransactionsResponse, error) {
+	ts, err := uc.transactionRepo.GetMany(ctx, req.ToTransactionFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
+		return nil, err
+	}
+
+	u := entity.GetUserFromCtx(ctx)
+
+	ers, err := uc.exchangeRateRepo.GetMany(ctx, req.ToExchangeRateFilter(u.Meta.GetCurrency()))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
+		return nil, err
+	}
+
+	sumByTT := make(map[uint32]float64)
+	for tt := range entity.TransactionTypes {
+		if (req.TransactionType == nil) ||
+			(req.TransactionType != nil && tt == req.GetTransactionType()) {
+			sumByTT[tt] = 0
+		}
+	}
+
+	for _, t := range ts {
+		amount := t.GetAmount()
+
+		if t.GetCurrency() != u.Meta.GetCurrency() {
+			er := uc.binarySearchExchangeRates(t, ers)
+			if er == nil {
+				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
+				continue
+			}
+			amount *= er.GetRate()
+		}
+
+		sumByTT[t.GetTransactionType()] += amount
+	}
+
+	sums := make([]*common.TransactionSummary, 0)
+	for tt, sum := range sumByTT {
+		sums = append(sums, &common.TransactionSummary{
+			TransactionType: goutil.Uint32(tt),
+			Sum:             goutil.Float64(util.RoundFloatToStandardDP(sum)),
+			Currency:        u.Meta.Currency,
+		})
+	}
+
+	return &SumTransactionsResponse{
+		Sums: sums,
+	}, nil
+}
+
+func (uc *transactionUseCase) binarySearchExchangeRates(t *entity.Transaction, ers []*entity.ExchangeRate) *entity.ExchangeRate {
+	var (
+		left  = 0
+		right = len(ers) - 1
+		index = -1
+	)
+
+	for left <= right {
+		mid := left + (right-left)/2
+
+		er := ers[mid]
+
+		if er.GetTimestamp() <= t.GetTransactionTime() && er.GetFrom() == t.GetCurrency() {
+			index = mid
+			left = mid + 1
+		} else {
+			right = mid - 1
+		}
+	}
+
+	if index != -1 {
+		return ers[index]
+	}
+
+	return nil
 }
 
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
@@ -297,11 +298,11 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		delete(sums, nil)
 	}
 
-	res := make([]*CategoryTransactionSum, 0)
+	res := make([]*common.TransactionSummary, 0)
 	for c, sum := range sums {
-		res = append(res, &CategoryTransactionSum{
+		res = append(res, &common.TransactionSummary{
 			Category: c,
-			Sum:      goutil.String(fmt.Sprint(util.RoundFloatToStandardDP(sum))),
+			Sum:      goutil.Float64(util.RoundFloatToStandardDP(sum)),
 		})
 	}
 

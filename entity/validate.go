@@ -137,19 +137,3 @@ func PagingValidator(optional bool) validator.Validator {
 		},
 	}
 }
-
-func RangeFilterValidator(optional bool) validator.Validator {
-	return &validator.Form{
-		Optional: optional,
-		Validators: map[string]validator.Validator{
-			"gte": &validator.UInt64{
-				Optional:  true,
-				UnsetZero: true,
-			},
-			"lte": &validator.UInt64{
-				Optional:  true,
-				UnsetZero: true,
-			},
-		},
-	}
-}

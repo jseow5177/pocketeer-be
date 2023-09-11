@@ -3,6 +3,7 @@ package presenter
 import (
 	"fmt"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -28,23 +29,53 @@ func (p *Paging) GetPage() uint32 {
 	return 0
 }
 
+func (p *Paging) toPaging() *common.Paging {
+	if p == nil {
+		p = new(Paging)
+	}
+
+	if p.Limit == nil {
+		p.Limit = goutil.Uint32(config.DefaultPagingLimit)
+	}
+
+	if p.Page == nil {
+		p.Page = goutil.Uint32(config.MinPagingPage)
+	}
+
+	return &common.Paging{
+		Limit: p.Limit,
+		Page:  p.Page,
+	}
+}
+
 type RangeFilter struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func (uv *RangeFilter) GetGte() uint64 {
-	if uv != nil && uv.Gte != nil {
-		return *uv.Gte
+func (rf *RangeFilter) GetGte() uint64 {
+	if rf != nil && rf.Gte != nil {
+		return *rf.Gte
 	}
 	return 0
 }
 
-func (uv *RangeFilter) GetLte() uint64 {
-	if uv != nil && uv.Lte != nil {
-		return *uv.Lte
+func (rf *RangeFilter) GetLte() uint64 {
+	if rf != nil && rf.Lte != nil {
+		return *rf.Lte
 	}
 	return 0
+}
+
+func (rf *RangeFilter) toRangeFilter() *common.RangeFilter {
+	if rf == nil {
+		return nil
+	}
+
+	return &common.RangeFilter{
+		Gte: rf.Gte,
+		Lte: rf.Lte,
+	}
 }
 
 func toBudget(b *entity.Budget) *Budget {
@@ -316,6 +347,32 @@ func toAccounts(acs []*entity.Account) []*Account {
 		accounts[idx] = toAccount(ac)
 	}
 	return accounts
+}
+
+func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
+	if ts == nil {
+		return nil
+	}
+
+	var sum *string
+	if ts.Sum != nil {
+		sum = goutil.String(fmt.Sprint(ts.GetSum()))
+	}
+
+	return &TransactionSummary{
+		Category:        toCategory(ts.Category),
+		TransactionType: ts.TransactionType,
+		Sum:             sum,
+		Currency:        ts.Currency,
+	}
+}
+
+func toTransactionSummaries(tss []*common.TransactionSummary) []*TransactionSummary {
+	transactionSummaries := make([]*TransactionSummary, len(tss))
+	for idx, ts := range tss {
+		transactionSummaries[idx] = toTransactionSummary(ts)
+	}
+	return transactionSummaries
 }
 
 func toPaging(p *common.Paging) *Paging {
