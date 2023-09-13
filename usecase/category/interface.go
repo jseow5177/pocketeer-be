@@ -3,8 +3,10 @@ package category
 import (
 	"context"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -72,6 +74,7 @@ func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end
 		repo.WithTransactionCategoryID(m.CategoryID),
 		repo.WithTransactionTimeGte(goutil.Uint64(start)),
 		repo.WithTransactionTimeLte(goutil.Uint64(end)),
+		repo.WithTransactionType(goutil.Uint32(uint32(entity.TransactionTypeExpense))), // safeguard
 	)
 }
 
@@ -81,6 +84,22 @@ func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
 		CategoryID: m.CategoryID,
 		BudgetDate: m.BudgetDate,
 	}
+}
+
+func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to string, start, end uint64) *repo.ExchangeRateFilter {
+	return repo.NewExchangeRateFilter(
+		to,
+		repo.WithTimestampGte(goutil.Uint64(start)),
+		repo.WithTimestampLte(goutil.Uint64(end)),
+		repo.WithExchangeRatePaging(&repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("timestamp"),
+					Order: goutil.String(config.OrderAsc),
+				},
+			},
+		}),
+	)
 }
 
 type GetCategoryBudgetResponse struct {
@@ -421,7 +440,7 @@ func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
 	return 0
 }
 
-func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+func (m *SumCategoryTransactionsRequest) ToTransactionFilter(categoryIDs []string) *repo.TransactionFilter {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.RangeFilter)
@@ -432,6 +451,28 @@ func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.Transaction
 		repo.WithTransactionTimeGte(tt.Gte),
 		repo.WithTransactionTimeLte(tt.Lte),
 		repo.WithTransactionType(m.TransactionType),
+		repo.WithTransactionCategoryIDs(categoryIDs),
+	)
+}
+
+func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(common.RangeFilter)
+	}
+
+	return repo.NewExchangeRateFilter(
+		to,
+		repo.WithTimestampGte(tt.Gte),
+		repo.WithTimestampLte(tt.Lte),
+		repo.WithExchangeRatePaging(&repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("timestamp"),
+					Order: goutil.String(config.OrderAsc),
+				},
+			},
+		}),
 	)
 }
 

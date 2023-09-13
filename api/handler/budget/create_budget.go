@@ -38,6 +38,7 @@ var CreateBudgetValidator = validator.OptionalForm(map[string]validator.Validato
 
 func (h *budgetHandler) CreateBudget(ctx context.Context, req *presenter.CreateBudgetRequest, res *presenter.CreateBudgetResponse) error {
 	user := entity.GetUserFromCtx(ctx)
+	req.Currency = user.Meta.Currency // may support currency set
 
 	if req.GetCategoryID() == "" {
 		return ErrEmptyCategoryID

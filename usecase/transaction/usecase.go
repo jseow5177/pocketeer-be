@@ -436,7 +436,7 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 		amount := t.GetAmount()
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := uc.binarySearchExchangeRates(t, ers)
+			er := entity.BinarySearchExchangeRates(t, ers)
 			if er == nil {
 				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
 				continue
@@ -459,33 +459,6 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 	return &SumTransactionsResponse{
 		Sums: sums,
 	}, nil
-}
-
-func (uc *transactionUseCase) binarySearchExchangeRates(t *entity.Transaction, ers []*entity.ExchangeRate) *entity.ExchangeRate {
-	var (
-		left  = 0
-		right = len(ers) - 1
-		index = -1
-	)
-
-	for left <= right {
-		mid := left + (right-left)/2
-
-		er := ers[mid]
-
-		if er.GetTimestamp() <= t.GetTransactionTime() && er.GetFrom() == t.GetCurrency() {
-			index = mid
-			left = mid + 1
-		} else {
-			right = mid - 1
-		}
-	}
-
-	if index != -1 {
-		return ers[index]
-	}
-
-	return nil
 }
 
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {

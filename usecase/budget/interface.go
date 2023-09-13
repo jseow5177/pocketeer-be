@@ -23,6 +23,7 @@ type CreateBudgetRequest struct {
 	BudgetType   *uint32
 	BudgetRepeat *uint32
 	Amount       *float64
+	Currency     *string
 }
 
 func (m *CreateBudgetRequest) GetUserID() string {
@@ -67,6 +68,13 @@ func (m *CreateBudgetRequest) GetAmount() float64 {
 	return 0
 }
 
+func (m *CreateBudgetRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
 	startDate, endDate, err := entity.GetBudgetStartEnd(
 		m.GetBudgetDate(),
@@ -80,6 +88,7 @@ func (m *CreateBudgetRequest) ToBudgetEntity() (*entity.Budget, error) {
 	return entity.NewBudget(
 		m.GetUserID(),
 		m.GetCategoryID(),
+		entity.WithBudgetCurrency(m.Currency),
 		entity.WithBudgetAmount(m.Amount),
 		entity.WithBudgetType(goutil.Uint32(m.GetBudgetType())),
 		entity.WithBudgetStartDate(goutil.Uint64(startDate)),

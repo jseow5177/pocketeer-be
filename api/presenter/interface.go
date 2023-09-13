@@ -97,6 +97,7 @@ func toBudget(b *entity.Budget) *Budget {
 		BudgetID:     b.BudgetID,
 		CategoryID:   b.CategoryID,
 		BudgetType:   b.BudgetType,
+		Currency:     b.Currency,
 		BudgetStatus: b.BudgetStatus,
 		Amount:       amount,
 		CreateTime:   b.CreateTime,

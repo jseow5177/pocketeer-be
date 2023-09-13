@@ -197,7 +197,9 @@ func (s *server) Start() error {
 		s.mongo, s.categoryRepo, s.accountRepo,
 		s.transactionRepo, s.budgetRepo, s.exchangeRateRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
-	s.categoryUseCase = cuc.NewCategoryUseCase(s.mongo, s.categoryRepo, s.transactionRepo, s.budgetUseCase, s.budgetRepo)
+	s.categoryUseCase = cuc.NewCategoryUseCase(
+		s.mongo, s.categoryRepo, s.transactionRepo,
+		s.budgetUseCase, s.budgetRepo, s.exchangeRateRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)

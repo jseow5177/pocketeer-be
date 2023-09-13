@@ -37,8 +37,9 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 
 func (h *accountHandler) CreateAccount(ctx context.Context, req *presenter.CreateAccountRequest, res *presenter.CreateAccountResponse) error {
 	user := entity.GetUserFromCtx(ctx)
+	req.Currency = user.Meta.Currency // may support currency set
 
-	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(user.GetUserID(), user.Meta.GetCurrency()))
+	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create account, err: %v", err)
 		return err

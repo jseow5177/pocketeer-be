@@ -258,11 +258,15 @@ func (m *InitUserRequest) GetCategories() []*CreateCategoryRequest {
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
 	acs := make([]*account.CreateAccountRequest, 0)
 	for _, r := range m.Accounts {
-		acs = append(acs, r.ToUseCaseReq(userID, m.GetCurrency()))
+		r.Currency = m.Currency // may support currency set
+		acs = append(acs, r.ToUseCaseReq(userID))
 	}
 
 	cs := make([]*category.CreateCategoryRequest, 0)
 	for _, r := range m.Categories {
+		if r.Budget != nil {
+			r.Budget.Currency = m.Currency // may support currency set
+		}
 		cs = append(cs, r.ToUseCaseReq(userID))
 	}
 

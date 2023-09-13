@@ -104,6 +104,8 @@ type CreateAccountRequest struct {
 	Note        *string                 `json:"note,omitempty"`
 	AccountType *uint32                 `json:"account_type,omitempty"`
 	Holdings    []*CreateHoldingRequest `json:"holdings,omitempty"`
+
+	Currency *string // unsupported for now
 }
 
 func (m *CreateAccountRequest) GetAccountName() string {
@@ -116,6 +118,13 @@ func (m *CreateAccountRequest) GetAccountName() string {
 func (m *CreateAccountRequest) GetBalance() string {
 	if m != nil && m.Balance != nil {
 		return *m.Balance
+	}
+	return ""
+}
+
+func (m *CreateAccountRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -141,7 +150,7 @@ func (m *CreateAccountRequest) GetHoldings() []*CreateHoldingRequest {
 	return nil
 }
 
-func (m *CreateAccountRequest) ToUseCaseReq(userID, currency string) *account.CreateAccountRequest {
+func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
 	var balance *float64
 	if m.Balance != nil {
 		b, _ := util.MonetaryStrToFloat(m.GetBalance())
@@ -157,7 +166,7 @@ func (m *CreateAccountRequest) ToUseCaseReq(userID, currency string) *account.Cr
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
 		Balance:     balance,
-		Currency:    goutil.String(currency),
+		Currency:    m.Currency,
 		AccountType: m.AccountType,
 		Note:        m.Note,
 		Holdings:    hs,

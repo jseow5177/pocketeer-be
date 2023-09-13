@@ -105,7 +105,7 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 	startDate, endDate, err := entity.GetBudgetStartEnd(
 		f.GetBudgetDate(),
 		f.GetBudgetType(),
-		f.GetBudgetType(),
+		f.GetBudgetRepeat(),
 	)
 	if err != nil {
 		return err
@@ -114,6 +114,7 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 	dummyBudget, err := entity.NewBudget(
 		f.GetUserID(),
 		f.GetCategoryID(),
+		entity.WithBudgetCurrency(goutil.String("")),
 		entity.WithBudgetAmount(goutil.Float64(0)),
 		entity.WithBudgetType(f.BudgetType),
 		entity.WithBudgetStatus(goutil.Uint32(uint32(entity.BudgetStatusDeleted))),
