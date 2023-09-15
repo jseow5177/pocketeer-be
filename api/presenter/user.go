@@ -2,8 +2,6 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/account"
-	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/user"
 )
 
@@ -229,9 +227,7 @@ func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
 }
 
 type InitUserRequest struct {
-	Currency   *string                  `json:"currency,omitempty"`
-	Accounts   []*CreateAccountRequest  `json:"accounts,omitempty"`
-	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
+	Currency *string `json:"currency,omitempty"`
 }
 
 func (m *InitUserRequest) GetCurrency() string {
@@ -241,40 +237,10 @@ func (m *InitUserRequest) GetCurrency() string {
 	return ""
 }
 
-func (m *InitUserRequest) GetAccounts() []*CreateAccountRequest {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
-	}
-	return nil
-}
-
-func (m *InitUserRequest) GetCategories() []*CreateCategoryRequest {
-	if m != nil && m.Categories != nil {
-		return m.Categories
-	}
-	return nil
-}
-
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
-	acs := make([]*account.CreateAccountRequest, 0)
-	for _, r := range m.Accounts {
-		r.Currency = m.Currency // may support currency set
-		acs = append(acs, r.ToUseCaseReq(userID))
-	}
-
-	cs := make([]*category.CreateCategoryRequest, 0)
-	for _, r := range m.Categories {
-		if r.Budget != nil {
-			r.Budget.Currency = m.Currency // may support currency set
-		}
-		cs = append(cs, r.ToUseCaseReq(userID))
-	}
-
 	return &user.InitUserRequest{
-		UserID:     goutil.String(userID),
-		Currency:   m.Currency,
-		Accounts:   acs,
-		Categories: cs,
+		UserID:   goutil.String(userID),
+		Currency: m.Currency,
 	}
 }
 

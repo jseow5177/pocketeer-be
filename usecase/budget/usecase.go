@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
@@ -43,7 +44,9 @@ func (uc *budgetUseCase) CreateBudget(ctx context.Context, req *CreateBudgetRequ
 		return nil, repo.ErrBudgetAlreadyExists
 	}
 
-	b, err = req.ToBudgetEntity()
+	u := entity.GetUserFromCtx(ctx)
+
+	b, err = req.ToBudgetEntity(u.Meta.GetCurrency())
 	if err != nil {
 		return nil, err
 	}

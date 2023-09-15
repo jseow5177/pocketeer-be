@@ -5,7 +5,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/jseow5177/pockteer-be/api/handler/budget"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
@@ -19,7 +18,6 @@ var CreateCategoryValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:   false,
 		Validators: []validator.UInt32Func{entity.CheckCategoryType},
 	},
-	"budget": budget.CreateBudgetValidator,
 })
 
 func (h *categoryHandler) CreateCategory(ctx context.Context, req *presenter.CreateCategoryRequest, res *presenter.CreateCategoryResponse) error {

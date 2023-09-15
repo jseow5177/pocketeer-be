@@ -119,12 +119,6 @@ func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 	}
 }
 
-func WithCategoryBudget(budget *Budget) CategoryOption {
-	return func(c *Category) {
-		c.SetBudget(budget)
-	}
-}
-
 func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{

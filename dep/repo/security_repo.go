@@ -24,6 +24,34 @@ type SecurityFilter struct {
 	Paging      *Paging `filter:"-"`
 }
 
+type SecurityFilterOption = func(sf *SecurityFilter)
+
+func WithSecuritySymbolRegex(symbolRegex *string) SecurityFilterOption {
+	return func(sf *SecurityFilter) {
+		sf.SymbolRegex = symbolRegex
+	}
+}
+
+func WithSecuritySymbol(symbol *string) SecurityFilterOption {
+	return func(sf *SecurityFilter) {
+		sf.Symbol = symbol
+	}
+}
+
+func WithSecurityPaging(paging *Paging) SecurityFilterOption {
+	return func(sf *SecurityFilter) {
+		sf.Paging = paging
+	}
+}
+
+func NewSecurityFilter(opts ...SecurityFilterOption) *SecurityFilter {
+	sf := new(SecurityFilter)
+	for _, opt := range opts {
+		opt(sf)
+	}
+	return sf
+}
+
 func (f *SecurityFilter) GetSymbol() string {
 	if f != nil && f.Symbol != nil {
 		return *f.Symbol

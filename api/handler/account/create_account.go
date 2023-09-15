@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/api/handler/holding"
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -28,16 +27,10 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 		Optional:   false,
 		Validators: []validator.UInt32Func{entity.CheckChildAccountType},
 	},
-	"holdings": &validator.Slice{
-		Optional:  true,
-		MaxLen:    20,
-		Validator: holding.CreateHoldingValidator,
-	},
 })
 
 func (h *accountHandler) CreateAccount(ctx context.Context, req *presenter.CreateAccountRequest, res *presenter.CreateAccountResponse) error {
 	user := entity.GetUserFromCtx(ctx)
-	req.Currency = user.Meta.Currency // may support currency set
 
 	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {

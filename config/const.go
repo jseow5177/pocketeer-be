@@ -73,8 +73,6 @@ const (
 	StandardDP = 2
 	PreciseDP  = 5
 
-	USDToSGD = 1.31
-
 	LogLevelDebug = "DEBUG"
 	LogLevelInfo  = "INFO"
 

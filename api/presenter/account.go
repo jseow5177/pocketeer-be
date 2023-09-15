@@ -1,9 +1,10 @@
 package presenter
 
 import (
+	"fmt"
+
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
-	"github.com/jseow5177/pockteer-be/usecase/holding"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
@@ -19,6 +20,8 @@ type Account struct {
 	UpdateTime    *uint64    `json:"update_time,omitempty"`
 	TotalCost     *string    `json:"total_cost,omitempty"`
 	Holdings      []*Holding `json:"holdings,omitempty"`
+	Gain          *string    `json:"gain,omitempty"`
+	PercentGain   *string    `json:"percent_gain,omitempty"`
 }
 
 func (ac *Account) GetAccountID() string {
@@ -99,13 +102,10 @@ func (ac *Account) GetHoldings() []*Holding {
 }
 
 type CreateAccountRequest struct {
-	AccountName *string                 `json:"account_name,omitempty"`
-	Balance     *string                 `json:"balance,omitempty"`
-	Note        *string                 `json:"note,omitempty"`
-	AccountType *uint32                 `json:"account_type,omitempty"`
-	Holdings    []*CreateHoldingRequest `json:"holdings,omitempty"`
-
-	Currency *string // unsupported for now
+	AccountName *string `json:"account_name,omitempty"`
+	Balance     *string `json:"balance,omitempty"`
+	Note        *string `json:"note,omitempty"`
+	AccountType *uint32 `json:"account_type,omitempty"`
 }
 
 func (m *CreateAccountRequest) GetAccountName() string {
@@ -118,13 +118,6 @@ func (m *CreateAccountRequest) GetAccountName() string {
 func (m *CreateAccountRequest) GetBalance() string {
 	if m != nil && m.Balance != nil {
 		return *m.Balance
-	}
-	return ""
-}
-
-func (m *CreateAccountRequest) GetCurrency() string {
-	if m != nil && m.Currency != nil {
-		return *m.Currency
 	}
 	return ""
 }
@@ -143,13 +136,6 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) GetHoldings() []*CreateHoldingRequest {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
-	}
-	return nil
-}
-
 func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
 	var balance *float64
 	if m.Balance != nil {
@@ -157,19 +143,12 @@ func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccoun
 		balance = goutil.Float64(b)
 	}
 
-	hs := make([]*holding.CreateHoldingRequest, 0)
-	for _, r := range m.Holdings {
-		hs = append(hs, r.ToUseCaseReq(userID))
-	}
-
 	return &account.CreateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
 		Balance:     balance,
-		Currency:    m.Currency,
 		AccountType: m.AccountType,
 		Note:        m.Note,
-		Holdings:    hs,
 	}
 }
 
@@ -240,7 +219,15 @@ func (m *GetAccountsRequest) ToUseCaseReq(userID string) *account.GetAccountsReq
 }
 
 type GetAccountsResponse struct {
+	NetWorth *string    `json:"net_worth,omitempty"`
 	Accounts []*Account `json:"accounts,omitempty"`
+}
+
+func (m *GetAccountsResponse) GetNetWorth() string {
+	if m != nil && m.NetWorth != nil {
+		return *m.NetWorth
+	}
+	return ""
 }
 
 func (m *GetAccountsResponse) GetAccounts() []*Account {
@@ -252,6 +239,7 @@ func (m *GetAccountsResponse) GetAccounts() []*Account {
 
 func (m *GetAccountsResponse) Set(useCaseRes *account.GetAccountsResponse) {
 	m.Accounts = toAccounts(useCaseRes.Accounts)
+	m.NetWorth = goutil.String(fmt.Sprint(useCaseRes.GetNetWorth()))
 }
 
 type UpdateAccountRequest struct {

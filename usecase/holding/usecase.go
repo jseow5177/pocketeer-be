@@ -5,17 +5,17 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
 type holdingUseCase struct {
-	txMgr        repo.TxMgr
-	accountRepo  repo.AccountRepo
-	holdingRepo  repo.HoldingRepo
-	lotRepo      repo.LotRepo
-	securityRepo repo.SecurityRepo
-	quoteRepo    repo.QuoteRepo
+	txMgr            repo.TxMgr
+	accountRepo      repo.AccountRepo
+	holdingRepo      repo.HoldingRepo
+	lotRepo          repo.LotRepo
+	securityRepo     repo.SecurityRepo
+	quoteRepo        repo.QuoteRepo
+	exchangeRateRepo repo.ExchangeRateRepo
 }
 
 func NewHoldingUseCase(
@@ -25,6 +25,7 @@ func NewHoldingUseCase(
 	lotRepo repo.LotRepo,
 	securityRepo repo.SecurityRepo,
 	quoteRepo repo.QuoteRepo,
+	exchangeRateRepo repo.ExchangeRateRepo,
 ) UseCase {
 	return &holdingUseCase{
 		txMgr,
@@ -33,15 +34,11 @@ func NewHoldingUseCase(
 		lotRepo,
 		securityRepo,
 		quoteRepo,
+		exchangeRateRepo,
 	}
 }
 
 func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error) {
-	h, err := req.ToHoldingEntity()
-	if err != nil {
-		return nil, err
-	}
-
 	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
@@ -52,48 +49,29 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, entity.ErrAccountCannotHaveHoldings
 	}
 
+	// default to account currency
+	h, err := req.ToHoldingEntity(ac.GetCurrency())
+	if err != nil {
+		return nil, err
+	}
+
 	if h.IsDefault() {
-		if _, err = uc.securityRepo.Get(ctx, req.ToSecurityFilter()); err != nil {
+		s, err := uc.securityRepo.Get(ctx, req.ToSecurityFilter())
+		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
 			return nil, err
 		}
 
-		q, err := uc.quoteRepo.Get(ctx, req.ToQuoteFilter())
-		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to get quote from repo, err: %v", err)
-			return nil, err
-		}
-		h.SetQuote(q)
+		// use symbol's currency
+		h.SetCurrency(s.Currency)
 	}
 
-	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if _, err = uc.holdingRepo.Create(txCtx, h); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new holding to repo, err: %v", err)
-			return err
-		}
-
-		if len(req.Lots) == 0 {
-			return nil
-		}
-
-		ls := req.ToLotEntities()
-		for _, l := range ls {
-			l.SetHoldingID(h.HoldingID)
-		}
-
-		_, err := uc.lotRepo.CreateMany(txCtx, ls)
-		if err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new lots to repo, err: %v", err)
-			return err
-		}
-
-		h.SetLots(ls)
-		h.ComputeSharesCostAndValue()
-
-		return nil
-	}); err != nil {
+	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
 		return nil, err
 	}
+
+	h.ComputeCostGainAndValue()
 
 	return &CreateHoldingResponse{
 		Holding: h,
@@ -107,70 +85,26 @@ func (uc *holdingUseCase) GetHolding(ctx context.Context, req *GetHoldingRequest
 		return nil, err
 	}
 
-	if !h.IsDefault() {
-		return &GetHoldingResponse{
-			Holding: h,
-		}, nil
-	}
-
-	q, err := uc.quoteRepo.Get(ctx, req.ToQuoteFilter(h.GetSymbol()))
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get quote from repo, err: %v", err)
-		return nil, err
-	}
-	h.SetQuote(q)
-
-	ls, err := uc.lotRepo.GetMany(ctx, req.ToLotFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get lots from repo, err: %v", err)
-		return nil, err
-	}
-	h.SetLots(ls)
-
-	h.ComputeSharesCostAndValue()
-
-	return &GetHoldingResponse{
-		Holding: h,
-	}, nil
-}
-
-func (uc *holdingUseCase) GetHoldings(ctx context.Context, req *GetHoldingsRequest) (*GetHoldingsResponse, error) {
-	hs, err := uc.holdingRepo.GetMany(ctx, req.ToHoldingFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get holdings from repo, err: %v", err)
-		return nil, err
-	}
-
-	if err := goutil.ParallelizeWork(ctx, len(hs), 5, func(ctx context.Context, workNum int) error {
-		h := hs[workNum]
-
-		if !h.IsDefault() {
-			return nil
-		}
-
+	if h.IsDefault() {
 		q, err := uc.quoteRepo.Get(ctx, req.ToQuoteFilter(h.GetSymbol()))
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get quote from repo, err: %v", err)
-			return err
+			return nil, err
 		}
 		h.SetQuote(q)
 
-		ls, err := uc.lotRepo.GetMany(ctx, req.ToLotFilter(h.GetHoldingID()))
+		ls, err := uc.lotRepo.GetMany(ctx, req.ToLotFilter())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get lots from repo, err: %v", err)
-			return err
+			return nil, err
 		}
 		h.SetLots(ls)
-
-		h.ComputeSharesCostAndValue()
-
-		return nil
-	}); err != nil {
-		return nil, err
 	}
 
-	return &GetHoldingsResponse{
-		Holdings: hs,
+	h.ComputeCostGainAndValue()
+
+	return &GetHoldingResponse{
+		Holding: h,
 	}, nil
 }
 
@@ -193,9 +127,9 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 	}
 
 	if hu.Symbol != nil && h.IsDefault() {
-		if _, err = uc.securityRepo.Get(ctx, &repo.SecurityFilter{
-			Symbol: hu.Symbol,
-		}); err != nil {
+		if _, err = uc.securityRepo.Get(ctx, repo.NewSecurityFilter(
+			repo.WithSecuritySymbol(hu.Symbol),
+		)); err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
 			return nil, err
 		}

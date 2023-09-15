@@ -8,7 +8,6 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
@@ -154,7 +153,6 @@ type CreateCategoryRequest struct {
 	UserID       *string
 	CategoryName *string
 	CategoryType *uint32
-	Budget       *budget.CreateBudgetRequest
 }
 
 func (m *CreateCategoryRequest) GetUserID() string {
@@ -178,27 +176,11 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 	return 0
 }
 
-func (m *CreateCategoryRequest) GetBudget() *budget.CreateBudgetRequest {
-	if m != nil && m.Budget != nil {
-		return m.Budget
-	}
-	return nil
-}
-
 func (m *CreateCategoryRequest) ToCategoryEntity() (*entity.Category, error) {
-	var b *entity.Budget
-	if m.Budget != nil {
-		var err error
-		b, err = m.Budget.ToBudgetEntity()
-		if err != nil {
-			return nil, err
-		}
-	}
 	return entity.NewCategory(
 		m.GetUserID(),
 		m.GetCategoryName(),
 		entity.WithCategoryType(m.CategoryType),
-		entity.WithCategoryBudget(b),
 	)
 }
 

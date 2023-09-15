@@ -6,8 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/account"
-	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/token"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -247,10 +245,8 @@ func (m *IsAuthenticatedResponse) GetUser() *entity.User {
 }
 
 type InitUserRequest struct {
-	UserID     *string
-	Currency   *string
-	Categories []*category.CreateCategoryRequest
-	Accounts   []*account.CreateAccountRequest
+	UserID   *string
+	Currency *string
 }
 
 func (m *InitUserRequest) GetUserID() string {
@@ -283,45 +279,6 @@ func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 		UserID:     m.UserID,
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
 	}
-}
-
-func (m *InitUserRequest) GetCategories() []*category.CreateCategoryRequest {
-	if m != nil && m.Categories != nil {
-		return m.Categories
-	}
-	return nil
-}
-
-func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
-	cs := make([]*entity.Category, 0)
-	for _, r := range m.Categories {
-		c, err := r.ToCategoryEntity()
-		if err != nil {
-			return nil, err
-		}
-		cs = append(cs, c)
-	}
-	return cs, nil
-}
-
-func (m *InitUserRequest) GetAccounts() []*account.CreateAccountRequest {
-	if m != nil && m.Accounts != nil {
-		return m.Accounts
-	}
-	return nil
-}
-
-func (m *InitUserRequest) ToAccountEntities() ([]*entity.Account, error) {
-	acs := make([]*entity.Account, 0)
-	for _, r := range m.Accounts {
-		ac, err := r.ToAccountEntity()
-		if err != nil {
-			return nil, err
-		}
-		acs = append(acs, ac)
-	}
-
-	return acs, nil
 }
 
 type InitUserResponse struct{}

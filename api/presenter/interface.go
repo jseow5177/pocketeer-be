@@ -217,6 +217,16 @@ func toHolding(h *entity.Holding) *Holding {
 		avgCostPerShare = goutil.String(fmt.Sprint(h.GetAvgCostPerShare()))
 	}
 
+	var gain *string
+	if h.Gain != nil {
+		gain = goutil.String(fmt.Sprint(h.GetGain()))
+	}
+
+	var percentGain *string
+	if h.PercentGain != nil {
+		percentGain = goutil.String(fmt.Sprint(h.GetPercentGain()))
+	}
+
 	return &Holding{
 		HoldingID:       h.HoldingID,
 		AccountID:       h.AccountID,
@@ -229,8 +239,11 @@ func toHolding(h *entity.Holding) *Holding {
 		TotalCost:       totalCost,
 		TotalShares:     totalShares,
 		AvgCostPerShare: avgCostPerShare,
+		Currency:        h.Currency,
 		Quote:           toQuote(h.Quote),
 		Lots:            toLots(h.Lots),
+		Gain:            gain,
+		PercentGain:     percentGain,
 	}
 }
 
@@ -301,6 +314,7 @@ func toLot(l *entity.Lot) *Lot {
 		TradeDate:    l.TradeDate,
 		CreateTime:   l.CreateTime,
 		UpdateTime:   l.UpdateTime,
+		Currency:     l.Currency,
 	}
 }
 
@@ -322,9 +336,14 @@ func toAccount(ac *entity.Account) *Account {
 		balance = goutil.String(fmt.Sprint(ac.GetBalance()))
 	}
 
-	var totalCost *string
-	if ac.TotalCost != nil {
-		totalCost = goutil.String(fmt.Sprint(ac.GetTotalCost()))
+	var gain *string
+	if ac.Gain != nil {
+		gain = goutil.String(fmt.Sprint(ac.GetGain()))
+	}
+
+	var percentGain *string
+	if ac.PercentGain != nil {
+		percentGain = goutil.String(fmt.Sprint(ac.GetPercentGain()))
 	}
 
 	return &Account{
@@ -337,7 +356,8 @@ func toAccount(ac *entity.Account) *Account {
 		Note:          ac.Note,
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
-		TotalCost:     totalCost,
+		Gain:          gain,
+		PercentGain:   percentGain,
 		Holdings:      toHoldings(ac.Holdings),
 	}
 }

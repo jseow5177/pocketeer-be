@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/holding"
 )
 
 var (
@@ -113,7 +112,15 @@ func (m *GetAccountsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 }
 
 type GetAccountsResponse struct {
+	NetWorth *float64
 	Accounts []*entity.Account
+}
+
+func (m *GetAccountsResponse) GetNetWorth() float64 {
+	if m != nil && m.NetWorth != nil {
+		return *m.NetWorth
+	}
+	return 0
 }
 
 func (m *GetAccountsResponse) GetAccounts() []*entity.Account {
@@ -126,11 +133,9 @@ func (m *GetAccountsResponse) GetAccounts() []*entity.Account {
 type CreateAccountRequest struct {
 	UserID      *string
 	AccountName *string
-	Currency    *string
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
-	Holdings    []*holding.CreateHoldingRequest
 }
 
 func (m *CreateAccountRequest) GetUserID() string {
@@ -143,13 +148,6 @@ func (m *CreateAccountRequest) GetUserID() string {
 func (m *CreateAccountRequest) GetAccountName() string {
 	if m != nil && m.AccountName != nil {
 		return *m.AccountName
-	}
-	return ""
-}
-
-func (m *CreateAccountRequest) GetCurrency() string {
-	if m != nil && m.Currency != nil {
-		return *m.Currency
 	}
 	return ""
 }
@@ -175,40 +173,16 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) GetHoldings() []*holding.CreateHoldingRequest {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
-	}
-	return nil
-}
-
-func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
-	hs, err := m.ToHoldingEntities()
-	if err != nil {
-		return nil, err
-	}
+func (m *CreateAccountRequest) ToAccountEntity(currency string) (*entity.Account, error) {
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
-		entity.WithAccountCurrency(m.Currency),
+		entity.WithAccountCurrency(goutil.String(currency)),
 		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
-		entity.WithAccountHoldings(hs),
 	)
-}
-
-func (m *CreateAccountRequest) ToHoldingEntities() ([]*entity.Holding, error) {
-	hs := make([]*entity.Holding, 0)
-	for _, r := range m.Holdings {
-		h, err := r.ToHoldingEntity()
-		if err != nil {
-			return nil, err
-		}
-		hs = append(hs, h)
-	}
-	return hs, nil
 }
 
 type CreateAccountResponse struct {

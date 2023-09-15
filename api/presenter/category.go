@@ -2,7 +2,6 @@ package presenter
 
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/category"
 )
 
@@ -66,9 +65,8 @@ func (c *Category) GetBudget() *Budget {
 }
 
 type CreateCategoryRequest struct {
-	CategoryName *string              `json:"category_name,omitempty"`
-	CategoryType *uint32              `json:"category_type,omitempty"`
-	Budget       *CreateBudgetRequest `json:"budget,omitempty"`
+	CategoryName *string `json:"category_name,omitempty"`
+	CategoryType *uint32 `json:"category_type,omitempty"`
 }
 
 func (m *CreateCategoryRequest) GetCategoryName() string {
@@ -85,23 +83,11 @@ func (m *CreateCategoryRequest) GetCategoryType() uint32 {
 	return 0
 }
 
-func (m *CreateCategoryRequest) GetBudget() *CreateBudgetRequest {
-	if m != nil && m.Budget != nil {
-		return m.Budget
-	}
-	return nil
-}
-
 func (m *CreateCategoryRequest) ToUseCaseReq(userID string) *category.CreateCategoryRequest {
-	var b *budget.CreateBudgetRequest
-	if m.Budget != nil {
-		b = m.Budget.ToUseCaseReq(userID)
-	}
 	return &category.CreateCategoryRequest{
 		UserID:       goutil.String(userID),
 		CategoryName: m.CategoryName,
 		CategoryType: m.CategoryType,
-		Budget:       b,
 	}
 }
 

@@ -203,10 +203,12 @@ func (s *server) Start() error {
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
+	s.holdingUseCase = huc.NewHoldingUseCase(
+		s.mongo, s.accountRepo, s.holdingRepo,
+		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo)
 	s.accountUseCase = acuc.NewAccountUseCase(
 		s.mongo, s.accountRepo, s.transactionRepo,
-		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo)
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
 		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,

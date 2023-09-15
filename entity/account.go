@@ -175,8 +175,9 @@ type Account struct {
 	UpdateTime    *uint64
 
 	// Investment
-	TotalCost *float64
-	Holdings  []*Holding
+	Gain        *float64
+	PercentGain *float64
+	Holdings    []*Holding
 }
 
 type AccountOption = func(ac *Account)
@@ -232,12 +233,6 @@ func WithAccountCreateTime(createTime *uint64) AccountOption {
 func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	return func(ac *Account) {
 		ac.SetUpdateTime(updateTime)
-	}
-}
-
-func WithAccountHoldings(holdings []*Holding) AccountOption {
-	return func(ac *Account) {
-		ac.SetHoldings(holdings)
 	}
 }
 
@@ -448,19 +443,35 @@ func (ac *Account) SetUpdateTime(updateTime *uint64) {
 	ac.UpdateTime = updateTime
 }
 
-func (ac *Account) GetTotalCost() float64 {
-	if ac != nil && ac.TotalCost != nil {
-		return *ac.TotalCost
+func (ac *Account) GetGain() float64 {
+	if ac != nil && ac.Gain != nil {
+		return *ac.Gain
 	}
 	return 0
 }
 
-func (ac *Account) SetTotalCost(totalCost *float64) {
-	ac.TotalCost = totalCost
+func (ac *Account) SetGain(gain *float64) {
+	ac.Gain = gain
 
-	if totalCost != nil {
-		tc := util.RoundFloatToStandardDP(*totalCost)
-		ac.TotalCost = goutil.Float64(tc)
+	if gain != nil {
+		g := util.RoundFloatToStandardDP(*gain)
+		ac.Gain = goutil.Float64(g)
+	}
+}
+
+func (ac *Account) GetPercentGain() float64 {
+	if ac != nil && ac.PercentGain != nil {
+		return *ac.PercentGain
+	}
+	return 0
+}
+
+func (ac *Account) SetPercentGain(percentGain *float64) {
+	ac.PercentGain = percentGain
+
+	if percentGain != nil {
+		pg := util.RoundFloatToStandardDP(*percentGain)
+		ac.PercentGain = goutil.Float64(pg)
 	}
 }
 
@@ -489,22 +500,4 @@ func (ac *Account) IsInvestment() bool {
 
 func (ac *Account) CanSetBalance() bool {
 	return ac.GetAccountType() != uint32(AssetInvestment)
-}
-
-func (ac *Account) ComputeCostAndBalance() {
-	if !ac.IsInvestment() {
-		return
-	}
-
-	var (
-		totalCost    float64
-		totalBalance float64
-	)
-	for _, h := range ac.Holdings {
-		totalCost += h.GetTotalCost()
-		totalBalance += h.GetLatestValue()
-	}
-
-	ac.SetBalance(goutil.Float64(totalBalance))
-	ac.SetTotalCost(goutil.Float64(totalCost))
 }

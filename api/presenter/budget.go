@@ -129,8 +129,6 @@ type CreateBudgetRequest struct {
 	BudgetType   *uint32 `json:"budget_type,omitempty"`
 	BudgetRepeat *uint32 `json:"budget_repeat,omitempty"`
 	Amount       *string `json:"amount,omitempty"`
-
-	Currency *string // unsupported for now
 }
 
 func (m *CreateBudgetRequest) GetCategoryID() string {
@@ -161,13 +159,6 @@ func (m *CreateBudgetRequest) GetBudgetRepeat() uint32 {
 	return 0
 }
 
-func (m *CreateBudgetRequest) GetCurrency() string {
-	if m != nil && m.Currency != nil {
-		return *m.Currency
-	}
-	return ""
-}
-
 func (m *CreateBudgetRequest) GetAmount() string {
 	if m != nil && m.Amount != nil {
 		return *m.Amount
@@ -185,7 +176,6 @@ func (m *CreateBudgetRequest) ToUseCaseReq(userID string) *budget.CreateBudgetRe
 		UserID:       goutil.String(userID),
 		CategoryID:   m.CategoryID,
 		Amount:       amount,
-		Currency:     m.Currency,
 		BudgetType:   m.BudgetType,
 		BudgetDate:   m.BudgetDate,
 		BudgetRepeat: m.BudgetRepeat,
