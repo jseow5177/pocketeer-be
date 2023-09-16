@@ -137,9 +137,7 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 }
 
 func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error) {
-	u := entity.GetUserFromCtx(ctx)
-
-	ac, err := req.ToAccountEntity(u.Meta.GetCurrency())
+	ac, err := req.ToAccountEntity()
 	if err != nil {
 		return nil, err
 	}

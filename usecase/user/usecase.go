@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/mailer"
@@ -359,9 +360,102 @@ func (uc *userUseCase) LogIn(ctx context.Context, req *LogInRequest) (*LogInResp
 }
 
 func (uc *userUseCase) initCategoriesAndBudgets(ctx context.Context, req *InitUserRequest) error {
+	if len(req.Categories) == 0 {
+		return nil
+	}
+
+	cs, err := req.ToCategoryEntities()
+	if err != nil {
+		return err
+	}
+
+	if _, err := uc.categoryRepo.CreateMany(ctx, cs); err != nil {
+		return err
+	}
+
+	bs := make([]*entity.Budget, 0)
+	for _, c := range cs {
+		if c.Budget == nil {
+			continue
+		}
+		c.Budget.SetCategoryID(c.CategoryID)
+		bs = append(bs, c.Budget)
+	}
+
+	if len(bs) == 0 {
+		return nil
+	}
+
+	if _, err := uc.budgetRepo.CreateMany(ctx, bs); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) error {
+	if len(req.Accounts) == 0 {
+		return nil
+	}
+
+	acs, err := req.ToAccountEntities()
+	if err != nil {
+		return err
+	}
+
+	// create accounts
+	_, err = uc.accountRepo.CreateMany(ctx, acs)
+	if err != nil {
+		return fmt.Errorf("fail to create accounts in repo, err: %v", err)
+	}
+
+	hs := make([]*entity.Holding, 0)
+	for i, ac := range acs {
+		for j, h := range ac.Holdings {
+			hrs := req.Accounts[i].Holdings
+
+			if h.IsDefault() {
+				s, err := uc.securityRepo.Get(ctx, hrs[j].ToSecurityFilter())
+				if err != nil {
+					return fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
+				}
+				h.SetCurrency(s.Currency)
+			}
+
+			h.SetAccountID(ac.AccountID)
+		}
+
+		hs = append(hs, ac.Holdings...)
+	}
+
+	if len(hs) == 0 {
+		return nil
+	}
+
+	// create holdings
+	_, err = uc.holdingRepo.CreateMany(ctx, hs)
+	if err != nil {
+		return fmt.Errorf("fail to create holdings in repo, err: %v", err)
+	}
+
+	ls := make([]*entity.Lot, 0)
+	for _, h := range hs {
+		for _, l := range h.Lots {
+			l.SetHoldingID(h.HoldingID)
+			l.SetCurrency(h.Currency)
+		}
+		ls = append(ls, h.Lots...)
+	}
+
+	if len(ls) == 0 {
+		return nil
+	}
+
+	// create lots
+	_, err = uc.lotRepo.CreateMany(ctx, ls)
+	if err != nil {
+		return fmt.Errorf("fail to create lots in repo, err: %v", err)
+	}
+
 	return nil
 }

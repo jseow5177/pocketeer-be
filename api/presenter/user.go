@@ -1,7 +1,10 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/account"
+	"github.com/jseow5177/pockteer-be/usecase/category"
 	"github.com/jseow5177/pockteer-be/usecase/user"
 )
 
@@ -227,7 +230,9 @@ func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
 }
 
 type InitUserRequest struct {
-	Currency *string `json:"currency,omitempty"`
+	Currency   *string                  `json:"currency,omitempty"`
+	Accounts   []*CreateAccountRequest  `json:"accounts,omitempty"`
+	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
 }
 
 func (m *InitUserRequest) GetCurrency() string {
@@ -238,9 +243,29 @@ func (m *InitUserRequest) GetCurrency() string {
 }
 
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
+	acs := make([]*account.CreateAccountRequest, 0)
+	for _, r := range m.Accounts {
+		r.Currency = m.Currency // TODO: Support currency on account creation
+		acs = append(acs, r.ToUseCaseReq(userID))
+	}
+
+	cs := make([]*category.CreateCategoryRequest, 0)
+	for _, r := range m.Categories {
+		if r.Budget != nil {
+			// TODO: Support currency on budget creation
+			r.Budget.Currency = m.Currency
+
+			// Default to all time
+			r.Budget.BudgetRepeat = goutil.Uint32(uint32(entity.BudgetRepeatAllTime))
+		}
+		cs = append(cs, r.ToUseCaseReq(userID))
+	}
+
 	return &user.InitUserRequest{
-		UserID:   goutil.String(userID),
-		Currency: m.Currency,
+		UserID:     goutil.String(userID),
+		Currency:   m.Currency,
+		Accounts:   acs,
+		Categories: cs,
 	}
 }
 

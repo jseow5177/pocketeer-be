@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
 )
 
 var (
@@ -136,6 +137,9 @@ type CreateAccountRequest struct {
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
+	Currency    *string
+
+	Holdings []*holding.CreateHoldingRequest // only for InitUser
 }
 
 func (m *CreateAccountRequest) GetUserID() string {
@@ -159,6 +163,13 @@ func (m *CreateAccountRequest) GetBalance() float64 {
 	return 0
 }
 
+func (m *CreateAccountRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *CreateAccountRequest) GetNote() string {
 	if m != nil && m.Note != nil {
 		return *m.Note
@@ -173,16 +184,40 @@ func (m *CreateAccountRequest) GetAccountType() uint32 {
 	return 0
 }
 
-func (m *CreateAccountRequest) ToAccountEntity(currency string) (*entity.Account, error) {
+func (m *CreateAccountRequest) GetHoldings() []*holding.CreateHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
+}
+
+func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
+	hs, err := m.ToHoldingEntities()
+	if err != nil {
+		return nil, err
+	}
+
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
-		entity.WithAccountCurrency(goutil.String(currency)),
-		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
+		entity.WithAccountCurrency(m.Currency),
+		entity.WithAccountHoldings(hs),
 	)
+}
+
+func (m *CreateAccountRequest) ToHoldingEntities() ([]*entity.Holding, error) {
+	hs := make([]*entity.Holding, 0)
+	for _, r := range m.Holdings {
+		h, err := r.ToHoldingEntity(m.GetCurrency()) // default to account currency
+		if err != nil {
+			return nil, err
+		}
+		hs = append(hs, h)
+	}
+	return hs, nil
 }
 
 type CreateAccountResponse struct {

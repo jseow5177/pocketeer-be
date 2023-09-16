@@ -9,22 +9,24 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var CreateLotValidator = validator.MustForm(map[string]validator.Validator{
-	"holding_id": &validator.String{
-		Optional: false,
-	},
-	"shares": &validator.String{
-		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
-	},
-	"cost_per_share": &validator.String{
-		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
-	},
-	"trade_date": &validator.UInt64{
-		Optional: false,
-	},
-})
+func NewCreateLotValidator(optionalHoldingID bool) validator.Validator {
+	return validator.MustForm(map[string]validator.Validator{
+		"holding_id": &validator.String{
+			Optional: optionalHoldingID,
+		},
+		"shares": &validator.String{
+			Optional:   false,
+			Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
+		},
+		"cost_per_share": &validator.String{
+			Optional:   false,
+			Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
+		},
+		"trade_date": &validator.UInt64{
+			Optional: false,
+		},
+	})
+}
 
 func (h *lotHandler) CreateLot(ctx context.Context, req *presenter.CreateLotRequest, res *presenter.CreateLotResponse) error {
 	user := entity.GetUserFromCtx(ctx)

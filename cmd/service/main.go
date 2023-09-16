@@ -763,7 +763,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateBudgetRequest),
 			Res:       new(presenter.CreateBudgetResponse),
-			Validator: bh.CreateBudgetValidator,
+			Validator: bh.NewCreateBudgetValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
 			},
@@ -861,7 +861,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateHoldingRequest),
 			Res:       new(presenter.CreateHoldingResponse),
-			Validator: hh.CreateHoldingValidator,
+			Validator: hh.NewCreateHoldingValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return holdingHandler.CreateHolding(ctx, req.(*presenter.CreateHoldingRequest), res.(*presenter.CreateHoldingResponse))
 			},
@@ -925,7 +925,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateLotRequest),
 			Res:       new(presenter.CreateLotResponse),
-			Validator: lh.CreateLotValidator,
+			Validator: lh.NewCreateLotValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
 			},

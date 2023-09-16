@@ -129,6 +129,7 @@ type CreateBudgetRequest struct {
 	BudgetType   *uint32 `json:"budget_type,omitempty"`
 	BudgetRepeat *uint32 `json:"budget_repeat,omitempty"`
 	Amount       *string `json:"amount,omitempty"`
+	Currency     *string `json:"currency,omitempty"` // no op
 }
 
 func (m *CreateBudgetRequest) GetCategoryID() string {
@@ -166,6 +167,13 @@ func (m *CreateBudgetRequest) GetAmount() string {
 	return ""
 }
 
+func (m *CreateBudgetRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *CreateBudgetRequest) ToUseCaseReq(userID string) *budget.CreateBudgetRequest {
 	var amount *float64
 	if m.Amount != nil {
@@ -179,6 +187,7 @@ func (m *CreateBudgetRequest) ToUseCaseReq(userID string) *budget.CreateBudgetRe
 		BudgetType:   m.BudgetType,
 		BudgetDate:   m.BudgetDate,
 		BudgetRepeat: m.BudgetRepeat,
+		Currency:     m.Currency,
 	}
 }
 

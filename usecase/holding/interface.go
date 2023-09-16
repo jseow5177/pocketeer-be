@@ -7,6 +7,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/lot"
 )
 
 type UseCase interface {
@@ -158,6 +159,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32
 	TotalCost   *float64
 	LatestValue *float64
+	Lots        []*lot.CreateLotRequest // only for InitUser
 }
 
 func (m *CreateHoldingRequest) GetUserID() string {
@@ -202,6 +204,10 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 	return 0
 }
 
+func (m *CreateHoldingRequest) IsDefault() bool {
+	return m.GetHoldingType() == uint32(entity.HoldingTypeDefault)
+}
+
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
@@ -224,7 +230,16 @@ func (m *CreateHoldingRequest) ToHoldingEntity(currency string) (*entity.Holding
 		entity.WithHoldingTotalCost(m.TotalCost),
 		entity.WithHoldingLatestValue(m.LatestValue),
 		entity.WithHoldingCurrency(goutil.String(currency)),
+		entity.WithHoldingLots(m.ToLotEntities(currency)),
 	)
+}
+
+func (m *CreateHoldingRequest) ToLotEntities(currency string) []*entity.Lot {
+	ls := make([]*entity.Lot, 0)
+	for _, r := range m.Lots {
+		ls = append(ls, r.ToLotEntity(currency))
+	}
+	return ls
 }
 
 type CreateHoldingResponse struct {

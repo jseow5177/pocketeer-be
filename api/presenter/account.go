@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
+	"github.com/jseow5177/pockteer-be/usecase/holding"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
@@ -102,10 +103,12 @@ func (ac *Account) GetHoldings() []*Holding {
 }
 
 type CreateAccountRequest struct {
-	AccountName *string `json:"account_name,omitempty"`
-	Balance     *string `json:"balance,omitempty"`
-	Note        *string `json:"note,omitempty"`
-	AccountType *uint32 `json:"account_type,omitempty"`
+	AccountName *string                 `json:"account_name,omitempty"`
+	Balance     *string                 `json:"balance,omitempty"`
+	Note        *string                 `json:"note,omitempty"`
+	AccountType *uint32                 `json:"account_type,omitempty"`
+	Currency    *string                 `json:"currency,omitempty"` // no op
+	Holdings    []*CreateHoldingRequest `json:"holdings,omitempty"` // only for InitUser
 }
 
 func (m *CreateAccountRequest) GetAccountName() string {
@@ -129,11 +132,25 @@ func (m *CreateAccountRequest) GetNote() string {
 	return ""
 }
 
+func (m *CreateAccountRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *CreateAccountRequest) GetAccountType() uint32 {
 	if m != nil && m.AccountType != nil {
 		return *m.AccountType
 	}
 	return 0
+}
+
+func (m *CreateAccountRequest) GetHoldings() []*CreateHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
 }
 
 func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccountRequest {
@@ -143,12 +160,19 @@ func (m *CreateAccountRequest) ToUseCaseReq(userID string) *account.CreateAccoun
 		balance = goutil.Float64(b)
 	}
 
+	hs := make([]*holding.CreateHoldingRequest, 0)
+	for _, r := range m.Holdings {
+		hs = append(hs, r.ToUseCaseReq(userID))
+	}
+
 	return &account.CreateAccountRequest{
 		UserID:      goutil.String(userID),
 		AccountName: m.AccountName,
 		Balance:     balance,
 		AccountType: m.AccountType,
 		Note:        m.Note,
+		Currency:    m.Currency,
+		Holdings:    hs,
 	}
 }
 

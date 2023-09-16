@@ -236,6 +236,12 @@ func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	}
 }
 
+func WithAccountHoldings(holdings []*Holding) AccountOption {
+	return func(ac *Account) {
+		ac.SetHoldings(holdings)
+	}
+}
+
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
@@ -270,10 +276,6 @@ func (ac *Account) checkOpts() error {
 
 	if !ac.IsInvestment() && len(ac.Holdings) > 0 {
 		return ErrAccountCannotHaveHoldings
-	}
-
-	if err := CheckCurrency(ac.GetCurrency()); err != nil {
-		return err
 	}
 
 	return nil

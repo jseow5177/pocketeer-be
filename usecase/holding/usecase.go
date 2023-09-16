@@ -50,12 +50,9 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	}
 
 	// default to account currency
-	h, err := req.ToHoldingEntity(ac.GetCurrency())
-	if err != nil {
-		return nil, err
-	}
+	currency := ac.GetCurrency()
 
-	if h.IsDefault() {
+	if req.IsDefault() {
 		s, err := uc.securityRepo.Get(ctx, req.ToSecurityFilter())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
@@ -63,7 +60,12 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		}
 
 		// use symbol's currency
-		h.SetCurrency(s.Currency)
+		currency = s.GetCurrency()
+	}
+
+	h, err := req.ToHoldingEntity(currency)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {

@@ -3,6 +3,7 @@ package presenter
 import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
+	"github.com/jseow5177/pockteer-be/usecase/lot"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
@@ -210,11 +211,12 @@ func (m *UpdateHoldingResponse) Set(useCaseRes *holding.UpdateHoldingResponse) {
 }
 
 type CreateHoldingRequest struct {
-	AccountID   *string `json:"account_id,omitempty"`
-	Symbol      *string `json:"symbol,omitempty"`
-	HoldingType *uint32 `json:"holding_type,omitempty"`
-	TotalCost   *string `json:"total_cost,omitempty"`
-	LatestValue *string `json:"latest_value,omitempty"`
+	AccountID   *string             `json:"account_id,omitempty"`
+	Symbol      *string             `json:"symbol,omitempty"`
+	HoldingType *uint32             `json:"holding_type,omitempty"`
+	TotalCost   *string             `json:"total_cost,omitempty"`
+	LatestValue *string             `json:"latest_value,omitempty"`
+	Lots        []*CreateLotRequest `json:"lots,omitempty"` // only for InitUser
 }
 
 func (m *CreateHoldingRequest) GetAccountID() string {
@@ -245,6 +247,13 @@ func (m *CreateHoldingRequest) GetLatestValue() string {
 	return ""
 }
 
+func (m *CreateHoldingRequest) GetLots() []*CreateLotRequest {
+	if m != nil && m.Lots != nil {
+		return m.Lots
+	}
+	return nil
+}
+
 func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldingRequest {
 	var totalCost *float64
 	if m.TotalCost != nil {
@@ -258,6 +267,11 @@ func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldin
 		latestValue = goutil.Float64(lv)
 	}
 
+	ls := make([]*lot.CreateLotRequest, 0)
+	for _, r := range m.Lots {
+		ls = append(ls, r.ToUseCaseReq(userID))
+	}
+
 	return &holding.CreateHoldingRequest{
 		UserID:      goutil.String(userID),
 		AccountID:   m.AccountID,
@@ -265,6 +279,7 @@ func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldin
 		HoldingType: m.HoldingType,
 		TotalCost:   totalCost,
 		LatestValue: latestValue,
+		Lots:        ls,
 	}
 }
 

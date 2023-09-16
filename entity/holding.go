@@ -221,6 +221,12 @@ func WithHoldingTotalShares(totalShares *float64) HoldingOption {
 	}
 }
 
+func WithHoldingLots(lots []*Lot) HoldingOption {
+	return func(h *Holding) {
+		h.SetLots(lots)
+	}
+}
+
 func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holding, error) {
 	now := uint64(time.Now().UnixMilli())
 	h := &Holding{

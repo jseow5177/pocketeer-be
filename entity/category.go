@@ -119,6 +119,12 @@ func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 	}
 }
 
+func WithCategoryBudget(budget *Budget) CategoryOption {
+	return func(c *Category) {
+		c.SetBudget(budget)
+	}
+}
+
 func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
@@ -142,6 +148,10 @@ func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category
 }
 
 func (c *Category) checkOpts() error {
+	if !c.CanAddBudget() && c.Budget != nil {
+		return ErrBudgetNotAllowed
+	}
+
 	return nil
 }
 
