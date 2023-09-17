@@ -420,6 +420,10 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 		hs = append(hs, ac.Holdings...)
 	}
 
+	if len(hs) == 0 {
+		return nil
+	}
+
 	// create holdings
 	_, err = uc.holdingRepo.CreateMany(ctx, hs)
 	if err != nil {
@@ -432,6 +436,10 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 			l.SetHoldingID(h.HoldingID)
 		}
 		ls = append(ls, h.Lots...)
+	}
+
+	if len(ls) == 0 {
+		return nil
 	}
 
 	// create lots
