@@ -5,11 +5,12 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
-	ErrCategoryNotFound = errors.New("category not found")
+	ErrCategoryNotFound = errutil.NotFoundError(errors.New("category not found"))
 )
 
 type CategoryRepo interface {
