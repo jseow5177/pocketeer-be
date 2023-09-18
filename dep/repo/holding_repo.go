@@ -5,11 +5,12 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
-	ErrHoldingNotFound = errors.New("holding not found")
+	ErrHoldingNotFound = errutil.NotFoundError(errors.New("holding not found"))
 )
 
 type HoldingRepo interface {

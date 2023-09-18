@@ -5,10 +5,11 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound = errutil.NotFoundError(errors.New("user not found"))
 )
 
 type UserRepo interface {

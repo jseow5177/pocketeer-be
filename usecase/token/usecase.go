@@ -6,13 +6,14 @@ import (
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
 var (
 	ErrUnsupportedTokenType = errors.New("unsupported token type")
-	ErrInvalidToken         = errors.New("invalid token")
+	ErrInvalidToken         = errutil.ValidationError(errors.New("invalid token"))
 )
 
 type tokenUseCase struct {
