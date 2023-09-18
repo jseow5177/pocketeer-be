@@ -30,6 +30,7 @@ func NewAuthMiddleware(userUseCase user.UseCase) *AuthMiddleware {
 func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		authErr := errutil.UnauthorizedError(ErrUserNotAuthenticated)
 
 		// get token from auth header
 		authHeader := r.Header.Get("Authorization")
@@ -37,7 +38,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 
 		if accessToken == "" {
 			log.Ctx(ctx).Error().Msg("token is empty")
-			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrUserNotAuthenticated))
+			httputil.ReturnServerResponse(w, nil, authErr)
 			return
 		}
 
@@ -45,9 +46,7 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			AccessToken: goutil.String(accessToken),
 		})
 		if err != nil {
-			// TODO: Return NotAuthenticated only when user is not found or token is invalid
-			// Else, return 500
-			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrUserNotAuthenticated))
+			httputil.ReturnServerResponse(w, nil, authErr)
 			return
 		}
 

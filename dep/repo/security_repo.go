@@ -5,10 +5,11 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
 var (
-	ErrSecurityNotFound = errors.New("security not found")
+	ErrSecurityNotFound = errutil.NotFoundError(errors.New("security not found"))
 )
 
 type SecurityRepo interface {
