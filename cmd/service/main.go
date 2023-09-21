@@ -243,6 +243,7 @@ func (s *server) Stop() error {
 
 	// TODO: Handle inflight requests
 
+	log.Ctx(ctx).Info().Msgf("closing Mongo client...")
 	if err := s.mongo.Close(ctx); err != nil {
 		log.Ctx(ctx).Error().Msgf("close mongo fail, err: %v", err)
 	}

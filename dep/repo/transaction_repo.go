@@ -5,11 +5,12 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
-	ErrTransactionNotFound = errors.New("transaction not found")
+	ErrTransactionNotFound = errutil.NotFoundError(errors.New("transaction not found"))
 )
 
 type TransactionRepo interface {

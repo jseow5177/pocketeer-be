@@ -6,23 +6,28 @@ import (
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
-	ErrInvalidHoldingType      = errors.New("invalid holding type")
-	ErrInvalidChildAccountType = errors.New("invalid child account type")
-	ErrInvalidAccountType      = errors.New("invalid account type")
-	ErrInvalidTransactionType  = errors.New("invalid transaction type")
-	ErrInvalidCategoryType     = errors.New("invalid category type")
-	ErrInvalidBudgetType       = errors.New("invalid budget type")
-	ErrInvalidMonetaryStr      = errors.New("invalid monetary str")
-	ErrInvalidTransactionSumBy = errors.New("invalid transactions sum by")
 	ErrInvalidBudgetRepeat     = errors.New("invalid budget repeat")
 	ErrInvalidCurrency         = errors.New("invalid currency")
-	ErrMustBePositive          = errors.New("must be positive")
+	ErrInvalidEmail            = errutil.ValidationError(errors.New("invalid email"))
+	ErrInvalidDate             = errutil.ValidationError(errors.New("invalid date"))
+	ErrInvalidTimezone         = errutil.ValidationError(errors.New("invalid timezone"))
+	ErrInvalidHoldingType      = errutil.ValidationError(errors.New("invalid holding type"))
+	ErrInvalidChildAccountType = errutil.ValidationError(errors.New("invalid child account type"))
+	ErrInvalidAccountType      = errutil.ValidationError(errors.New("invalid account type"))
+	ErrInvalidTransactionType  = errutil.ValidationError(errors.New("invalid transaction type"))
+	ErrInvalidCategoryType     = errutil.ValidationError(errors.New("invalid category type"))
+	ErrInvalidBudgetType       = errutil.ValidationError(errors.New("invalid budget type"))
+	ErrInvalidMonetaryStr      = errutil.ValidationError(errors.New("invalid monetary str"))
+	ErrInvalidTransactionSumBy = errutil.ValidationError(errors.New("invalid transactions sum by"))
+	ErrInvalidBudgetRepeats    = errutil.ValidationError(errors.New("invalid budget periods"))
+	ErrMustBePositive          = errutil.ValidationError(errors.New("must be positive"))
 )
 
 func CheckCurrency(currency string) error {
@@ -33,8 +38,10 @@ func CheckCurrency(currency string) error {
 }
 
 func CheckEmail(email string) error {
-	_, err := mail.ParseAddress(email)
-	return err
+	if _, err := mail.ParseAddress(email); err != nil {
+		return ErrInvalidEmail
+	}
+	return nil
 }
 
 func CheckBudgetRepeat(budgetRepeat uint32) error {
@@ -46,14 +53,14 @@ func CheckBudgetRepeat(budgetRepeat uint32) error {
 
 func CheckDateStr(date string) error {
 	if _, err := util.ParseDate(date); err != nil {
-		return err
+		return ErrInvalidDate
 	}
 	return nil
 }
 
 func CheckTimezone(timezone string) error {
 	if _, err := time.LoadLocation(timezone); err != nil {
-		return err
+		return ErrInvalidTimezone
 	}
 	return nil
 }
@@ -89,17 +96,17 @@ func CheckCategoryType(categoryType uint32) error {
 }
 
 func CheckTransactionType(transactionType uint32) error {
-	if _, ok := TransactionTypes[transactionType]; ok {
-		return nil
+	if _, ok := TransactionTypes[transactionType]; !ok {
+		return ErrInvalidTransactionType
 	}
-	return ErrInvalidTransactionType
+	return nil
 }
 
 func CheckBudgetType(budgetType uint32) error {
-	if _, ok := BudgetTypes[budgetType]; ok {
-		return nil
+	if _, ok := BudgetTypes[budgetType]; !ok {
+		return ErrInvalidTransactionType
 	}
-	return ErrInvalidTransactionType
+	return nil
 }
 
 func CheckMonetaryStr(str string) error {

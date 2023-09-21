@@ -5,11 +5,12 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
-	ErrLotNotFound = errors.New("lot not found")
+	ErrLotNotFound = errutil.NotFoundError(errors.New("lot not found"))
 )
 
 type LotRepo interface {

@@ -25,7 +25,14 @@ type Mongo struct {
 }
 
 func NewMongo(ctx context.Context, cfg *config.Mongo) (*Mongo, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.String()))
+	client, err := mongo.Connect(
+		ctx,
+		options.Client().
+			ApplyURI(cfg.String()).
+			SetServerAPIOptions(
+				options.ServerAPI(options.ServerAPIVersion1),
+			),
+	)
 	if err != nil {
 		return nil, err
 	}

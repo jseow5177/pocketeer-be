@@ -6,14 +6,15 @@ import (
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
-	ErrBudgetNotFound      = errors.New("budget not found")
-	ErrBudgetAlreadyExists = errors.New("budget already exists")
+	ErrBudgetNotFound      = errutil.NotFoundError(errors.New("budget not found"))
+	ErrBudgetAlreadyExists = errutil.ValidationError(errors.New("budget already exists"))
 )
 
 type BudgetRepo interface {

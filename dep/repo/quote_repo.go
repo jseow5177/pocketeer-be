@@ -5,10 +5,11 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
 var (
-	ErrQuoteNotFound = errors.New("quote not found")
+	ErrQuoteNotFound = errutil.NotFoundError(errors.New("quote not found"))
 	ErrInvalidQuote  = errors.New("invalid quote in mem cache")
 )
 
