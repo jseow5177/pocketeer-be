@@ -137,6 +137,7 @@ func toUserMeta(um *entity.UserMeta) *UserMeta {
 
 	return &UserMeta{
 		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 

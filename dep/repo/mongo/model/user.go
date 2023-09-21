@@ -10,6 +10,7 @@ import (
 
 type UserMeta struct {
 	Currency *string `bson:"currency,omitempty"`
+	HideInfo *bool   `bson:"hide_info,omitempty"`
 }
 
 func (um *UserMeta) GetCurrency() string {
@@ -19,6 +20,13 @@ func (um *UserMeta) GetCurrency() string {
 	return ""
 }
 
+func (um *UserMeta) GetHideInfo() bool {
+	if um != nil && um.HideInfo != nil {
+		return *um.HideInfo
+	}
+	return false
+}
+
 func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
 	if um == nil {
 		return nil
@@ -26,6 +34,7 @@ func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
 
 	return &UserMeta{
 		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 
@@ -36,6 +45,7 @@ func ToUserMetaModelFromUpdate(umu *entity.UserMetaUpdate) *UserMeta {
 
 	return &UserMeta{
 		Currency: umu.Currency,
+		HideInfo: umu.HideInfo,
 	}
 }
 
@@ -46,6 +56,7 @@ func ToUserMetaEntity(um *UserMeta) *entity.UserMeta {
 
 	return &entity.UserMeta{
 		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 

@@ -31,6 +31,7 @@ func GetUserFromCtx(ctx context.Context) *User {
 
 type UserMetaUpdate struct {
 	Currency *string
+	HideInfo *bool
 }
 
 func (umu *UserMetaUpdate) GetCurrency() string {
@@ -44,6 +45,17 @@ func (umu *UserMetaUpdate) SetCurrency(currency *string) {
 	umu.Currency = currency
 }
 
+func (umu *UserMetaUpdate) GetHideInfo() bool {
+	if umu != nil && umu.HideInfo != nil {
+		return *umu.HideInfo
+	}
+	return false
+}
+
+func (umu *UserMetaUpdate) SetHideInfo(hideInfo *bool) {
+	umu.HideInfo = hideInfo
+}
+
 type UserMetaUpdateOption func(uu *UserMetaUpdate)
 
 func WithUpdateUserMetaCurrency(currency *string) UserMetaUpdateOption {
@@ -52,16 +64,27 @@ func WithUpdateUserMetaCurrency(currency *string) UserMetaUpdateOption {
 	}
 }
 
+func WithUpdateUserMetaHideInfo(hideInfo *bool) UserMetaUpdateOption {
+	return func(umu *UserMetaUpdate) {
+		umu.SetHideInfo(hideInfo)
+	}
+}
+
 func NewUserMetaUpdate(opts ...UserMetaUpdateOption) *UserMetaUpdate {
-	umu := new(UserMetaUpdate)
+	umu := &UserMetaUpdate{
+		HideInfo: goutil.Bool(false),
+	}
+
 	for _, opt := range opts {
 		opt(umu)
 	}
+
 	return umu
 }
 
 type UserMeta struct {
 	Currency *string
+	HideInfo *bool
 }
 
 type UserMetaOption = func(um *UserMeta)
@@ -80,6 +103,12 @@ func WithUserMetaCurrency(currency *string) UserMetaOption {
 	}
 }
 
+func WithUserMetaHideInfo(hideInfo *bool) UserMetaOption {
+	return func(um *UserMeta) {
+		um.SetHideInfo(hideInfo)
+	}
+}
+
 func (um *UserMeta) GetCurrency() string {
 	if um != nil && um.Currency != nil {
 		return *um.Currency
@@ -89,6 +118,17 @@ func (um *UserMeta) GetCurrency() string {
 
 func (um *UserMeta) SetCurrency(currency *string) {
 	um.Currency = currency
+}
+
+func (um *UserMeta) GetHideInfo() bool {
+	if um != nil && um.HideInfo != nil {
+		return *um.HideInfo
+	}
+	return false
+}
+
+func (um *UserMeta) SetHideInfo(hideInfo *bool) {
+	um.HideInfo = hideInfo
 }
 
 func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
@@ -103,6 +143,15 @@ func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
 
 		defer func() {
 			userMetaUpdate.SetCurrency(um.Currency)
+		}()
+	}
+
+	if umu.HideInfo != nil && um.GetHideInfo() != umu.GetHideInfo() {
+		hasUpdate = true
+		um.SetHideInfo(umu.HideInfo)
+
+		defer func() {
+			userMetaUpdate.SetHideInfo(um.HideInfo)
 		}()
 	}
 
@@ -329,7 +378,9 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
-		Meta:       NewUserMeta(),
+		Meta: NewUserMeta(
+			WithUserMetaHideInfo(goutil.Bool(false)),
+		),
 	}
 	for _, opt := range opts {
 		opt(u)
@@ -433,6 +484,14 @@ func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
 
 				defer func() {
 					userUpdate.Meta.SetCurrency(u.Meta.Currency)
+				}()
+			}
+
+			if umu.HideInfo != nil {
+				u.Meta.SetHideInfo(umu.HideInfo)
+
+				defer func() {
+					userUpdate.Meta.SetHideInfo(u.Meta.HideInfo)
 				}()
 			}
 		}

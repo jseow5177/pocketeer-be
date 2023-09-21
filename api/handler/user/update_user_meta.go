@@ -15,6 +15,9 @@ var UpdateUserMetaValidator = validator.MustForm(map[string]validator.Validator{
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckCurrency},
 	},
+	"hide_info": &validator.Bool{
+		Optional: true,
+	},
 })
 
 func (h *userHandler) UpdateUserMeta(ctx context.Context, req *presenter.UpdateUserMetaRequest, res *presenter.UpdateUserMetaResponse) error {
