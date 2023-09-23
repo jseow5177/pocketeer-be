@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrInvalidBudgetRepeat     = errors.New("invalid budget repeat")
-	ErrInvalidCurrency         = errors.New("invalid currency")
+	ErrInvalidBudgetRepeat     = errutil.ValidationError(errors.New("invalid budget repeat"))
+	ErrInvalidCurrency         = errutil.ValidationError(errors.New("invalid currency"))
 	ErrInvalidEmail            = errutil.ValidationError(errors.New("invalid email"))
 	ErrInvalidDate             = errutil.ValidationError(errors.New("invalid date"))
 	ErrInvalidTimezone         = errutil.ValidationError(errors.New("invalid timezone"))
@@ -26,9 +26,16 @@ var (
 	ErrInvalidBudgetType       = errutil.ValidationError(errors.New("invalid budget type"))
 	ErrInvalidMonetaryStr      = errutil.ValidationError(errors.New("invalid monetary str"))
 	ErrInvalidTransactionSumBy = errutil.ValidationError(errors.New("invalid transactions sum by"))
-	ErrInvalidBudgetRepeats    = errutil.ValidationError(errors.New("invalid budget periods"))
+	ErrInvalidSnapshotType     = errutil.ValidationError(errors.New("invalid snapshot type"))
 	ErrMustBePositive          = errutil.ValidationError(errors.New("must be positive"))
 )
+
+func CheckSnapshotType(snapshotType uint32) error {
+	if _, ok := SnapshotTypes[snapshotType]; !ok {
+		return ErrInvalidSnapshotType
+	}
+	return nil
+}
 
 func CheckCurrency(currency string) error {
 	if _, ok := Currencies[currency]; !ok {

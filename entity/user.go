@@ -576,10 +576,6 @@ func (u *User) IsNormal() bool {
 	return u.GetUserStatus() == uint32(UserStatusNormal)
 }
 
-func (u *User) IsPendingVerification() bool {
-	return u.GetUserStatus() == uint32(UserStatusPending)
-}
-
 func (u *User) IsNew() bool {
 	return (u.GetUserFlag() & uint32(UserFlagNewUser)) > 0
 }

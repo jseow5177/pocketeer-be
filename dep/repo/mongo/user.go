@@ -58,3 +58,23 @@ func (m *userMongo) Update(ctx context.Context, uf *repo.UserFilter, uu *entity.
 
 	return nil
 }
+
+func (m *userMongo) GetMany(ctx context.Context, uf *repo.UserFilter) ([]*entity.User, error) {
+	f := mongoutil.BuildFilter(uf)
+
+	res, err := m.mColl.getMany(ctx, new(model.User), uf.Paging, f)
+	if err != nil {
+		return nil, err
+	}
+
+	us := make([]*entity.User, 0, len(res))
+	for _, r := range res {
+		u, err := model.ToUserEntity(r.(*model.User))
+		if err != nil {
+			return nil, err
+		}
+		us = append(us, u)
+	}
+
+	return us, nil
+}

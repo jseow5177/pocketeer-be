@@ -13,6 +13,7 @@ import (
 
 	ier "github.com/jseow5177/pockteer-be/cmd/job/init_exchange_rates"
 	is "github.com/jseow5177/pockteer-be/cmd/job/init_symbols"
+	ss "github.com/jseow5177/pockteer-be/cmd/job/save_snapshot"
 )
 
 type Job interface {
@@ -32,6 +33,10 @@ var cmds = map[string]struct {
 	"init_exchange_rates": {
 		desc: "get exchange rates from third party API and save into mongo",
 		job:  new(ier.InitExchangeRates),
+	},
+	"save_snapshot": {
+		desc: "take snapshots of user financial status",
+		job:  new(ss.SaveSnapshot),
 	},
 }
 
