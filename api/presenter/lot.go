@@ -13,6 +13,7 @@ type Lot struct {
 	CostPerShare *string `json:"cost_per_share,omitempty"`
 	LotStatus    *uint32 `json:"lot_status,omitempty"`
 	TradeDate    *uint64 `json:"trade_date,omitempty"`
+	Currency     *string `json:"currency,omitempty"`
 	CreateTime   *uint64 `json:"create_time,omitempty"`
 	UpdateTime   *uint64 `json:"update_time,omitempty"`
 }
@@ -34,6 +35,13 @@ func (l *Lot) GetHoldingID() string {
 func (l *Lot) GetShares() string {
 	if l != nil && l.Shares != nil {
 		return *l.Shares
+	}
+	return ""
+}
+
+func (l *Lot) GetCurrency() string {
+	if l != nil && l.Currency != nil {
+		return *l.Currency
 	}
 	return ""
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,9 +16,9 @@ var GetHoldingValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *holdingHandler) GetHolding(ctx context.Context, req *presenter.GetHoldingRequest, res *presenter.GetHoldingResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.holdingUseCase.GetHolding(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.holdingUseCase.GetHolding(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get holding, err: %v", err)
 		return err

@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	ErrInvalidBudgetRepeat     = errors.New("invalid budget repeat")
+	ErrInvalidCurrency         = errors.New("invalid currency")
 	ErrInvalidEmail            = errutil.ValidationError(errors.New("invalid email"))
 	ErrInvalidDate             = errutil.ValidationError(errors.New("invalid date"))
 	ErrInvalidTimezone         = errutil.ValidationError(errors.New("invalid timezone"))
@@ -28,6 +30,13 @@ var (
 	ErrMustBePositive          = errutil.ValidationError(errors.New("must be positive"))
 )
 
+func CheckCurrency(currency string) error {
+	if _, ok := Currencies[currency]; !ok {
+		return ErrInvalidCurrency
+	}
+	return nil
+}
+
 func CheckEmail(email string) error {
 	if _, err := mail.ParseAddress(email); err != nil {
 		return ErrInvalidEmail
@@ -37,13 +46,13 @@ func CheckEmail(email string) error {
 
 func CheckBudgetRepeat(budgetRepeat uint32) error {
 	if _, ok := BudgetRepeats[budgetRepeat]; !ok {
-		return ErrInvalidBudgetRepeats
+		return ErrInvalidBudgetRepeat
 	}
 	return nil
 }
 
 func CheckDateStr(date string) error {
-	if _, err := util.ParseDateStr(date); err != nil {
+	if _, err := util.ParseDate(date); err != nil {
 		return ErrInvalidDate
 	}
 	return nil
@@ -131,22 +140,6 @@ func PagingValidator(optional bool) validator.Validator {
 				Optional:  true,
 				UnsetZero: true,
 				Min:       goutil.Uint32(config.MinPagingPage),
-			},
-		},
-	}
-}
-
-func RangeFilterValidator(optional bool) validator.Validator {
-	return &validator.Form{
-		Optional: optional,
-		Validators: map[string]validator.Validator{
-			"gte": &validator.UInt64{
-				Optional:  true,
-				UnsetZero: true,
-			},
-			"lte": &validator.UInt64{
-				Optional:  true,
-				UnsetZero: true,
 			},
 		},
 	}

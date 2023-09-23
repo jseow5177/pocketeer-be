@@ -15,6 +15,7 @@ type Holding struct {
 	HoldingType   *uint32            `bson:"holding_type,omitempty"`
 	CreateTime    *uint64            `bson:"create_time,omitempty"`
 	UpdateTime    *uint64            `bson:"update_time,omitempty"`
+	Currency      *string            `bson:"currency,omitempty"`
 
 	// for custom holding
 	TotalCost   *float64 `bson:"total_cost,omitempty"`
@@ -42,6 +43,7 @@ func ToHoldingModelFromEntity(h *entity.Holding) *Holding {
 		UpdateTime:    h.UpdateTime,
 		TotalCost:     h.TotalCost,
 		LatestValue:   h.LatestValue,
+		Currency:      h.Currency,
 	}
 }
 
@@ -74,6 +76,7 @@ func ToHoldingEntity(h *Holding) (*entity.Holding, error) {
 		entity.WithHoldingUpdateTime(h.UpdateTime),
 		entity.WithHoldingTotalCost(h.TotalCost),
 		entity.WithHoldingLatestValue(h.LatestValue),
+		entity.WithHoldingCurrency(h.Currency),
 	)
 }
 
@@ -101,6 +104,13 @@ func (h *Holding) GetAccountID() string {
 func (h *Holding) GetSymbol() string {
 	if h != nil && h.Symbol != nil {
 		return *h.Symbol
+	}
+	return ""
+}
+
+func (h *Holding) GetCurrency() string {
+	if h != nil && h.Currency != nil {
+		return *h.Currency
 	}
 	return ""
 }

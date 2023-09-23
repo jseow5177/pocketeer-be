@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,9 +20,9 @@ var GetBudgetValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *budgetHandler) GetBudget(ctx context.Context, req *presenter.GetBudgetRequest, res *presenter.GetBudgetResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.budgetUseCase.GetBudget(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.budgetUseCase.GetBudget(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get budget, err: %v", err)
 		return err

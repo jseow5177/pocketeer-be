@@ -75,7 +75,7 @@ type finnhubMgr struct {
 	client *finnhub.DefaultApiService
 }
 
-func NewFinnHubMgr(cfg *config.FinnHub) *finnhubMgr {
+func NewFinnHubMgr(cfg *config.FinnHub) api.SecurityAPI {
 	fhCfg := finnhub.NewConfiguration()
 	fhCfg.AddDefaultHeader("X-Finnhub-Token", cfg.Token)
 

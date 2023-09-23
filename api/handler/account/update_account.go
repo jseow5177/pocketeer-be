@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 
 	auc "github.com/jseow5177/pockteer-be/usecase/account"
@@ -35,9 +34,9 @@ var UpdateAccountValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *accountHandler) UpdateAccount(ctx context.Context, req *presenter.UpdateAccountRequest, res *presenter.UpdateAccountResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.accountUseCase.UpdateAccount(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.accountUseCase.UpdateAccount(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to update account, err: %v", err)
 		return err

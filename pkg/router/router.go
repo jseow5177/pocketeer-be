@@ -2,10 +2,12 @@ package router
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"reflect"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
@@ -76,6 +78,12 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := h.HandleFunc(r.Context(), req, res)
+	ctx := r.Context()
+	err := h.HandleFunc(ctx, req, res)
+
+	jsReq, _ := json.Marshal(req)
+	jsRes, _ := json.Marshal(res)
+	log.Ctx(ctx).Info().Msgf("req: %v, res: %v", string(jsReq), string(jsRes))
+
 	httputil.ReturnServerResponse(w, res, err)
 }

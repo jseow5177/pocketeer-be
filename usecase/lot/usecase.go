@@ -13,7 +13,10 @@ type lotUseCase struct {
 	holdingRepo repo.HoldingRepo
 }
 
-func NewLotUseCase(lotRepo repo.LotRepo, holdingRepo repo.HoldingRepo) UseCase {
+func NewLotUseCase(
+	lotRepo repo.LotRepo,
+	holdingRepo repo.HoldingRepo,
+) UseCase {
 	return &lotUseCase{
 		lotRepo,
 		holdingRepo,
@@ -31,7 +34,9 @@ func (uc *lotUseCase) CreateLot(ctx context.Context, req *CreateLotRequest) (*Cr
 		return nil, entity.ErrHoldingCannotHaveLots
 	}
 
-	l := req.ToLotEntity()
+	// use holding's currency
+	l := req.ToLotEntity(h.GetCurrency())
+
 	_, err = uc.lotRepo.Create(ctx, l)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save new lot to repo, err: %v", err)

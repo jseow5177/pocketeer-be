@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
@@ -15,23 +14,17 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/pkg/logger"
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	DefaultExchange = "US"
-)
+const DefaultExchange = "US"
 
 type JobConfig struct {
 	Exchange string
 }
 
-type SaveSymbols struct {
-	jobCfg JobConfig
-
-	cfg *config.Config
-	opt *config.Option
+type InitSymbols struct {
+	cfg JobConfig
 
 	mongo *mongo.Mongo
 
@@ -39,54 +32,30 @@ type SaveSymbols struct {
 	securityRepo repo.SecurityRepo
 }
 
-func (c *SaveSymbols) initFlags() {
+func (c *InitSymbols) initFlags() error {
 	flagSet := flag.NewFlagSet(fmt.Sprintf("%s %s", filepath.Base(os.Args[0]), os.Args[1]), flag.ExitOnError)
 
-	flagSet.StringVar(&c.jobCfg.Exchange, "exchange", DefaultExchange, "exchange of symbols")
+	flagSet.StringVar(&c.cfg.Exchange, "exchange", DefaultExchange, "exchange of symbols")
+
+	if err := flagSet.Parse(os.Args[2:]); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (c *SaveSymbols) initOpt() *config.Option {
-	opt := config.NewOptions()
-
-	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
-		opt.LogLevel = logLevel
-	}
-
-	if configFile := os.Getenv("CONFIG_FILE"); configFile != "" {
-		opt.ConfigFile = configFile
-	}
-
-	if serverPort := os.Getenv("PORT"); serverPort != "" {
-		if port, err := strconv.Atoi(serverPort); err == nil {
-			opt.Port = port
-		}
-	}
-
-	return opt
-}
-
-func (c *SaveSymbols) Init(ctx context.Context) (context.Context, error) {
+func (c *InitSymbols) Init(ctx context.Context, cfg *config.Config) error {
 	var err error
 
-	c.opt = c.initOpt()
-
-	c.initFlags()
-
-	// init logger
-	ctx = logger.InitZeroLog(ctx, c.opt.LogLevel)
-
-	// init config
-	c.cfg = config.NewConfig()
-	if err := c.cfg.Subscribe(ctx, c.opt.ConfigFile); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail subscribe to config, err: %v", err)
-		return ctx, err
+	if err = c.initFlags(); err != nil {
+		return err
 	}
 
 	// init mongo
-	c.mongo, err = mongo.NewMongo(ctx, c.cfg.Mongo)
+	c.mongo, err = mongo.NewMongo(ctx, cfg.Mongo)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to init mongo client, err: %v", err)
-		return ctx, err
+		return err
 	}
 	defer func() {
 		if err != nil {
@@ -98,15 +67,15 @@ func (c *SaveSymbols) Init(ctx context.Context) (context.Context, error) {
 	c.securityRepo = mongo.NewSecurityMongo(c.mongo)
 
 	// init apis
-	c.securityAPI = finnhub.NewFinnHubMgr(c.cfg.FinnHub)
+	c.securityAPI = finnhub.NewFinnHubMgr(cfg.FinnHub)
 
-	return ctx, nil
+	return nil
 }
 
-func (c *SaveSymbols) Run(ctx context.Context) error {
+func (c *InitSymbols) Run(ctx context.Context) error {
 	// scan symbols from API
 	ss, err := c.securityAPI.ListSymbols(ctx, &api.SecurityFilter{
-		Exchange: goutil.String(c.jobCfg.Exchange),
+		Exchange: goutil.String(c.cfg.Exchange),
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to list symbols from api, err: %v", err)
@@ -150,11 +119,11 @@ func (c *SaveSymbols) Run(ctx context.Context) error {
 		count += len(batch)
 	}
 
-	log.Ctx(ctx).Info().Msgf("inserted %v symbols, exchange: %v", count, c.jobCfg.Exchange)
+	log.Ctx(ctx).Info().Msgf("inserted %v symbols, exchange: %v", count, c.cfg.Exchange)
 
 	return nil
 }
 
-func (c *SaveSymbols) Clean(ctx context.Context) error {
-	return nil
+func (c *InitSymbols) Clean(ctx context.Context) error {
+	return c.mongo.Close(ctx)
 }

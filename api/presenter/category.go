@@ -4,7 +4,6 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/category"
-	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 type Category struct {
@@ -69,7 +68,7 @@ func (c *Category) GetBudget() *Budget {
 type CreateCategoryRequest struct {
 	CategoryName *string              `json:"category_name,omitempty"`
 	CategoryType *uint32              `json:"category_type,omitempty"`
-	Budget       *CreateBudgetRequest `json:"budget,omitempty"`
+	Budget       *CreateBudgetRequest `json:"budget,omitempty"` // only for InitUser
 }
 
 func (m *CreateCategoryRequest) GetCategoryName() string {
@@ -382,36 +381,17 @@ func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
 }
 
 func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.SumCategoryTransactionsRequest {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(RangeFilter)
-	}
-
 	return &category.SumCategoryTransactionsRequest{
 		UserID:          goutil.String(userID),
 		TransactionType: m.TransactionType,
-		TransactionTime: &common.RangeFilter{
-			Gte: tt.Gte,
-			Lte: tt.Lte,
-		},
+		TransactionTime: m.TransactionTime.toRangeFilter(),
 	}
-}
-
-type CategoryTransactionSum struct {
-	Category *Category `json:"category"`
-	Sum      *string   `json:"sum,omitempty"`
 }
 
 type SumCategoryTransactionsResponse struct {
-	Sums []*CategoryTransactionSum `json:"sums,omitempty"`
+	Sums []*TransactionSummary `json:"sums,omitempty"`
 }
 
 func (m *SumCategoryTransactionsResponse) Set(useCaseRes *category.SumCategoryTransactionsResponse) {
-	m.Sums = make([]*CategoryTransactionSum, 0)
-	for _, r := range useCaseRes.Sums {
-		m.Sums = append(m.Sums, &CategoryTransactionSum{
-			Category: toCategory(r.Category),
-			Sum:      r.Sum,
-		})
-	}
+	m.Sums = toTransactionSummaries(useCaseRes.Sums)
 }

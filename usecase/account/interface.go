@@ -113,7 +113,15 @@ func (m *GetAccountsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 }
 
 type GetAccountsResponse struct {
+	NetWorth *float64
 	Accounts []*entity.Account
+}
+
+func (m *GetAccountsResponse) GetNetWorth() float64 {
+	if m != nil && m.NetWorth != nil {
+		return *m.NetWorth
+	}
+	return 0
 }
 
 func (m *GetAccountsResponse) GetAccounts() []*entity.Account {
@@ -129,7 +137,9 @@ type CreateAccountRequest struct {
 	Balance     *float64
 	Note        *string
 	AccountType *uint32
-	Holdings    []*holding.CreateHoldingRequest
+	Currency    *string
+
+	Holdings []*holding.CreateHoldingRequest // only for InitUser
 }
 
 func (m *CreateAccountRequest) GetUserID() string {
@@ -151,6 +161,13 @@ func (m *CreateAccountRequest) GetBalance() float64 {
 		return *m.Balance
 	}
 	return 0
+}
+
+func (m *CreateAccountRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
 }
 
 func (m *CreateAccountRequest) GetNote() string {
@@ -179,13 +196,14 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return entity.NewAccount(
 		m.GetUserID(),
 		entity.WithAccountName(m.AccountName),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
-		entity.WithAccountStatus(goutil.Uint32(uint32(entity.AccountStatusNormal))),
+		entity.WithAccountCurrency(m.Currency),
 		entity.WithAccountHoldings(hs),
 	)
 }
@@ -193,7 +211,7 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 func (m *CreateAccountRequest) ToHoldingEntities() ([]*entity.Holding, error) {
 	hs := make([]*entity.Holding, 0)
 	for _, r := range m.Holdings {
-		h, err := r.ToHoldingEntity()
+		h, err := r.ToHoldingEntity(m.GetCurrency()) // default to account currency
 		if err != nil {
 			return nil, err
 		}

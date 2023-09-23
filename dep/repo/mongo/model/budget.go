@@ -10,6 +10,7 @@ type Budget struct {
 	BudgetID     primitive.ObjectID `bson:"_id,omitempty"`
 	UserID       *string            `bson:"user_id,omitempty"`
 	CategoryID   *string            `bson:"category_id,omitempty"`
+	Currency     *string            `bson:"currency,omitempty"`
 	BudgetType   *uint32            `bson:"budget_type,omitempty"`
 	Amount       *float64           `bson:"amount,omitempty"`
 	BudgetStatus *uint32            `bson:"budget_status,omitempty"`
@@ -28,6 +29,7 @@ func ToBudgetEntity(b *Budget) (*entity.Budget, error) {
 		b.GetUserID(),
 		b.GetCategoryID(),
 		entity.WithBudgetID(goutil.String(b.GetBudgetID())),
+		entity.WithBudgetCurrency(b.Currency),
 		entity.WithBudgetAmount(b.Amount),
 		entity.WithBudgetType(b.BudgetType),
 		entity.WithBudgetStatus(b.BudgetStatus),
@@ -59,6 +61,7 @@ func ToBudgetModelFromEntity(b *entity.Budget) *Budget {
 		EndDate:      b.EndDate,
 		CreateTime:   b.CreateTime,
 		UpdateTime:   b.UpdateTime,
+		Currency:     b.Currency,
 	}
 }
 
@@ -116,4 +119,11 @@ func (b *Budget) GetUpdateTime() uint64 {
 		return *b.UpdateTime
 	}
 	return 0
+}
+
+func (b *Budget) GetCurrency() string {
+	if b != nil && b.Currency != nil {
+		return *b.Currency
+	}
+	return ""
 }

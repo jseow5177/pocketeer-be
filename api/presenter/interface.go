@@ -3,6 +3,7 @@ package presenter
 import (
 	"fmt"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -28,23 +29,53 @@ func (p *Paging) GetPage() uint32 {
 	return 0
 }
 
+func (p *Paging) toPaging() *common.Paging {
+	if p == nil {
+		p = new(Paging)
+	}
+
+	if p.Limit == nil {
+		p.Limit = goutil.Uint32(config.DefaultPagingLimit)
+	}
+
+	if p.Page == nil {
+		p.Page = goutil.Uint32(config.MinPagingPage)
+	}
+
+	return &common.Paging{
+		Limit: p.Limit,
+		Page:  p.Page,
+	}
+}
+
 type RangeFilter struct {
 	Gte *uint64 `json:"gte,omitempty"`
 	Lte *uint64 `json:"lte,omitempty"`
 }
 
-func (uv *RangeFilter) GetGte() uint64 {
-	if uv != nil && uv.Gte != nil {
-		return *uv.Gte
+func (rf *RangeFilter) GetGte() uint64 {
+	if rf != nil && rf.Gte != nil {
+		return *rf.Gte
 	}
 	return 0
 }
 
-func (uv *RangeFilter) GetLte() uint64 {
-	if uv != nil && uv.Lte != nil {
-		return *uv.Lte
+func (rf *RangeFilter) GetLte() uint64 {
+	if rf != nil && rf.Lte != nil {
+		return *rf.Lte
 	}
 	return 0
+}
+
+func (rf *RangeFilter) toRangeFilter() *common.RangeFilter {
+	if rf == nil {
+		return nil
+	}
+
+	return &common.RangeFilter{
+		Gte: rf.Gte,
+		Lte: rf.Lte,
+	}
 }
 
 func toBudget(b *entity.Budget) *Budget {
@@ -66,6 +97,7 @@ func toBudget(b *entity.Budget) *Budget {
 		BudgetID:     b.BudgetID,
 		CategoryID:   b.CategoryID,
 		BudgetType:   b.BudgetType,
+		Currency:     b.Currency,
 		BudgetStatus: b.BudgetStatus,
 		Amount:       amount,
 		CreateTime:   b.CreateTime,
@@ -104,7 +136,8 @@ func toUserMeta(um *entity.UserMeta) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 
@@ -142,6 +175,7 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		Category:          toCategory(t.Category),
 		AccountID:         t.AccountID,
 		Account:           toAccount(t.Account),
+		Currency:          t.Currency,
 		Note:              t.Note,
 		TransactionStatus: t.TransactionStatus,
 		TransactionType:   t.TransactionType,
@@ -184,6 +218,16 @@ func toHolding(h *entity.Holding) *Holding {
 		avgCostPerShare = goutil.String(fmt.Sprint(h.GetAvgCostPerShare()))
 	}
 
+	var gain *string
+	if h.Gain != nil {
+		gain = goutil.String(fmt.Sprint(h.GetGain()))
+	}
+
+	var percentGain *string
+	if h.PercentGain != nil {
+		percentGain = goutil.String(fmt.Sprint(h.GetPercentGain()))
+	}
+
 	return &Holding{
 		HoldingID:       h.HoldingID,
 		AccountID:       h.AccountID,
@@ -196,8 +240,11 @@ func toHolding(h *entity.Holding) *Holding {
 		TotalCost:       totalCost,
 		TotalShares:     totalShares,
 		AvgCostPerShare: avgCostPerShare,
+		Currency:        h.Currency,
 		Quote:           toQuote(h.Quote),
 		Lots:            toLots(h.Lots),
+		Gain:            gain,
+		PercentGain:     percentGain,
 	}
 }
 
@@ -268,6 +315,7 @@ func toLot(l *entity.Lot) *Lot {
 		TradeDate:    l.TradeDate,
 		CreateTime:   l.CreateTime,
 		UpdateTime:   l.UpdateTime,
+		Currency:     l.Currency,
 	}
 }
 
@@ -289,21 +337,28 @@ func toAccount(ac *entity.Account) *Account {
 		balance = goutil.String(fmt.Sprint(ac.GetBalance()))
 	}
 
-	var totalCost *string
-	if ac.TotalCost != nil {
-		totalCost = goutil.String(fmt.Sprint(ac.GetTotalCost()))
+	var gain *string
+	if ac.Gain != nil {
+		gain = goutil.String(fmt.Sprint(ac.GetGain()))
+	}
+
+	var percentGain *string
+	if ac.PercentGain != nil {
+		percentGain = goutil.String(fmt.Sprint(ac.GetPercentGain()))
 	}
 
 	return &Account{
 		AccountID:     ac.AccountID,
 		AccountName:   ac.AccountName,
+		Currency:      ac.Currency,
 		Balance:       balance,
 		AccountType:   ac.AccountType,
 		AccountStatus: ac.AccountStatus,
 		Note:          ac.Note,
 		CreateTime:    ac.CreateTime,
 		UpdateTime:    ac.UpdateTime,
-		TotalCost:     totalCost,
+		Gain:          gain,
+		PercentGain:   percentGain,
 		Holdings:      toHoldings(ac.Holdings),
 	}
 }
@@ -314,6 +369,32 @@ func toAccounts(acs []*entity.Account) []*Account {
 		accounts[idx] = toAccount(ac)
 	}
 	return accounts
+}
+
+func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
+	if ts == nil {
+		return nil
+	}
+
+	var sum *string
+	if ts.Sum != nil {
+		sum = goutil.String(fmt.Sprint(ts.GetSum()))
+	}
+
+	return &TransactionSummary{
+		Category:        toCategory(ts.Category),
+		TransactionType: ts.TransactionType,
+		Sum:             sum,
+		Currency:        ts.Currency,
+	}
+}
+
+func toTransactionSummaries(tss []*common.TransactionSummary) []*TransactionSummary {
+	transactionSummaries := make([]*TransactionSummary, len(tss))
+	for idx, ts := range tss {
+		transactionSummaries[idx] = toTransactionSummary(ts)
+	}
+	return transactionSummaries
 }
 
 func toPaging(p *common.Paging) *Paging {
@@ -338,6 +419,10 @@ func toAggr(aggr *transaction.Aggr) *Aggr {
 }
 
 func toSecurity(s *entity.Security) *Security {
+	if s == nil {
+		return nil
+	}
+
 	return &Security{
 		Symbol:       s.Symbol,
 		SecurityName: s.SecurityName,
@@ -345,4 +430,32 @@ func toSecurity(s *entity.Security) *Security {
 		Region:       s.Region,
 		Currency:     s.Currency,
 	}
+}
+
+func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
+	if er == nil {
+		return nil
+	}
+
+	var rate *string
+	if er.Rate != nil {
+		rate = goutil.String(fmt.Sprint(er.GetRate()))
+	}
+
+	return &ExchangeRate{
+		ExchangeRateID: er.ExchangeRateID,
+		From:           er.From,
+		To:             er.To,
+		Rate:           rate,
+		Timestamp:      er.Timestamp,
+		CreateTime:     er.CreateTime,
+	}
+}
+
+func toExchangeRates(ers []*entity.ExchangeRate) []*ExchangeRate {
+	exchangeRates := make([]*ExchangeRate, len(ers))
+	for idx, er := range ers {
+		exchangeRates[idx] = toExchangeRate(er)
+	}
+	return exchangeRates
 }

@@ -16,6 +16,7 @@ type Lot struct {
 	TradeDate    *uint64            `bson:"trade_date,omitempty"`
 	CreateTime   *uint64            `bson:"create_time,omitempty"`
 	UpdateTime   *uint64            `bson:"update_time,omitempty"`
+	Currency     *string            `bson:"currency,omitempty"`
 }
 
 func ToLotModelFromEntity(l *entity.Lot) *Lot {
@@ -38,6 +39,7 @@ func ToLotModelFromEntity(l *entity.Lot) *Lot {
 		TradeDate:    l.TradeDate,
 		CreateTime:   l.CreateTime,
 		UpdateTime:   l.UpdateTime,
+		Currency:     l.Currency,
 	}
 }
 
@@ -70,6 +72,7 @@ func ToLotEntity(l *Lot) *entity.Lot {
 		entity.WithLotTradeDate(l.TradeDate),
 		entity.WithLotCreateTime(l.CreateTime),
 		entity.WithLotUpdateTime(l.UpdateTime),
+		entity.WithLotCurrency(l.Currency),
 	)
 }
 
@@ -134,4 +137,11 @@ func (l *Lot) GetUpdateTime() uint64 {
 		return *l.UpdateTime
 	}
 	return 0
+}
+
+func (l *Lot) GetCurrency() string {
+	if l != nil && l.Currency != nil {
+		return *l.Currency
+	}
+	return ""
 }
