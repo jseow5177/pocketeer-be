@@ -35,7 +35,7 @@ func GetYearRangeAsUnix(date, timezone string) (start, end uint64, err error) {
 func getYearRange(date, timezone string) (start, end time.Time, err error) {
 	zeroTime := time.Time{}
 
-	t, err := ParseDateStr(date)
+	t, err := ParseDate(date)
 	if err != nil {
 		return zeroTime, zeroTime, err
 	}
@@ -83,7 +83,7 @@ func GetMonthRangeAsUnix(date, timezone string) (start, end uint64, err error) {
 func getMonthRange(date, timezone string) (start, end time.Time, err error) {
 	zeroTime := time.Time{}
 
-	t, err := ParseDateStr(date)
+	t, err := ParseDate(date)
 	if err != nil {
 		return zeroTime, zeroTime, err
 	}
@@ -104,21 +104,21 @@ func getMonthRange(date, timezone string) (start, end time.Time, err error) {
 	return
 }
 
-func FormatDateAsStr(t time.Time) string {
+func FormatDate(t time.Time) string {
 	return t.Format(layout)
 }
 
 func FormatDateAsInt(t time.Time) uint64 {
-	d, _ := ParseDateStrToInt(FormatDateAsStr(t))
+	d, _ := ParseDateToInt(FormatDate(t))
 	return d
 }
 
-func ParseDateStr(s string) (time.Time, error) {
+func ParseDate(s string) (time.Time, error) {
 	return time.Parse(layout, s)
 }
 
-func ParseDateStrToInt(s string) (uint64, error) {
-	_, err := ParseDateStr(s)
+func ParseDateToInt(s string) (uint64, error) {
+	_, err := ParseDate(s)
 	if err != nil {
 		return 0, err
 	}
@@ -129,4 +129,10 @@ func ParseDateStrToInt(s string) (uint64, error) {
 	}
 
 	return di, nil
+}
+
+func ToUnixStartOfMonth(ts uint64) uint64 {
+	t := time.UnixMilli(int64(ts))
+	start := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return uint64(start.UnixMilli())
 }

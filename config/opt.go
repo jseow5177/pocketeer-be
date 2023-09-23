@@ -8,7 +8,7 @@ type Option struct {
 
 func NewOptions() *Option {
 	return &Option{
-		LogLevel:   "DEBUG",
+		LogLevel:   LogLevelDebug,
 		ConfigFile: "",
 		Port:       9090,
 	}

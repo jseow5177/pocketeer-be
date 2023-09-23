@@ -262,6 +262,28 @@ func (stv *String) Validate(value interface{}) error {
 	return nil
 }
 
+// ========== Bool Field Validator ========== //
+
+type Bool struct {
+	Optional bool
+}
+
+func (b *Bool) Validate(value interface{}) error {
+	if value == nil {
+		if b.Optional {
+			return nil
+		}
+		return errors.New("bool field is required")
+	}
+
+	_, ok := value.(bool)
+	if !ok {
+		return errors.New("unexpected non-bool type")
+	}
+
+	return nil
+}
+
 // ========== UInt64 Field Validator ========== //
 
 type UInt64Func func(uint64) error

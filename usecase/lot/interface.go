@@ -254,7 +254,13 @@ func (m *CreateLotRequest) ToHoldingFilter() *repo.HoldingFilter {
 	)
 }
 
-func (m *CreateLotRequest) ToLotEntity() *entity.Lot {
+func (m *CreateLotRequest) ToSecurityFilter(symbol string) *repo.SecurityFilter {
+	return repo.NewSecurityFilter(
+		repo.WithSecuritySymbol(goutil.String(symbol)),
+	)
+}
+
+func (m *CreateLotRequest) ToLotEntity(currency string) *entity.Lot {
 	return entity.NewLot(
 		m.GetUserID(),
 		m.GetHoldingID(),
@@ -262,6 +268,7 @@ func (m *CreateLotRequest) ToLotEntity() *entity.Lot {
 		entity.WithLotCostPerShare(m.CostPerShare),
 		entity.WithLotTradeDate(m.TradeDate),
 		entity.WithLotStatus(goutil.Uint32(uint32(entity.LotStatusNormal))),
+		entity.WithLotCurrency(goutil.String(currency)),
 	)
 }
 

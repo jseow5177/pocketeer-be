@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,9 +28,9 @@ func (h *categoryHandler) GetCategoryBudget(
 	req *presenter.GetCategoryBudgetRequest,
 	res *presenter.GetCategoryBudgetResponse,
 ) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.categoryUseCase.GetCategoryBudget(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.categoryUseCase.GetCategoryBudget(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category budget, err: %v", err)
 		return err

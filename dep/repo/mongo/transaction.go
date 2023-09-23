@@ -39,8 +39,10 @@ func (m *transactionMongo) Create(ctx context.Context, t *entity.Transaction) (s
 }
 
 func (m *transactionMongo) Update(ctx context.Context, tf *repo.TransactionFilter, tu *entity.TransactionUpdate) error {
+	f := mongoutil.BuildFilter(tf)
+
 	tm := model.ToTransactionModelFromUpdate(tu)
-	if err := m.mColl.update(ctx, tf, tm); err != nil {
+	if err := m.mColl.update(ctx, f, tm); err != nil {
 		return err
 	}
 
@@ -81,25 +83,6 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 	}
 
 	return ets, nil
-}
-
-func (m *transactionMongo) Sum(ctx context.Context, sumBy string, tf *repo.TransactionFilter) (map[string]float64, error) {
-	f := mongoutil.BuildFilter(tf)
-
-	sumAmountAggr := mongoutil.NewAggr("sum", mongoutil.AggrSum, &mongoutil.AggrOpt{
-		Field: "amount",
-	})
-	res, err := m.mColl.aggrV2(ctx, f, sumBy, sumAmountAggr)
-	if err != nil {
-		return nil, err
-	}
-
-	sums := make(map[string]float64)
-	for f, aggr := range res {
-		sums[f] = mongoutil.ToFloat64(aggr["sum"])
-	}
-
-	return sums, nil
 }
 
 // Deprecated

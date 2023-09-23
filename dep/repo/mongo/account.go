@@ -53,8 +53,10 @@ func (m *accountMongo) CreateMany(ctx context.Context, acs []*entity.Account) ([
 }
 
 func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu *entity.AccountUpdate) error {
+	f := mongoutil.BuildFilter(acf)
+
 	acm := model.ToAccountModelFromUpdate(acu)
-	if err := m.mColl.update(ctx, acf, acm); err != nil {
+	if err := m.mColl.update(ctx, f, acm); err != nil {
 		return err
 	}
 
@@ -89,14 +91,14 @@ func (m *accountMongo) GetMany(ctx context.Context, acf *repo.AccountFilter) ([]
 		return nil, err
 	}
 
-	eacs := make([]*entity.Account, 0, len(res))
+	acs := make([]*entity.Account, 0, len(res))
 	for _, r := range res {
-		eac, err := model.ToAccountEntity(r.(*model.Account))
+		ac, err := model.ToAccountEntity(r.(*model.Account))
 		if err != nil {
 			return nil, err
 		}
-		eacs = append(eacs, eac)
+		acs = append(acs, ac)
 	}
 
-	return eacs, nil
+	return acs, nil
 }

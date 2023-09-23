@@ -28,13 +28,11 @@ const (
 	TransactionTypeInvalid TransactionType = iota
 	TransactionTypeExpense
 	TransactionTypeIncome
-	TransactionTypeTransfer
 )
 
 var TransactionTypes = map[uint32]string{
-	uint32(TransactionTypeExpense):  "expense",
-	uint32(TransactionTypeIncome):   "income",
-	uint32(TransactionTypeTransfer): "transfer",
+	uint32(TransactionTypeExpense): "expense",
+	uint32(TransactionTypeIncome):  "income",
 }
 
 type TransactionUpdate struct {
@@ -46,6 +44,7 @@ type TransactionUpdate struct {
 	AccountID         *string
 	CategoryID        *string
 	TransactionType   *uint32
+	Currency          *string
 }
 
 func (tu *TransactionUpdate) GetAmount() float64 {
@@ -141,6 +140,17 @@ func (tu *TransactionUpdate) SetCategoryID(categoryID *string) {
 	tu.CategoryID = categoryID
 }
 
+func (tu *TransactionUpdate) GetCurrency() string {
+	if tu != nil && tu.Currency != nil {
+		return *tu.Currency
+	}
+	return ""
+}
+
+func (tu *TransactionUpdate) SetCurrency(currency *string) {
+	tu.Currency = currency
+}
+
 type TransactionUpdateOption func(acu *TransactionUpdate)
 
 func WithUpdateTransactionAccountID(accountID *string) TransactionUpdateOption {
@@ -185,6 +195,12 @@ func WithUpdateTransactionType(transactionType *uint32) TransactionUpdateOption 
 	}
 }
 
+func WithUpdateTransactionCurrency(currency *string) TransactionUpdateOption {
+	return func(tu *TransactionUpdate) {
+		tu.SetCurrency(currency)
+	}
+}
+
 func NewTransactionUpdate(opts ...TransactionUpdateOption) *TransactionUpdate {
 	tu := new(TransactionUpdate)
 	for _, opt := range opts {
@@ -198,6 +214,7 @@ type Transaction struct {
 	UserID            *string
 	CategoryID        *string
 	AccountID         *string
+	Currency          *string
 	Amount            *float64
 	Note              *string
 	TransactionStatus *uint32
@@ -221,6 +238,12 @@ func WithTransactionID(transactionID *string) TransactionOption {
 func WithTransactionAmount(amount *float64) TransactionOption {
 	return func(t *Transaction) {
 		t.SetAmount(amount)
+	}
+}
+
+func WithTransactionCurrency(currency *string) TransactionOption {
+	return func(t *Transaction) {
+		t.SetCurrency(currency)
 	}
 }
 
@@ -266,6 +289,7 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 		UserID:            goutil.String(userID),
 		CategoryID:        goutil.String(categoryID),
 		AccountID:         goutil.String(accountID),
+		Currency:          goutil.String(string(CurrencySGD)),
 		Amount:            goutil.Float64(0),
 		Note:              goutil.String(""),
 		TransactionStatus: goutil.Uint32(uint32(TransactionStatusNormal)),
@@ -277,7 +301,9 @@ func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOpt
 	for _, opt := range opts {
 		opt(t)
 	}
+
 	t.checkOpts()
+
 	return t
 }
 
@@ -304,7 +330,7 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 		t.SetTransactionType(tu.TransactionType)
 
 		defer func() {
-			// a change in transaction type may need to reset amount
+			// a change in transaction type need to reset amount
 			transactionUpdate.SetAmount(t.Amount)
 			transactionUpdate.SetTransactionType(t.TransactionType)
 		}()
@@ -333,6 +359,9 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 		t.SetTransactionTime(tu.TransactionTime)
 
 		defer func() {
+			// a change in transaction time may result in different exchange rates
+			// amount may (implicitly) need to change
+			transactionUpdate.SetAmount(t.Amount)
 			transactionUpdate.SetTransactionTime(t.TransactionTime)
 		}()
 	}
@@ -361,6 +390,18 @@ func (t *Transaction) Update(tu *TransactionUpdate) *TransactionUpdate {
 
 		defer func() {
 			transactionUpdate.SetAccountID(t.AccountID)
+		}()
+	}
+
+	if tu.Currency != nil && tu.GetCurrency() != t.GetCurrency() {
+		hasUpdate = true
+		t.SetCurrency(tu.Currency)
+
+		defer func() {
+			// a change in currency will result in different exchange rates
+			// amount (implicitly) need to change
+			transactionUpdate.SetAmount(t.Amount)
+			transactionUpdate.SetCurrency(t.Currency)
 		}()
 	}
 
@@ -435,6 +476,17 @@ func (t *Transaction) GetAccountID() string {
 
 func (t *Transaction) SetAccountID(accountID *string) {
 	t.AccountID = accountID
+}
+
+func (t *Transaction) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
+	}
+	return ""
+}
+
+func (t *Transaction) SetCurrency(currency *string) {
+	t.Currency = currency
 }
 
 func (t *Transaction) GetAmount() float64 {

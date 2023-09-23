@@ -148,6 +148,10 @@ func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category
 }
 
 func (c *Category) checkOpts() error {
+	if !c.CanAddBudget() && c.Budget != nil {
+		return ErrBudgetNotAllowed
+	}
+
 	return nil
 }
 

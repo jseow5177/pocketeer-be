@@ -21,6 +21,9 @@ type Holding struct {
 	LatestValue     *string `json:"latest_value,omitempty"`
 	Quote           *Quote  `json:"quote,omitempty"`
 	Lots            []*Lot  `json:"lots,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
+	Gain            *string `json:"gain,omitempty"`
+	PercentGain     *string `json:"percent_gain,omitempty"`
 }
 
 func (h *Holding) GetHoldingID() string {
@@ -114,6 +117,27 @@ func (h *Holding) GetLots() []*Lot {
 	return nil
 }
 
+func (h *Holding) GetCurrency() string {
+	if h != nil && h.Currency != nil {
+		return *h.Currency
+	}
+	return ""
+}
+
+func (h *Holding) GetGain() string {
+	if h != nil && h.Gain != nil {
+		return *h.Gain
+	}
+	return ""
+}
+
+func (h *Holding) GetPercentGain() string {
+	if h != nil && h.PercentGain != nil {
+		return *h.PercentGain
+	}
+	return ""
+}
+
 type UpdateHoldingRequest struct {
 	HoldingID   *string `json:"holding_id,omitempty"`
 	TotalCost   *string `json:"total_cost,omitempty"`
@@ -192,7 +216,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32             `json:"holding_type,omitempty"`
 	TotalCost   *string             `json:"total_cost,omitempty"`
 	LatestValue *string             `json:"latest_value,omitempty"`
-	Lots        []*CreateLotRequest `json:"lots,omitempty"`
+	Lots        []*CreateLotRequest `json:"lots,omitempty"` // only for InitUser
 }
 
 func (m *CreateHoldingRequest) GetAccountID() string {
@@ -221,6 +245,13 @@ func (m *CreateHoldingRequest) GetLatestValue() string {
 		return *m.LatestValue
 	}
 	return ""
+}
+
+func (m *CreateHoldingRequest) GetLots() []*CreateLotRequest {
+	if m != nil && m.Lots != nil {
+		return m.Lots
+	}
+	return nil
 }
 
 func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldingRequest {

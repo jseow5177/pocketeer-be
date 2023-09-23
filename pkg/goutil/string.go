@@ -29,12 +29,12 @@ func HMACSha256(str string, secret []byte) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func Base64Encode(b []byte) string {
-	return base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(b)
+func Base64Encode(b []byte, padding rune) string {
+	return base64.StdEncoding.WithPadding(padding).EncodeToString(b)
 }
 
-func Base64Decode(s string) ([]byte, error) {
-	return base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(s)
+func Base64Decode(s string, padding rune) ([]byte, error) {
+	return base64.StdEncoding.WithPadding(padding).DecodeString(s)
 }
 
 func NextXID() string {

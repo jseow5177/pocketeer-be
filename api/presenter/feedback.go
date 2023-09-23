@@ -62,6 +62,4 @@ func (m *CreateFeedbackResponse) GetFeedback() *Feedback {
 	return nil
 }
 
-func (m *CreateFeedbackResponse) Set(useCaseRes *feedback.CreateFeedbackResponse) {
-
-}
+func (m *CreateFeedbackResponse) Set(useCaseRes *feedback.CreateFeedbackResponse) {}

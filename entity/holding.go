@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -153,10 +152,13 @@ type Holding struct {
 	HoldingType   *uint32
 	CreateTime    *uint64
 	UpdateTime    *uint64
+	Currency      *string
 
 	TotalShares     *float64 // no-op for customm, computed for default from lots
 	AvgCostPerShare *float64 // no-op for custom, computed for default from lots
 	Quote           *Quote   // no-op for custom, computed for default from external API
+	Gain            *float64 // no-op for customm, computed for default from lots
+	PercentGain     *float64 // no-op for customm, computed for default from lots
 	TotalCost       *float64 // stored for custom, computed for default
 	LatestValue     *float64 // stored for custom, computed for default
 
@@ -195,6 +197,12 @@ func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	}
 }
 
+func WithHoldingCurrency(currency *string) HoldingOption {
+	return func(h *Holding) {
+		h.SetCurrency(currency)
+	}
+}
+
 func WithHoldingTotalCost(totalCost *float64) HoldingOption {
 	return func(h *Holding) {
 		h.SetTotalCost(totalCost)
@@ -229,6 +237,7 @@ func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holdi
 		HoldingType:   goutil.Uint32(uint32(HoldingTypeCustom)),
 		CreateTime:    goutil.Uint64(now),
 		UpdateTime:    goutil.Uint64(now),
+		Currency:      goutil.String(string(CurrencySGD)),
 	}
 	for _, opt := range opts {
 		opt(h)
@@ -463,6 +472,17 @@ func (h *Holding) SetLatestValue(latestValue *float64) {
 	}
 }
 
+func (h *Holding) GetCurrency() string {
+	if h != nil && h.Currency != nil {
+		return *h.Currency
+	}
+	return ""
+}
+
+func (h *Holding) SetCurrency(currency *string) {
+	h.Currency = currency
+}
+
 func (h *Holding) GetQuote() *Quote {
 	if h != nil && h.Quote != nil {
 		return h.Quote
@@ -472,6 +492,38 @@ func (h *Holding) GetQuote() *Quote {
 
 func (h *Holding) SetQuote(quote *Quote) {
 	h.Quote = quote
+}
+
+func (h *Holding) GetGain() float64 {
+	if h != nil && h.Gain != nil {
+		return *h.Gain
+	}
+	return 0
+}
+
+func (h *Holding) SetGain(gain *float64) {
+	h.Gain = gain
+
+	if gain != nil {
+		g := util.RoundFloatToStandardDP(*gain)
+		h.Gain = goutil.Float64(g)
+	}
+}
+
+func (h *Holding) GetPercentGain() float64 {
+	if h != nil && h.PercentGain != nil {
+		return *h.PercentGain
+	}
+	return 0
+}
+
+func (h *Holding) SetPercentGain(percentGain *float64) {
+	h.PercentGain = percentGain
+
+	if percentGain != nil {
+		pg := util.RoundFloatToStandardDP(*percentGain)
+		h.PercentGain = goutil.Float64(pg)
+	}
 }
 
 func (h *Holding) GetLots() []*Lot {
@@ -497,13 +549,21 @@ func (h *Holding) CanHaveLots() bool {
 	return h.IsDefault()
 }
 
-func (h *Holding) ComputeSharesCostAndValue() {
+// Compute the latest value, total cost, avg cost, gain, and percent gain of a holding.
+//
+// No currency conversion is needed as holding, lots, and security currency should be same.
+func (h *Holding) ComputeCostGainAndValue() {
 	if !h.IsDefault() {
+		gain := h.GetLatestValue() - h.GetTotalCost()
+		h.SetGain(goutil.Float64(gain))
+
+		var percentGain float64
+		if h.GetTotalCost() > 0 {
+			percentGain = gain * 100 / h.GetTotalCost()
+		}
+		h.SetPercentGain(goutil.Float64(percentGain))
 		return
 	}
-
-	// TODO
-	conv := config.USDToSGD
 
 	var (
 		totalCost   float64
@@ -522,7 +582,16 @@ func (h *Holding) ComputeSharesCostAndValue() {
 	latestValue := totalShares * h.Quote.GetLatestPrice()
 
 	h.SetTotalShares(goutil.Float64(totalShares))
-	h.SetTotalCost(goutil.Float64(totalCost * conv))
-	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare * conv))
-	h.SetLatestValue(goutil.Float64(latestValue * conv))
+	h.SetTotalCost(goutil.Float64(totalCost))
+	h.SetAvgCostPerShare(goutil.Float64(avgCostPerShare))
+	h.SetLatestValue(goutil.Float64(latestValue))
+
+	gain := latestValue - totalCost
+	h.SetGain(goutil.Float64(gain))
+
+	var percentGain float64
+	if totalCost > 0 {
+		percentGain = gain * 100 / totalCost
+	}
+	h.SetPercentGain(goutil.Float64(percentGain))
 }

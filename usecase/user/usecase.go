@@ -77,11 +77,16 @@ func (uc *userUseCase) UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRe
 		return nil, err
 	}
 
-	if uu != nil {
-		if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
-			return nil, err
-		}
+	if uu == nil {
+		log.Ctx(ctx).Info().Msg("user meta has no updates")
+		return &UpdateUserMetaResponse{
+			User: u,
+		}, err
+	}
+
+	if err := uc.userRepo.Update(ctx, uf, uu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save user updates to repo, err: %v", err)
+		return nil, err
 	}
 
 	return &UpdateUserMetaResponse{
@@ -399,8 +404,9 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 	}
 
 	// create accounts
-	if _, err := uc.accountRepo.CreateMany(ctx, acs); err != nil {
-		return err
+	_, err = uc.accountRepo.CreateMany(ctx, acs)
+	if err != nil {
+		return fmt.Errorf("fail to create accounts in repo, err: %v", err)
 	}
 
 	hs := make([]*entity.Holding, 0)
@@ -409,9 +415,11 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 			hrs := req.Accounts[i].Holdings
 
 			if h.IsDefault() {
-				if _, err = uc.securityRepo.Get(ctx, hrs[j].ToSecurityFilter()); err != nil {
+				s, err := uc.securityRepo.Get(ctx, hrs[j].ToSecurityFilter())
+				if err != nil {
 					return fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
 				}
+				h.SetCurrency(s.Currency)
 			}
 
 			h.SetAccountID(ac.AccountID)
@@ -427,13 +435,14 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 	// create holdings
 	_, err = uc.holdingRepo.CreateMany(ctx, hs)
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to create holdings in repo, err: %v", err)
 	}
 
 	ls := make([]*entity.Lot, 0)
 	for _, h := range hs {
 		for _, l := range h.Lots {
 			l.SetHoldingID(h.HoldingID)
+			l.SetCurrency(h.Currency)
 		}
 		ls = append(ls, h.Lots...)
 	}
@@ -445,7 +454,7 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 	// create lots
 	_, err = uc.lotRepo.CreateMany(ctx, ls)
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to create lots in repo, err: %v", err)
 	}
 
 	return nil

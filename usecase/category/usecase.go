@@ -3,21 +3,22 @@ package category
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
 type categoryUseCase struct {
-	txMgr           repo.TxMgr
-	categoryRepo    repo.CategoryRepo
-	transactionRepo repo.TransactionRepo
-	budgetRepo      repo.BudgetRepo
+	txMgr            repo.TxMgr
+	categoryRepo     repo.CategoryRepo
+	transactionRepo  repo.TransactionRepo
+	budgetRepo       repo.BudgetRepo
+	exchangeRateRepo repo.ExchangeRateRepo
 }
 
 func NewCategoryUseCase(
@@ -26,12 +27,14 @@ func NewCategoryUseCase(
 	transactionRepo repo.TransactionRepo,
 	budgetUseCase budget.UseCase,
 	budgetRepo repo.BudgetRepo,
+	exchangeRateRepo repo.ExchangeRateRepo,
 ) UseCase {
 	return &categoryUseCase{
 		txMgr,
 		categoryRepo,
 		transactionRepo,
 		budgetRepo,
+		exchangeRateRepo,
 	}
 }
 
@@ -239,6 +242,7 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 		return nil, nil
 	}
 
+	// get budget date range
 	var start, end uint64
 	if b.IsMonth() {
 		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
@@ -252,15 +256,36 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 	}
 
 	tf := req.ToTransactionFilter(req.GetUserID(), start, end)
-	aggrs, err := uc.transactionRepo.CalcTotalAmount(ctx, "category_id", tf)
+	ts, err := uc.transactionRepo.GetMany(ctx, tf)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum transactions by category ID, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
+		return nil, err
+	}
+
+	u := entity.GetUserFromCtx(ctx)
+
+	// get exchange rates
+	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency(), start, end)
+	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
 		return nil, err
 	}
 
 	var usedAmount float64
-	if len(aggrs) > 0 {
-		usedAmount = math.Abs(aggrs[0].GetTotalAmount())
+	for _, t := range ts {
+		amount := t.GetAmount()
+
+		if t.GetCurrency() != u.Meta.GetCurrency() {
+			er := entity.BinarySearchExchangeRates(t, ers)
+			if er == nil {
+				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
+				continue
+			}
+			amount *= er.GetRate()
+		}
+
+		usedAmount += amount
 	}
 
 	b.SetUsedAmount(goutil.Float64(usedAmount))
@@ -275,37 +300,73 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		return nil, err
 	}
 
-	tf := req.ToTransactionFilter()
-
-	aggrs, err := uc.transactionRepo.Sum(ctx, "category_id", tf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum transactions, err: %v", err)
-		return nil, err
-	}
-
-	sums := make(map[*entity.Category]float64)
+	var (
+		categoryIDs   = make([]string, 0)
+		categoryMap   = make(map[string]*entity.Category)
+		sumByCategory = make(map[*entity.Category]float64)
+	)
 	for _, c := range cs {
+		categoryIDs = append(categoryIDs, c.GetCategoryID())
+		categoryMap[c.GetCategoryID()] = c
+
 		if c.IsDeleted() {
-			sums[nil] += aggrs[c.GetCategoryID()]
+			sumByCategory[nil] = 0
 		} else {
-			sums[c] += aggrs[c.GetCategoryID()]
+			sumByCategory[c] = 0
 		}
 	}
 
-	// remove uncategorized if it has no sum
-	if sum, ok := sums[nil]; ok && sum == 0 {
-		delete(sums, nil)
+	tf := req.ToTransactionFilter(categoryIDs)
+	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
+		return nil, err
 	}
 
-	res := make([]*CategoryTransactionSum, 0)
-	for c, sum := range sums {
-		res = append(res, &CategoryTransactionSum{
+	u := entity.GetUserFromCtx(ctx)
+
+	// get exchange rates
+	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency())
+	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
+		return nil, err
+	}
+
+	for _, t := range ts {
+		amount := t.GetAmount()
+
+		if t.GetCurrency() != u.Meta.GetCurrency() {
+			er := entity.BinarySearchExchangeRates(t, ers)
+			if er == nil {
+				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
+				continue
+			}
+			amount *= er.GetRate()
+		}
+
+		if c := categoryMap[t.GetCategoryID()]; c.IsDeleted() {
+			sumByCategory[nil] += amount
+		} else {
+			sumByCategory[c] += amount
+		}
+	}
+
+	sums := make([]*common.TransactionSummary, 0)
+	for c, sum := range sumByCategory {
+		// remove uncategorized if it has no sum
+		if c == nil && sum == 0 {
+			continue
+		}
+
+		sums = append(sums, &common.TransactionSummary{
 			Category: c,
-			Sum:      goutil.String(fmt.Sprint(util.RoundFloatToStandardDP(sum))),
+			Sum:      goutil.Float64(util.RoundFloatToStandardDP(sum)),
+			Currency: u.Meta.Currency,
 		})
 	}
 
 	return &SumCategoryTransactionsResponse{
-		Sums: res,
+		Sums: sums,
 	}, nil
 }
