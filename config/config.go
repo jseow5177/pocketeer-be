@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,11 +34,17 @@ type MemCache struct {
 }
 
 type Mongo struct {
-	Username       string `json:"username"`
-	Password       string `json:"passowrd"`
-	Host           string `json:"host"`
-	Database       string `json:"database"`
-	ConnectTimeout string `json:"connect_timeout"`
+	Username        string `json:"username"`
+	Password        string `json:"passowrd"`
+	Host            string `json:"host"`
+	Database        string `json:"database"`
+	ConnectTimeout  string `json:"connect_timeout"`
+	MaxConnIdleTime string `json:"max_conn_idle_time"`
+	MinConnPoolSize int    `json:"min_conn_pool_size"`
+	MaxConnPoolSize int    `json:"max_conn_pool_size"`
+	Timeout         string `json:"timeout"`
+	RetryReads      *bool  `json:"retry_reads"`
+	RetryWrites     *bool  `json:"retry_writes"`
 }
 
 type GoogleSheet struct {
@@ -50,9 +57,11 @@ type GoogleSheet struct {
 
 func (m *Mongo) String() string {
 	dsn := &url.URL{
-		Scheme: "mongodb+srv",
-		User:   url.UserPassword(m.Username, m.Password),
-		Host:   m.Host,
+		Scheme:     "mongodb+srv",
+		User:       url.UserPassword(m.Username, m.Password),
+		Host:       m.Host,
+		Path:       fmt.Sprintf("/%s", m.Database),
+		ForceQuery: false,
 	}
 
 	q := dsn.Query()
@@ -62,6 +71,34 @@ func (m *Mongo) String() string {
 			q.Set("connectTimeoutMS", fmt.Sprint(t.Milliseconds()))
 		}
 	}
+
+	if m.Timeout != "" {
+		if t, err := time.ParseDuration(m.Timeout); err == nil {
+			q.Set("timeoutms", fmt.Sprint(t.Milliseconds()))
+		}
+	}
+
+	if m.MaxConnIdleTime != "" {
+		if t, err := time.ParseDuration(m.MaxConnIdleTime); err == nil {
+			q.Set("maxIdleTimeMS", fmt.Sprint(t.Milliseconds()))
+		}
+	}
+
+	if m.RetryReads != nil {
+		q.Set("retryReads", fmt.Sprint(*m.RetryReads))
+	}
+
+	if m.RetryWrites != nil {
+		q.Set("retryWrites", fmt.Sprint(*m.RetryWrites))
+	}
+
+	q.Set("minPoolSize", fmt.Sprint(m.MinConnPoolSize))
+
+	q.Set("maxPoolSize", fmt.Sprint(m.MaxConnPoolSize))
+
+	q.Set("authSource", "admin")
+
+	dsn.RawQuery = q.Encode()
 
 	return dsn.String()
 }
@@ -90,11 +127,17 @@ func NewConfig() *Config {
 	return &Config{
 		RateLimits: make(map[string]*RateLimit),
 		Mongo: &Mongo{
-			Username:       "pocketeer-test",
-			Password:       "twvD8CaUMd03WkdB",
-			Host:           "pocketeer-test.aepotln.mongodb.net",
-			Database:       "pocketeer",
-			ConnectTimeout: "5s",
+			Username:        "pocketeer-test",
+			Password:        "twvD8CaUMd03WkdB",
+			Host:            "pocketeer-test.aepotln.mongodb.net",
+			Database:        "pocketeer",
+			ConnectTimeout:  "5s",
+			MaxConnIdleTime: "60m",
+			Timeout:         "5s",
+			MinConnPoolSize: 20,
+			MaxConnPoolSize: 100,
+			RetryReads:      goutil.Bool(true),
+			RetryWrites:     goutil.Bool(true),
 		},
 		Tokens: &Tokens{
 			AccessToken: &Token{

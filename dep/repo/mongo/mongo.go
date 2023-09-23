@@ -26,7 +26,14 @@ type Mongo struct {
 }
 
 func NewMongo(ctx context.Context, cfg *config.Mongo) (*Mongo, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.String()))
+	client, err := mongo.Connect(
+		ctx,
+		options.Client().
+			ApplyURI(cfg.String()).
+			SetServerAPIOptions(
+				options.ServerAPI(options.ServerAPIVersion1),
+			),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +142,17 @@ func (mc *MongoColl) updateMany(ctx context.Context, filter, update interface{})
 	)
 
 	_, err := mc.coll.UpdateMany(ctx, f, u)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (mc *MongoColl) deleteMany(ctx context.Context, filter interface{}) error {
+	f := mongoutil.BuildFilter(filter)
+
+	_, err := mc.coll.DeleteMany(ctx, f)
 	if err != nil {
 		return err
 	}

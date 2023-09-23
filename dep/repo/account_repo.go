@@ -5,11 +5,12 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
 var (
-	ErrAccountNotFound = errors.New("account not found")
+	ErrAccountNotFound = errutil.NotFoundError(errors.New("account not found"))
 )
 
 type AccountRepo interface {

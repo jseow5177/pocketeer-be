@@ -5,10 +5,11 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 )
 
 var (
-	ErrOTPNotFound  = errors.New("otp not found")
+	ErrOTPNotFound  = errutil.NotFoundError(errors.New("otp not found"))
 	ErrInvalidOTP   = errors.New("invalid otp in mem cache")
 	ErrDuplicateOTP = errors.New("duplicate otp")
 )

@@ -5,12 +5,13 @@ import (
 	"errors"
 
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/filter"
 )
 
 var (
-	ErrBudgetNotFound      = errors.New("budget not found")
-	ErrBudgetAlreadyExists = errors.New("budget already exists")
+	ErrBudgetNotFound      = errutil.NotFoundError(errors.New("budget not found"))
+	ErrBudgetAlreadyExists = errutil.ValidationError(errors.New("budget already exists"))
 )
 
 type BudgetRepo interface {
@@ -19,6 +20,7 @@ type BudgetRepo interface {
 	Create(ctx context.Context, b *entity.Budget) (string, error)
 	CreateMany(ctx context.Context, bs []*entity.Budget) ([]string, error)
 	Delete(ctx context.Context, f *DeleteBudgetFilter) error
+	DeleteMany(ctx context.Context, f *BudgetFilter) error
 }
 
 type DeleteBudgetFilter struct {

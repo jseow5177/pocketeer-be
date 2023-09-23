@@ -9,16 +9,16 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/mailer"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/token"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	ErrEmailAlreadyExist = errors.New("email already exists")
-	ErrUserInvalid       = errors.New("user invalid")
-	ErrOTPInit           = errors.New("otp init fail")
-	ErrOTPInvalid        = errors.New("otp invalid")
+	ErrEmailAlreadyExist = errutil.ValidationError(errors.New("email already exists"))
+	ErrOTPInvalid        = errutil.ValidationError(errors.New("otp invalid"))
+	ErrUserInvalid       = errutil.ValidationError(errors.New("user invalid"))
 )
 
 type userUseCase struct {
@@ -420,6 +420,10 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 		hs = append(hs, ac.Holdings...)
 	}
 
+	if len(hs) == 0 {
+		return nil
+	}
+
 	// create holdings
 	_, err = uc.holdingRepo.CreateMany(ctx, hs)
 	if err != nil {
@@ -432,6 +436,10 @@ func (uc *userUseCase) initAccounts(ctx context.Context, req *InitUserRequest) e
 			l.SetHoldingID(h.HoldingID)
 		}
 		ls = append(ls, h.Lots...)
+	}
+
+	if len(ls) == 0 {
+		return nil
 	}
 
 	// create lots

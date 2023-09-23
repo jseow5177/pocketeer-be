@@ -141,24 +141,27 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 func (uc *categoryUseCase) DeleteCategory(ctx context.Context, req *DeleteCategoryRequest) (*DeleteCategoryResponse, error) {
 	f := req.ToCategoryFilter()
 
-	c, err := uc.categoryRepo.Get(ctx, f)
-	if err != nil && err != repo.ErrCategoryNotFound {
+	_, err := uc.categoryRepo.Get(ctx, f)
+	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 		return nil, err
 	}
 
-	if err == repo.ErrCategoryNotFound {
-		return new(DeleteCategoryResponse), nil
-	}
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		// mark category as deleted
+		if err := uc.categoryRepo.Delete(txCtx, f); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark category as deleted, err: %v", err)
+			return err
+		}
 
-	cu, err := c.Update(req.ToCategoryUpdate())
-	if err != nil {
-		return nil, err
-	}
+		// hard delete budgets
+		if err := uc.budgetRepo.DeleteMany(ctx, req.ToBudgetFilter()); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to delete category budgets, err: %v", err)
+			return err
+		}
 
-	// mark category as deleted
-	if err := uc.categoryRepo.Update(ctx, f, cu); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to mark category as deleted, err: %v", err)
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
@@ -287,6 +290,11 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		} else {
 			sums[c] += aggrs[c.GetCategoryID()]
 		}
+	}
+
+	// remove uncategorized if it has no sum
+	if sum, ok := sums[nil]; ok && sum == 0 {
+		delete(sums, nil)
 	}
 
 	res := make([]*CategoryTransactionSum, 0)

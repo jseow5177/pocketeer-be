@@ -60,11 +60,10 @@ func (m *GetCategoryBudgetRequest) GetTimezone() string {
 }
 
 func (m *GetCategoryBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end uint64) *repo.TransactionFilter {
@@ -115,11 +114,10 @@ func (m *GetCategoryRequest) GetCategoryID() string {
 }
 
 func (m *GetCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 type GetCategoryResponse struct {
@@ -230,11 +228,10 @@ func (m *UpdateCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
 }
 
 func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
 }
 
 type UpdateCategoryResponse struct {
@@ -276,12 +273,11 @@ func (m *GetCategoriesRequest) GetCategoryIDs() []string {
 }
 
 func (m *GetCategoriesRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryType:   m.CategoryType,
-		CategoryIDs:    m.CategoryIDs,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+		repo.WithCategoryType(m.CategoryType),
+	)
 }
 
 type GetCategoriesResponse struct {
@@ -331,11 +327,10 @@ func (m *GetCategoriesBudgetRequest) GetTimezone() string {
 }
 
 func (m *GetCategoriesBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryIDs:    m.CategoryIDs,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryIDs(m.CategoryIDs),
+	)
 }
 
 func (m *GetCategoriesBudgetRequest) ToGetCategoryBudgetRequest(categoryID string) *GetCategoryBudgetRequest {
@@ -378,10 +373,16 @@ func (m *DeleteCategoryRequest) GetCategoryID() string {
 }
 
 func (m *DeleteCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:         m.UserID,
-		CategoryID:     m.CategoryID,
-		CategoryStatus: goutil.Uint32(uint32(entity.CategoryStatusNormal)),
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryID(m.CategoryID),
+	)
+}
+
+func (m *DeleteCategoryRequest) ToBudgetFilter() *repo.BudgetFilter {
+	return &repo.BudgetFilter{
+		UserID:     m.UserID,
+		CategoryID: m.CategoryID,
 	}
 }
 
@@ -435,10 +436,11 @@ func (m *SumCategoryTransactionsRequest) ToTransactionFilter() *repo.Transaction
 }
 
 func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return &repo.CategoryFilter{
-		UserID:       m.UserID,
-		CategoryType: m.TransactionType,
-	}
+	return repo.NewCategoryFilter(
+		m.GetUserID(),
+		repo.WithCategoryType(m.TransactionType),
+		repo.WithCategoryStatus(nil),
+	)
 }
 
 type CategoryTransactionSum struct {
