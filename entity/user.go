@@ -201,9 +201,9 @@ func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
 
 func (uu *UserUpdate) GetMeta() *UserMetaUpdate {
 	if uu != nil && uu.Meta != nil {
-		return nil
+		return uu.Meta
 	}
-	return uu.Meta
+	return nil
 }
 
 func (uu *UserUpdate) SetMeta(meta *UserMetaUpdate) {
@@ -563,9 +563,9 @@ func (u *User) SetUpdateTime(updateTime *uint64) {
 
 func (u *User) GetMeta() *UserMeta {
 	if u != nil && u.Meta != nil {
-		return nil
+		return u.Meta
 	}
-	return u.Meta
+	return nil
 }
 
 func (u *User) SetMeta(meta *UserMeta) {

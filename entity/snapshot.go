@@ -6,6 +6,16 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
+type SnapshotUnit uint32
+
+const (
+	SnapshotUnitMonth SnapshotUnit = iota
+)
+
+var SnapshotUnits = map[uint32]string{
+	uint32(SnapshotUnitMonth): "month",
+}
+
 type SnapshotType uint32
 
 const (
@@ -24,6 +34,10 @@ type Snapshot struct {
 	Record       *string
 	Timestamp    *uint64
 	CreateTime   *uint64
+
+	// Only `Period` and `Value` will be returned
+	Period *string
+	Value  *string
 }
 
 type SnapshotOption = func(sp *Snapshot)
@@ -122,4 +136,26 @@ func (sp *Snapshot) GetCreateTime() uint64 {
 
 func (sp *Snapshot) SetCreateTime(createTime *uint64) {
 	sp.CreateTime = createTime
+}
+
+func (sp *Snapshot) GetPeriod() string {
+	if sp != nil && sp.Period != nil {
+		return *sp.Period
+	}
+	return ""
+}
+
+func (sp *Snapshot) SetPeriod(period *string) {
+	sp.Period = period
+}
+
+func (sp *Snapshot) GetValue() string {
+	if sp != nil && sp.Value != nil {
+		return *sp.Value
+	}
+	return ""
+}
+
+func (sp *Snapshot) SetValue(value *string) {
+	sp.Value = value
 }

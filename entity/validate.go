@@ -26,6 +26,7 @@ var (
 	ErrInvalidBudgetType       = errutil.ValidationError(errors.New("invalid budget type"))
 	ErrInvalidMonetaryStr      = errutil.ValidationError(errors.New("invalid monetary str"))
 	ErrInvalidTransactionSumBy = errutil.ValidationError(errors.New("invalid transactions sum by"))
+	ErrInvalidSnapshotUnit     = errutil.ValidationError(errors.New("invalid snapshot unit"))
 	ErrInvalidSnapshotType     = errutil.ValidationError(errors.New("invalid snapshot type"))
 	ErrMustBePositive          = errutil.ValidationError(errors.New("must be positive"))
 )
@@ -33,6 +34,13 @@ var (
 func CheckSnapshotType(snapshotType uint32) error {
 	if _, ok := SnapshotTypes[snapshotType]; !ok {
 		return ErrInvalidSnapshotType
+	}
+	return nil
+}
+
+func CheckSnapshotUnit(unit uint32) error {
+	if _, ok := SnapshotUnits[unit]; !ok {
+		return ErrInvalidSnapshotUnit
 	}
 	return nil
 }

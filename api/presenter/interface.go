@@ -458,3 +458,22 @@ func toExchangeRates(ers []*entity.ExchangeRate) []*ExchangeRate {
 	}
 	return exchangeRates
 }
+
+func toSnapshot(sp *entity.Snapshot) *Snapshot {
+	if sp == nil {
+		return nil
+	}
+
+	return &Snapshot{
+		Period: sp.Period,
+		Value:  sp.Value,
+	}
+}
+
+func toSnapshots(sps []*entity.Snapshot) []*Snapshot {
+	snapshots := make([]*Snapshot, len(sps))
+	for idx, sp := range sps {
+		snapshots[idx] = toSnapshot(sp)
+	}
+	return snapshots
+}
