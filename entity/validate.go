@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrInvalidBudgetRepeat     = errors.New("invalid budget repeat")
-	ErrInvalidCurrency         = errors.New("invalid currency")
+	ErrInvalidBudgetRepeat     = errutil.ValidationError(errors.New("invalid budget repeat"))
+	ErrInvalidCurrency         = errutil.ValidationError(errors.New("invalid currency"))
 	ErrInvalidEmail            = errutil.ValidationError(errors.New("invalid email"))
 	ErrInvalidDate             = errutil.ValidationError(errors.New("invalid date"))
 	ErrInvalidTimezone         = errutil.ValidationError(errors.New("invalid timezone"))
@@ -143,4 +143,13 @@ func PagingValidator(optional bool) validator.Validator {
 			},
 		},
 	}
+}
+
+func AppMetaValidator() validator.Validator {
+	return validator.MustForm(map[string]validator.Validator{
+		"timezone": &validator.String{
+			Optional:   false,
+			Validators: []validator.StringFunc{CheckTimezone},
+		},
+	})
 }

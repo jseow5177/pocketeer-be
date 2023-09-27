@@ -78,6 +78,27 @@ func (rf *RangeFilter) toRangeFilter() *common.RangeFilter {
 	}
 }
 
+type AppMeta struct {
+	Timezone *string `json:"timezone,omitempty"`
+}
+
+func (am *AppMeta) GetTimezone() string {
+	if am != nil && am.Timezone != nil {
+		return *am.Timezone
+	}
+	return ""
+}
+
+func (am *AppMeta) toAppMeta() *common.AppMeta {
+	if am == nil {
+		return nil
+	}
+
+	return &common.AppMeta{
+		Timezone: am.Timezone,
+	}
+}
+
 func toBudget(b *entity.Budget) *Budget {
 	if b == nil {
 		return nil
@@ -382,10 +403,12 @@ func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
 	}
 
 	return &TransactionSummary{
+		Date:            ts.Date,
 		Category:        toCategory(ts.Category),
 		TransactionType: ts.TransactionType,
 		Sum:             sum,
 		Currency:        ts.Currency,
+		Transactions:    toTransactions(ts.Transactions),
 	}
 }
 

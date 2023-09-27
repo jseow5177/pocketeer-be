@@ -27,6 +27,13 @@ func (um *UserMeta) GetHideInfo() bool {
 	return false
 }
 
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
+	}
+	return ""
+}
+
 type User struct {
 	UserID     *string   `json:"user_id,omitempty"`
 	Email      *string   `json:"email,omitempty"`
