@@ -572,7 +572,7 @@ func (m *SumTransactionsRequest) ToUseCaseReq(userID string) *transaction.SumTra
 }
 
 type SumTransactionsResponse struct {
-	Sums []*TransactionSummary
+	Sums []*TransactionSummary `json:"sums,omitempty"`
 }
 
 func (m *SumTransactionsResponse) GetSums() []*TransactionSummary {
