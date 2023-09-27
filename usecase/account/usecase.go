@@ -83,9 +83,9 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		u    = entity.GetUserFromCtx(ctx)
 		ers  = make(map[string]*entity.ExchangeRate)
 
-		netWorth float64
+		assetValue, debtValue float64
 	)
-	if err := goutil.ParallelizeWork(ctx, len(acs), 5, func(ctx context.Context, workNum int) error {
+	if err := goutil.ParallelizeWork(ctx, len(acs), 10, func(ctx context.Context, workNum int) error {
 		ac := acs[workNum]
 
 		if ac.IsInvestment() {
@@ -120,7 +120,11 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		}
 
 		bMu.Lock()
-		netWorth += balance
+		if ac.IsAsset() {
+			assetValue += balance
+		} else if ac.IsDebt() {
+			debtValue += balance
+		}
 		bMu.Unlock()
 
 		return nil
@@ -128,11 +132,17 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		return nil, err
 	}
 
-	netWorth = util.RoundFloatToStandardDP(netWorth)
+	assetValue = util.RoundFloatToStandardDP(assetValue)
+	debtValue = util.RoundFloatToStandardDP(debtValue)
+
+	netWorth := util.RoundFloatToStandardDP(assetValue + debtValue)
 
 	return &GetAccountsResponse{
-		NetWorth: goutil.Float64(netWorth),
-		Accounts: acs,
+		NetWorth:   goutil.Float64(netWorth),
+		AssetValue: goutil.Float64(assetValue),
+		DebtValue:  goutil.Float64(debtValue),
+		Currency:   u.Meta.Currency,
+		Accounts:   acs,
 	}, nil
 }
 
