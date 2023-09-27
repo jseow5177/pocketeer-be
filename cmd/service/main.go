@@ -618,6 +618,23 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
+	// get transaction groups
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransactionGroups,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionGroupsRequest),
+			Res:       new(presenter.GetTransactionGroupsResponse),
+			Validator: th.GetTransactionGroupsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransactionGroups(
+					ctx, req.(*presenter.GetTransactionGroupsRequest), res.(*presenter.GetTransactionGroupsResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
 	// delete transactions
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathDeleteTransaction,

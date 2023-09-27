@@ -278,10 +278,6 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
 			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
-			}
 			amount *= er.GetRate()
 		}
 
@@ -338,10 +334,6 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
 			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
-			}
 			amount *= er.GetRate()
 		}
 

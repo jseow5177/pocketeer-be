@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -77,7 +78,71 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 	}, nil
 }
 
-func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
+func (uc *transactionUseCase) GetTransactionGroups(
+	ctx context.Context,
+	req *GetTransactionGroupsRequest,
+) (*GetTransactionGroupsResponse, error) {
+	res, err := uc.GetTransactions(ctx, req.GetTransactionsRequest)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions, err: %v", err)
+		return nil, err
+	}
+
+	u := entity.GetUserFromCtx(ctx)
+
+	ers, err := uc.exchangeRateRepo.GetMany(ctx, req.ToExchangeRateFilter(u.Meta.GetCurrency()))
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
+		return nil, err
+	}
+
+	loc, err := time.LoadLocation(req.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, entity.ErrInvalidTimezone
+	}
+
+	var (
+		transactionGroups    = make([]*common.TransactionSummary, 0)
+		transactionGroupsMap = make(map[string]*common.TransactionSummary)
+	)
+	// transactions is already ordered in desc order of transaction_time
+	for _, t := range res.Transactions {
+		ts := time.UnixMilli(int64(t.GetTransactionTime())).In(loc)
+		date := util.FormatDate(ts)
+
+		if _, ok := transactionGroupsMap[date]; !ok {
+			ts := &common.TransactionSummary{
+				Date:         goutil.String(date),
+				Currency:     u.Meta.Currency,
+				Sum:          goutil.Float64(0),
+				Transactions: make([]*entity.Transaction, 0),
+			}
+			transactionGroupsMap[date] = ts
+			transactionGroups = append(transactionGroups, ts)
+		}
+
+		transactionGroup := transactionGroupsMap[date]
+		transactionGroup.Transactions = append(transactionGroup.Transactions, t)
+
+		amount := t.GetAmount()
+		if u.Meta.GetCurrency() != t.GetCurrency() {
+			er := entity.BinarySearchExchangeRates(t, ers)
+			amount *= er.GetRate()
+		}
+
+		transactionGroup.Sum = goutil.Float64(transactionGroup.GetSum() + amount)
+	}
+
+	return &GetTransactionGroupsResponse{
+		TransactionGroups: transactionGroups,
+		Paging:            req.Paging,
+	}, nil
+}
+
+func (uc *transactionUseCase) GetTransactions(
+	ctx context.Context,
+	req *GetTransactionsRequest,
+) (*GetTransactionsResponse, error) {
 	isDeletedCategory := make(map[string]bool)
 
 	// convert empty category ID to query of deleted categories
@@ -437,10 +502,6 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
 			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
-			}
 			amount *= er.GetRate()
 		}
 

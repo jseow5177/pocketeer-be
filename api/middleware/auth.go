@@ -91,6 +91,7 @@ func (am *UserAuthMiddleware) Handle(next http.Handler) http.Handler {
 			AccessToken: goutil.String(accessToken),
 		})
 		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to check if user is authenticated, err: %v", err)
 			httputil.ReturnServerResponse(w, nil, authErr)
 			return
 		}
