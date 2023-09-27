@@ -13,18 +13,18 @@ type UserMeta struct {
 	HideInfo *bool   `json:"hide_info,omitempty"`
 }
 
-func (um *UserMeta) GetCurrency() string {
-	if um != nil && um.Currency != nil {
-		return *um.Currency
-	}
-	return ""
-}
-
 func (um *UserMeta) GetHideInfo() bool {
 	if um != nil && um.HideInfo != nil {
 		return *um.HideInfo
 	}
 	return false
+}
+
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
+	}
+	return ""
 }
 
 type User struct {

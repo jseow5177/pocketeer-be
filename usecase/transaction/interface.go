@@ -14,6 +14,7 @@ import (
 type UseCase interface {
 	GetTransaction(ctx context.Context, req *GetTransactionRequest) (*GetTransactionResponse, error)
 	GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error)
+	GetTransactionGroups(ctx context.Context, req *GetTransactionGroupsRequest) (*GetTransactionGroupsResponse, error)
 
 	CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error)
 	UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error)
@@ -312,6 +313,51 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 	return nil
 }
 
+type GetTransactionGroupsRequest struct {
+	AppMeta *common.AppMeta
+	*GetTransactionsRequest
+}
+
+func (m *GetTransactionGroupsRequest) GetAppMeta() *common.AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
+	return repo.NewExchangeRateFilter(
+		to,
+		repo.WithExchangeRatePaging(&repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("timestamp"),
+					Order: goutil.String(config.OrderAsc),
+				},
+			},
+		}),
+	)
+}
+
+type GetTransactionGroupsResponse struct {
+	TransactionGroups []*common.TransactionSummary
+	Paging            *common.Paging
+}
+
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*common.TransactionSummary {
+	if m != nil && m.TransactionGroups != nil {
+		return m.TransactionGroups
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsResponse) GetPaging() *common.Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
+	}
+	return nil
+}
+
 type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
@@ -466,15 +512,8 @@ func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 func (m *SumTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.RangeFilter)
-	}
-
 	return repo.NewExchangeRateFilter(
 		to,
-		repo.WithTimestampGte(tt.Gte),
-		repo.WithTimestampLte(tt.Lte),
 		repo.WithExchangeRatePaging(&repo.Paging{
 			Sorts: []filter.Sort{
 				&repo.Sort{
