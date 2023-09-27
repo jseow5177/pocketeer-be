@@ -40,11 +40,31 @@ func (m *RangeFilter) GetLte() uint64 {
 	return 0
 }
 
+type AppMeta struct {
+	Timezone *string
+}
+
+func (m *AppMeta) GetTimezone() string {
+	if m != nil && m.Timezone != nil {
+		return *m.Timezone
+	}
+	return ""
+}
+
 type TransactionSummary struct {
+	Date            *string
 	Category        *entity.Category
 	TransactionType *uint32
 	Sum             *float64
 	Currency        *string
+	Transactions    []*entity.Transaction
+}
+
+func (m *TransactionSummary) GetDate() string {
+	if m != nil && m.Date != nil {
+		return *m.Date
+	}
+	return ""
 }
 
 func (m *TransactionSummary) GetCategory() *entity.Category {
@@ -73,4 +93,11 @@ func (m *TransactionSummary) GetCurrency() string {
 		return *m.Currency
 	}
 	return ""
+}
+
+func (m *TransactionSummary) GetTransactions() []*entity.Transaction {
+	if m != nil && m.Transactions != nil {
+		return m.Transactions
+	}
+	return nil
 }

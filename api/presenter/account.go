@@ -243,8 +243,32 @@ func (m *GetAccountsRequest) ToUseCaseReq(userID string) *account.GetAccountsReq
 }
 
 type GetAccountsResponse struct {
-	NetWorth *string    `json:"net_worth,omitempty"`
-	Accounts []*Account `json:"accounts,omitempty"`
+	NetWorth   *string    `json:"net_worth,omitempty"`
+	AssetValue *string    `json:"asset_value,omitempty"`
+	DebtValue  *string    `json:"debt_value,omitempty"`
+	Currency   *string    `json:"currency,omitempty"`
+	Accounts   []*Account `json:"accounts,omitempty"`
+}
+
+func (m *GetAccountsResponse) GetAssetValue() string {
+	if m != nil && m.AssetValue != nil {
+		return *m.AssetValue
+	}
+	return ""
+}
+
+func (m *GetAccountsResponse) GetDebtValue() string {
+	if m != nil && m.DebtValue != nil {
+		return *m.DebtValue
+	}
+	return ""
+}
+
+func (m *GetAccountsResponse) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
 }
 
 func (m *GetAccountsResponse) GetNetWorth() string {
@@ -264,6 +288,9 @@ func (m *GetAccountsResponse) GetAccounts() []*Account {
 func (m *GetAccountsResponse) Set(useCaseRes *account.GetAccountsResponse) {
 	m.Accounts = toAccounts(useCaseRes.Accounts)
 	m.NetWorth = goutil.String(fmt.Sprint(useCaseRes.GetNetWorth()))
+	m.AssetValue = goutil.String(fmt.Sprint(useCaseRes.GetAssetValue()))
+	m.DebtValue = goutil.String(fmt.Sprint(useCaseRes.GetDebtValue()))
+	m.Currency = useCaseRes.Currency
 }
 
 type UpdateAccountRequest struct {
