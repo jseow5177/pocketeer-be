@@ -512,15 +512,8 @@ func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 }
 
 func (m *SumTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.RangeFilter)
-	}
-
 	return repo.NewExchangeRateFilter(
 		to,
-		repo.WithTimestampGte(tt.Gte),
-		repo.WithTimestampLte(tt.Lte),
 		repo.WithExchangeRatePaging(&repo.Paging{
 			Sorts: []filter.Sort{
 				&repo.Sort{

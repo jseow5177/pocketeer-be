@@ -245,9 +245,9 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 	// get budget date range
 	var start, end uint64
 	if b.IsMonth() {
-		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.AppMeta.GetTimezone())
 	} else if b.IsYear() {
-		start, end, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+		start, end, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.AppMeta.GetTimezone())
 	} else {
 		return nil, fmt.Errorf("invalid budget type, budget ID: %v", b.GetBudgetID())
 	}
@@ -265,7 +265,7 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 	u := entity.GetUserFromCtx(ctx)
 
 	// get exchange rates
-	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency(), start, end)
+	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency())
 	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
