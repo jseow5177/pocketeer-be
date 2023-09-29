@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/entity"
 	exchangerate "github.com/jseow5177/pockteer-be/usecase/exchange_rate"
 )
 
@@ -105,52 +106,25 @@ func (m *GetExchangeRateResponse) Set(useCaseRes *exchangerate.GetExchangeRateRe
 	m.ExchangeRate = toExchangeRate(useCaseRes.ExchangeRate)
 }
 
-type CreateExchangeRatesRequest struct {
-	Timestamp *uint64  `json:"timestamp,omitempty"`
-	From      *string  `json:"from,omitempty"`
-	To        []string `json:"to,omitempty"`
-}
+type GetCurrenciesRequest struct{}
 
-func (m *CreateExchangeRatesRequest) GetFrom() string {
-	if m != nil && m.From != nil {
-		return *m.From
+func (m *GetCurrenciesRequest) ToUseCaseReq(user *entity.User) *exchangerate.GetCurrenciesRequest {
+	return &exchangerate.GetCurrenciesRequest{
+		User: user,
 	}
-	return ""
 }
 
-func (m *CreateExchangeRatesRequest) GetTimestamp() uint64 {
-	if m != nil && m.Timestamp != nil {
-		return *m.Timestamp
-	}
-	return 0
+type GetCurrenciesResponse struct {
+	Currencies []string `json:"currencies,omitempty"`
 }
 
-func (m *CreateExchangeRatesRequest) GetTo() []string {
-	if m != nil && m.To != nil {
-		return m.To
+func (m *GetCurrenciesResponse) GetCurrencies() []string {
+	if m != nil && m.Currencies != nil {
+		return m.Currencies
 	}
 	return nil
 }
 
-func (m *CreateExchangeRatesRequest) ToUseCaseReq() *exchangerate.CreateExchangeRatesRequest {
-	return &exchangerate.CreateExchangeRatesRequest{
-		Timestamp: m.Timestamp,
-		From:      m.From,
-		To:        m.To,
-	}
-}
-
-type CreateExchangeRatesResponse struct {
-	ExchangeRates []*ExchangeRate `json:"exchange_rates,omitempty"`
-}
-
-func (m *CreateExchangeRatesResponse) GetExchangeRates() []*ExchangeRate {
-	if m != nil && m.ExchangeRates != nil {
-		return m.ExchangeRates
-	}
-	return nil
-}
-
-func (m *CreateExchangeRatesResponse) Set(useCaseRes *exchangerate.CreateExchangeRatesResponse) {
-	m.ExchangeRates = toExchangeRates(useCaseRes.ExchangeRates)
+func (m *GetCurrenciesResponse) Set(useCaseRes *exchangerate.GetCurrenciesResponse) {
+	m.Currencies = useCaseRes.Currencies
 }

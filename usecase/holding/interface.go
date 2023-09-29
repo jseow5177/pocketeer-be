@@ -2,7 +2,6 @@ package holding
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -61,15 +60,6 @@ func (m *GetHoldingRequest) ToLotFilter() *repo.LotFilter {
 		m.GetUserID(),
 		repo.WithLotHoldingID(m.HoldingID),
 	)
-}
-
-func (m *GetHoldingRequest) ToGetExchangeRateFilter(to, from string) *repo.GetExchangeRateFilter {
-	now := time.Now()
-	return &repo.GetExchangeRateFilter{
-		To:        goutil.String(to),
-		From:      goutil.String(from),
-		Timestamp: goutil.Uint64(uint64(now.UnixMilli())),
-	}
 }
 
 type GetHoldingResponse struct {

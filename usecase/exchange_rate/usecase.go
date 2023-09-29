@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/repo"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,23 +24,6 @@ func NewExchangeRateUseCase(
 	}
 }
 
-func (uc *exchangeRateUseCase) CreateExchangeRates(ctx context.Context, req *CreateExchangeRatesRequest) (*CreateExchangeRatesResponse, error) {
-	ers, err := uc.exchangeRateAPI.GetExchangeRates(ctx, req.ToExchangeRateFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates, err: %v", err)
-		return nil, err
-	}
-
-	if _, err := uc.exchangeRateRepo.CreateMany(ctx, ers); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to create exchange rates in repo, err: %v", err)
-		return nil, err
-	}
-
-	return &CreateExchangeRatesResponse{
-		ExchangeRates: ers,
-	}, nil
-}
-
 func (uc *exchangeRateUseCase) GetExchangeRate(ctx context.Context, req *GetExchangeRateRequest) (*GetExchangeRateResponse, error) {
 	er, err := uc.exchangeRateRepo.Get(ctx, req.ToGetExchangeRateFilter())
 	if err != nil {
@@ -49,5 +33,22 @@ func (uc *exchangeRateUseCase) GetExchangeRate(ctx context.Context, req *GetExch
 
 	return &GetExchangeRateResponse{
 		ExchangeRate: er,
+	}, nil
+}
+
+func (uc *exchangeRateUseCase) GetCurrencies(ctx context.Context, req *GetCurrenciesRequest) (*GetCurrenciesResponse, error) {
+	u := req.GetUser()
+
+	currencies := make([]string, 0)
+	currencies = append(currencies, u.Meta.GetCurrency())
+
+	for _, currency := range entity.Currencies {
+		if currency != u.Meta.GetCurrency() {
+			currencies = append(currencies, currency)
+		}
+	}
+
+	return &GetCurrenciesResponse{
+		Currencies: currencies,
 	}, nil
 }

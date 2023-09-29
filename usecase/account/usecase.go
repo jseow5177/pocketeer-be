@@ -77,11 +77,9 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 	}
 
 	var (
-		erMu sync.RWMutex
-		bMu  sync.Mutex
-		now  = time.Now().UnixMilli()
-		u    = entity.GetUserFromCtx(ctx)
-		ers  = make(map[string]*entity.ExchangeRate)
+		mu  sync.Mutex
+		now = time.Now().UnixMilli()
+		u   = entity.GetUserFromCtx(ctx)
 
 		assetValue, debtValue float64
 	)
@@ -97,35 +95,27 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 
 		balance := ac.GetBalance()
 		if u.Meta.GetCurrency() != ac.GetCurrency() {
-			erMu.RLock()
-			er := ers[ac.GetCurrency()]
-			erMu.RUnlock()
-
-			if er == nil {
-				er, err = uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
-					To:        u.Meta.Currency,
-					From:      ac.Currency,
-					Timestamp: goutil.Uint64(uint64(now)),
-				})
-				if err != nil {
-					log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
-					return err
-				}
-
-				erMu.Lock()
-				ers[ac.GetCurrency()] = er
-				erMu.Unlock()
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(ac.Currency),
+				repo.WithExchangeRateTo(u.Meta.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return err
 			}
+
 			balance *= er.GetRate()
 		}
 
-		bMu.Lock()
+		mu.Lock()
 		if ac.IsAsset() {
 			assetValue += balance
 		} else if ac.IsDebt() {
 			debtValue += balance
 		}
-		bMu.Unlock()
+		mu.Unlock()
 
 		return nil
 	}); err != nil {
@@ -325,7 +315,6 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 	}
 
 	now := time.Now().UnixMilli()
-	ers := make(map[string]*entity.ExchangeRate)
 
 	// compute latest value and gain
 	var totalBalance, totalGain float64
@@ -334,18 +323,14 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 		gain := h.GetGain()
 
 		if ac.GetCurrency() != h.GetCurrency() {
-			er := ers[h.GetCurrency()]
-			if er == nil {
-				var err error
-				er, err = uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
-					To:        ac.Currency,
-					From:      h.Currency,
-					Timestamp: goutil.Uint64(uint64(now)),
-				})
-				if err != nil {
-					return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
-				}
-				ers[h.GetCurrency()] = er
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(h.Currency),
+				repo.WithExchangeRateTo(ac.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
 			}
 
 			lv *= er.GetRate()
@@ -365,7 +350,14 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 			lv := h.GetLatestValue()
 
 			if ac.GetCurrency() != h.GetCurrency() {
-				er := ers[h.GetCurrency()]
+				er, err := uc.exchangeRateRepo.Get(ctx, repo.NewExchangeRateFilter(
+					repo.WithExchangeRateFrom(h.Currency),
+					repo.WithExchangeRateTo(ac.Currency),
+					repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+				))
+				if err != nil {
+					return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+				}
 				lv *= er.GetRate()
 			}
 
