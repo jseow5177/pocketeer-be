@@ -13,12 +13,18 @@ const (
 	CurrencySGD Currency = "SGD"
 	CurrencyUSD Currency = "USD"
 	CurrencyMYR Currency = "MYR"
+	CurrencyTHB Currency = "THB"
+	CurrencyJPY Currency = "JPY"
+	CurrencyNZD Currency = "NZD"
 )
 
 var Currencies = map[string]string{
 	string(CurrencySGD): "SGD",
 	string(CurrencyUSD): "USD",
 	string(CurrencyMYR): "MYR",
+	string(CurrencyTHB): "THB",
+	string(CurrencyJPY): "JPY",
+	string(CurrencyNZD): "NZD",
 }
 
 type ExchangeRate struct {
@@ -124,17 +130,4 @@ func (er *ExchangeRate) GetCreateTime() uint64 {
 
 func (er *ExchangeRate) SetCreateTime(createTime *uint64) {
 	er.CreateTime = createTime
-}
-
-func BinarySearchExchangeRates(t *Transaction, ers []*ExchangeRate) *ExchangeRate {
-	index := goutil.BinarySearch(len(ers), func(index int) bool {
-		er := ers[index]
-		return er.GetTimestamp() <= t.GetTransactionTime() && er.GetFrom() == t.GetCurrency()
-	})
-
-	if index != -1 {
-		return ers[index]
-	}
-
-	return nil
 }

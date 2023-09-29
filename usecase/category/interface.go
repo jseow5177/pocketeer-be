@@ -3,10 +3,8 @@ package category
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -86,17 +84,11 @@ func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
 	}
 }
 
-func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
+func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to, from string, timestamp uint64) *repo.ExchangeRateFilter {
 	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
+		repo.WithExchangeRateFrom(goutil.String(from)),
+		repo.WithExchangeRateTo(goutil.String(to)),
+		repo.WithExchangeRateTimestamp(goutil.Uint64(timestamp)),
 	)
 }
 
@@ -152,7 +144,8 @@ type CreateCategoryRequest struct {
 	UserID       *string
 	CategoryName *string
 	CategoryType *uint32
-	Budget       *budget.CreateBudgetRequest
+
+	Budget *budget.CreateBudgetRequest // only for InitUser
 }
 
 func (m *CreateCategoryRequest) GetUserID() string {
@@ -447,17 +440,11 @@ func (m *SumCategoryTransactionsRequest) ToTransactionFilter(categoryIDs []strin
 	)
 }
 
-func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
+func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to, from string, timestamp uint64) *repo.ExchangeRateFilter {
 	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
+		repo.WithExchangeRateFrom(goutil.String(from)),
+		repo.WithExchangeRateTo(goutil.String(to)),
+		repo.WithExchangeRateTimestamp(goutil.Uint64(timestamp)),
 	)
 }
 

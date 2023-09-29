@@ -82,29 +82,9 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 		return nil, err
 	}
 
-	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		_, err = uc.categoryRepo.Create(txCtx, c)
-		if err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new category to repo, err: %v", err)
-			return err
-		}
-
-		if c.Budget == nil {
-			return nil
-		}
-
-		b := c.Budget
-		b.SetCategoryID(c.CategoryID)
-
-		_, err := uc.budgetRepo.Create(txCtx, b)
-		if err != nil {
-			return err
-		}
-
-		c.SetBudget(b)
-
-		return nil
-	}); err != nil {
+	_, err = uc.categoryRepo.Create(ctx, c)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err
 	}
 
@@ -262,22 +242,22 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 		return nil, err
 	}
 
-	u := entity.GetUserFromCtx(ctx)
-
-	// get exchange rates
-	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency())
-	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
-		return nil, err
-	}
-
 	var usedAmount float64
 	for _, t := range ts {
 		amount := t.GetAmount()
 
-		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := entity.BinarySearchExchangeRates(t, ers)
+		if t.GetCurrency() != b.GetCurrency() {
+			erf := req.ToExchangeRateFilter(
+				b.GetCurrency(),
+				t.GetCurrency(),
+				t.GetTransactionTime(),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return nil, err
+			}
+
 			amount *= er.GetRate()
 		}
 
@@ -321,19 +301,21 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 
 	u := entity.GetUserFromCtx(ctx)
 
-	// get exchange rates
-	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency())
-	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
-		return nil, err
-	}
-
 	for _, t := range ts {
 		amount := t.GetAmount()
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := entity.BinarySearchExchangeRates(t, ers)
+			erf := req.ToExchangeRateFilter(
+				u.Meta.GetCurrency(),
+				t.GetCurrency(),
+				t.GetTransactionTime(),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return nil, err
+			}
+
 			amount *= er.GetRate()
 		}
 

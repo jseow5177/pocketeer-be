@@ -3,14 +3,35 @@ package exchangerate
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/dep/api"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 )
 
 type UseCase interface {
-	CreateExchangeRates(ctx context.Context, req *CreateExchangeRatesRequest) (*CreateExchangeRatesResponse, error)
+	GetCurrencies(ctx context.Context, req *GetCurrenciesRequest) (*GetCurrenciesResponse, error)
 	GetExchangeRate(ctx context.Context, req *GetExchangeRateRequest) (*GetExchangeRateResponse, error)
+}
+
+type GetCurrenciesRequest struct {
+	User *entity.User
+}
+
+func (m *GetCurrenciesRequest) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
+}
+
+type GetCurrenciesResponse struct {
+	Currencies []string
+}
+
+func (m *GetCurrenciesResponse) GetCurrencies() []string {
+	if m != nil && m.Currencies != nil {
+		return m.Currencies
+	}
+	return nil
 }
 
 type GetExchangeRateRequest struct {
@@ -40,12 +61,12 @@ func (m *GetExchangeRateRequest) GetTo() string {
 	return ""
 }
 
-func (m *GetExchangeRateRequest) ToGetExchangeRateFilter() *repo.GetExchangeRateFilter {
-	return &repo.GetExchangeRateFilter{
-		From:      m.From,
-		To:        m.To,
-		Timestamp: m.Timestamp,
-	}
+func (m *GetExchangeRateRequest) ToGetExchangeRateFilter() *repo.ExchangeRateFilter {
+	return repo.NewExchangeRateFilter(
+		repo.WithExchangeRateFrom(m.From),
+		repo.WithExchangeRateTo(m.To),
+		repo.WithExchangeRateTimestamp(m.Timestamp),
+	)
 }
 
 type GetExchangeRateResponse struct {
@@ -55,48 +76,6 @@ type GetExchangeRateResponse struct {
 func (m *GetExchangeRateResponse) GetExchangeRate() *entity.ExchangeRate {
 	if m != nil && m.ExchangeRate != nil {
 		return m.ExchangeRate
-	}
-	return nil
-}
-
-type CreateExchangeRatesRequest struct {
-	Timestamp *uint64
-	From      *string
-	To        []string
-}
-
-func (m *CreateExchangeRatesRequest) GetFrom() string {
-	if m != nil && m.From != nil {
-		return *m.From
-	}
-	return ""
-}
-
-func (m *CreateExchangeRatesRequest) GetTimestamp() uint64 {
-	if m != nil && m.Timestamp != nil {
-		return *m.Timestamp
-	}
-	return 0
-}
-
-func (m *CreateExchangeRatesRequest) GetTo() []string {
-	if m != nil && m.To != nil {
-		return m.To
-	}
-	return nil
-}
-
-func (m *CreateExchangeRatesRequest) ToExchangeRateFilter() *api.ExchangeRateFilter {
-	return api.NewExchangeRateFilter(m.Timestamp, m.GetFrom(), m.To...)
-}
-
-type CreateExchangeRatesResponse struct {
-	ExchangeRates []*entity.ExchangeRate
-}
-
-func (m *CreateExchangeRatesResponse) GetExchangeRates() []*entity.ExchangeRate {
-	if m != nil && m.ExchangeRates != nil {
-		return m.ExchangeRates
 	}
 	return nil
 }

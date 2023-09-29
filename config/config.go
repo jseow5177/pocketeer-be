@@ -128,6 +128,7 @@ type FinnHub struct {
 
 type ExchangeRateHost struct {
 	BaseURL string `json:"base_url"`
+	APIKey  string `json:"api_key"`
 }
 
 type Brevo struct {
@@ -189,7 +190,8 @@ func NewConfig() *Config {
 			APIKey: "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",
 		},
 		ExchangeRateHost: &ExchangeRateHost{
-			BaseURL: "https://api.exchangerate.host",
+			BaseURL: "https://api.freecurrencyapi.com/v1",
+			APIKey:  "fca_live_kzWz8AeLMJoQW0FRu2BmJrugbcDg584r5rJGweuK",
 		},
 	}
 }
