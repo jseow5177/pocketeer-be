@@ -2,11 +2,9 @@ package api
 
 import (
 	"context"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/util"
 )
 
 type ExchangeRateAPI interface {
@@ -14,23 +12,35 @@ type ExchangeRateAPI interface {
 }
 
 type ExchangeRateFilter struct {
-	Date    *string
-	Base    *string
-	Symbols []string
+	FromDate   *string
+	ToDate     *string
+	Base       *string
+	Currencies []string
 }
 
-func NewExchangeRateFilter(timestamp *uint64, base string, symbols ...string) *ExchangeRateFilter {
-	var date string
-	if timestamp != nil {
-		ts := util.ToUnixStartOfMonth(*timestamp)
-		date = util.FormatDate(time.UnixMilli(int64(ts)))
-	}
+type ExchangeRateFilterOption = func(erf *ExchangeRateFilter)
 
-	return &ExchangeRateFilter{
-		Base:    goutil.String(base),
-		Date:    goutil.String(date),
-		Symbols: symbols,
+func WithExchangeRateBase(base *string) ExchangeRateFilterOption {
+	return func(erf *ExchangeRateFilter) {
+		erf.Base = base
 	}
+}
+
+func WithExchangeRateCurrencies(currencies ...string) ExchangeRateFilterOption {
+	return func(erf *ExchangeRateFilter) {
+		erf.Currencies = currencies
+	}
+}
+
+func NewExchangeRateFilter(fromDate, toDate string, opts ...ExchangeRateFilterOption) *ExchangeRateFilter {
+	erf := &ExchangeRateFilter{
+		FromDate: goutil.String(fromDate),
+		ToDate:   goutil.String(toDate),
+	}
+	for _, opt := range opts {
+		opt(erf)
+	}
+	return erf
 }
 
 func (f *ExchangeRateFilter) GetBase() string {
@@ -40,16 +50,23 @@ func (f *ExchangeRateFilter) GetBase() string {
 	return ""
 }
 
-func (f *ExchangeRateFilter) GetSymbols() []string {
-	if f != nil && f.Symbols != nil {
-		return f.Symbols
+func (f *ExchangeRateFilter) GetCurrencies() []string {
+	if f != nil && f.Currencies != nil {
+		return f.Currencies
 	}
 	return nil
 }
 
-func (f *ExchangeRateFilter) GetDate() string {
-	if f != nil && f.Date != nil {
-		return *f.Date
+func (f *ExchangeRateFilter) GetFromDate() string {
+	if f != nil && f.FromDate != nil {
+		return *f.FromDate
+	}
+	return ""
+}
+
+func (f *ExchangeRateFilter) GetToDate() string {
+	if f != nil && f.ToDate != nil {
+		return *f.ToDate
 	}
 	return ""
 }

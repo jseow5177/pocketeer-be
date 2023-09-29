@@ -163,7 +163,12 @@ func (s *server) Start() error {
 	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
-	s.exchangeRateRepo = mongo.NewExchangeRateMongo(s.mongo)
+
+	s.exchangeRateRepo, err = mongo.NewExchangeRateMongo(s.ctx, s.mongo)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init exchange rate repo, err: %v", err)
+		return err
+	}
 
 	// init sheet repo
 	s.feedbackRepo, err = sheet.NewFeedbackSheet(s.ctx, s.cfg.FeedbackGoogleSheet)
@@ -284,30 +289,7 @@ func (s *server) registerRoutes() http.Handler {
 }
 
 func (s *server) initAdminRoutes(r *router.HttpRouter) {
-	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(s.cfg.ServerAdmin)
-
-	// ========== Exchange Rate ========== //
-
-	exchangeRateHandler := erh.NewExchangeRateHandler(s.exchangeRateUseCase)
-
-	// create exchange rates
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathCreateExchangeRates,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.CreateExchangeRatesRequest),
-			Res:       new(presenter.CreateExchangeRatesResponse),
-			Validator: erh.CreateExchangeRatesValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return exchangeRateHandler.CreateExchangeRates(
-					ctx,
-					req.(*presenter.CreateExchangeRatesRequest),
-					res.(*presenter.CreateExchangeRatesResponse),
-				)
-			},
-		},
-		Middlewares: []router.Middleware{adminAuthMiddleware},
-	})
+	_ = middleware.NewAdminAuthMiddleware(s.cfg.ServerAdmin)
 }
 
 func (s *server) initUserRoutes(r *router.HttpRouter) {
@@ -1015,7 +997,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 
 	exchangeRateHandler := erh.NewExchangeRateHandler(s.exchangeRateUseCase)
 
-	// create exchange rates
+	// get exchange rates
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetExchangeRate,
 		Method: http.MethodPost,
@@ -1028,6 +1010,25 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 					ctx,
 					req.(*presenter.GetExchangeRateRequest),
 					res.(*presenter.GetExchangeRateResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get currencies
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCurrencies,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCurrenciesRequest),
+			Res:       new(presenter.GetCurrenciesResponse),
+			Validator: erh.GetCurrenciesValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return exchangeRateHandler.GetCurrencies(
+					ctx,
+					req.(*presenter.GetCurrenciesRequest),
+					res.(*presenter.GetCurrenciesResponse),
 				)
 			},
 		},

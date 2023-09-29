@@ -325,20 +325,6 @@ func (m *GetTransactionGroupsRequest) GetAppMeta() *common.AppMeta {
 	return nil
 }
 
-func (m *GetTransactionGroupsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
-	)
-}
-
 type GetTransactionGroupsResponse struct {
 	TransactionGroups []*common.TransactionSummary
 	Paging            *common.Paging
@@ -508,20 +494,6 @@ func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		repo.WithTransactionType(m.TransactionType),
 		repo.WithTransactionTimeGte(tt.Gte),
 		repo.WithTransactionTimeLte(tt.Lte),
-	)
-}
-
-func (m *SumTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
 	)
 }
 
