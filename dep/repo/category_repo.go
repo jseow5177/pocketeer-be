@@ -20,7 +20,6 @@ type CategoryRepo interface {
 	Create(ctx context.Context, c *entity.Category) (string, error)
 	CreateMany(ctx context.Context, cs []*entity.Category) ([]string, error)
 	Update(ctx context.Context, cf *CategoryFilter, c *entity.CategoryUpdate) error
-	Delete(ctx context.Context, cf *CategoryFilter) error
 }
 
 type CategoryFilter struct {
