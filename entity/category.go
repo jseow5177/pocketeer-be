@@ -6,67 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
-type CategoryUpdate struct {
-	CategoryName   *string
-	CategoryStatus *uint32
-	UpdateTime     *uint64
-}
-
-func (cu *CategoryUpdate) GetCategoryName() string {
-	if cu != nil && cu.CategoryName != nil {
-		return *cu.CategoryName
-	}
-	return ""
-}
-
-func (cu *CategoryUpdate) SetCategoryName(categoryName *string) {
-	cu.CategoryName = categoryName
-}
-
-func (cu *CategoryUpdate) GetCategoryStatus() uint32 {
-	if cu != nil && cu.CategoryStatus != nil {
-		return *cu.CategoryStatus
-	}
-	return 0
-}
-
-func (cu *CategoryUpdate) SetCategoryStatus(categoryStatus *uint32) {
-	cu.CategoryStatus = categoryStatus
-}
-
-func (cu *CategoryUpdate) GetUpdateTime() uint64 {
-	if cu != nil && cu.UpdateTime != nil {
-		return *cu.UpdateTime
-	}
-	return 0
-}
-
-func (cu *CategoryUpdate) SetUpdateTime(updateTime *uint64) {
-	cu.UpdateTime = updateTime
-}
-
-type CategoryUpdateOption func(cu *CategoryUpdate)
-
-func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
-	return func(cu *CategoryUpdate) {
-		cu.SetCategoryName(categoryName)
-	}
-}
-
-func WithUpdateCategoryStatus(categoryStatus *uint32) CategoryUpdateOption {
-	return func(cu *CategoryUpdate) {
-		cu.SetCategoryStatus(categoryStatus)
-	}
-}
-
-func NewCategoryUpdate(opts ...CategoryUpdateOption) *CategoryUpdate {
-	cu := new(CategoryUpdate)
-	for _, opt := range opts {
-		opt(cu)
-	}
-	return cu
-}
-
 type CategoryStatus uint32
 
 const (
@@ -74,6 +13,28 @@ const (
 	CategoryStatusNormal
 	CategoryStatusDeleted
 )
+
+type CategoryUpdateOption func(c *Category) bool
+
+func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
+	return func(c *Category) bool {
+		if categoryName != nil && c.GetCategoryName() != *categoryName {
+			c.SetCategoryName(categoryName)
+			return true
+		}
+		return false
+	}
+}
+
+func WithUpdateCategoryStatus(categoryStatus *uint32) CategoryUpdateOption {
+	return func(c *Category) bool {
+		if categoryStatus != nil && c.GetCategoryStatus() != *categoryStatus {
+			c.SetCategoryStatus(categoryStatus)
+			return true
+		}
+		return false
+	}
+}
 
 type Category struct {
 	UserID         *string
@@ -125,10 +86,10 @@ func WithCategoryBudget(budget *Budget) CategoryOption {
 	}
 }
 
-func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category, error) {
+func NewCategory(UserID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
-		UserID:         goutil.String(userID),
+		UserID:         goutil.String(UserID),
 		CategoryName:   goutil.String(categoryName),
 		CategoryType:   goutil.Uint32(uint32(TransactionTypeExpense)),
 		CategoryStatus: goutil.Uint32(uint32(CategoryStatusNormal)),
@@ -140,14 +101,14 @@ func NewCategory(userID, categoryName string, opts ...CategoryOption) (*Category
 		opt(c)
 	}
 
-	if err := c.checkOpts(); err != nil {
+	if err := c.validate(); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (c *Category) checkOpts() error {
+func (c *Category) validate() error {
 	if !c.CanAddBudget() && c.Budget != nil {
 		return ErrBudgetNotAllowed
 	}
@@ -155,45 +116,43 @@ func (c *Category) checkOpts() error {
 	return nil
 }
 
-func (c *Category) Update(cu *CategoryUpdate) (*CategoryUpdate, error) {
-	var (
-		hasUpdate      bool
-		categoryUpdate = new(CategoryUpdate)
-	)
+type CategoryUpdate struct {
+	CategoryName   *string
+	CategoryStatus *uint32
+	UpdateTime     *uint64
+}
 
-	if cu.CategoryName != nil && cu.GetCategoryName() != c.GetCategoryName() {
-		hasUpdate = true
-		c.SetCategoryName(cu.CategoryName)
+func (c *Category) ToCategoryUpdate() *CategoryUpdate {
+	return &CategoryUpdate{
+		CategoryName:   c.CategoryName,
+		CategoryStatus: c.CategoryStatus,
+		UpdateTime:     c.UpdateTime,
+	}
+}
 
-		defer func() {
-			categoryUpdate.SetCategoryName(c.CategoryName)
-		}()
+func (c *Category) Update(cus ...CategoryUpdateOption) (*CategoryUpdate, error) {
+	if len(cus) == 0 {
+		return nil, nil
 	}
 
-	if cu.CategoryStatus != nil && cu.GetCategoryStatus() != c.GetCategoryStatus() {
-		hasUpdate = true
-		c.SetCategoryStatus(cu.CategoryStatus)
-
-		defer func() {
-			categoryUpdate.SetCategoryStatus(c.CategoryStatus)
-		}()
+	var hasUpdate bool
+	for _, cu := range cus {
+		hasUpdate = cu(c)
 	}
 
 	if !hasUpdate {
 		return nil, nil
 	}
 
-	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
-	c.SetUpdateTime(now)
-
 	// check
-	if err := c.checkOpts(); err != nil {
+	if err := c.validate(); err != nil {
 		return nil, err
 	}
 
-	categoryUpdate.SetUpdateTime(now)
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
+	c.SetUpdateTime(now)
 
-	return categoryUpdate, nil
+	return c.ToCategoryUpdate(), nil
 }
 
 func (c *Category) GetUserID() string {
@@ -203,8 +162,8 @@ func (c *Category) GetUserID() string {
 	return ""
 }
 
-func (c *Category) SetUserID(userID *string) {
-	c.UserID = userID
+func (c *Category) SetUserID(UserID *string) {
+	c.UserID = UserID
 }
 
 func (c *Category) GetCategoryID() string {

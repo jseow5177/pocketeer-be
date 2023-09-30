@@ -63,12 +63,6 @@ func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu 
 	return nil
 }
 
-func (m *categoryMongo) Delete(ctx context.Context, cf *repo.CategoryFilter) error {
-	return m.Update(ctx, cf, entity.NewCategoryUpdate(
-		entity.WithUpdateCategoryStatus(goutil.Uint32(uint32(entity.CategoryStatusDeleted))),
-	))
-}
-
 func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {
 	f := mongoutil.BuildFilter(cf)
 
