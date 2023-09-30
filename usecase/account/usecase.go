@@ -164,7 +164,11 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 	oldBalance := ac.GetBalance()
 
-	acu, err := ac.Update(req.ToAccountUpdate())
+	acu, err := ac.Update(
+		entity.WithUpdateAccountBalance(req.Balance),
+		entity.WithUpdateAccountName(req.AccountName),
+		entity.WithUpdateAccountNote(req.Note),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +180,8 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 		}, nil
 	}
 
-	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err = uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to save account updates to repo, err: %v", err)
 			return err
 		}
@@ -186,7 +190,7 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 			balanceChange := acu.GetBalance() - oldBalance
 			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
 
-			if _, err = uc.transactionRepo.Create(txCtx, t); err != nil {
+			if _, err := uc.transactionRepo.Create(txCtx, t); err != nil {
 				log.Ctx(txCtx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
 				return err
 			}
@@ -212,7 +216,14 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err := uc.accountRepo.Delete(txCtx, acf); err != nil {
+		acu, err := ac.Update(
+			entity.WithUpdateAccountStatus(goutil.Uint32(uint32(entity.AccountStatusDeleted))),
+		)
+		if err != nil {
+			return err
+		}
+
+		if err = uc.accountRepo.Update(txCtx, acf, acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark account as deleted, err: %v", err)
 			return err
 		}

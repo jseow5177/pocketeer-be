@@ -337,14 +337,6 @@ func (m *UpdateAccountRequest) ToAccountFilter() *repo.AccountFilter {
 	)
 }
 
-func (m *UpdateAccountRequest) ToAccountUpdate() *entity.AccountUpdate {
-	return entity.NewAccountUpdate(
-		entity.WithUpdateAccountName(m.AccountName),
-		entity.WithUpdateAccountBalance(m.Balance),
-		entity.WithUpdateAccountNote(m.Note),
-	)
-}
-
 func (m *UpdateAccountRequest) NeedOffsetTransaction() bool {
 	return m.GetUpdateMode()&uint32(UpdateModeOffsetTransaction) > 0
 }
