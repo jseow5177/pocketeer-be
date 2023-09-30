@@ -265,9 +265,9 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 
 			// reset account balance
 			newBalance := ac.GetBalance() - amount
-			nac, err := ac.Update(entity.NewAccountUpdate(
+			nac, err := ac.Update(
 				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
-			))
+			)
 			if err != nil {
 				return err
 			}
@@ -328,9 +328,9 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 		// update account balance
 		newBalance := ac.GetBalance() + amount
-		nac, err := ac.Update(entity.NewAccountUpdate(
+		nac, err := ac.Update(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
-		))
+		)
 		if err != nil {
 			return err
 		}
@@ -418,9 +418,9 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 				}
 
 				oldAcBalance := oldAc.GetBalance() - amount
-				acu, err := oldAc.Update(entity.NewAccountUpdate(
+				acu, err := oldAc.Update(
 					entity.WithUpdateAccountBalance(goutil.Float64(oldAcBalance)),
-				))
+				)
 				if err != nil {
 					return err
 				}
@@ -442,9 +442,9 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 				}
 
 				newAcBalance := newAc.GetBalance() + amount
-				acu, err := newAc.Update(entity.NewAccountUpdate(
+				acu, err := newAc.Update(
 					entity.WithUpdateAccountBalance(goutil.Float64(newAcBalance)),
-				))
+				)
 				if err != nil {
 					return err
 				}

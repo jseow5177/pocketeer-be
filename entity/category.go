@@ -137,7 +137,9 @@ func (c *Category) Update(cus ...CategoryUpdateOption) (*CategoryUpdate, error) 
 
 	var hasUpdate bool
 	for _, cu := range cus {
-		hasUpdate = cu(c)
+		if ok := cu(c); ok {
+			hasUpdate = true
+		}
 	}
 
 	if !hasUpdate {
