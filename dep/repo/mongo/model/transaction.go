@@ -65,9 +65,9 @@ func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 	}
 }
 
-func ToTransactionEntity(t *Transaction) *entity.Transaction {
+func ToTransactionEntity(t *Transaction) (*entity.Transaction, error) {
 	if t == nil {
-		return nil
+		return nil, nil
 	}
 
 	return entity.NewTransaction(

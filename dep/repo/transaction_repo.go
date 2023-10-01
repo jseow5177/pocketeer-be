@@ -19,7 +19,6 @@ type TransactionRepo interface {
 
 	Create(ctx context.Context, t *entity.Transaction) (string, error)
 	Update(ctx context.Context, tf *TransactionFilter, t *entity.TransactionUpdate) error
-	Delete(ctx context.Context, tf *TransactionFilter) error
 
 	CalcTotalAmount(ctx context.Context, totalBy string, tf *TransactionFilter) ([]*TransactionAggr, error)
 }
