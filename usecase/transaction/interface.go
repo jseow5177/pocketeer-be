@@ -145,7 +145,7 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
+func (m *CreateTransactionRequest) ToTransactionEntity() (*entity.Transaction, error) {
 	return entity.NewTransaction(
 		m.GetUserID(),
 		m.GetAccountID(),
@@ -430,18 +430,6 @@ func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.Accou
 	return repo.NewAccountFilter(
 		m.GetUserID(),
 		repo.WithAccountID(goutil.String(accountID)),
-	)
-}
-
-func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
-	return entity.NewTransactionUpdate(
-		entity.WithUpdateTransactionAmount(m.Amount),
-		entity.WithUpdateTransactionTime(m.TransactionTime),
-		entity.WithUpdateTransactionNote(m.Note),
-		entity.WithUpdateTransactionAccountID(m.AccountID),
-		entity.WithUpdateTransactionCategoryID(m.CategoryID),
-		entity.WithUpdateTransactionType(m.TransactionType),
-		entity.WithUpdateTransactionCurrency(m.Currency),
 	)
 }
 
