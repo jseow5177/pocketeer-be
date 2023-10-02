@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
@@ -11,10 +10,6 @@ import (
 	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	ErrInvalidCategoryIDs = errors.New("invalid category_ids")
 )
 
 type transactionUseCase struct {
@@ -573,44 +568,6 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 
 	return &SumTransactionsResponse{
 		Sums: sums,
-	}, nil
-}
-
-func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
-	tf := req.ToTransactionFilter(req.GetUserID())
-
-	// default sum by category_id
-	sumBy := "category_id"
-
-	switch {
-	case len(req.CategoryIDs) > 0:
-		categories, err := uc.categoryRepo.GetMany(ctx, req.ToCategoryFilter())
-		if err != nil {
-			return nil, err
-		}
-
-		if len(req.CategoryIDs) != len(categories) {
-			return nil, ErrInvalidCategoryIDs
-		}
-	case len(req.TransactionTypes) > 0:
-		sumBy = "transaction_type"
-	}
-
-	aggrs, err := uc.transactionRepo.CalcTotalAmount(ctx, sumBy, tf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to sum transactions by %s, err: %v", sumBy, err)
-		return nil, err
-	}
-
-	results := make(map[string]*Aggr)
-	for _, aggr := range aggrs {
-		results[aggr.GetGroupBy()] = &Aggr{
-			Sum: aggr.TotalAmount,
-		}
-	}
-
-	return &AggrTransactionsResponse{
-		Results: results,
 	}, nil
 }
 

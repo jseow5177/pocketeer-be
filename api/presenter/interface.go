@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
-	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 type Paging struct {
@@ -432,16 +431,6 @@ func toPaging(p *common.Paging) *Paging {
 	return &Paging{
 		Limit: p.Limit,
 		Page:  p.Page,
-	}
-}
-
-func toAggr(aggr *transaction.Aggr) *Aggr {
-	if aggr == nil {
-		return nil
-	}
-
-	return &Aggr{
-		Sum: aggr.Sum,
 	}
 }
 

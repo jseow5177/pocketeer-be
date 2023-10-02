@@ -454,50 +454,6 @@ func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactio
 	m.Transaction = toTransaction(useCaseRes.Transaction)
 }
 
-type AggrTransactionsRequest struct {
-	TransactionTime  *RangeFilter `json:"transaction_time,omitempty"`
-	CategoryIDs      []string     `json:"category_ids,omitempty"`
-	BudgetIDs        []string     `json:"budget_ids,omitempty"`
-	TransactionTypes []uint32     `json:"transaction_types,omitempty"`
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTime() *RangeFilter {
-	if m != nil && m.TransactionTime != nil {
-		return m.TransactionTime
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetBudgetIDs() []string {
-	if m != nil && m.BudgetIDs != nil {
-		return m.BudgetIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
-	if m != nil && m.TransactionTypes != nil {
-		return m.TransactionTypes
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
-	return &transaction.AggrTransactionsRequest{
-		UserID:           goutil.String(userID),
-		TransactionTypes: m.TransactionTypes,
-		CategoryIDs:      m.CategoryIDs,
-		TransactionTime:  m.TransactionTime.toRangeFilter(),
-	}
-}
-
 type TransactionSummary struct {
 	Date            *string        `json:"date,omitempty"`
 	Category        *Category      `json:"category,omitempty"`
@@ -547,29 +503,6 @@ func (m *TransactionSummary) GetTransactions() []*Transaction {
 		return m.Transactions
 	}
 	return nil
-}
-
-type Aggr struct {
-	Sum *float64 `json:"sum,omitempty"`
-}
-
-type AggrTransactionsResponse struct {
-	Results map[string]*Aggr `json:"results,omitempty"`
-}
-
-func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
-	if m != nil && m.Results != nil {
-		return m.Results
-	}
-	return nil
-}
-
-func (m *AggrTransactionsResponse) Set(useCaseRes *transaction.AggrTransactionsResponse) {
-	res := make(map[string]*Aggr)
-	for k, v := range useCaseRes.Results {
-		res[k] = toAggr(v)
-	}
-	m.Results = res
 }
 
 type DeleteTransactionRequest struct {

@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
@@ -14,7 +13,6 @@ import (
 
 const (
 	transactionCollName = "transaction"
-	aggrSumAmount       = "sumAmount"
 )
 
 type transactionMongo struct {
@@ -81,29 +79,4 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 	}
 
 	return ets, nil
-}
-
-// Deprecated
-func (m *transactionMongo) CalcTotalAmount(ctx context.Context, groupBy string, tf *repo.TransactionFilter) ([]*repo.TransactionAggr, error) {
-	f := mongoutil.BuildFilter(tf)
-
-	sumAmountAggr := mongoutil.NewAggr(aggrSumAmount, mongoutil.AggrSum, &mongoutil.AggrOpt{
-		Field: "amount",
-	})
-	aggrRes, err := m.mColl.aggr(ctx, f, groupBy, sumAmountAggr)
-	if err != nil {
-		return nil, err
-	}
-
-	aggrs := make([]*repo.TransactionAggr, 0)
-	for _, ag := range aggrRes {
-		sumAmount := ag[aggrSumAmount]
-
-		aggrs = append(aggrs, &repo.TransactionAggr{
-			GroupBy:     goutil.String(fmt.Sprint(ag[aggrGroupByField])),
-			TotalAmount: goutil.Float64(mongoutil.ToFloat64(sumAmount)),
-		})
-	}
-
-	return aggrs, nil
 }

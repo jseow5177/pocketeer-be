@@ -32,7 +32,6 @@ const (
 	PathGetTransactions         = PathV1Prefix + "get_transactions"
 	PathGetTransactionGroups    = PathV1Prefix + "get_transaction_groups"
 	PathSumTransactions         = PathV1Prefix + "sum_transactions"
-	PathAggrTransactions        = PathV1Prefix + "aggr_transactions"
 	PathGetBudget               = PathV1Prefix + "get_budget"
 	PathUpdateBudget            = PathV1Prefix + "update_budget"
 	PathGetBudgets              = PathV1Prefix + "get_budgets"

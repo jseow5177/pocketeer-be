@@ -21,9 +21,6 @@ type UseCase interface {
 	DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error)
 
 	SumTransactions(ctx context.Context, req *SumTransactionsRequest) (*SumTransactionsResponse, error)
-
-	// deprecated
-	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
 
 type GetTransactionRequest struct {
@@ -511,78 +508,6 @@ type SumTransactionsResponse struct {
 func (m *SumTransactionsResponse) GetSums() []*common.TransactionSummary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
-	}
-	return nil
-}
-
-type AggrTransactionsRequest struct {
-	UserID           *string
-	TransactionTime  *common.RangeFilter
-	CategoryIDs      []string
-	TransactionTypes []uint32
-}
-
-func (m *AggrTransactionsRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTime() *common.RangeFilter {
-	if m != nil && m.TransactionTime != nil {
-		return m.TransactionTime
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
-	if m != nil && m.TransactionTypes != nil {
-		return m.TransactionTypes
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) ToTransactionFilter(userID string) *repo.TransactionFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.RangeFilter)
-	}
-
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionCategoryIDs(m.CategoryIDs),
-		repo.WithTransactionTypes(m.TransactionTypes),
-		repo.WithTransactionTimeGte(tt.Gte),
-		repo.WithTransactionTimeLte(tt.Lte),
-	)
-}
-
-func (m *AggrTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
-	return repo.NewCategoryFilter(
-		m.GetUserID(),
-		repo.WithCategoryIDs(m.CategoryIDs),
-	)
-}
-
-type Aggr struct {
-	Sum *float64
-}
-
-type AggrTransactionsResponse struct {
-	Results map[string]*Aggr
-}
-
-func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
-	if m != nil && m.Results != nil {
-		return m.Results
 	}
 	return nil
 }

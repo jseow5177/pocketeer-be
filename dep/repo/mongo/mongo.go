@@ -15,10 +15,6 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
 )
 
-const (
-	aggrGroupByField = "groupBy"
-)
-
 type Mongo struct {
 	client *mongo.Client
 	db     *mongo.Database
@@ -177,37 +173,4 @@ func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts 
 	}
 
 	return res, nil
-}
-
-func (mc *MongoColl) aggr(ctx context.Context, filter bson.D, groupBy string, aggrs ...*mongoutil.Aggr) ([]map[string]interface{}, error) {
-	pipeline, err := mongoutil.BuildAggrPipeline(filter, groupBy, aggrs...)
-	if err != nil {
-		return nil, err
-	}
-
-	cursor, err := mc.coll.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-
-	aggrResults := make([]bson.M, 0)
-	if err = cursor.All(ctx, &aggrResults); err != nil {
-		return nil, err
-	}
-
-	allRes := make([]map[string]interface{}, 0)
-	for _, aggrResult := range aggrResults {
-		res := make(map[string]interface{})
-		for _, aggr := range aggrs {
-			// aggr results
-			res[aggr.GetName()] = aggrResult[aggr.GetName()]
-		}
-
-		// groupBy field
-		res[aggrGroupByField] = aggrResult["_id"]
-
-		allRes = append(allRes, res)
-	}
-
-	return allRes, nil
 }
