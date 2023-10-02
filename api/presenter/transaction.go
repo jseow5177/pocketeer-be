@@ -227,6 +227,7 @@ func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionRespo
 
 type GetTransactionsRequest struct {
 	CategoryID      *string      `json:"category_id,omitempty"`
+	CategoryIDs     []string     `json:"category_ids,omitempty"`
 	AccountID       *string      `json:"account_id,omitempty"`
 	TransactionType *uint32      `json:"transaction_type,omitempty"`
 	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
@@ -245,6 +246,13 @@ func (m *GetTransactionsRequest) GetAccountID() string {
 		return *m.AccountID
 	}
 	return ""
+}
+
+func (m *GetTransactionsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
 }
 
 func (m *GetTransactionsRequest) GetTransactionType() uint32 {
@@ -273,6 +281,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
+		CategoryIDs:     m.CategoryIDs,
 		TransactionType: m.TransactionType,
 		Paging:          m.Paging.toPaging(),
 		TransactionTime: m.TransactionTime.toRangeFilter(),
