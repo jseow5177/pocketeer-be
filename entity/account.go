@@ -116,69 +116,89 @@ type AccountOption = func(ac *Account)
 
 func WithAccountID(accountID *string) AccountOption {
 	return func(ac *Account) {
-		ac.SetAccountID(accountID)
+		if accountID != nil {
+			ac.SetAccountID(accountID)
+		}
 	}
 }
 
 func WithAccountName(accountName *string) AccountOption {
 	return func(ac *Account) {
-		ac.SetAccountName(accountName)
+		if accountName != nil {
+			ac.SetAccountName(accountName)
+		}
 	}
 }
 
 func WithAccountCurrency(currency *string) AccountOption {
 	return func(ac *Account) {
-		ac.SetCurrency(currency)
+		if currency != nil {
+			ac.SetCurrency(currency)
+		}
 	}
 }
 
 func WithAccountBalance(balance *float64) AccountOption {
 	return func(ac *Account) {
-		ac.SetBalance(balance)
+		if balance != nil {
+			ac.SetBalance(balance)
+		}
 	}
 }
 
 func WithAccountStatus(accountStatus *uint32) AccountOption {
 	return func(ac *Account) {
-		ac.SetAccountStatus(accountStatus)
+		if accountStatus != nil {
+			ac.SetAccountStatus(accountStatus)
+		}
 	}
 }
 
 func WithAccountType(accountType *uint32) AccountOption {
 	return func(ac *Account) {
-		ac.SetAccountType(accountType)
+		if accountType != nil {
+			ac.SetAccountType(accountType)
+		}
 	}
 }
 
 func WithAccountNote(note *string) AccountOption {
 	return func(ac *Account) {
-		ac.SetNote(note)
+		if note != nil {
+			ac.SetNote(note)
+		}
 	}
 }
 
 func WithAccountCreateTime(createTime *uint64) AccountOption {
 	return func(ac *Account) {
-		ac.SetCreateTime(createTime)
+		if createTime != nil {
+			ac.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithAccountUpdateTime(updateTime *uint64) AccountOption {
 	return func(ac *Account) {
-		ac.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			ac.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithAccountHoldings(holdings []*Holding) AccountOption {
 	return func(ac *Account) {
-		ac.SetHoldings(holdings)
+		if holdings != nil {
+			ac.SetHoldings(holdings)
+		}
 	}
 }
 
 func (ac *Account) Clone() (*Account, error) {
 	return NewAccount(
 		ac.GetUserID(),
+		ac.GetAccountName(),
 		WithAccountID(goutil.String(ac.GetAccountID())),
-		WithAccountName(ac.AccountName),
 		WithAccountBalance(ac.Balance),
 		WithAccountCurrency(ac.Currency),
 		WithAccountStatus(ac.AccountStatus),
@@ -189,7 +209,7 @@ func (ac *Account) Clone() (*Account, error) {
 	)
 }
 
-func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
+func NewAccount(userID, accountName string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
 		UserID:        goutil.String(userID),

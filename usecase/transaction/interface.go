@@ -56,6 +56,7 @@ func (m *GetTransactionRequest) ToCategoryFilter(categoryID string) *repo.Catego
 	return repo.NewCategoryFilter(
 		m.GetUserID(),
 		repo.WithCategoryID(goutil.String(categoryID)),
+		repo.WithCategoryStatus(nil),
 	)
 }
 
@@ -63,7 +64,7 @@ func (m *GetTransactionRequest) ToAccountFilter(accountID string) *repo.AccountF
 	return repo.NewAccountFilter(
 		m.GetUserID(),
 		repo.WithAccountID(goutil.String(accountID)),
-		repo.WithAccountStatus(nil), // any status is ok
+		repo.WithAccountStatus(nil), // deleted account can be shown
 	)
 }
 
@@ -82,6 +83,8 @@ type CreateTransactionRequest struct {
 	UserID          *string
 	AccountID       *string
 	CategoryID      *string
+	FromAccountID   *string
+	ToAccountID     *string
 	Currency        *string
 	Amount          *float64
 	Note            *string
@@ -106,6 +109,20 @@ func (m *CreateTransactionRequest) GetCategoryID() string {
 func (m *CreateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -148,9 +165,11 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 func (m *CreateTransactionRequest) ToTransactionEntity() (*entity.Transaction, error) {
 	return entity.NewTransaction(
 		m.GetUserID(),
-		m.GetAccountID(),
-		m.GetCategoryID(),
 		entity.WithTransactionAmount(m.Amount),
+		entity.WithTransactionAccountID(m.AccountID),
+		entity.WithTransactionCategoryID(m.CategoryID),
+		entity.WithTransactionFromAccountID(m.FromAccountID),
+		entity.WithTransactionToAccountID(m.ToAccountID),
 		entity.WithTransactionNote(m.Note),
 		entity.WithTransactionType(m.TransactionType),
 		entity.WithTransactionTime(m.TransactionTime),
@@ -165,10 +184,10 @@ func (m *CreateTransactionRequest) ToCategoryFilter() *repo.CategoryFilter {
 	)
 }
 
-func (m *CreateTransactionRequest) ToAccountFilter() *repo.AccountFilter {
+func (m *CreateTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
-		repo.WithAccountID(m.AccountID),
+		repo.WithAccountID(goutil.String(accountID)),
 	)
 }
 

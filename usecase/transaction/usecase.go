@@ -51,27 +51,44 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		return nil, err
 	}
 
-	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
-	if err != nil && err != repo.ErrCategoryNotFound {
-		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-		return nil, err
-	}
+	if t.IsTransfer() {
+		fromAc, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetFromAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get from_account from repo, err: %v", err)
+			return nil, err
+		}
 
-	// hide deleted category
-	if c != nil {
-		t.SetCategory(c)
+		t.SetFromAccount(fromAc)
+
+		toAc, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetToAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get to_account from repo, err: %v", err)
+			return nil, err
+		}
+
+		t.SetToAccount(toAc)
 	} else {
-		t.SetCategoryID(goutil.String(""))
-	}
+		c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+			return nil, err
+		}
 
-	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
-	if err != nil && err != repo.ErrAccountNotFound {
-		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
-		return nil, err
-	}
+		// hide deleted category
+		if c.IsDeleted() {
+			t.SetCategoryID(goutil.String(""))
+		} else {
+			t.SetCategory(c)
+		}
 
-	// deleted account can be shown
-	t.SetAccount(ac)
+		ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter(t.GetAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+			return nil, err
+		}
+
+		t.SetAccount(ac)
+	}
 
 	return &GetTransactionResponse{
 		Transaction: t,
@@ -118,13 +135,16 @@ func (uc *transactionUseCase) GetTransactionGroups(
 		transactionGroup := transactionGroupsMap[date]
 		transactionGroup.Transactions = append(transactionGroup.Transactions, t)
 
-		amount, err := uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
-		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
-			return nil, err
-		}
+		// don't consider transfer in Sum
+		if !t.IsTransfer() {
+			amount, err := uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
+				return nil, err
+			}
 
-		transactionGroup.Sum = goutil.Float64(transactionGroup.GetSum() + amount)
+			transactionGroup.Sum = goutil.Float64(transactionGroup.GetSum() + amount)
+		}
 	}
 
 	return &GetTransactionGroupsResponse{
@@ -302,24 +322,49 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		return nil, err
 	}
 
-	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
-		return nil, err
-	}
+	var (
+		c   *entity.Category
+		acs = make(map[*entity.Account]*entity.Account) // left: to minus amount, right: to plus amount
 
-	if err := t.CanTransactionUnderCategory(c); err != nil {
-		return nil, err
-	}
+		ac, toAc, fromAc *entity.Account
+	)
 
-	ac, err := uc.accountRepo.Get(ctx, req.ToAccountFilter())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
-		return nil, err
-	}
+	if t.IsTransfer() {
+		fromAc, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(req.GetFromAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get from_account from repo, err: %v", err)
+			return nil, err
+		}
 
-	if err := t.CanTransactionUnderAccount(ac); err != nil {
-		return nil, err
+		toAc, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(req.GetToAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get to_account from repo, err: %v", err)
+			return nil, err
+		}
+
+		acs[fromAc] = toAc
+	} else {
+		c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
+			return nil, err
+		}
+
+		if err := t.CanTransactionUnderCategory(c); err != nil {
+			return nil, err
+		}
+
+		ac, err = uc.accountRepo.Get(ctx, req.ToAccountFilter(req.GetAccountID()))
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
+			return nil, err
+		}
+
+		if err := t.CanTransactionUnderAccount(ac); err != nil {
+			return nil, err
+		}
+
+		acs[nil] = ac
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
@@ -330,26 +375,19 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 			return err
 		}
 
-		// make currency conversion if necessary
-		amount, err := uc.getAmountAfterConversion(txCtx, t, ac.GetCurrency())
-		if err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
-			return err
-		}
+		for minusAc, addAc := range acs {
+			if minusAc != nil {
+				if err := uc.updateAccountBalance(txCtx, t, minusAc, false); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
+					return err
+				}
+			}
 
-		// update account balance
-		newBalance := ac.GetBalance() + amount
-		nac, err := ac.Update(
-			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
-		)
-		if err != nil {
-			return err
-		}
-
-		if nac != nil {
-			if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), nac); err != nil {
-				log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
-				return err
+			if addAc != nil {
+				if err := uc.updateAccountBalance(txCtx, t, addAc, true); err != nil {
+					log.Ctx(txCtx).Error().Msgf("fail to update account balance, err: %v", err)
+					return err
+				}
 			}
 		}
 
@@ -360,6 +398,8 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 	t.SetCategory(c)
 	t.SetAccount(ac)
+	t.SetFromAccount(fromAc)
+	t.SetToAccount(toAc)
 
 	return &CreateTransactionResponse{
 		Transaction: t,
@@ -595,4 +635,37 @@ func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *e
 	amount *= er.GetRate()
 
 	return amount, nil
+}
+
+func (uc *transactionUseCase) updateAccountBalance(ctx context.Context, t *entity.Transaction, ac *entity.Account, add bool) error {
+	// make currency conversion if necessary
+	amount, err := uc.getAmountAfterConversion(ctx, t, ac.GetCurrency())
+	if err != nil {
+		return err
+	}
+
+	var newBalance float64
+	if add {
+		newBalance = ac.GetBalance() + amount
+	} else {
+		newBalance = ac.GetBalance() - amount
+	}
+
+	nac, err := ac.Update(
+		entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
+	)
+	if err != nil {
+		return err
+	}
+
+	if nac != nil {
+		if err := uc.accountRepo.Update(ctx, repo.NewAccountFilter(
+			ac.GetUserID(),
+			repo.WithAccountID(ac.AccountID),
+		), nac); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

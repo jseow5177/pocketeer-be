@@ -28,11 +28,13 @@ const (
 	TransactionTypeInvalid TransactionType = iota
 	TransactionTypeExpense
 	TransactionTypeIncome
+	TransactionTypeTransfer
 )
 
 var TransactionTypes = map[uint32]string{
-	uint32(TransactionTypeExpense): "expense",
-	uint32(TransactionTypeIncome):  "income",
+	uint32(TransactionTypeExpense):  "expense",
+	uint32(TransactionTypeIncome):   "income",
+	uint32(TransactionTypeTransfer): "transfer",
 }
 
 type TransactionUpdateOption func(t *Transaction)
@@ -107,6 +109,8 @@ type TransactionUpdate struct {
 	Note              *string
 	TransactionStatus *uint32
 	AccountID         *string
+	FromAccountID     *string
+	ToAccountID       *string
 	CategoryID        *string
 	TransactionType   *uint32
 	Currency          *string
@@ -181,6 +185,8 @@ type Transaction struct {
 	UserID            *string
 	CategoryID        *string
 	AccountID         *string
+	FromAccountID     *string
+	ToAccountID       *string
 	Currency          *string
 	Amount            *float64
 	Note              *string
@@ -190,72 +196,126 @@ type Transaction struct {
 	CreateTime        *uint64
 	UpdateTime        *uint64
 
-	Category *Category
-	Account  *Account
+	Category    *Category
+	Account     *Account
+	FromAccount *Account
+	ToAccount   *Account
 }
 
 type TransactionOption = func(t *Transaction)
 
 func WithTransactionID(transactionID *string) TransactionOption {
 	return func(t *Transaction) {
-		t.SetTransactionID(transactionID)
+		if transactionID != nil {
+			t.SetTransactionID(transactionID)
+		}
+	}
+}
+
+func WithTransactionAccountID(accountID *string) TransactionOption {
+	return func(t *Transaction) {
+		if accountID != nil {
+			t.SetAccountID(accountID)
+		}
+	}
+}
+
+func WithTransactionFromAccountID(fromAccountID *string) TransactionOption {
+	return func(t *Transaction) {
+		if fromAccountID != nil {
+			t.SetFromAccountID(fromAccountID)
+		}
+	}
+}
+
+func WithTransactionToAccountID(toAccountID *string) TransactionOption {
+	return func(t *Transaction) {
+		if toAccountID != nil {
+			t.SetToAccountID(toAccountID)
+		}
+	}
+}
+
+func WithTransactionCategoryID(categoryID *string) TransactionOption {
+	return func(t *Transaction) {
+		if categoryID != nil {
+			t.SetCategoryID(categoryID)
+		}
 	}
 }
 
 func WithTransactionAmount(amount *float64) TransactionOption {
 	return func(t *Transaction) {
-		t.SetAmount(amount)
+		if amount != nil {
+			t.SetAmount(amount)
+		}
 	}
 }
 
 func WithTransactionCurrency(currency *string) TransactionOption {
 	return func(t *Transaction) {
-		t.SetCurrency(currency)
+		if currency != nil {
+			t.SetCurrency(currency)
+		}
 	}
 }
 
 func WithTransactionNote(note *string) TransactionOption {
 	return func(t *Transaction) {
-		t.SetNote(note)
+		if note != nil {
+			t.SetNote(note)
+		}
 	}
 }
 
 func WithTransactionStatus(transactionStatus *uint32) TransactionOption {
 	return func(t *Transaction) {
-		t.SetTransactionStatus(transactionStatus)
+		if transactionStatus != nil {
+			t.SetTransactionStatus(transactionStatus)
+		}
 	}
 }
 
 func WithTransactionType(transactionType *uint32) TransactionOption {
 	return func(t *Transaction) {
-		t.SetTransactionType(transactionType)
+		if transactionType != nil {
+			t.SetTransactionType(transactionType)
+		}
 	}
 }
 
 func WithTransactionTime(transactionTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.SetTransactionTime(transactionTime)
+		if transactionTime != nil {
+			t.SetTransactionTime(transactionTime)
+		}
 	}
 }
 
 func WithTransactionCreateTime(createTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.SetCreateTime(createTime)
+		if createTime != nil {
+			t.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithTransactionUpdateTime(updateTime *uint64) TransactionOption {
 	return func(t *Transaction) {
-		t.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			t.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func (t *Transaction) Clone() (*Transaction, error) {
 	return NewTransaction(
 		t.GetUserID(),
-		t.GetAccountID(),
-		t.GetCategoryID(),
 		WithTransactionID(goutil.String(t.GetTransactionID())),
+		WithTransactionAccountID(t.AccountID),
+		WithTransactionCategoryID(t.CategoryID),
+		WithTransactionFromAccountID(t.FromAccountID),
+		WithTransactionToAccountID(t.ToAccountID),
 		WithTransactionAmount(t.Amount),
 		WithTransactionNote(t.Note),
 		WithTransactionType(t.TransactionType),
@@ -267,12 +327,10 @@ func (t *Transaction) Clone() (*Transaction, error) {
 	)
 }
 
-func NewTransaction(userID, accountID, categoryID string, opts ...TransactionOption) (*Transaction, error) {
+func NewTransaction(userID string, opts ...TransactionOption) (*Transaction, error) {
 	now := uint64(time.Now().UnixMilli())
 	t := &Transaction{
 		UserID:            goutil.String(userID),
-		CategoryID:        goutil.String(categoryID),
-		AccountID:         goutil.String(accountID),
 		Currency:          goutil.String(string(CurrencySGD)),
 		Amount:            goutil.Float64(0),
 		Note:              goutil.String(""),
@@ -302,6 +360,30 @@ func (t *Transaction) validate() error {
 
 	if t.IsIncome() {
 		t.SetAmount(goutil.Float64(math.Abs(t.GetAmount())))
+	}
+
+	if t.IsTransfer() {
+		if goutil.Any(t.AccountID, t.CategoryID) {
+			return errors.New("transfer cannot set account_id and category_id")
+		}
+
+		if !goutil.All(t.FromAccountID, t.ToAccountID) {
+			return errors.New("transfer must have to_account_id and from_account_id")
+		}
+
+		if t.GetFromAccountID() == t.GetToAccountID() {
+			return errors.New("to_account_id cannot be same as from_account_id")
+		}
+
+		t.SetAmount(goutil.Float64(math.Abs(t.GetAmount())))
+	} else {
+		if goutil.Any(t.FromAccountID, t.ToAccountID) {
+			return errors.New("non-transfer cannot set to_account_id and from_account_id")
+		}
+
+		if !goutil.All(t.AccountID, t.CategoryID) {
+			return errors.New("non-transfer must have account_id and category_id")
+		}
 	}
 
 	return nil
@@ -340,6 +422,16 @@ func (t *Transaction) ToTransactionUpdate(old *Transaction) *TransactionUpdate {
 	if old.GetAccountID() != t.GetAccountID() {
 		hasUpdate = true
 		tu.AccountID = t.AccountID
+	}
+
+	if old.GetFromAccountID() != t.GetFromAccountID() {
+		hasUpdate = true
+		tu.FromAccountID = t.FromAccountID
+	}
+
+	if old.GetToAccountID() != t.GetToAccountID() {
+		hasUpdate = true
+		tu.ToAccountID = t.ToAccountID
 	}
 
 	if old.GetCategoryID() != t.GetCategoryID() {
@@ -447,6 +539,28 @@ func (t *Transaction) GetAccountID() string {
 
 func (t *Transaction) SetAccountID(accountID *string) {
 	t.AccountID = accountID
+}
+
+func (t *Transaction) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *Transaction) SetFromAccountID(fromAccountID *string) {
+	t.FromAccountID = fromAccountID
+}
+
+func (t *Transaction) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
+	}
+	return ""
+}
+
+func (t *Transaction) SetToAccountID(toAccountID *string) {
+	t.ToAccountID = toAccountID
 }
 
 func (t *Transaction) GetCurrency() string {
@@ -564,12 +678,38 @@ func (t *Transaction) SetAccount(ac *Account) {
 	t.Account = ac
 }
 
+func (t *Transaction) GetFromAccount() *Account {
+	if t != nil && t.FromAccount != nil {
+		return t.FromAccount
+	}
+	return nil
+}
+
+func (t *Transaction) SetFromAccount(ac *Account) {
+	t.FromAccount = ac
+}
+
+func (t *Transaction) GetToAccount() *Account {
+	if t != nil && t.ToAccount != nil {
+		return t.ToAccount
+	}
+	return nil
+}
+
+func (t *Transaction) SetToAccount(ac *Account) {
+	t.ToAccount = ac
+}
+
 func (t *Transaction) IsExpense() bool {
 	return t.GetTransactionType() == uint32(TransactionTypeExpense)
 }
 
 func (t *Transaction) IsIncome() bool {
 	return t.GetTransactionType() == uint32(TransactionTypeIncome)
+}
+
+func (t *Transaction) IsTransfer() bool {
+	return t.GetTransactionType() == uint32(TransactionTypeTransfer)
 }
 
 func GetTransactionTypeByAmount(amount float64) TransactionType {
