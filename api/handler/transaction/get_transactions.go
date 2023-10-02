@@ -17,6 +17,10 @@ var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator
 		Optional:  true,
 		UnsetZero: true,
 	},
+	"category_ids": &validator.Slice{
+		Optional:  true,
+		Validator: new(validator.String),
+	},
 	"transaction_type": &validator.UInt32{
 		Optional:   true,
 		UnsetZero:  true,
