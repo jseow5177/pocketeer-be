@@ -273,8 +273,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accou
 
 	return entity.NewTransaction(
 		userID,
-		accountID,
-		"",
+		entity.WithTransactionAccountID(goutil.String(accountID)),
 		entity.WithTransactionAmount(goutil.Float64(amount)),
 		entity.WithTransactionType(goutil.Uint32(tt)),
 		entity.WithTransactionNote(goutil.String(note)),

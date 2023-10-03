@@ -570,21 +570,6 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// aggr transactions
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathAggrTransactions,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.AggrTransactionsRequest),
-			Res:       new(presenter.AggrTransactionsResponse),
-			Validator: th.AggrTransactionsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return transactionHandler.AggrTransactions(ctx, req.(*presenter.AggrTransactionsRequest), res.(*presenter.AggrTransactionsResponse))
-			},
-		},
-		Middlewares: []router.Middleware{userAuthMiddleware},
-	})
-
 	// get transactions
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetTransactions,

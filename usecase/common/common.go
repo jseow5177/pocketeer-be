@@ -55,7 +55,9 @@ type TransactionSummary struct {
 	Date            *string
 	Category        *entity.Category
 	TransactionType *uint32
-	Sum             *float64
+	Sum             *float64 // TotalExpense + TotalIncome
+	TotalExpense    *float64
+	TotalIncome     *float64
 	Currency        *string
 	Transactions    []*entity.Transaction
 }
@@ -77,6 +79,20 @@ func (m *TransactionSummary) GetCategory() *entity.Category {
 func (m *TransactionSummary) GetSum() float64 {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
+	}
+	return 0
+}
+
+func (m *TransactionSummary) GetTotalExpense() float64 {
+	if m != nil && m.TotalExpense != nil {
+		return *m.TotalExpense
+	}
+	return 0
+}
+
+func (m *TransactionSummary) GetTotalIncome() float64 {
+	if m != nil && m.TotalIncome != nil {
+		return *m.TotalIncome
 	}
 	return 0
 }
