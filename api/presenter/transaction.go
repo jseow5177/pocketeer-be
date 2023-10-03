@@ -462,6 +462,8 @@ type TransactionSummary struct {
 	Category        *Category      `json:"category,omitempty"`
 	TransactionType *uint32        `json:"transaction_type,omitempty"`
 	Sum             *string        `json:"sum,omitempty"`
+	TotalExpense    *string        `json:"total_expense,omitempty"`
+	TotalIncome     *string        `json:"total_income,omitempty"`
 	Currency        *string        `json:"currency,omitempty"`
 	Transactions    []*Transaction `json:"transactions,omitempty"`
 }
@@ -483,6 +485,20 @@ func (m *TransactionSummary) GetCategory() *Category {
 func (m *TransactionSummary) GetSum() string {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTotalExpense() string {
+	if m != nil && m.TotalExpense != nil {
+		return *m.TotalExpense
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTotalIncome() string {
+	if m != nil && m.TotalIncome != nil {
+		return *m.TotalIncome
 	}
 	return ""
 }
