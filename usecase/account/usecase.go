@@ -189,7 +189,7 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 		if acu.Balance != nil && req.NeedOffsetTransaction() {
 			balanceChange := acu.GetBalance() - oldBalance
 
-			t, err := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
+			t, err := uc.newUnrecordedTransaction(ac, balanceChange)
 			if err != nil {
 				log.Ctx(txCtx).Error().Msgf("fail to new unrecorded transaction, err: %v", err)
 				return err
@@ -266,15 +266,16 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 	return new(DeleteAccountResponse), nil
 }
 
-func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accountID string) (*entity.Transaction, error) {
+func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amount float64) (*entity.Transaction, error) {
 	tt := uint32(entity.GetTransactionTypeByAmount(amount))
 
 	note := fmt.Sprintf("Unrecorded %s", entity.TransactionTypes[tt])
 
 	return entity.NewTransaction(
-		userID,
-		entity.WithTransactionAccountID(goutil.String(accountID)),
+		account.GetUserID(),
+		entity.WithTransactionAccountID(account.AccountID),
 		entity.WithTransactionAmount(goutil.Float64(amount)),
+		entity.WithTransactionCurrency(account.Currency),
 		entity.WithTransactionType(goutil.Uint32(tt)),
 		entity.WithTransactionNote(goutil.String(note)),
 		entity.WithTransactionTime(goutil.Uint64(uint64(time.Now().UnixMilli()))),
