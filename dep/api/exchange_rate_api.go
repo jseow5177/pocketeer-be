@@ -12,8 +12,7 @@ type ExchangeRateAPI interface {
 }
 
 type ExchangeRateFilter struct {
-	FromDate   *string
-	ToDate     *string
+	Date       *string
 	Base       *string
 	Currencies []string
 }
@@ -32,10 +31,9 @@ func WithExchangeRateCurrencies(currencies ...string) ExchangeRateFilterOption {
 	}
 }
 
-func NewExchangeRateFilter(fromDate, toDate string, opts ...ExchangeRateFilterOption) *ExchangeRateFilter {
+func NewExchangeRateFilter(date string, opts ...ExchangeRateFilterOption) *ExchangeRateFilter {
 	erf := &ExchangeRateFilter{
-		FromDate: goutil.String(fromDate),
-		ToDate:   goutil.String(toDate),
+		Date: goutil.String(date),
 	}
 	for _, opt := range opts {
 		opt(erf)
@@ -57,16 +55,9 @@ func (f *ExchangeRateFilter) GetCurrencies() []string {
 	return nil
 }
 
-func (f *ExchangeRateFilter) GetFromDate() string {
-	if f != nil && f.FromDate != nil {
-		return *f.FromDate
-	}
-	return ""
-}
-
-func (f *ExchangeRateFilter) GetToDate() string {
-	if f != nil && f.ToDate != nil {
-		return *f.ToDate
+func (f *ExchangeRateFilter) GetDate() string {
+	if f != nil && f.Date != nil {
+		return *f.Date
 	}
 	return ""
 }
