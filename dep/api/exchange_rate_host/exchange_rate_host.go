@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api"
@@ -17,29 +16,48 @@ import (
 
 const layout = "2006-01-02"
 
+type exchangeRate struct {
+	Code  *string  `json:"code,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
+
+func (er *exchangeRate) GetCode() string {
+	if er != nil && er.Code != nil {
+		return *er.Code
+	}
+	return ""
+}
+
+func (er *exchangeRate) GetValue() float64 {
+	if er != nil && er.Value != nil {
+		return *er.Value
+	}
+	return 0
+}
+
 type response struct {
-	Data    map[string]map[string]float64 `json:"data,omitempty"`
-	Message *string                       `json:"message,omitempty"`
-	Errors  map[string][]string           `json:"errors,omitempty"`
+	Data    map[string]*exchangeRate `json:"data,omitempty"`
+	Message *string                  `json:"message,omitempty"`
+	Errors  map[string][]string      `json:"errors,omitempty"`
 }
 
-func (er *response) GetData() map[string]map[string]float64 {
-	if er != nil && er.Data != nil {
-		return er.Data
+func (r *response) GetData() map[string]*exchangeRate {
+	if r != nil && r.Data != nil {
+		return r.Data
 	}
 	return nil
 }
 
-func (er *response) GetErrors() map[string][]string {
-	if er != nil && er.Errors != nil {
-		return er.Errors
+func (r *response) GetErrors() map[string][]string {
+	if r != nil && r.Errors != nil {
+		return r.Errors
 	}
 	return nil
 }
 
-func (er *response) GetMessage() string {
-	if er != nil && er.Message != nil {
-		return *er.Message
+func (r *response) GetMessage() string {
+	if r != nil && r.Message != nil {
+		return *r.Message
 	}
 	return ""
 }
@@ -56,7 +74,7 @@ func NewExchangeRateHostMgr(cfg *config.ExchangeRateHost) api.ExchangeRateAPI {
 	}
 }
 
-// Doc: https://freecurrencyapi.com/docs/
+// Doc: https://currencyapi.com/docs/historical
 func (mgr *exchangeRateHostMgr) GetExchangeRates(ctx context.Context, erf *api.ExchangeRateFilter) ([]*entity.ExchangeRate, error) {
 	params := map[string]string{
 		"base_currency": erf.GetBase(),
@@ -64,17 +82,11 @@ func (mgr *exchangeRateHostMgr) GetExchangeRates(ctx context.Context, erf *api.E
 		"apikey":        mgr.apiKey,
 	}
 
-	toDate, err := util.ParseDate(erf.GetToDate())
+	date, err := util.ParseDate(erf.GetDate())
 	if err != nil {
 		return nil, err
 	}
-	params["date_to"] = toDate.Format(layout)
-
-	fromDate, err := util.ParseDate(erf.GetFromDate())
-	if err != nil {
-		return nil, err
-	}
-	params["date_from"] = fromDate.Format(layout)
+	params["date"] = date.Format(layout)
 
 	url := fmt.Sprintf("%s/historical", mgr.baseURL)
 	code, data, err := httputil.SendGetRequest(url, params, nil)
@@ -93,21 +105,15 @@ func (mgr *exchangeRateHostMgr) GetExchangeRates(ctx context.Context, erf *api.E
 	}
 
 	exchangeRates := make([]*entity.ExchangeRate, 0)
-	for date, data := range resp.Data {
-		t, err := time.Parse(layout, date)
-		if err != nil {
-			return nil, err
-		}
-		ts := t.UnixMilli()
+	for _, er := range resp.Data {
+		ts := date.UnixMilli()
 
-		for to, rate := range data {
-			exchangeRates = append(exchangeRates, entity.NewExchangeRate(
-				erf.GetBase(),
-				to,
-				rate,
-				uint64(ts),
-			))
-		}
+		exchangeRates = append(exchangeRates, entity.NewExchangeRate(
+			erf.GetBase(),
+			er.GetCode(),
+			er.GetValue(),
+			uint64(ts),
+		))
 	}
 
 	return exchangeRates, nil
