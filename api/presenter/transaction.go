@@ -366,6 +366,8 @@ type UpdateTransactionRequest struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
+	FromAccountID   *string `json:"from_account_id,omitempty"`
+	ToAccountID     *string `json:"to_account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -383,6 +385,20 @@ func (t *UpdateTransactionRequest) GetTransactionID() string {
 func (t *UpdateTransactionRequest) GetAccountID() string {
 	if t != nil && t.AccountID != nil {
 		return *t.AccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -438,6 +454,8 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		AccountID:       m.AccountID,
+		FromAccountID:   m.FromAccountID,
+		ToAccountID:     m.ToAccountID,
 		TransactionID:   m.TransactionID,
 		Note:            m.Note,
 		Amount:          amount,

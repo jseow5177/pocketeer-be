@@ -258,7 +258,7 @@ func (m *GetTransactionsRequest) GetPaging() *common.Paging {
 	return nil
 }
 
-func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+func (m *GetTransactionsRequest) ToTransactionQuery() *repo.TransactionQuery {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.RangeFilter)
@@ -269,15 +269,40 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		paging = new(common.Paging)
 	}
 
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionAccountID(m.AccountID),
-		repo.WithTransactionCategoryID(m.CategoryID),
-		repo.WithTransactionCategoryIDs(m.CategoryIDs),
-		repo.WithTransactionType(m.TransactionType),
-		repo.WithTransactionTimeGte(tt.Gte),
-		repo.WithTransactionTimeLte(tt.Lte),
-		repo.WithTransactionPaging(&repo.Paging{
+	return &repo.TransactionQuery{
+		Queries: []*repo.TransactionQuery{
+			{
+				Filters: []*repo.TransactionFilter{
+					repo.NewTransactionFilter(
+						m.GetUserID(),
+						repo.WithTransactionAccountID(m.AccountID),
+					),
+					repo.NewTransactionFilter(
+						m.GetUserID(),
+						repo.WithTransactionFromAccountID(m.AccountID),
+					),
+					repo.NewTransactionFilter(
+						m.GetUserID(),
+						repo.WithTransactionToAccountID(m.AccountID),
+					),
+				},
+				Op: filter.Or,
+			},
+			{
+				Filters: []*repo.TransactionFilter{
+					repo.NewTransactionFilter(
+						m.GetUserID(),
+						repo.WithTransactionCategoryID(m.CategoryID),
+						repo.WithTransactionCategoryIDs(m.CategoryIDs),
+						repo.WithTransactionType(m.TransactionType),
+						repo.WithTransactionTimeGte(tt.Gte),
+						repo.WithTransactionTimeLte(tt.Lte),
+					),
+				},
+			},
+		},
+		Op: filter.And,
+		Paging: &repo.Paging{
 			Limit: paging.Limit,
 			Page:  paging.Page,
 			Sorts: []filter.Sort{
@@ -290,8 +315,8 @@ func (m *GetTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 					Order: goutil.String(config.OrderDesc),
 				},
 			},
-		}),
-	)
+		},
+	}
 }
 
 func (m *GetTransactionsRequest) ToCategoryFilter(categoryIDs []string, categoryStatus uint32) *repo.CategoryFilter {
@@ -365,6 +390,8 @@ type UpdateTransactionRequest struct {
 	TransactionID   *string
 	AccountID       *string
 	CategoryID      *string
+	FromAccountID   *string
+	ToAccountID     *string
 	TransactionType *uint32
 	Note            *string
 	Amount          *float64
@@ -389,6 +416,20 @@ func (m *UpdateTransactionRequest) GetTransactionID() string {
 func (m *UpdateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -487,18 +528,23 @@ func (m *SumTransactionsRequest) GetTransactionType() uint32 {
 	return 0
 }
 
-func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+func (m *SumTransactionsRequest) ToTransactionQuery() *repo.TransactionQuery {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.RangeFilter)
 	}
 
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionType(m.TransactionType),
-		repo.WithTransactionTimeGte(tt.Gte),
-		repo.WithTransactionTimeLte(tt.Lte),
-	)
+	return &repo.TransactionQuery{
+		Filters: []*repo.TransactionFilter{
+			repo.NewTransactionFilter(
+				m.GetUserID(),
+				repo.WithTransactionType(m.TransactionType),
+				repo.WithTransactionTimeGte(tt.Gte),
+				repo.WithTransactionTimeLte(tt.Lte),
+			),
+		},
+		Op: filter.And,
+	}
 }
 
 type SumTransactionsResponse struct {
@@ -538,10 +584,10 @@ func (m *DeleteTransactionRequest) ToTransactionFilter() *repo.TransactionFilter
 	)
 }
 
-func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.AccountFilter {
+func (m *DeleteTransactionRequest) ToAccountFilter(accountID string) *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
-		repo.WithAccountID(t.AccountID),
+		repo.WithAccountID(goutil.String(accountID)),
 	)
 }
 

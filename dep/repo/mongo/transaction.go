@@ -61,10 +61,13 @@ func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) 
 	return model.ToTransactionEntity(t)
 }
 
-func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilter) ([]*entity.Transaction, error) {
-	f := mongoutil.BuildFilter(tf)
+func (m *transactionMongo) GetMany(ctx context.Context, tq *repo.TransactionQuery) ([]*entity.Transaction, error) {
+	q, err := mongoutil.BuildQuery(tq)
+	if err != nil {
+		return nil, err
+	}
 
-	res, err := m.mColl.getMany(ctx, new(model.Transaction), tf.Paging, f)
+	res, err := m.mColl.getMany(ctx, new(model.Transaction), tq.Paging, q)
 	if err != nil {
 		return nil, err
 	}

@@ -212,8 +212,10 @@ func (ac *Account) Clone() (*Account, error) {
 func NewAccount(userID, accountName string, opts ...AccountOption) (*Account, error) {
 	now := uint64(time.Now().UnixMilli())
 	ac := &Account{
+		AccountID:     goutil.String(""),
 		UserID:        goutil.String(userID),
-		AccountName:   goutil.String(""),
+		AccountName:   goutil.String(accountName),
+		Balance:       nil,
 		AccountType:   goutil.Uint32(uint32(AssetCash)),
 		Currency:      goutil.String(string(CurrencySGD)),
 		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),

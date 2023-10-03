@@ -109,6 +109,7 @@ func (c *Category) Clone() (*Category, error) {
 func NewCategory(UserID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
+		CategoryID:     goutil.String(""),
 		UserID:         goutil.String(UserID),
 		CategoryName:   goutil.String(categoryName),
 		CategoryType:   goutil.Uint32(uint32(TransactionTypeExpense)),

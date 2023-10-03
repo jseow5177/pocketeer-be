@@ -55,6 +55,22 @@ func WithUpdateTransactionCategoryID(categoryID *string) TransactionUpdateOption
 	}
 }
 
+func WithUpdateTransactionFromAccountID(fromAccountID *string) TransactionUpdateOption {
+	return func(t *Transaction) {
+		if fromAccountID != nil {
+			t.SetFromAccountID(fromAccountID)
+		}
+	}
+}
+
+func WithUpdateTransactionToAccountID(toAccountID *string) TransactionUpdateOption {
+	return func(t *Transaction) {
+		if toAccountID != nil {
+			t.SetToAccountID(toAccountID)
+		}
+	}
+}
+
 func WithUpdateTransactionAmount(amount *float64) TransactionUpdateOption {
 	return func(t *Transaction) {
 		if amount != nil {
@@ -155,6 +171,20 @@ func (tu *TransactionUpdate) GetUpdateTime() uint64 {
 func (tu *TransactionUpdate) GetAccountID() string {
 	if tu != nil && tu.AccountID != nil {
 		return *tu.AccountID
+	}
+	return ""
+}
+
+func (tu *TransactionUpdate) GetFromAccountID() string {
+	if tu != nil && tu.FromAccountID != nil {
+		return *tu.FromAccountID
+	}
+	return ""
+}
+
+func (tu *TransactionUpdate) GetToAccountID() string {
+	if tu != nil && tu.ToAccountID != nil {
+		return *tu.ToAccountID
 	}
 	return ""
 }
@@ -330,8 +360,13 @@ func (t *Transaction) Clone() (*Transaction, error) {
 func NewTransaction(userID string, opts ...TransactionOption) (*Transaction, error) {
 	now := uint64(time.Now().UnixMilli())
 	t := &Transaction{
+		TransactionID:     goutil.String(""),
 		UserID:            goutil.String(userID),
 		Currency:          goutil.String(string(CurrencySGD)),
+		AccountID:         goutil.String(""),
+		CategoryID:        goutil.String(""),
+		FromAccountID:     goutil.String(""),
+		ToAccountID:       goutil.String(""),
 		Amount:            goutil.Float64(0),
 		Note:              goutil.String(""),
 		TransactionStatus: goutil.Uint32(uint32(TransactionStatusNormal)),
@@ -363,11 +398,7 @@ func (t *Transaction) validate() error {
 	}
 
 	if t.IsTransfer() {
-		if goutil.Any(t.AccountID, t.CategoryID) {
-			return errors.New("transfer cannot set account_id and category_id")
-		}
-
-		if !goutil.All(t.FromAccountID, t.ToAccountID) {
+		if t.GetFromAccountID() == "" || t.GetToAccountID() == "" {
 			return errors.New("transfer must have to_account_id and from_account_id")
 		}
 
@@ -375,15 +406,17 @@ func (t *Transaction) validate() error {
 			return errors.New("to_account_id cannot be same as from_account_id")
 		}
 
-		t.SetAmount(goutil.Float64(math.Abs(t.GetAmount())))
+		t.SetAmount(goutil.Float64(math.Abs(t.GetAmount()))) // always positive
+		t.AccountID = goutil.String("")
+		t.CategoryID = goutil.String("")
 	} else {
-		if goutil.Any(t.FromAccountID, t.ToAccountID) {
-			return errors.New("non-transfer cannot set to_account_id and from_account_id")
+		// a transaction must have account_id, but it may have no category_id
+		if t.GetAccountID() == "" {
+			return errors.New("non-transfer must have account_id")
 		}
 
-		if !goutil.All(t.AccountID, t.CategoryID) {
-			return errors.New("non-transfer must have account_id and category_id")
-		}
+		t.FromAccountID = goutil.String("")
+		t.ToAccountID = goutil.String("")
 	}
 
 	return nil
@@ -406,7 +439,6 @@ func (t *Transaction) ToTransactionUpdate(old *Transaction) *TransactionUpdate {
 	if old.GetTransactionTime() != t.GetTransactionTime() {
 		hasUpdate = true
 		tu.TransactionTime = t.TransactionTime
-		tu.Amount = t.Amount // implicit amount change due to possible change in exchange rate
 	}
 
 	if old.GetNote() != t.GetNote() {
@@ -442,13 +474,11 @@ func (t *Transaction) ToTransactionUpdate(old *Transaction) *TransactionUpdate {
 	if old.GetTransactionType() != t.GetTransactionType() {
 		hasUpdate = true
 		tu.TransactionType = t.TransactionType
-		tu.Amount = t.Amount // change in type need to reset amount
 	}
 
 	if old.GetCurrency() != t.GetCurrency() {
 		hasUpdate = true
 		tu.Currency = t.Currency
-		tu.Amount = t.Amount // implicit amount change due to change in exchange rate
 	}
 
 	if hasUpdate {
