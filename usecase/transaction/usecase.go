@@ -121,6 +121,8 @@ func (uc *transactionUseCase) GetTransactionGroups(
 				Date:         goutil.String(date),
 				Currency:     u.Meta.Currency,
 				Sum:          goutil.Float64(0),
+				TotalExpense: goutil.Float64(0),
+				TotalIncome:  goutil.Float64(0),
 				Transactions: make([]*entity.Transaction, 0),
 			}
 			transactionGroupsMap[date] = ts
@@ -130,17 +132,24 @@ func (uc *transactionUseCase) GetTransactionGroups(
 		transactionGroup := transactionGroupsMap[date]
 		transactionGroup.Transactions = append(transactionGroup.Transactions, t)
 
-		// don't consider transfer in Sum
+		var amount float64
 		if !t.IsTransfer() {
-			amount, err := uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
+			amount, err = uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
 			if err != nil {
 				log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
 				return nil, err
 			}
-
-			sum := util.RoundFloatToStandardDP(transactionGroup.GetSum() + amount)
-			transactionGroup.Sum = goutil.Float64(sum)
+			amount = util.RoundFloatToStandardDP(amount)
 		}
+
+		if t.IsExpense() {
+			transactionGroup.TotalExpense = goutil.Float64(transactionGroup.GetTotalExpense() + amount)
+		} else if t.IsIncome() {
+			transactionGroup.TotalIncome = goutil.Float64(transactionGroup.GetTotalIncome() + amount)
+		}
+
+		sum := util.RoundFloatToStandardDP(transactionGroup.GetSum() + amount)
+		transactionGroup.Sum = goutil.Float64(sum)
 	}
 
 	return &GetTransactionGroupsResponse{
