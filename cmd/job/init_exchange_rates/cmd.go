@@ -21,20 +21,12 @@ import (
 	exchangeratehost "github.com/jseow5177/pockteer-be/dep/api/exchange_rate_host"
 )
 
-const DefaultStartDate = config.MinCurrencyDate
-
 type JobConfig struct {
-	StartDate string
-	EndDate   string
-	From      string
-	To        string
-	Unit      string
+	Date string
+	From string
+	To   string
+	Unit string
 }
-
-const (
-	UnitMonth string = "month"
-	UnitDay   string = "day"
-)
 
 type InitExchangeRates struct {
 	cfg JobConfig
@@ -51,11 +43,9 @@ type InitExchangeRates struct {
 func (c *InitExchangeRates) initFlags() error {
 	flagSet := flag.NewFlagSet(fmt.Sprintf("%s %s", filepath.Base(os.Args[0]), os.Args[1]), flag.ExitOnError)
 
-	flagSet.StringVar(&c.cfg.StartDate, "startDate", DefaultStartDate, "start date of exchange rate, format: 20220202")
-	flagSet.StringVar(&c.cfg.EndDate, "endDate", "", "end date of exchange rate, format: 20220202. Default to one year from startDate")
+	flagSet.StringVar(&c.cfg.Date, "date", util.FormatDate(time.Now()), "date of exchange rate, format: 20220202")
 	flagSet.StringVar(&c.cfg.From, "from", "", "comma-separated currencies, eg: SGD,MYR")
 	flagSet.StringVar(&c.cfg.To, "to", "", "comma-separated currencies, eg: SGD,MYR")
-	flagSet.StringVar(&c.cfg.Unit, "unit", UnitMonth, "the accuracy of exchange rate")
 
 	if err := flagSet.Parse(os.Args[2:]); err != nil {
 		return err
@@ -123,21 +113,9 @@ func (c *InitExchangeRates) Init(ctx context.Context, cfg *config.Config) error 
 }
 
 func (c *InitExchangeRates) Run(ctx context.Context) error {
-	startDate, err := util.ParseDate(c.cfg.StartDate)
+	date, err := util.ParseDate(c.cfg.Date)
 	if err != nil {
-		return fmt.Errorf("fail to parse start date, date: %v, err: %v", c.cfg.StartDate, err)
-	}
-
-	endDate := startDate.AddDate(0, 11, 0) // default to one year range
-	if c.cfg.EndDate != "" {
-		endDate, err = util.ParseDate(c.cfg.EndDate)
-		if err != nil {
-			return fmt.Errorf("fail to parse end date, date: %v, err: %v", c.cfg.EndDate, err)
-		}
-	}
-
-	if endDate.Before(startDate) {
-		return fmt.Errorf("endDate must be after startDate")
+		return fmt.Errorf("fail to parse date, date: %v, err: %v", c.cfg.Date, err)
 	}
 
 	exchangeRates := make([]*entity.ExchangeRate, 0)
@@ -154,8 +132,7 @@ func (c *InitExchangeRates) Run(ctx context.Context) error {
 		}
 
 		erf := api.NewExchangeRateFilter(
-			c.cfg.StartDate,
-			util.FormatDate(endDate),
+			util.FormatDate(date),
 			api.WithExchangeRateBase(goutil.String(fromCurrency)),
 			api.WithExchangeRateCurrencies(symbols...),
 		)
@@ -166,17 +143,7 @@ func (c *InitExchangeRates) Run(ctx context.Context) error {
 			return err
 		}
 
-		switch c.cfg.Unit {
-		case UnitDay:
-			exchangeRates = append(exchangeRates, ers...)
-		case UnitMonth:
-			for _, er := range ers {
-				t := time.UnixMilli(int64(er.GetTimestamp()))
-				if t.Day() == 1 {
-					exchangeRates = append(exchangeRates, er)
-				}
-			}
-		}
+		exchangeRates = append(exchangeRates, ers...)
 	}
 
 	if len(exchangeRates) == 0 {
