@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -121,13 +120,8 @@ func (mc *MongoColl) createMany(ctx context.Context, docs []interface{}) ([]stri
 	return ids, nil
 }
 
-func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) error {
-	var (
-		f = mongoutil.BuildFilter(filter)
-		u = mongoutil.BuildUpdate(update)
-	)
-
-	_, err := mc.coll.UpdateOne(ctx, f, u)
+func (mc *MongoColl) update(ctx context.Context, filter bson.D, update interface{}) error {
+	_, err := mc.coll.UpdateOne(ctx, filter, mongoutil.BuildUpdate(update))
 	if err != nil {
 		return err
 	}
@@ -135,13 +129,8 @@ func (mc *MongoColl) update(ctx context.Context, filter, update interface{}) err
 	return nil
 }
 
-func (mc *MongoColl) updateMany(ctx context.Context, filter, update interface{}) error {
-	var (
-		f = mongoutil.BuildFilter(filter)
-		u = mongoutil.BuildUpdate(update)
-	)
-
-	_, err := mc.coll.UpdateMany(ctx, f, u)
+func (mc *MongoColl) updateMany(ctx context.Context, filter bson.D, update interface{}) error {
+	_, err := mc.coll.UpdateMany(ctx, filter, mongoutil.BuildUpdate(update))
 	if err != nil {
 		return err
 	}
@@ -185,35 +174,6 @@ func (mc *MongoColl) getMany(ctx context.Context, model interface{}, filterOpts 
 			return nil, err
 		}
 		res = append(res, m)
-	}
-
-	return res, nil
-}
-
-func (mc *MongoColl) aggrV2(ctx context.Context, filter bson.D, groupBy string, aggrs ...*mongoutil.Aggr) (map[string]map[string]interface{}, error) {
-	pipeline, err := mongoutil.BuildAggrPipeline(filter, groupBy, aggrs...)
-	if err != nil {
-		return nil, err
-	}
-
-	cursor, err := mc.coll.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-
-	aggrRes := make([]bson.M, 0)
-	if err = cursor.All(ctx, &aggrRes); err != nil {
-		return nil, err
-	}
-
-	res := make(map[string]map[string]interface{})
-	for _, r := range aggrRes {
-		f := fmt.Sprint(r["_id"]) // group by field
-
-		res[f] = make(map[string]interface{})
-		for _, aggr := range aggrs {
-			res[f][aggr.GetName()] = r[aggr.GetName()] // aggr results
-		}
 	}
 
 	return res, nil

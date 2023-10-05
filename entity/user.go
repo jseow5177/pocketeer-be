@@ -1,41 +1,54 @@
 package entity
 
 import (
+	"context"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 )
 
-type UserInitStage uint32
+type ctxKey string
 
-const (
-	InitStageOne UserInitStage = iota
-	InitStageTwo
-	InitStageThree
-	InitStageFour
-)
+const ctxKeyUser ctxKey = "ctx:user"
+
+func SetUserToCtx(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, ctxKeyUser, user)
+}
+
+func GetUserFromCtx(ctx context.Context) *User {
+	val := ctx.Value(ctxKeyUser)
+	if val == nil {
+		return nil
+	}
+
+	if user, ok := val.(*User); ok {
+		return user
+	}
+
+	return nil
+}
 
 type UserMetaUpdate struct {
-	InitStage *uint32
+	Currency *string
 }
 
-func (umu *UserMetaUpdate) GetInitStage() uint32 {
-	if umu != nil && umu.InitStage != nil {
-		return *umu.InitStage
+func (umu *UserMetaUpdate) GetCurrency() string {
+	if umu != nil && umu.Currency != nil {
+		return *umu.Currency
 	}
-	return 0
+	return ""
 }
 
-func (umu *UserMetaUpdate) SetInitStage(initStage *uint32) {
-	umu.InitStage = initStage
+func (umu *UserMetaUpdate) SetCurrency(currency *string) {
+	umu.Currency = currency
 }
 
 type UserMetaUpdateOption func(uu *UserMetaUpdate)
 
-func WithUpdateUserMetaInitStage(initStage *uint32) UserMetaUpdateOption {
+func WithUpdateUserMetaCurrency(currency *string) UserMetaUpdateOption {
 	return func(umu *UserMetaUpdate) {
-		umu.SetInitStage(initStage)
+		umu.SetCurrency(currency)
 	}
 }
 
@@ -48,26 +61,34 @@ func NewUserMetaUpdate(opts ...UserMetaUpdateOption) *UserMetaUpdate {
 }
 
 type UserMeta struct {
-	InitStage *uint32
+	Currency *string
 }
 
 type UserMetaOption = func(um *UserMeta)
 
-func WithUserMetaInitStage(initStage *uint32) UserMetaOption {
+func NewUserMeta(opts ...UserMetaOption) *UserMeta {
+	um := new(UserMeta)
+	for _, opt := range opts {
+		opt(um)
+	}
+	return um
+}
+
+func WithUserMetaCurrency(currency *string) UserMetaOption {
 	return func(um *UserMeta) {
-		um.SetInitStage(initStage)
+		um.SetCurrency(currency)
 	}
 }
 
-func (um *UserMeta) GetInitStage() uint32 {
-	if um != nil && um.InitStage != nil {
-		return *um.InitStage
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
 	}
-	return 0
+	return ""
 }
 
-func (um *UserMeta) SetInitStage(initStage *uint32) {
-	um.InitStage = initStage
+func (um *UserMeta) SetCurrency(currency *string) {
+	um.Currency = currency
 }
 
 func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
@@ -76,12 +97,12 @@ func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
 		userMetaUpdate = new(UserMetaUpdate)
 	)
 
-	if umu.InitStage != nil && um.GetInitStage() != umu.GetInitStage() {
+	if umu.Currency != nil && um.GetCurrency() != umu.GetCurrency() {
 		hasUpdate = true
-		um.SetInitStage(umu.InitStage)
+		um.SetCurrency(umu.Currency)
 
 		defer func() {
-			userMetaUpdate.SetInitStage(um.InitStage)
+			userMetaUpdate.SetCurrency(um.Currency)
 		}()
 	}
 
@@ -308,6 +329,7 @@ func NewUser(email, password string, opts ...UserOption) (*User, error) {
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
+		Meta:       NewUserMeta(),
 	}
 	for _, opt := range opts {
 		opt(u)
@@ -406,11 +428,11 @@ func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
 			hasUpdate = true
 			userUpdate.Meta = new(UserMetaUpdate)
 
-			if umu.InitStage != nil {
-				u.Meta.SetInitStage(umu.InitStage)
+			if umu.Currency != nil {
+				u.Meta.SetCurrency(umu.Currency)
 
 				defer func() {
-					userUpdate.Meta.SetInitStage(u.Meta.InitStage)
+					userUpdate.Meta.SetCurrency(u.Meta.Currency)
 				}()
 			}
 		}

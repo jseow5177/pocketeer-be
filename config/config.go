@@ -14,13 +14,20 @@ import (
 
 type Config struct {
 	RateLimits          map[string]*RateLimit `json:"rate_limits"`
+	ServerAdmin         *ServerAdmin          `json:"server_admin"`
 	Mongo               *Mongo                `json:"mongo"`
 	Tokens              *Tokens               `json:"token"`
 	FinnHub             *FinnHub              `json:"finnhub"`
+	ExchangeRateHost    *ExchangeRateHost     `json:"exchange_rate_host"`
 	QuoteMemCache       *MemCache             `json:"quote_mem_cache"`
 	FeedbackGoogleSheet *GoogleSheet          `json:"feedback_google_sheet"`
 	OTPMemCache         *MemCache             `json:"otp_mem_cache"`
 	Brevo               *Brevo                `json:"brevo"`
+}
+
+type ServerAdmin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type RateLimit struct {
@@ -119,6 +126,11 @@ type FinnHub struct {
 	Token   string `json:"token"`
 }
 
+type ExchangeRateHost struct {
+	BaseURL string `json:"base_url"`
+	APIKey  string `json:"api_key"`
+}
+
 type Brevo struct {
 	APIKey string `json:"api_key"`
 }
@@ -126,6 +138,10 @@ type Brevo struct {
 func NewConfig() *Config {
 	return &Config{
 		RateLimits: make(map[string]*RateLimit),
+		ServerAdmin: &ServerAdmin{
+			Username: "admin",
+			Password: "2nExTnguiW9PNxsQk0gVUvAny",
+		},
 		Mongo: &Mongo{
 			Username:        "pocketeer-test",
 			Password:        "twvD8CaUMd03WkdB",
@@ -167,11 +183,15 @@ func NewConfig() *Config {
 			WriteRange:  "Sheet1!A1:D2",
 		},
 		OTPMemCache: &MemCache{
-			ExpiryTime:      "2m",
-			CleanUpInterval: "3m",
+			ExpiryTime:      "10m",
+			CleanUpInterval: "15m",
 		},
 		Brevo: &Brevo{
 			APIKey: "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",
+		},
+		ExchangeRateHost: &ExchangeRateHost{
+			BaseURL: "https://api.currencyapi.com/v3",
+			APIKey:  "fca_live_kzWz8AeLMJoQW0FRu2BmJrugbcDg584r5rJGweuK",
 		},
 	}
 }

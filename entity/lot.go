@@ -128,6 +128,7 @@ type Lot struct {
 	TradeDate    *uint64
 	CreateTime   *uint64
 	UpdateTime   *uint64
+	Currency     *string
 }
 
 type LotOption = func(l *Lot)
@@ -174,6 +175,12 @@ func WithLotUpdateTime(updateTime *uint64) LotOption {
 	}
 }
 
+func WithLotCurrency(currency *string) LotOption {
+	return func(l *Lot) {
+		l.SetCurrency(currency)
+	}
+}
+
 func NewLot(userID, holdingID string, opts ...LotOption) *Lot {
 	now := uint64(time.Now().UnixMilli())
 	l := &Lot{
@@ -185,11 +192,15 @@ func NewLot(userID, holdingID string, opts ...LotOption) *Lot {
 		TradeDate:    goutil.Uint64(now),
 		CreateTime:   goutil.Uint64(now),
 		UpdateTime:   goutil.Uint64(now),
+		Currency:     goutil.String(string(CurrencyUSD)),
 	}
+
 	for _, opt := range opts {
 		opt(l)
 	}
+
 	l.checkOpts()
+
 	return l
 }
 
@@ -354,4 +365,15 @@ func (l *Lot) GetUpdateTime() uint64 {
 
 func (l *Lot) SetUpdateTime(updateTime *uint64) {
 	l.UpdateTime = updateTime
+}
+
+func (l *Lot) GetCurrency() string {
+	if l != nil && l.Currency != nil {
+		return *l.Currency
+	}
+	return ""
+}
+
+func (l *Lot) SetCurrency(currency *string) {
+	l.Currency = currency
 }

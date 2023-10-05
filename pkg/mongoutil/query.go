@@ -95,12 +95,12 @@ func BuildFilterOptions(filterOptions filter.FilterOptions) *options.FindOptions
 
 func BuildFilter(filter interface{}) bson.D {
 	if filter == nil {
-		return nil
+		return bson.D{}
 	}
 
 	val := reflect.ValueOf(filter)
 	if val.IsNil() {
-		return nil
+		return bson.D{}
 	}
 	val = val.Elem()
 
@@ -171,7 +171,7 @@ func BuildFilter(filter interface{}) bson.D {
 	}
 
 	if len(conds) == 0 {
-		return nil
+		return bson.D{}
 	}
 
 	return bson.D{{Key: Prefix("and"), Value: conds}}

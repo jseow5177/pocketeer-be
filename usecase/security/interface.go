@@ -28,17 +28,17 @@ func (m *SearchSecuritiesRequest) GetSymbol() string {
 }
 
 func (m *SearchSecuritiesRequest) ToSecurityFilter() *repo.SecurityFilter {
-	return &repo.SecurityFilter{
-		SymbolRegex: goutil.String(fmt.Sprintf("^%s.*", strings.ToUpper(m.GetSymbol()))),
-		Paging: &repo.Paging{
+	return repo.NewSecurityFilter(
+		repo.WithSecuritySymbolRegex(goutil.String(fmt.Sprintf("^%s.*", strings.ToUpper(m.GetSymbol())))),
+		repo.WithSecurityPaging(&repo.Paging{
 			Sorts: []filter.Sort{
 				&repo.Sort{
 					Field: goutil.String("symbol"),
 					Order: goutil.String(config.OrderAsc),
 				},
 			},
-		},
-	}
+		}),
+	)
 }
 
 type SearchSecuritiesResponse struct {

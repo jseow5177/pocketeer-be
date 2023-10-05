@@ -3,22 +3,25 @@ package account
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
 type accountUseCase struct {
-	txMgr           repo.TxMgr
-	accountRepo     repo.AccountRepo
-	transactionRepo repo.TransactionRepo
-	holdingRepo     repo.HoldingRepo
-	lotRepo         repo.LotRepo
-	quoteRepo       repo.QuoteRepo
-	securityRepo    repo.SecurityRepo
+	txMgr            repo.TxMgr
+	accountRepo      repo.AccountRepo
+	transactionRepo  repo.TransactionRepo
+	holdingRepo      repo.HoldingRepo
+	lotRepo          repo.LotRepo
+	quoteRepo        repo.QuoteRepo
+	securityRepo     repo.SecurityRepo
+	exchangeRateRepo repo.ExchangeRateRepo
 }
 
 func NewAccountUseCase(
@@ -29,6 +32,7 @@ func NewAccountUseCase(
 	lotRepo repo.LotRepo,
 	quoteRepo repo.QuoteRepo,
 	securityRepo repo.SecurityRepo,
+	exchangeRateRepo repo.ExchangeRateRepo,
 ) UseCase {
 	return &accountUseCase{
 		txMgr,
@@ -38,6 +42,7 @@ func NewAccountUseCase(
 		lotRepo,
 		quoteRepo,
 		securityRepo,
+		exchangeRateRepo,
 	}
 }
 
@@ -71,25 +76,63 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		return nil, err
 	}
 
-	if err := goutil.ParallelizeWork(ctx, len(acs), 5, func(ctx context.Context, workNum int) error {
+	var (
+		mu  sync.Mutex
+		now = time.Now().UnixMilli()
+		u   = entity.GetUserFromCtx(ctx)
+
+		assetValue, debtValue float64
+	)
+	if err := goutil.ParallelizeWork(ctx, len(acs), 10, func(ctx context.Context, workNum int) error {
 		ac := acs[workNum]
 
-		if !ac.IsInvestment() {
-			return nil
+		if ac.IsInvestment() {
+			if err := uc.getAccountHoldingsAndLots(ctx, ac); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get account holdings and lots, err: %v", err)
+				return err
+			}
 		}
 
-		if err := uc.getAccountHoldingsAndLots(ctx, ac); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to get account holdings and lots, err: %v", err)
-			return err
+		balance := ac.GetBalance()
+		if u.Meta.GetCurrency() != ac.GetCurrency() {
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(ac.Currency),
+				repo.WithExchangeRateTo(u.Meta.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return err
+			}
+
+			balance *= er.GetRate()
 		}
+
+		mu.Lock()
+		if ac.IsAsset() {
+			assetValue += balance
+		} else if ac.IsDebt() {
+			debtValue += balance
+		}
+		mu.Unlock()
 
 		return nil
 	}); err != nil {
 		return nil, err
 	}
 
+	assetValue = util.RoundFloatToStandardDP(assetValue)
+	debtValue = util.RoundFloatToStandardDP(debtValue)
+
+	netWorth := util.RoundFloatToStandardDP(assetValue + debtValue)
+
 	return &GetAccountsResponse{
-		Accounts: acs,
+		NetWorth:   goutil.Float64(netWorth),
+		AssetValue: goutil.Float64(assetValue),
+		DebtValue:  goutil.Float64(debtValue),
+		Currency:   u.Meta.Currency,
+		Accounts:   acs,
 	}, nil
 }
 
@@ -99,71 +142,15 @@ func (uc *accountUseCase) CreateAccount(ctx context.Context, req *CreateAccountR
 		return nil, err
 	}
 
-	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if _, err := uc.accountRepo.Create(txCtx, ac); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new account to repo, err: %v", err)
-			return err
-		}
-
-		hs := ac.Holdings
-		if len(hs) == 0 {
-			return nil
-		}
-
-		for _, h := range hs {
-			h.SetAccountID(ac.AccountID)
-		}
-
-		for i, h := range hs {
-			if h.IsDefault() {
-				if _, err = uc.securityRepo.Get(txCtx, req.Holdings[i].ToSecurityFilter()); err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to get security from repo, err: %v", err)
-					return fmt.Errorf("symbol %v, err: %v", h.GetSymbol(), err)
-				}
-
-				q, err := uc.quoteRepo.Get(txCtx, req.Holdings[i].ToQuoteFilter())
-				if err != nil {
-					log.Ctx(txCtx).Error().Msgf("fail to get quote from repo, err: %v", err)
-					return err
-				}
-
-				h.SetQuote(q)
-			}
-		}
-
-		_, err = uc.holdingRepo.CreateMany(txCtx, hs)
-		if err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new holdings to repo, err: %v", err)
-			return err
-		}
-
-		ls := make([]*entity.Lot, 0)
-		for _, h := range hs {
-			for _, l := range h.Lots {
-				l.SetHoldingID(h.HoldingID)
-			}
-			ls = append(ls, h.Lots...)
-		}
-
-		if len(ls) == 0 {
-			return nil
-		}
-
-		_, err := uc.lotRepo.CreateMany(ctx, ls)
-		if err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
-			return err
-		}
-
-		return nil
-	}); err != nil {
+	if _, err := uc.accountRepo.Create(ctx, ac); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new account to repo, err: %v", err)
 		return nil, err
 	}
 
-	for _, h := range ac.Holdings {
-		h.ComputeSharesCostAndValue()
+	if err := uc.computeAccountCostGainAndBalance(ctx, ac); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to compute account cost, gain, and balance, err: %v", err)
+		return nil, err
 	}
-	ac.ComputeCostAndBalance()
 
 	return &CreateAccountResponse{
 		Account: ac,
@@ -177,7 +164,11 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 	oldBalance := ac.GetBalance()
 
-	acu, err := ac.Update(req.ToAccountUpdate())
+	acu, err := ac.Update(
+		entity.WithUpdateAccountBalance(req.Balance),
+		entity.WithUpdateAccountName(req.AccountName),
+		entity.WithUpdateAccountNote(req.Note),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -189,8 +180,8 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 		}, nil
 	}
 
-	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err = uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to save account updates to repo, err: %v", err)
 			return err
 		}
@@ -199,7 +190,7 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 			balanceChange := acu.GetBalance() - oldBalance
 			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
 
-			if _, err = uc.transactionRepo.Create(txCtx, t); err != nil {
+			if _, err := uc.transactionRepo.Create(txCtx, t); err != nil {
 				log.Ctx(txCtx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
 				return err
 			}
@@ -225,7 +216,14 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err := uc.accountRepo.Delete(txCtx, acf); err != nil {
+		acu, err := ac.Update(
+			entity.WithUpdateAccountStatus(goutil.Uint32(uint32(entity.AccountStatusDeleted))),
+		)
+		if err != nil {
+			return err
+		}
+
+		if err = uc.accountRepo.Update(txCtx, acf, acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark account as deleted, err: %v", err)
 			return err
 		}
@@ -291,32 +289,94 @@ func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *ent
 	}
 
 	for _, h := range hs {
-		if !h.IsDefault() {
-			continue
+		if h.IsDefault() {
+			q, err := uc.quoteRepo.Get(ctx, &repo.QuoteFilter{
+				Symbol: h.Symbol,
+			})
+			if err != nil {
+				return fmt.Errorf("fail to get quote from repo, err: %v", err)
+			}
+			h.SetQuote(q)
+
+			ls, err := uc.lotRepo.GetMany(ctx, repo.NewLotFilter(
+				ac.GetUserID(),
+				repo.WithLotHoldingID(h.HoldingID),
+			))
+			if err != nil {
+				return fmt.Errorf("fail to get lots from repo, err: %v", err)
+			}
+			h.SetLots(ls)
 		}
 
-		q, err := uc.quoteRepo.Get(ctx, &repo.QuoteFilter{
-			Symbol: h.Symbol,
-		})
-		if err != nil {
-			return fmt.Errorf("fail to get quote from repo, err: %v", err)
-		}
-		h.SetQuote(q)
-
-		ls, err := uc.lotRepo.GetMany(ctx, repo.NewLotFilter(
-			ac.GetUserID(),
-			repo.WithLotHoldingID(h.HoldingID),
-		))
-		if err != nil {
-			return fmt.Errorf("fail to get lots from repo, err: %v", err)
-		}
-		h.SetLots(ls)
-
-		h.ComputeSharesCostAndValue()
+		h.ComputeCostGainAndValue()
 	}
 
 	ac.SetHoldings(hs)
-	ac.ComputeCostAndBalance()
+
+	if err := uc.computeAccountCostGainAndBalance(ctx, ac); err != nil {
+		return fmt.Errorf("fail to compute account cost, gain, and balance, err: %v", err)
+	}
+
+	return nil
+}
+
+func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, ac *entity.Account) error {
+	if !ac.IsInvestment() {
+		return nil
+	}
+
+	now := time.Now().UnixMilli()
+
+	// compute latest value and gain
+	var totalBalance, totalGain float64
+	for _, h := range ac.Holdings {
+		lv := h.GetLatestValue()
+		gain := h.GetGain()
+
+		if ac.GetCurrency() != h.GetCurrency() {
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(h.Currency),
+				repo.WithExchangeRateTo(ac.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+			}
+
+			lv *= er.GetRate()
+			gain *= er.GetRate()
+		}
+
+		totalBalance += lv
+		totalGain += gain
+	}
+	ac.SetBalance(goutil.Float64(totalBalance))
+	ac.SetGain(goutil.Float64(totalGain))
+
+	// compute weighted average percent gain
+	var percentGain float64
+	if totalBalance > 0 {
+		for _, h := range ac.Holdings {
+			lv := h.GetLatestValue()
+
+			if ac.GetCurrency() != h.GetCurrency() {
+				er, err := uc.exchangeRateRepo.Get(ctx, repo.NewExchangeRateFilter(
+					repo.WithExchangeRateFrom(h.Currency),
+					repo.WithExchangeRateTo(ac.Currency),
+					repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+				))
+				if err != nil {
+					return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+				}
+				lv *= er.GetRate()
+			}
+
+			weight := lv / totalBalance
+			percentGain += weight * h.GetPercentGain()
+		}
+	}
+	ac.SetPercentGain(goutil.Float64(percentGain))
 
 	return nil
 }

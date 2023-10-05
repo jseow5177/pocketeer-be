@@ -1,20 +1,22 @@
 package model
 
 import (
+	"encoding/base64"
+
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserMeta struct {
-	InitStage *uint32 `bson:"init_stage,omitempty"`
+	Currency *string `bson:"currency,omitempty"`
 }
 
-func (um *UserMeta) GetInitStage() uint32 {
-	if um != nil && um.InitStage != nil {
-		return *um.InitStage
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
 	}
-	return 0
+	return ""
 }
 
 func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
@@ -23,7 +25,7 @@ func ToUserMetaModelFromEntity(um *entity.UserMeta) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
 	}
 }
 
@@ -33,7 +35,7 @@ func ToUserMetaModelFromUpdate(umu *entity.UserMetaUpdate) *UserMeta {
 	}
 
 	return &UserMeta{
-		InitStage: umu.InitStage,
+		Currency: umu.Currency,
 	}
 }
 
@@ -43,7 +45,7 @@ func ToUserMetaEntity(um *UserMeta) *entity.UserMeta {
 	}
 
 	return &entity.UserMeta{
-		InitStage: um.InitStage,
+		Currency: um.Currency,
 	}
 }
 
@@ -72,12 +74,12 @@ func ToUserModelFromEntity(u *entity.User) *User {
 
 	var encodedHash *string
 	if u.Hash != nil {
-		encodedHash = goutil.String(goutil.Base64Encode([]byte(u.GetHash())))
+		encodedHash = goutil.String(goutil.Base64Encode([]byte(u.GetHash()), base64.NoPadding))
 	}
 
 	var encodedSalt *string
 	if u.Salt != nil {
-		encodedSalt = goutil.String(goutil.Base64Encode([]byte(u.GetSalt())))
+		encodedSalt = goutil.String(goutil.Base64Encode([]byte(u.GetSalt()), base64.NoPadding))
 	}
 
 	return &User{
@@ -101,7 +103,7 @@ func ToUserModelFromUpdate(uu *entity.UserUpdate) *User {
 
 	var encodedHash *string
 	if uu.Hash != nil {
-		encodedHash = goutil.String(goutil.Base64Encode([]byte(uu.GetHash())))
+		encodedHash = goutil.String(goutil.Base64Encode([]byte(uu.GetHash()), base64.NoPadding))
 	}
 
 	return &User{
@@ -120,7 +122,7 @@ func ToUserEntity(u *User) (*entity.User, error) {
 
 	var decodedHash *string
 	if u.Hash != nil {
-		b, err := goutil.Base64Decode(u.GetHash())
+		b, err := goutil.Base64Decode(u.GetHash(), base64.NoPadding)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +131,7 @@ func ToUserEntity(u *User) (*entity.User, error) {
 
 	var decodedSalt *string
 	if u.Salt != nil {
-		b, err := goutil.Base64Decode(u.GetSalt())
+		b, err := goutil.Base64Decode(u.GetSalt(), base64.NoPadding)
 		if err != nil {
 			return nil, err
 		}

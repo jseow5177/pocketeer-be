@@ -3,14 +3,11 @@ package mongo
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo/model"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/mongoutil"
-	"github.com/jseow5177/pockteer-be/util"
 )
 
 const budgetCollName = "budget"
@@ -55,7 +52,7 @@ func (m *budgetMongo) CreateMany(ctx context.Context, bs []*entity.Budget) ([]st
 }
 
 func (m *budgetMongo) Get(ctx context.Context, f *repo.GetBudgetFilter) (*entity.Budget, error) {
-	bq, err := m.toGetBudgetQuery(f)
+	bq, err := f.ToBudgetQuery()
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +105,7 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 	startDate, endDate, err := entity.GetBudgetStartEnd(
 		f.GetBudgetDate(),
 		f.GetBudgetType(),
-		f.GetBudgetType(),
+		f.GetBudgetRepeat(),
 	)
 	if err != nil {
 		return err
@@ -117,6 +114,7 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 	dummyBudget, err := entity.NewBudget(
 		f.GetUserID(),
 		f.GetCategoryID(),
+		entity.WithBudgetCurrency(goutil.String("")),
 		entity.WithBudgetAmount(goutil.Float64(0)),
 		entity.WithBudgetType(f.BudgetType),
 		entity.WithBudgetStatus(goutil.Uint32(uint32(entity.BudgetStatusDeleted))),
@@ -132,51 +130,4 @@ func (m *budgetMongo) Delete(ctx context.Context, f *repo.DeleteBudgetFilter) er
 	}
 
 	return nil
-}
-
-func (m *budgetMongo) toGetBudgetQuery(f *repo.GetBudgetFilter) (*repo.BudgetQuery, error) {
-	t, err := util.ParseDateStrToInt(f.GetBudgetDate())
-	if err != nil {
-		return nil, err
-	}
-
-	return &repo.BudgetQuery{
-		Queries: []*repo.BudgetQuery{
-			{
-				Filters: []*repo.BudgetFilter{
-					{
-						StartDateLte: goutil.Uint64(t),
-						EndDateGte:   goutil.Uint64(t),
-					},
-					{
-						StartDateLte: goutil.Uint64(t),
-						EndDate:      goutil.Uint64(0),
-					},
-					{
-						StartDate: goutil.Uint64(0),
-						EndDate:   goutil.Uint64(0),
-					},
-				},
-				Op: filter.Or,
-			},
-			{
-				Filters: []*repo.BudgetFilter{
-					{
-						UserID:     goutil.String(f.GetUserID()),
-						CategoryID: goutil.String(f.GetCategoryID()),
-					},
-				},
-			},
-		},
-		Op: filter.And,
-		Paging: &repo.Paging{
-			Limit: goutil.Uint32(1),
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("update_time"),
-					Order: goutil.String(config.OrderDesc),
-				},
-			},
-		},
-	}, nil
 }

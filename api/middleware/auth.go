@@ -1,40 +1,85 @@
 package middleware
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"strings"
 
+	"github.com/jseow5177/pockteer-be/config"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/errutil"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/pkg/httputil"
 	"github.com/jseow5177/pockteer-be/usecase/user"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	ErrUserNotAuthenticated = errors.New("user not authenticated")
+	ErrUserNotAuthenticated  = errors.New("user not authenticated")
+	ErrAdminNotAuthenticated = errors.New("admin not authenticated")
 )
 
-type AuthMiddleware struct {
+type AdminAuthMiddleware struct {
+	adminCfg *config.ServerAdmin
+}
+
+func NewAdminAuthMiddleware(adminCfg *config.ServerAdmin) *AdminAuthMiddleware {
+	return &AdminAuthMiddleware{
+		adminCfg,
+	}
+}
+
+func (am *AdminAuthMiddleware) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		authHeader := r.Header.Get("Authorization")
+		s := am.stripBasicPrefix(authHeader)
+
+		creds, err := goutil.Base64Decode(s, base64.StdPadding)
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to decode credentials, str: %v, err: %v", s, err)
+			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrAdminNotAuthenticated))
+			return
+		}
+
+		up := strings.Split(string(creds), ":")
+		if len(up) != 2 || (up[0] != am.adminCfg.Username || up[1] != am.adminCfg.Password) {
+			log.Ctx(ctx).Error().Msgf("invalid credentials: %v", up)
+			httputil.ReturnServerResponse(w, nil, errutil.UnauthorizedError(ErrAdminNotAuthenticated))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (am *AdminAuthMiddleware) stripBasicPrefix(authHeader string) string {
+	if len(authHeader) > 5 && strings.ToUpper(authHeader[0:6]) == "BASIC " {
+		return authHeader[6:]
+	}
+	return ""
+}
+
+type UserAuthMiddleware struct {
 	userUseCase user.UseCase
 }
 
-func NewAuthMiddleware(userUseCase user.UseCase) *AuthMiddleware {
-	return &AuthMiddleware{
+func NewUserAuthMiddleware(userUseCase user.UseCase) *UserAuthMiddleware {
+	return &UserAuthMiddleware{
 		userUseCase,
 	}
 }
 
-func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
+func (am *UserAuthMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		authErr := errutil.UnauthorizedError(ErrUserNotAuthenticated)
 
 		// get token from auth header
 		authHeader := r.Header.Get("Authorization")
-		accessToken := am.stripBearerPrefix(authHeader)
+		accessToken := am.stripBasicPrefix(authHeader)
 
 		if accessToken == "" {
 			log.Ctx(ctx).Error().Msg("token is empty")
@@ -46,17 +91,18 @@ func (am *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			AccessToken: goutil.String(accessToken),
 		})
 		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to check if user is authenticated, err: %v", err)
 			httputil.ReturnServerResponse(w, nil, authErr)
 			return
 		}
 
-		r = r.WithContext(util.SetUserIDToCtx(ctx, res.User.GetUserID()))
+		r = r.WithContext(entity.SetUserToCtx(ctx, res.User))
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (am *AuthMiddleware) stripBearerPrefix(authHeader string) string {
+func (am *UserAuthMiddleware) stripBasicPrefix(authHeader string) string {
 	if len(authHeader) > 6 && strings.ToUpper(authHeader[0:7]) == "BEARER " {
 		return authHeader[7:]
 	}

@@ -60,112 +60,53 @@ var ChildAccountTypes = map[uint32]string{
 	uint32(DebtMortgage):     "mortgage",
 }
 
-type AccountUpdate struct {
-	AccountName   *string
-	Balance       *float64
-	Note          *string
-	UpdateTime    *uint64
-	AccountStatus *uint32
-}
-
-func (acu *AccountUpdate) GetAccountName() string {
-	if acu != nil && acu.AccountName != nil {
-		return *acu.AccountName
-	}
-	return ""
-}
-
-func (acu *AccountUpdate) SetAccountName(accountName *string) {
-	acu.AccountName = accountName
-}
-
-func (acu *AccountUpdate) GetBalance() float64 {
-	if acu != nil && acu.Balance != nil {
-		return *acu.Balance
-	}
-	return 0
-}
-
-func (acu *AccountUpdate) SetBalance(balance *float64) {
-	acu.Balance = balance
-
-	if balance != nil {
-		b := util.RoundFloatToStandardDP(*balance)
-		acu.Balance = goutil.Float64(b)
-	}
-}
-
-func (acu *AccountUpdate) GetNote() string {
-	if acu != nil && acu.Note != nil {
-		return *acu.Note
-	}
-	return ""
-}
-
-func (acu *AccountUpdate) SetNote(note *string) {
-	acu.Note = note
-}
-
-func (acu *AccountUpdate) GetUpdateTime() uint64 {
-	if acu != nil && acu.UpdateTime != nil {
-		return *acu.UpdateTime
-	}
-	return 0
-}
-
-func (acu *AccountUpdate) SetUpdateTime(updateTime *uint64) {
-	acu.UpdateTime = updateTime
-}
-
-func (acu *AccountUpdate) GetAccountStatus() uint32 {
-	if acu != nil && acu.AccountStatus != nil {
-		return *acu.AccountStatus
-	}
-	return 0
-}
-
-func (acu *AccountUpdate) SetAccountStatus(accountStatus *uint32) {
-	acu.AccountStatus = accountStatus
-}
-
-type AccountUpdateOption func(acu *AccountUpdate)
+type AccountUpdateOption func(ac *Account) bool
 
 func WithUpdateAccountName(accountName *string) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.SetAccountName(accountName)
+	return func(ac *Account) bool {
+		if accountName != nil && ac.GetAccountName() != *accountName {
+			ac.SetAccountName(accountName)
+			return true
+		}
+		return false
 	}
 }
 
 func WithUpdateAccountBalance(balance *float64) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.SetBalance(balance)
+	return func(ac *Account) bool {
+		if balance != nil && ac.GetBalance() != *balance {
+			ac.SetBalance(balance)
+			return true
+		}
+		return false
 	}
 }
 
 func WithUpdateAccountNote(note *string) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.SetNote(note)
+	return func(ac *Account) bool {
+		if note != nil && ac.GetNote() != *note {
+			ac.SetNote(note)
+			return true
+		}
+		return false
 	}
 }
 
 func WithUpdateAccountStatus(accountStatus *uint32) AccountUpdateOption {
-	return func(acu *AccountUpdate) {
-		acu.SetAccountStatus(accountStatus)
+	return func(ac *Account) bool {
+		if accountStatus != nil && ac.GetAccountStatus() != *accountStatus {
+			ac.SetAccountStatus(accountStatus)
+			return true
+		}
+		return false
 	}
-}
-
-func NewAccountUpdate(opts ...AccountUpdateOption) *AccountUpdate {
-	au := new(AccountUpdate)
-	for _, opt := range opts {
-		opt(au)
-	}
-	return au
 }
 
 type Account struct {
 	UserID        *string
 	AccountID     *string
 	AccountName   *string
+	Currency      *string
 	Balance       *float64
 	AccountType   *uint32
 	AccountStatus *uint32
@@ -174,8 +115,9 @@ type Account struct {
 	UpdateTime    *uint64
 
 	// Investment
-	TotalCost *float64
-	Holdings  []*Holding
+	Gain        *float64
+	PercentGain *float64
+	Holdings    []*Holding
 }
 
 type AccountOption = func(ac *Account)
@@ -189,6 +131,12 @@ func WithAccountID(accountID *string) AccountOption {
 func WithAccountName(accountName *string) AccountOption {
 	return func(ac *Account) {
 		ac.SetAccountName(accountName)
+	}
+}
+
+func WithAccountCurrency(currency *string) AccountOption {
+	return func(ac *Account) {
+		ac.SetCurrency(currency)
 	}
 }
 
@@ -240,6 +188,7 @@ func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 		UserID:        goutil.String(userID),
 		AccountName:   goutil.String(""),
 		AccountType:   goutil.Uint32(uint32(AssetCash)),
+		Currency:      goutil.String(string(CurrencySGD)),
 		AccountStatus: goutil.Uint32(uint32(AccountStatusNormal)),
 		Note:          goutil.String(""),
 		CreateTime:    goutil.Uint64(now),
@@ -249,14 +198,14 @@ func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
 		opt(ac)
 	}
 
-	if err := ac.checkOpts(); err != nil {
+	if err := ac.validate(); err != nil {
 		return nil, err
 	}
 
 	return ac, nil
 }
 
-func (ac *Account) checkOpts() error {
+func (ac *Account) validate() error {
 	if ac.CanSetBalance() && ac.Balance == nil {
 		return ErrMustSetBalance
 	}
@@ -272,53 +221,84 @@ func (ac *Account) checkOpts() error {
 	return nil
 }
 
-func (ac *Account) Update(acu *AccountUpdate) (*AccountUpdate, error) {
-	var (
-		hasUpdate     bool
-		accountUpdate = new(AccountUpdate)
-	)
+type AccountUpdate struct {
+	AccountName   *string
+	Balance       *float64
+	Note          *string
+	UpdateTime    *uint64
+	AccountStatus *uint32
+}
 
-	if acu.AccountName != nil && acu.GetAccountName() != ac.GetAccountName() {
-		hasUpdate = true
-		ac.SetAccountName(acu.AccountName)
+func (acu *AccountUpdate) GetAccountName() string {
+	if acu != nil && acu.AccountName != nil {
+		return *acu.AccountName
+	}
+	return ""
+}
 
-		defer func() {
-			accountUpdate.SetAccountName(ac.AccountName)
-		}()
+func (acu *AccountUpdate) GetBalance() float64 {
+	if acu != nil && acu.Balance != nil {
+		return *acu.Balance
+	}
+	return 0
+}
+
+func (acu *AccountUpdate) GetAccountStatus() uint32 {
+	if acu != nil && acu.AccountStatus != nil {
+		return *acu.AccountStatus
+	}
+	return 0
+}
+
+func (acu *AccountUpdate) GetUpdateTime() uint64 {
+	if acu != nil && acu.UpdateTime != nil {
+		return *acu.UpdateTime
+	}
+	return 0
+}
+
+func (acu *AccountUpdate) GetNote() string {
+	if acu != nil && acu.Note != nil {
+		return *acu.Note
+	}
+	return ""
+}
+
+func (ac *Account) ToAccountUpdate() *AccountUpdate {
+	return &AccountUpdate{
+		AccountName:   ac.AccountName,
+		Balance:       ac.Balance,
+		Note:          ac.Note,
+		AccountStatus: ac.AccountStatus,
+		UpdateTime:    ac.UpdateTime,
+	}
+}
+
+func (ac *Account) Update(acus ...AccountUpdateOption) (*AccountUpdate, error) {
+	if len(acus) == 0 {
+		return nil, nil
 	}
 
-	if acu.Balance != nil && acu.GetBalance() != ac.GetBalance() {
-		hasUpdate = true
-		ac.SetBalance(acu.Balance)
-
-		defer func() {
-			accountUpdate.SetBalance(ac.Balance)
-		}()
-	}
-
-	if acu.Note != nil && acu.GetNote() != ac.GetNote() {
-		hasUpdate = true
-		ac.SetNote(acu.Note)
-
-		defer func() {
-			accountUpdate.SetNote(ac.Note)
-		}()
+	var hasUpdate bool
+	for _, acu := range acus {
+		if ok := acu(ac); ok {
+			hasUpdate = true
+		}
 	}
 
 	if !hasUpdate {
 		return nil, nil
 	}
 
-	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
-	ac.SetUpdateTime(now)
-
-	if err := ac.checkOpts(); err != nil {
+	// check
+	if err := ac.validate(); err != nil {
 		return nil, err
 	}
 
-	accountUpdate.SetUpdateTime(now)
+	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
+	ac.SetUpdateTime(now)
 
-	return accountUpdate, nil
+	return ac.ToAccountUpdate(), nil
 }
 
 func (ac *Account) GetUserID() string {
@@ -352,6 +332,17 @@ func (ac *Account) GetAccountName() string {
 
 func (ac *Account) SetAccountName(accountName *string) {
 	ac.AccountName = accountName
+}
+
+func (ac *Account) GetCurrency() string {
+	if ac != nil && ac.Currency != nil {
+		return *ac.Currency
+	}
+	return ""
+}
+
+func (ac *Account) SetCurrency(currency *string) {
+	ac.Currency = currency
 }
 
 func (ac *Account) GetBalance() float64 {
@@ -425,19 +416,35 @@ func (ac *Account) SetUpdateTime(updateTime *uint64) {
 	ac.UpdateTime = updateTime
 }
 
-func (ac *Account) GetTotalCost() float64 {
-	if ac != nil && ac.TotalCost != nil {
-		return *ac.TotalCost
+func (ac *Account) GetGain() float64 {
+	if ac != nil && ac.Gain != nil {
+		return *ac.Gain
 	}
 	return 0
 }
 
-func (ac *Account) SetTotalCost(totalCost *float64) {
-	ac.TotalCost = totalCost
+func (ac *Account) SetGain(gain *float64) {
+	ac.Gain = gain
 
-	if totalCost != nil {
-		tc := util.RoundFloatToStandardDP(*totalCost)
-		ac.TotalCost = goutil.Float64(tc)
+	if gain != nil {
+		g := util.RoundFloatToStandardDP(*gain)
+		ac.Gain = goutil.Float64(g)
+	}
+}
+
+func (ac *Account) GetPercentGain() float64 {
+	if ac != nil && ac.PercentGain != nil {
+		return *ac.PercentGain
+	}
+	return 0
+}
+
+func (ac *Account) SetPercentGain(percentGain *float64) {
+	ac.PercentGain = percentGain
+
+	if percentGain != nil {
+		pg := util.RoundFloatToStandardDP(*percentGain)
+		ac.PercentGain = goutil.Float64(pg)
 	}
 }
 
@@ -466,22 +473,4 @@ func (ac *Account) IsInvestment() bool {
 
 func (ac *Account) CanSetBalance() bool {
 	return ac.GetAccountType() != uint32(AssetInvestment)
-}
-
-func (ac *Account) ComputeCostAndBalance() {
-	if !ac.IsInvestment() {
-		return
-	}
-
-	var (
-		totalCost    float64
-		totalBalance float64
-	)
-	for _, h := range ac.Holdings {
-		totalCost += h.GetTotalCost()
-		totalBalance += h.GetLatestValue()
-	}
-
-	ac.SetBalance(goutil.Float64(totalBalance))
-	ac.SetTotalCost(goutil.Float64(totalCost))
 }

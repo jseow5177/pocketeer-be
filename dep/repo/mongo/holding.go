@@ -53,8 +53,10 @@ func (m *holdingMongo) CreateMany(ctx context.Context, hs []*entity.Holding) ([]
 }
 
 func (m *holdingMongo) Update(ctx context.Context, hf *repo.HoldingFilter, hu *entity.HoldingUpdate) error {
+	f := mongoutil.BuildFilter(hf)
+
 	hm := model.ToHoldingModelFromUpdate(hu)
-	if err := m.mColl.update(ctx, hf, hm); err != nil {
+	if err := m.mColl.update(ctx, f, hm); err != nil {
 		return err
 	}
 
@@ -86,7 +88,9 @@ func (m *holdingMongo) DeleteMany(ctx context.Context, hf *repo.HoldingFilter) e
 		entity.WithUpdateHoldingStatus(goutil.Uint32(uint32(entity.HoldingStatusDeleted))),
 	))
 
-	return m.mColl.updateMany(ctx, hf, hm)
+	f := mongoutil.BuildFilter(hf)
+
+	return m.mColl.updateMany(ctx, f, hm)
 }
 
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {

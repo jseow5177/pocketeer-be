@@ -246,10 +246,174 @@ func (m *IsAuthenticatedResponse) GetUser() *entity.User {
 	return nil
 }
 
+type InitCategoryRequest struct {
+}
+
+type InitLotRequest struct {
+	Shares       *float64
+	CostPerShare *float64
+	TradeDate    *uint64
+}
+
+func (m *InitLotRequest) GetShares() float64 {
+	if m != nil && m.Shares != nil {
+		return *m.Shares
+	}
+	return 0
+}
+
+func (m *InitLotRequest) GetCostPerShare() float64 {
+	if m != nil && m.CostPerShare != nil {
+		return *m.CostPerShare
+	}
+	return 0
+}
+
+func (m *InitLotRequest) GetTradeDate() uint64 {
+	if m != nil && m.TradeDate != nil {
+		return *m.TradeDate
+	}
+	return 0
+}
+
+func (m *InitLotRequest) ToLotEntity(userID, holdingID, currency string) *entity.Lot {
+	return entity.NewLot(
+		userID,
+		holdingID,
+		entity.WithLotCostPerShare(m.CostPerShare),
+		entity.WithLotShares(m.Shares),
+		entity.WithLotTradeDate(m.TradeDate),
+		entity.WithLotCurrency(goutil.String(currency)),
+	)
+}
+
+type InitHoldingRequest struct {
+	Symbol      *string
+	HoldingType *uint32
+	TotalCost   *float64
+	LatestValue *float64
+	Lots        []*InitLotRequest
+}
+
+func (m *InitHoldingRequest) GetSymbol() string {
+	if m != nil && m.Symbol != nil {
+		return *m.Symbol
+	}
+	return ""
+}
+
+func (m *InitHoldingRequest) GetHoldingType() uint32 {
+	if m != nil && m.HoldingType != nil {
+		return *m.HoldingType
+	}
+	return 0
+}
+
+func (m *InitHoldingRequest) GetTotalCost() float64 {
+	if m != nil && m.TotalCost != nil {
+		return *m.TotalCost
+	}
+	return 0
+}
+
+func (m *InitHoldingRequest) GetLatestValue() float64 {
+	if m != nil && m.LatestValue != nil {
+		return *m.LatestValue
+	}
+	return 0
+}
+
+func (m *InitHoldingRequest) GetLots() []*InitLotRequest {
+	if m != nil && m.Lots != nil {
+		return m.Lots
+	}
+	return nil
+}
+
+func (m *InitHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {
+	return repo.NewSecurityFilter(
+		repo.WithSecuritySymbol(m.Symbol),
+	)
+}
+
+func (m *InitHoldingRequest) ToHoldingEntity(userID, accountID, currency string) (*entity.Holding, error) {
+	return entity.NewHolding(
+		userID,
+		accountID,
+		m.GetSymbol(),
+		entity.WithHoldingType(m.HoldingType),
+		entity.WithHoldingTotalCost(m.TotalCost),
+		entity.WithHoldingLatestValue(m.LatestValue),
+	)
+}
+
+func (m *InitHoldingRequest) ToLotEntities(userID, holdingID, currency string) []*entity.Lot {
+	ls := make([]*entity.Lot, 0)
+	for _, r := range m.Lots {
+		ls = append(ls, r.ToLotEntity(userID, holdingID, currency))
+	}
+	return ls
+}
+
+type InitAccountRequest struct {
+	AccountName *string
+	Balance     *float64
+	Note        *string
+	AccountType *uint32
+	Holdings    []*InitHoldingRequest
+}
+
+func (m *InitAccountRequest) GetAccountName() string {
+	if m != nil && m.AccountName != nil {
+		return *m.AccountName
+	}
+	return ""
+}
+
+func (m *InitAccountRequest) GetBalance() float64 {
+	if m != nil && m.Balance != nil {
+		return *m.Balance
+	}
+	return 0
+}
+
+func (m *InitAccountRequest) GetNote() string {
+	if m != nil && m.Note != nil {
+		return *m.Note
+	}
+	return ""
+}
+
+func (m *InitAccountRequest) GetAccountType() uint32 {
+	if m != nil && m.AccountType != nil {
+		return *m.AccountType
+	}
+	return 0
+}
+
+func (m *InitAccountRequest) GetHoldings() []*InitHoldingRequest {
+	if m != nil && m.Holdings != nil {
+		return m.Holdings
+	}
+	return nil
+}
+
+func (m *InitAccountRequest) ToAccountEntity(userID, currency string) (*entity.Account, error) {
+	return entity.NewAccount(
+		userID,
+		entity.WithAccountName(m.AccountName),
+		entity.WithAccountBalance(m.Balance),
+		entity.WithAccountType(m.AccountType),
+		entity.WithAccountNote(m.Note),
+		entity.WithAccountCurrency(goutil.String(currency)),
+	)
+}
+
 type InitUserRequest struct {
 	UserID     *string
-	Categories []*category.CreateCategoryRequest
+	Currency   *string
 	Accounts   []*account.CreateAccountRequest
+	Categories []*category.CreateCategoryRequest
 }
 
 func (m *InitUserRequest) GetUserID() string {
@@ -259,41 +423,23 @@ func (m *InitUserRequest) GetUserID() string {
 	return ""
 }
 
-func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
-	return entity.NewUserUpdate(
-		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
-	)
-}
-
-func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		UserID:     m.UserID,
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+func (m *InitUserRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
-}
-
-func (m *InitUserRequest) GetCategories() []*category.CreateCategoryRequest {
-	if m != nil && m.Categories != nil {
-		return m.Categories
-	}
-	return nil
-}
-
-func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
-	cs := make([]*entity.Category, 0)
-	for _, r := range m.Categories {
-		c, err := r.ToCategoryEntity()
-		if err != nil {
-			return nil, err
-		}
-		cs = append(cs, c)
-	}
-	return cs, nil
+	return ""
 }
 
 func (m *InitUserRequest) GetAccounts() []*account.CreateAccountRequest {
 	if m != nil && m.Accounts != nil {
 		return m.Accounts
+	}
+	return nil
+}
+
+func (m *InitUserRequest) GetCategories() []*category.CreateCategoryRequest {
+	if m != nil && m.Categories != nil {
+		return m.Categories
 	}
 	return nil
 }
@@ -309,6 +455,36 @@ func (m *InitUserRequest) ToAccountEntities() ([]*entity.Account, error) {
 	}
 
 	return acs, nil
+}
+
+func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
+	cs := make([]*entity.Category, 0)
+	for _, r := range m.Categories {
+		c, err := r.ToCategoryEntity()
+		if err != nil {
+			return nil, err
+		}
+		cs = append(cs, c)
+	}
+	return cs, nil
+}
+
+func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+		entity.WithUpdateUserMeta(
+			entity.NewUserMetaUpdate(
+				entity.WithUpdateUserMetaCurrency(m.Currency),
+			),
+		),
+	)
+}
+
+func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
+	return &repo.UserFilter{
+		UserID:     m.UserID,
+		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
+	}
 }
 
 type InitUserResponse struct{}
@@ -335,8 +511,8 @@ type SendOTPResponse struct {
 }
 
 type UpdateUserMetaRequest struct {
-	UserID    *string
-	InitStage *uint32
+	UserID   *string
+	Currency *string
 }
 
 func (m *UpdateUserMetaRequest) GetUserID() string {
@@ -346,11 +522,11 @@ func (m *UpdateUserMetaRequest) GetUserID() string {
 	return ""
 }
 
-func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
-	if m != nil && m.InitStage != nil {
-		return *m.InitStage
+func (m *UpdateUserMetaRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
-	return 0
+	return ""
 }
 
 func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
@@ -363,7 +539,7 @@ func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
 	return entity.NewUserUpdate(
 		entity.WithUpdateUserMeta(
 			entity.NewUserMetaUpdate(
-				entity.WithUpdateUserMetaInitStage(m.InitStage),
+				entity.WithUpdateUserMetaCurrency(m.Currency),
 			),
 		),
 	)

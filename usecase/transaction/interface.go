@@ -14,11 +14,15 @@ import (
 type UseCase interface {
 	GetTransaction(ctx context.Context, req *GetTransactionRequest) (*GetTransactionResponse, error)
 	GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error)
+	GetTransactionGroups(ctx context.Context, req *GetTransactionGroupsRequest) (*GetTransactionGroupsResponse, error)
 
 	CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error)
 	UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error)
 	DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error)
 
+	SumTransactions(ctx context.Context, req *SumTransactionsRequest) (*SumTransactionsResponse, error)
+
+	// deprecated
 	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
 }
 
@@ -78,6 +82,7 @@ type CreateTransactionRequest struct {
 	UserID          *string
 	AccountID       *string
 	CategoryID      *string
+	Currency        *string
 	Amount          *float64
 	Note            *string
 	TransactionType *uint32
@@ -101,6 +106,13 @@ func (m *CreateTransactionRequest) GetCategoryID() string {
 func (m *CreateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (m *CreateTransactionRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -142,6 +154,7 @@ func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
 		entity.WithTransactionNote(m.Note),
 		entity.WithTransactionType(m.TransactionType),
 		entity.WithTransactionTime(m.TransactionTime),
+		entity.WithTransactionCurrency(m.Currency),
 	)
 }
 
@@ -300,6 +313,37 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 	return nil
 }
 
+type GetTransactionGroupsRequest struct {
+	AppMeta *common.AppMeta
+	*GetTransactionsRequest
+}
+
+func (m *GetTransactionGroupsRequest) GetAppMeta() *common.AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+type GetTransactionGroupsResponse struct {
+	TransactionGroups []*common.TransactionSummary
+	Paging            *common.Paging
+}
+
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*common.TransactionSummary {
+	if m != nil && m.TransactionGroups != nil {
+		return m.TransactionGroups
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsResponse) GetPaging() *common.Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
+	}
+	return nil
+}
+
 type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
@@ -309,6 +353,7 @@ type UpdateTransactionRequest struct {
 	Note            *string
 	Amount          *float64
 	TransactionTime *uint64
+	Currency        *string
 }
 
 func (m *UpdateTransactionRequest) GetUserID() string {
@@ -396,6 +441,7 @@ func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpda
 		entity.WithUpdateTransactionAccountID(m.AccountID),
 		entity.WithUpdateTransactionCategoryID(m.CategoryID),
 		entity.WithUpdateTransactionType(m.TransactionType),
+		entity.WithUpdateTransactionCurrency(m.Currency),
 	)
 }
 
@@ -406,6 +452,58 @@ type UpdateTransactionResponse struct {
 func (m *UpdateTransactionResponse) GetTransaction() *entity.Transaction {
 	if m != nil && m.Transaction != nil {
 		return m.Transaction
+	}
+	return nil
+}
+
+type SumTransactionsRequest struct {
+	UserID          *string
+	TransactionTime *common.RangeFilter
+	TransactionType *uint32
+}
+
+func (m *SumTransactionsRequest) GetUserID() string {
+	if m != nil && m.UserID != nil {
+		return *m.UserID
+	}
+	return ""
+}
+
+func (m *SumTransactionsRequest) GetTransactionTime() *common.RangeFilter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
+}
+
+func (m *SumTransactionsRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
+func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
+	tt := m.TransactionTime
+	if tt == nil {
+		tt = new(common.RangeFilter)
+	}
+
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionType(m.TransactionType),
+		repo.WithTransactionTimeGte(tt.Gte),
+		repo.WithTransactionTimeLte(tt.Lte),
+	)
+}
+
+type SumTransactionsResponse struct {
+	Sums []*common.TransactionSummary
+}
+
+func (m *SumTransactionsResponse) GetSums() []*common.TransactionSummary {
+	if m != nil && m.Sums != nil {
+		return m.Sums
 	}
 	return nil
 }

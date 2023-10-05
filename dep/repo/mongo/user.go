@@ -49,8 +49,10 @@ func (m *userMongo) Get(ctx context.Context, uf *repo.UserFilter) (*entity.User,
 }
 
 func (m *userMongo) Update(ctx context.Context, uf *repo.UserFilter, uu *entity.UserUpdate) error {
+	f := mongoutil.BuildFilter(uf)
+
 	um := model.ToUserModelFromUpdate(uu)
-	if err := m.mColl.update(ctx, uf, um); err != nil {
+	if err := m.mColl.update(ctx, f, um); err != nil {
 		return err
 	}
 

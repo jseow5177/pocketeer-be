@@ -165,6 +165,7 @@ type Budget struct {
 	BudgetID     *string
 	CategoryID   *string
 	Amount       *float64
+	Currency     *string
 	BudgetType   *uint32
 	BudgetStatus *uint32
 	StartDate    *uint64
@@ -225,6 +226,12 @@ func WithBudgetUpdateTime(updateTime *uint64) BudgetOption {
 	}
 }
 
+func WithBudgetCurrency(currency *string) BudgetOption {
+	return func(b *Budget) {
+		b.SetCurrency(currency)
+	}
+}
+
 func NewBudget(userID, categoryID string, opts ...BudgetOption) (*Budget, error) {
 	now := uint64(time.Now().UnixMilli())
 	b := &Budget{
@@ -232,6 +239,7 @@ func NewBudget(userID, categoryID string, opts ...BudgetOption) (*Budget, error)
 		CategoryID:   goutil.String(categoryID),
 		BudgetType:   goutil.Uint32(uint32(BudgetTypeMonth)),
 		BudgetStatus: goutil.Uint32(uint32(BudgetStatusNormal)),
+		Currency:     goutil.String(string(CurrencySGD)),
 		Amount:       goutil.Float64(0),
 		CreateTime:   goutil.Uint64(now),
 		UpdateTime:   goutil.Uint64(now),
@@ -310,6 +318,10 @@ func (b *Budget) Update(bu *BudgetUpdate) (*BudgetUpdate, error) {
 func (b *Budget) checkOpts() error {
 	b.Amount = goutil.Float64(math.Abs(b.GetAmount()))
 
+	if err := CheckCurrency(b.GetCurrency()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -366,6 +378,17 @@ func (b *Budget) SetCategoryID(categoryID *string) {
 	b.CategoryID = categoryID
 }
 
+func (b *Budget) GetCurrency() string {
+	if b != nil && b.Currency != nil {
+		return *b.Currency
+	}
+	return ""
+}
+
+func (b *Budget) SetCurrency(currency *string) {
+	b.Currency = currency
+}
+
 func (b *Budget) GetBudgetType() uint32 {
 	if b != nil && b.BudgetType != nil {
 		return *b.BudgetType
@@ -408,6 +431,11 @@ func (b *Budget) GetUsedAmount() float64 {
 
 func (b *Budget) SetUsedAmount(usedAmount *float64) {
 	b.UsedAmount = usedAmount
+
+	if usedAmount != nil {
+		uam := util.RoundFloatToStandardDP(*usedAmount)
+		b.UsedAmount = goutil.Float64(uam)
+	}
 }
 
 func (b *Budget) GetCreateTime() uint64 {

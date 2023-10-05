@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jseow5177/pockteer-be/api/presenter"
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,9 +16,9 @@ var GetLotValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *lotHandler) GetLot(ctx context.Context, req *presenter.GetLotRequest, res *presenter.GetLotResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.lotUseCase.GetLot(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.lotUseCase.GetLot(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get lot, err: %v", err)
 		return err

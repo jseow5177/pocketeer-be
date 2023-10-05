@@ -1,9 +1,7 @@
 package presenter
 
 import (
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
-	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 	"github.com/jseow5177/pockteer-be/util"
 )
@@ -14,6 +12,7 @@ type Transaction struct {
 	Category          *Category `json:"category,omitempty"`
 	AccountID         *string   `json:"account_id,omitempty"`
 	Account           *Account  `json:"account,omitempty"`
+	Currency          *string   `json:"currency,omitempty"`
 	Amount            *string   `json:"amount,omitempty"`
 	Note              *string   `json:"note,omitempty"`
 	TransactionStatus *uint32   `json:"transaction_status,omitempty"`
@@ -33,6 +32,13 @@ func (t *Transaction) GetTransactionID() string {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
 	}
 	return ""
 }
@@ -97,6 +103,7 @@ type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
 	Note            *string `json:"note,omitempty"`
@@ -119,6 +126,13 @@ func (m *CreateTransactionRequest) GetCategoryID() string {
 func (m *CreateTransactionRequest) GetAmount() string {
 	if m != nil && m.Amount != nil {
 		return *m.Amount
+	}
+	return ""
+}
+
+func (m *CreateTransactionRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -150,11 +164,13 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 		a, _ := util.MonetaryStrToFloat(m.GetAmount())
 		amount = goutil.Float64(a)
 	}
+
 	return &transaction.CreateTransactionRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
 		Amount:          amount,
+		Currency:        m.Currency,
 		TransactionType: m.TransactionType,
 		TransactionTime: m.TransactionTime,
 		Note:            m.Note,
@@ -253,37 +269,13 @@ func (m *GetTransactionsRequest) GetPaging() *Paging {
 }
 
 func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTransactionsRequest {
-	paging := m.Paging
-	if paging == nil {
-		paging = new(Paging)
-	}
-
-	if paging.Limit == nil {
-		paging.Limit = goutil.Uint32(config.DefaultPagingLimit)
-	}
-
-	if paging.Page == nil {
-		paging.Page = goutil.Uint32(config.MinPagingPage)
-	}
-
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(RangeFilter)
-	}
-
 	return &transaction.GetTransactionsRequest{
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
 		TransactionType: m.TransactionType,
-		Paging: &common.Paging{
-			Limit: paging.Limit,
-			Page:  paging.Page,
-		},
-		TransactionTime: &common.RangeFilter{
-			Gte: tt.Gte,
-			Lte: tt.Lte,
-		},
+		Paging:          m.Paging.toPaging(),
+		TransactionTime: m.TransactionTime.toRangeFilter(),
 	}
 }
 
@@ -319,6 +311,7 @@ type UpdateTransactionRequest struct {
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
 	TransactionTime *uint64 `json:"transaction_time,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
 }
 
 func (t *UpdateTransactionRequest) GetTransactionID() string {
@@ -370,6 +363,13 @@ func (t *UpdateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
+func (t *UpdateTransactionRequest) GetCurrency() string {
+	if t != nil && t.Currency != nil {
+		return *t.Currency
+	}
+	return ""
+}
+
 func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.UpdateTransactionRequest {
 	var amount *float64
 	if m.Amount != nil {
@@ -385,6 +385,7 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 		TransactionTime: m.TransactionTime,
 		CategoryID:      m.CategoryID,
 		TransactionType: m.TransactionType,
+		Currency:        m.Currency,
 	}
 }
 
@@ -439,20 +440,63 @@ func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
 }
 
 func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(RangeFilter)
-	}
-
 	return &transaction.AggrTransactionsRequest{
 		UserID:           goutil.String(userID),
 		TransactionTypes: m.TransactionTypes,
 		CategoryIDs:      m.CategoryIDs,
-		TransactionTime: &common.RangeFilter{
-			Gte: tt.Gte,
-			Lte: tt.Lte,
-		},
+		TransactionTime:  m.TransactionTime.toRangeFilter(),
 	}
+}
+
+type TransactionSummary struct {
+	Date            *string        `json:"date,omitempty"`
+	Category        *Category      `json:"category,omitempty"`
+	TransactionType *uint32        `json:"transaction_type,omitempty"`
+	Sum             *string        `json:"sum,omitempty"`
+	Currency        *string        `json:"currency,omitempty"`
+	Transactions    []*Transaction `json:"transactions,omitempty"`
+}
+
+func (m *TransactionSummary) GetDate() string {
+	if m != nil && m.Date != nil {
+		return *m.Date
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetCategory() *Category {
+	if m != nil && m.Category != nil {
+		return m.Category
+	}
+	return nil
+}
+
+func (m *TransactionSummary) GetSum() string {
+	if m != nil && m.Sum != nil {
+		return *m.Sum
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
+func (m *TransactionSummary) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTransactions() []*Transaction {
+	if m != nil && m.Transactions != nil {
+		return m.Transactions
+	}
+	return nil
 }
 
 type Aggr struct {
@@ -499,3 +543,88 @@ func (m *DeleteTransactionRequest) ToUseCaseReq(userID string) *transaction.Dele
 type DeleteTransactionResponse struct{}
 
 func (m *DeleteTransactionResponse) Set(useCaseRes *transaction.DeleteTransactionResponse) {}
+
+type SumTransactionsRequest struct {
+	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
+	TransactionType *uint32      `json:"transaction_type,omitempty"`
+}
+
+func (m *SumTransactionsRequest) GetTransactionTime() *RangeFilter {
+	if m != nil && m.TransactionTime != nil {
+		return m.TransactionTime
+	}
+	return nil
+}
+
+func (m *SumTransactionsRequest) GetTransactionType() uint32 {
+	if m != nil && m.TransactionType != nil {
+		return *m.TransactionType
+	}
+	return 0
+}
+
+func (m *SumTransactionsRequest) ToUseCaseReq(userID string) *transaction.SumTransactionsRequest {
+	return &transaction.SumTransactionsRequest{
+		UserID:          goutil.String(userID),
+		TransactionType: m.TransactionType,
+		TransactionTime: m.TransactionTime.toRangeFilter(),
+	}
+}
+
+type SumTransactionsResponse struct {
+	Sums []*TransactionSummary
+}
+
+func (m *SumTransactionsResponse) GetSums() []*TransactionSummary {
+	if m != nil && m.Sums != nil {
+		return m.Sums
+	}
+	return nil
+}
+
+func (m *SumTransactionsResponse) Set(useCaseRes *transaction.SumTransactionsResponse) {
+	m.Sums = toTransactionSummaries(useCaseRes.Sums)
+}
+
+type GetTransactionGroupsRequest struct {
+	AppMeta *AppMeta `json:"app_meta,omitempty"`
+	*GetTransactionsRequest
+}
+
+func (m *GetTransactionGroupsRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsRequest) ToUseCaseReq(userID string) *transaction.GetTransactionGroupsRequest {
+	return &transaction.GetTransactionGroupsRequest{
+		AppMeta:                m.AppMeta.toAppMeta(),
+		GetTransactionsRequest: m.GetTransactionsRequest.ToUseCaseReq(userID),
+	}
+}
+
+type GetTransactionGroupsResponse struct {
+	TransactionGroups []*TransactionSummary `json:"transaction_groups,omitempty"`
+	Paging            *Paging               `json:"paging,omitempty"`
+}
+
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*TransactionSummary {
+	if m != nil && m.TransactionGroups != nil {
+		return m.TransactionGroups
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsResponse) GetPaging() *Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsResponse) Set(useCaseRes *transaction.GetTransactionGroupsResponse) {
+	m.TransactionGroups = toTransactionSummaries(useCaseRes.TransactionGroups)
+	m.Paging = toPaging(useCaseRes.Paging)
+}

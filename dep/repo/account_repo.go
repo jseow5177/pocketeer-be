@@ -20,7 +20,6 @@ type AccountRepo interface {
 	Create(ctx context.Context, ac *entity.Account) (string, error)
 	CreateMany(ctx context.Context, acs []*entity.Account) ([]string, error)
 	Update(ctx context.Context, acf *AccountFilter, acu *entity.AccountUpdate) error
-	Delete(ctx context.Context, acf *AccountFilter) error
 }
 
 type AccountFilter struct {

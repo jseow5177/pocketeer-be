@@ -31,6 +31,7 @@ import (
 	ach "github.com/jseow5177/pockteer-be/api/handler/account"
 	bh "github.com/jseow5177/pockteer-be/api/handler/budget"
 	ch "github.com/jseow5177/pockteer-be/api/handler/category"
+	erh "github.com/jseow5177/pockteer-be/api/handler/exchange_rate"
 	fh "github.com/jseow5177/pockteer-be/api/handler/feedback"
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
@@ -41,6 +42,7 @@ import (
 	acuc "github.com/jseow5177/pockteer-be/usecase/account"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
+	eruc "github.com/jseow5177/pockteer-be/usecase/exchange_rate"
 	fuc "github.com/jseow5177/pockteer-be/usecase/feedback"
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	luc "github.com/jseow5177/pockteer-be/usecase/lot"
@@ -48,6 +50,8 @@ import (
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
 	uuc "github.com/jseow5177/pockteer-be/usecase/user"
+
+	exchangeratehost "github.com/jseow5177/pockteer-be/dep/api/exchange_rate_host"
 )
 
 type server struct {
@@ -57,32 +61,34 @@ type server struct {
 
 	mongo *mongo.Mongo
 
-	categoryRepo    repo.CategoryRepo
-	transactionRepo repo.TransactionRepo
-	budgetRepo      repo.BudgetRepo
-	userRepo        repo.UserRepo
-	accountRepo     repo.AccountRepo
-	holdingRepo     repo.HoldingRepo
-	lotRepo         repo.LotRepo
-	securityRepo    repo.SecurityRepo
-	quoteRepo       repo.QuoteRepo
-	feedbackRepo    repo.FeedbackRepo
-	otpRepo         repo.OTPRepo
+	categoryRepo     repo.CategoryRepo
+	transactionRepo  repo.TransactionRepo
+	budgetRepo       repo.BudgetRepo
+	userRepo         repo.UserRepo
+	accountRepo      repo.AccountRepo
+	holdingRepo      repo.HoldingRepo
+	lotRepo          repo.LotRepo
+	securityRepo     repo.SecurityRepo
+	quoteRepo        repo.QuoteRepo
+	feedbackRepo     repo.FeedbackRepo
+	otpRepo          repo.OTPRepo
+	exchangeRateRepo repo.ExchangeRateRepo
 
-	securityAPI api.SecurityAPI
+	securityAPI     api.SecurityAPI
+	exchangeRateAPI api.ExchangeRateAPI
+	mailer          mailer.Mailer
 
-	mailer mailer.Mailer
-
-	categoryUseCase    cuc.UseCase
-	transactionUseCase tuc.UseCase
-	budgetUseCase      buc.UseCase
-	userUseCase        uuc.UseCase
-	tokenUseCase       ttuc.UseCase
-	accountUseCase     acuc.UseCase
-	securityUseCase    suc.UseCase
-	holdingUseCase     huc.UseCase
-	lotUseCase         luc.UseCase
-	feedbackUseCase    fuc.UseCase
+	categoryUseCase     cuc.UseCase
+	transactionUseCase  tuc.UseCase
+	budgetUseCase       buc.UseCase
+	userUseCase         uuc.UseCase
+	tokenUseCase        ttuc.UseCase
+	accountUseCase      acuc.UseCase
+	securityUseCase     suc.UseCase
+	holdingUseCase      huc.UseCase
+	lotUseCase          luc.UseCase
+	feedbackUseCase     fuc.UseCase
+	exchangeRateUseCase eruc.UseCase
 }
 
 func main() {
@@ -144,6 +150,10 @@ func (s *server) Start() error {
 		}
 	}()
 
+	// init apis
+	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
+	s.exchangeRateAPI = exchangeratehost.NewExchangeRateHostMgr(s.cfg.ExchangeRateHost)
+
 	// init mongo repos
 	s.categoryRepo = mongo.NewCategoryMongo(s.mongo)
 	s.transactionRepo = mongo.NewTransactionMongo(s.mongo)
@@ -154,15 +164,18 @@ func (s *server) Start() error {
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
 
-	// init sheet repos
+	s.exchangeRateRepo, err = mongo.NewExchangeRateMongo(s.ctx, s.mongo)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init exchange rate repo, err: %v", err)
+		return err
+	}
+
+	// init sheet repo
 	s.feedbackRepo, err = sheet.NewFeedbackSheet(s.ctx, s.cfg.FeedbackGoogleSheet)
 	if err != nil {
 		log.Ctx(s.ctx).Error().Msgf("fail to init feedback repo, err: %v", err)
 		return err
 	}
-
-	// init apis
-	s.securityAPI = finnhub.NewFinnHubMgr(s.cfg.FinnHub)
 
 	// init mailer
 	s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
@@ -185,19 +198,28 @@ func (s *server) Start() error {
 	}
 
 	// init use cases
-	s.transactionUseCase = tuc.NewTransactionUseCase(s.mongo, s.categoryRepo, s.accountRepo, s.transactionRepo, s.budgetRepo)
+	s.transactionUseCase = tuc.NewTransactionUseCase(
+		s.mongo, s.categoryRepo, s.accountRepo,
+		s.transactionRepo, s.budgetRepo, s.exchangeRateRepo)
 	s.budgetUseCase = buc.NewBudgetUseCase(s.mongo, s.budgetRepo, s.categoryRepo, s.transactionRepo)
-	s.categoryUseCase = cuc.NewCategoryUseCase(s.mongo, s.categoryRepo, s.transactionRepo, s.budgetUseCase, s.budgetRepo)
+	s.categoryUseCase = cuc.NewCategoryUseCase(
+		s.mongo, s.categoryRepo, s.transactionRepo,
+		s.budgetUseCase, s.budgetRepo, s.exchangeRateRepo)
 	s.tokenUseCase = ttuc.NewTokenUseCase(s.cfg.Tokens)
 	s.securityUseCase = suc.NewSecurityUseCase(s.securityRepo)
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
-	s.holdingUseCase = huc.NewHoldingUseCase(s.mongo, s.accountRepo, s.holdingRepo, s.lotRepo, s.securityRepo, s.quoteRepo)
-	s.accountUseCase = acuc.NewAccountUseCase(s.mongo, s.accountRepo, s.transactionRepo, s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo)
+	s.holdingUseCase = huc.NewHoldingUseCase(
+		s.mongo, s.accountRepo, s.holdingRepo,
+		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo)
+	s.accountUseCase = acuc.NewAccountUseCase(
+		s.mongo, s.accountRepo, s.transactionRepo,
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
 		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,
 		s.categoryRepo, s.budgetRepo, s.accountRepo, s.securityRepo, s.holdingRepo, s.lotRepo,
 	)
+	s.exchangeRateUseCase = eruc.NewExchangeRateUseCase(s.exchangeRateAPI, s.exchangeRateRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.opt.Port)
@@ -239,8 +261,6 @@ func (s *server) registerRoutes() http.Handler {
 		Router: mux.NewRouter(),
 	}
 
-	authMiddleware := middleware.NewAuthMiddleware(s.userUseCase)
-
 	// ========== Healthcheck ========== //
 
 	// healthcheck
@@ -256,6 +276,24 @@ func (s *server) registerRoutes() http.Handler {
 			},
 		},
 	})
+
+	// ========== User APIs ========== //
+
+	s.initUserRoutes(r)
+
+	// ========== Admin APIs ========== //
+
+	s.initAdminRoutes(r)
+
+	return r
+}
+
+func (s *server) initAdminRoutes(r *router.HttpRouter) {
+	_ = middleware.NewAdminAuthMiddleware(s.cfg.ServerAdmin)
+}
+
+func (s *server) initUserRoutes(r *router.HttpRouter) {
+	userAuthMiddleware := middleware.NewUserAuthMiddleware(s.userUseCase)
 
 	// ========== Feedback ========== //
 
@@ -273,7 +311,7 @@ func (s *server) registerRoutes() http.Handler {
 				return feedbackHandler.CreateFeedback(ctx, req.(*presenter.CreateFeedbackRequest), res.(*presenter.CreateFeedbackResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Category ========== //
@@ -292,7 +330,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.CreateCategory(ctx, req.(*presenter.CreateCategoryRequest), res.(*presenter.CreateCategoryResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update category
@@ -307,7 +345,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.UpdateCategory(ctx, req.(*presenter.UpdateCategoryRequest), res.(*presenter.UpdateCategoryResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete category
@@ -322,7 +360,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.DeleteCategory(ctx, req.(*presenter.DeleteCategoryRequest), res.(*presenter.DeleteCategoryResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get category
@@ -337,7 +375,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategory(ctx, req.(*presenter.GetCategoryRequest), res.(*presenter.GetCategoryResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get category budget
@@ -352,7 +390,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategoryBudget(ctx, req.(*presenter.GetCategoryBudgetRequest), res.(*presenter.GetCategoryBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get categories
@@ -367,7 +405,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategories(ctx, req.(*presenter.GetCategoriesRequest), res.(*presenter.GetCategoriesResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get categories budget
@@ -382,7 +420,7 @@ func (s *server) registerRoutes() http.Handler {
 				return categoryHandler.GetCategoriesBudget(ctx, req.(*presenter.GetCategoriesBudgetRequest), res.(*presenter.GetCategoriesBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// sum category transactions
@@ -401,7 +439,7 @@ func (s *server) registerRoutes() http.Handler {
 				)
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Account ========== //
@@ -420,7 +458,7 @@ func (s *server) registerRoutes() http.Handler {
 				return accountHandler.CreateAccount(ctx, req.(*presenter.CreateAccountRequest), res.(*presenter.CreateAccountResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update account
@@ -435,7 +473,7 @@ func (s *server) registerRoutes() http.Handler {
 				return accountHandler.UpdateAccount(ctx, req.(*presenter.UpdateAccountRequest), res.(*presenter.UpdateAccountResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get account
@@ -450,7 +488,7 @@ func (s *server) registerRoutes() http.Handler {
 				return accountHandler.GetAccount(ctx, req.(*presenter.GetAccountRequest), res.(*presenter.GetAccountResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// gets accounts
@@ -465,7 +503,7 @@ func (s *server) registerRoutes() http.Handler {
 				return accountHandler.GetAccounts(ctx, req.(*presenter.GetAccountsRequest), res.(*presenter.GetAccountsResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete account
@@ -480,7 +518,7 @@ func (s *server) registerRoutes() http.Handler {
 				return accountHandler.DeleteAccount(ctx, req.(*presenter.DeleteAccountRequest), res.(*presenter.DeleteAccountResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Transaction ========== //
@@ -499,7 +537,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.CreateTransaction(ctx, req.(*presenter.CreateTransactionRequest), res.(*presenter.CreateTransactionResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update transaction
@@ -514,7 +552,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.UpdateTransaction(ctx, req.(*presenter.UpdateTransactionRequest), res.(*presenter.UpdateTransactionResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get transaction
@@ -529,7 +567,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.GetTransaction(ctx, req.(*presenter.GetTransactionRequest), res.(*presenter.GetTransactionResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// aggr transactions
@@ -544,7 +582,7 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.AggrTransactions(ctx, req.(*presenter.AggrTransactionsRequest), res.(*presenter.AggrTransactionsResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get transactions
@@ -559,7 +597,24 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.GetTransactions(ctx, req.(*presenter.GetTransactionsRequest), res.(*presenter.GetTransactionsResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get transaction groups
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransactionGroups,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionGroupsRequest),
+			Res:       new(presenter.GetTransactionGroupsResponse),
+			Validator: th.GetTransactionGroupsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransactionGroups(
+					ctx, req.(*presenter.GetTransactionGroupsRequest), res.(*presenter.GetTransactionGroupsResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete transactions
@@ -574,7 +629,22 @@ func (s *server) registerRoutes() http.Handler {
 				return transactionHandler.DeleteTransaction(ctx, req.(*presenter.DeleteTransactionRequest), res.(*presenter.DeleteTransactionResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// sum transactions
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathSumTransactions,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.SumTransactionsRequest),
+			Res:       new(presenter.SumTransactionsResponse),
+			Validator: th.SumTransactionsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.SumTransactions(ctx, req.(*presenter.SumTransactionsRequest), res.(*presenter.SumTransactionsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== User ========== //
@@ -593,7 +663,7 @@ func (s *server) registerRoutes() http.Handler {
 				return userHandler.GetUser(ctx, req.(*presenter.GetUserRequest), res.(*presenter.GetUserResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update user meta
@@ -608,7 +678,7 @@ func (s *server) registerRoutes() http.Handler {
 				return userHandler.UpdateUserMeta(ctx, req.(*presenter.UpdateUserMetaRequest), res.(*presenter.UpdateUserMetaResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// init user
@@ -623,7 +693,7 @@ func (s *server) registerRoutes() http.Handler {
 				return userHandler.InitUser(ctx, req.(*presenter.InitUserRequest), res.(*presenter.InitUserResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// sign up
@@ -693,12 +763,12 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateBudgetRequest),
 			Res:       new(presenter.CreateBudgetResponse),
-			Validator: bh.CreateBudgetValidator,
+			Validator: bh.NewCreateBudgetValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return budgetHandler.CreateBudget(ctx, req.(*presenter.CreateBudgetRequest), res.(*presenter.CreateBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update budget
@@ -713,7 +783,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.UpdateBudget(ctx, req.(*presenter.UpdateBudgetRequest), res.(*presenter.UpdateBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete budget
@@ -728,7 +798,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.DeleteBudget(ctx, req.(*presenter.DeleteBudgetRequest), res.(*presenter.DeleteBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get budget
@@ -743,7 +813,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.GetBudget(ctx, req.(*presenter.GetBudgetRequest), res.(*presenter.GetBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update budget
@@ -758,7 +828,7 @@ func (s *server) registerRoutes() http.Handler {
 				return budgetHandler.UpdateBudget(ctx, req.(*presenter.UpdateBudgetRequest), res.(*presenter.UpdateBudgetResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Security ========== //
@@ -777,7 +847,7 @@ func (s *server) registerRoutes() http.Handler {
 				return securityHandler.SearchSecurities(ctx, req.(*presenter.SearchSecuritiesRequest), res.(*presenter.SearchSecuritiesResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Holding ========== //
@@ -791,12 +861,12 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateHoldingRequest),
 			Res:       new(presenter.CreateHoldingResponse),
-			Validator: hh.CreateHoldingValidator,
+			Validator: hh.NewCreateHoldingValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return holdingHandler.CreateHolding(ctx, req.(*presenter.CreateHoldingRequest), res.(*presenter.CreateHoldingResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update holding
@@ -811,7 +881,7 @@ func (s *server) registerRoutes() http.Handler {
 				return holdingHandler.UpdateHolding(ctx, req.(*presenter.UpdateHoldingRequest), res.(*presenter.UpdateHoldingResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get holding
@@ -826,7 +896,7 @@ func (s *server) registerRoutes() http.Handler {
 				return holdingHandler.GetHolding(ctx, req.(*presenter.GetHoldingRequest), res.(*presenter.GetHoldingResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete holding
@@ -841,7 +911,7 @@ func (s *server) registerRoutes() http.Handler {
 				return holdingHandler.DeleteHolding(ctx, req.(*presenter.DeleteHoldingRequest), res.(*presenter.DeleteHoldingResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// ========== Lot ========== //
@@ -855,12 +925,12 @@ func (s *server) registerRoutes() http.Handler {
 		Handler: router.Handler{
 			Req:       new(presenter.CreateLotRequest),
 			Res:       new(presenter.CreateLotResponse),
-			Validator: lh.CreateLotValidator,
+			Validator: lh.NewCreateLotValidator(false),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.CreateLot(ctx, req.(*presenter.CreateLotRequest), res.(*presenter.CreateLotResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// delete lot
@@ -875,7 +945,7 @@ func (s *server) registerRoutes() http.Handler {
 				return lotHandler.DeleteLot(ctx, req.(*presenter.DeleteLotRequest), res.(*presenter.DeleteLotResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// update lot
@@ -890,7 +960,7 @@ func (s *server) registerRoutes() http.Handler {
 				return lotHandler.UpdateLot(ctx, req.(*presenter.UpdateLotRequest), res.(*presenter.UpdateLotResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get lot
@@ -905,7 +975,7 @@ func (s *server) registerRoutes() http.Handler {
 				return lotHandler.GetLot(ctx, req.(*presenter.GetLotRequest), res.(*presenter.GetLotResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
 	// get lots
@@ -920,8 +990,48 @@ func (s *server) registerRoutes() http.Handler {
 				return lotHandler.GetLots(ctx, req.(*presenter.GetLotsRequest), res.(*presenter.GetLotsResponse))
 			},
 		},
-		Middlewares: []router.Middleware{authMiddleware},
+		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	return r
+	// ========== Exchange Rate ========== //
+
+	exchangeRateHandler := erh.NewExchangeRateHandler(s.exchangeRateUseCase)
+
+	// get exchange rates
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetExchangeRate,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetExchangeRateRequest),
+			Res:       new(presenter.GetExchangeRateResponse),
+			Validator: erh.GetExchangeRateValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return exchangeRateHandler.GetExchangeRate(
+					ctx,
+					req.(*presenter.GetExchangeRateRequest),
+					res.(*presenter.GetExchangeRateResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get currencies
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetCurrencies,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetCurrenciesRequest),
+			Res:       new(presenter.GetCurrenciesResponse),
+			Validator: erh.GetCurrenciesValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return exchangeRateHandler.GetCurrencies(
+					ctx,
+					req.(*presenter.GetCurrenciesRequest),
+					res.(*presenter.GetCurrenciesResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
 }

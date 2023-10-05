@@ -77,5 +77,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := h.HandleFunc(r.Context(), req, res)
+
 	httputil.ReturnServerResponse(w, res, err)
 }

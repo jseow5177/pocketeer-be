@@ -6,7 +6,6 @@ import (
 	"github.com/jseow5177/pockteer-be/api/presenter"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,9 +18,9 @@ var GetAccountsValidator = validator.MustForm(map[string]validator.Validator{
 })
 
 func (h *accountHandler) GetAccounts(ctx context.Context, req *presenter.GetAccountsRequest, res *presenter.GetAccountsResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.accountUseCase.GetAccounts(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.accountUseCase.GetAccounts(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get accounts from repo, err: %v", err)
 		return err

@@ -4,7 +4,6 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/category"
-	"github.com/jseow5177/pockteer-be/usecase/common"
 )
 
 type Category struct {
@@ -69,7 +68,7 @@ func (c *Category) GetBudget() *Budget {
 type CreateCategoryRequest struct {
 	CategoryName *string              `json:"category_name,omitempty"`
 	CategoryType *uint32              `json:"category_type,omitempty"`
-	Budget       *CreateBudgetRequest `json:"budget,omitempty"`
+	Budget       *CreateBudgetRequest `json:"budget,omitempty"` // only for InitUser
 }
 
 func (m *CreateCategoryRequest) GetCategoryName() string {
@@ -239,9 +238,9 @@ func (m *GetCategoryResponse) Set(useCaseRes *category.GetCategoryResponse) {
 }
 
 type GetCategoryBudgetRequest struct {
-	CategoryID *string `json:"category_id,omitempty"`
-	BudgetDate *string `json:"budget_date,omitempty"`
-	Timezone   *string `json:"timezone,omitempty"`
+	AppMeta    *AppMeta `json:"app_meta,omitempty"`
+	CategoryID *string  `json:"category_id,omitempty"`
+	BudgetDate *string  `json:"budget_date,omitempty"`
 }
 
 func (m *GetCategoryBudgetRequest) GetBudgetDate() string {
@@ -258,11 +257,11 @@ func (m *GetCategoryBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
-func (m *GetCategoryBudgetRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
+func (m *GetCategoryBudgetRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
 	}
-	return ""
+	return nil
 }
 
 func (m *GetCategoryBudgetRequest) ToUseCaseReq(userID string) *category.GetCategoryBudgetRequest {
@@ -270,7 +269,7 @@ func (m *GetCategoryBudgetRequest) ToUseCaseReq(userID string) *category.GetCate
 		UserID:     goutil.String(userID),
 		CategoryID: m.CategoryID,
 		BudgetDate: m.BudgetDate,
-		Timezone:   m.Timezone,
+		AppMeta:    m.AppMeta.toAppMeta(),
 	}
 }
 
@@ -290,9 +289,9 @@ func (m *GetCategoryBudgetResponse) Set(useCaseRes *category.GetCategoryBudgetRe
 }
 
 type GetCategoriesBudgetRequest struct {
+	AppMeta     *AppMeta `json:"app_meta,omitempty"`
 	CategoryIDs []string `json:"category_ids,omitempty"`
 	BudgetDate  *string  `json:"budget_date,omitempty"`
-	Timezone    *string  `json:"timezone,omitempty"`
 }
 
 func (m *GetCategoriesBudgetRequest) GetBudgetDate() string {
@@ -309,17 +308,17 @@ func (m *GetCategoriesBudgetRequest) GetCategoryIDs() []string {
 	return nil
 }
 
-func (m *GetCategoriesBudgetRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
+func (m *GetCategoriesBudgetRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
 	}
-	return ""
+	return nil
 }
 
 func (m *GetCategoriesBudgetRequest) ToUseCaseReq(userID string) *category.GetCategoriesBudgetRequest {
 	return &category.GetCategoriesBudgetRequest{
+		AppMeta:     m.AppMeta.toAppMeta(),
 		UserID:      goutil.String(userID),
-		Timezone:    m.Timezone,
 		BudgetDate:  m.BudgetDate,
 		CategoryIDs: m.CategoryIDs,
 	}
@@ -382,36 +381,17 @@ func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
 }
 
 func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.SumCategoryTransactionsRequest {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(RangeFilter)
-	}
-
 	return &category.SumCategoryTransactionsRequest{
 		UserID:          goutil.String(userID),
 		TransactionType: m.TransactionType,
-		TransactionTime: &common.RangeFilter{
-			Gte: tt.Gte,
-			Lte: tt.Lte,
-		},
+		TransactionTime: m.TransactionTime.toRangeFilter(),
 	}
-}
-
-type CategoryTransactionSum struct {
-	Category *Category `json:"category"`
-	Sum      *string   `json:"sum,omitempty"`
 }
 
 type SumCategoryTransactionsResponse struct {
-	Sums []*CategoryTransactionSum `json:"sums,omitempty"`
+	Sums []*TransactionSummary `json:"sums,omitempty"`
 }
 
 func (m *SumCategoryTransactionsResponse) Set(useCaseRes *category.SumCategoryTransactionsResponse) {
-	m.Sums = make([]*CategoryTransactionSum, 0)
-	for _, r := range useCaseRes.Sums {
-		m.Sums = append(m.Sums, &CategoryTransactionSum{
-			Category: toCategory(r.Category),
-			Sum:      r.Sum,
-		})
-	}
+	m.Sums = toTransactionSummaries(useCaseRes.Sums)
 }

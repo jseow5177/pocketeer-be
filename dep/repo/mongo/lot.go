@@ -54,8 +54,10 @@ func (m *lotMongo) CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, 
 }
 
 func (m *lotMongo) Update(ctx context.Context, lf *repo.LotFilter, lu *entity.LotUpdate) error {
+	f := mongoutil.BuildFilter(lf)
+
 	lm := model.ToLotModelFromUpdate(lu)
-	if err := m.mColl.update(ctx, lf, lm); err != nil {
+	if err := m.mColl.update(ctx, f, lm); err != nil {
 		return err
 	}
 
@@ -73,7 +75,9 @@ func (m *lotMongo) DeleteMany(ctx context.Context, lf *repo.LotFilter) error {
 		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
 	))
 
-	return m.mColl.updateMany(ctx, lf, lm)
+	f := mongoutil.BuildFilter(lf)
+
+	return m.mColl.updateMany(ctx, f, lm)
 }
 
 func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, error) {

@@ -8,7 +8,6 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/validator"
-	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -32,14 +31,15 @@ var CreateAccountValidator = validator.MustForm(map[string]validator.Validator{
 	"holdings": &validator.Slice{
 		Optional:  true,
 		MaxLen:    20,
-		Validator: holding.CreateHoldingValidator,
+		Validator: holding.NewCreateHoldingValidator(true),
 	},
 })
 
 func (h *accountHandler) CreateAccount(ctx context.Context, req *presenter.CreateAccountRequest, res *presenter.CreateAccountResponse) error {
-	userID := util.GetUserIDFromCtx(ctx)
+	user := entity.GetUserFromCtx(ctx)
+	req.Currency = user.Meta.Currency // TODO: Support currency on account creation
 
-	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(userID))
+	useCaseRes, err := h.accountUseCase.CreateAccount(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create account, err: %v", err)
 		return err

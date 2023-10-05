@@ -53,18 +53,14 @@ func (m *categoryMongo) CreateMany(ctx context.Context, cs []*entity.Category) (
 }
 
 func (m *categoryMongo) Update(ctx context.Context, cf *repo.CategoryFilter, cu *entity.CategoryUpdate) error {
+	f := mongoutil.BuildFilter(cf)
+
 	cm := model.ToCategoryModelFromUpdate(cu)
-	if err := m.mColl.update(ctx, cf, cm); err != nil {
+	if err := m.mColl.update(ctx, f, cm); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (m *categoryMongo) Delete(ctx context.Context, cf *repo.CategoryFilter) error {
-	return m.Update(ctx, cf, entity.NewCategoryUpdate(
-		entity.WithUpdateCategoryStatus(goutil.Uint32(uint32(entity.CategoryStatusDeleted))),
-	))
 }
 
 func (m *categoryMongo) Get(ctx context.Context, cf *repo.CategoryFilter) (*entity.Category, error) {

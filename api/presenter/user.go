@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
 	"github.com/jseow5177/pockteer-be/usecase/category"
@@ -8,7 +9,14 @@ import (
 )
 
 type UserMeta struct {
-	InitStage *uint32 `json:"init_stage,omitempty"`
+	Currency *string `json:"currency,omitempty"`
+}
+
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
+	}
+	return ""
 }
 
 type User struct {
@@ -229,22 +237,40 @@ func (m *VerifyEmailResponse) Set(useCaseRes *user.VerifyEmailResponse) {
 }
 
 type InitUserRequest struct {
+	Currency   *string                  `json:"currency,omitempty"`
 	Accounts   []*CreateAccountRequest  `json:"accounts,omitempty"`
 	Categories []*CreateCategoryRequest `json:"categories,omitempty"`
+}
+
+func (m *InitUserRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
 }
 
 func (m *InitUserRequest) ToUseCaseReq(userID string) *user.InitUserRequest {
 	acs := make([]*account.CreateAccountRequest, 0)
 	for _, r := range m.Accounts {
+		r.Currency = m.Currency // TODO: Support currency on account creation
 		acs = append(acs, r.ToUseCaseReq(userID))
 	}
 
 	cs := make([]*category.CreateCategoryRequest, 0)
 	for _, r := range m.Categories {
+		if r.Budget != nil {
+			// TODO: Support currency on budget creation
+			r.Budget.Currency = m.Currency
+
+			// Default to all time
+			r.Budget.BudgetRepeat = goutil.Uint32(uint32(entity.BudgetRepeatAllTime))
+		}
 		cs = append(cs, r.ToUseCaseReq(userID))
 	}
+
 	return &user.InitUserRequest{
 		UserID:     goutil.String(userID),
+		Currency:   m.Currency,
 		Accounts:   acs,
 		Categories: cs,
 	}
@@ -276,20 +302,20 @@ type SendOTPResponse struct{}
 func (m *SendOTPResponse) Set(useCaseRes *user.SendOTPResponse) {}
 
 type UpdateUserMetaRequest struct {
-	InitStage *uint32 `json:"init_stage,omitempty"`
+	Currency *string `json:"currency,omitempty"`
 }
 
-func (m *UpdateUserMetaRequest) GetInitStage() uint32 {
-	if m != nil && m.InitStage != nil {
-		return *m.InitStage
+func (m *UpdateUserMetaRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
-	return 0
+	return ""
 }
 
 func (m *UpdateUserMetaRequest) ToUseCaseReq(userID string) *user.UpdateUserMetaRequest {
 	return &user.UpdateUserMetaRequest{
-		UserID:    goutil.String(userID),
-		InitStage: m.InitStage,
+		UserID:   goutil.String(userID),
+		Currency: m.Currency,
 	}
 }
 

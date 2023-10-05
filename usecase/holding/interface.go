@@ -11,61 +11,10 @@ import (
 
 type UseCase interface {
 	GetHolding(ctx context.Context, req *GetHoldingRequest) (*GetHoldingResponse, error)
-	GetHoldings(ctx context.Context, req *GetHoldingsRequest) (*GetHoldingsResponse, error)
 
 	CreateHolding(ctx context.Context, req *CreateHoldingRequest) (*CreateHoldingResponse, error)
 	UpdateHolding(ctx context.Context, req *UpdateHoldingRequest) (*UpdateHoldingResponse, error)
 	DeleteHolding(ctx context.Context, req *DeleteHoldingRequest) (*DeleteHoldingResponse, error)
-}
-
-type GetHoldingsRequest struct {
-	UserID    *string
-	AccountID *string
-}
-
-func (m *GetHoldingsRequest) GetUserID() string {
-	if m != nil && m.UserID != nil {
-		return *m.UserID
-	}
-	return ""
-}
-
-func (m *GetHoldingsRequest) GetAccountID() string {
-	if m != nil && m.AccountID != nil {
-		return *m.AccountID
-	}
-	return ""
-}
-
-func (m *GetHoldingsRequest) ToHoldingFilter() *repo.HoldingFilter {
-	return repo.NewHoldingFilter(
-		m.GetUserID(),
-		repo.WithHoldingAccountID(m.AccountID),
-	)
-}
-
-func (m *GetHoldingsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
-	return &repo.QuoteFilter{
-		Symbol: goutil.String(symbol),
-	}
-}
-
-func (m *GetHoldingsRequest) ToLotFilter(holdingID string) *repo.LotFilter {
-	return repo.NewLotFilter(
-		m.GetUserID(),
-		repo.WithLotHoldingID(goutil.String(holdingID)),
-	)
-}
-
-type GetHoldingsResponse struct {
-	Holdings []*entity.Holding
-}
-
-func (m *GetHoldingsResponse) GetHoldings() []*entity.Holding {
-	if m != nil && m.Holdings != nil {
-		return m.Holdings
-	}
-	return nil
 }
 
 type GetHoldingRequest struct {
@@ -98,6 +47,12 @@ func (m *GetHoldingRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
 	return &repo.QuoteFilter{
 		Symbol: goutil.String(symbol),
 	}
+}
+
+func (m *GetHoldingRequest) ToSecurityFilter(symbol string) *repo.SecurityFilter {
+	return repo.NewSecurityFilter(
+		repo.WithSecuritySymbol(goutil.String(symbol)),
+	)
 }
 
 func (m *GetHoldingRequest) ToLotFilter() *repo.LotFilter {
@@ -194,7 +149,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32
 	TotalCost   *float64
 	LatestValue *float64
-	Lots        []*lot.CreateLotRequest
+	Lots        []*lot.CreateLotRequest // only for InitUser
 }
 
 func (m *CreateHoldingRequest) GetUserID() string {
@@ -239,30 +194,24 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) GetLots() []*lot.CreateLotRequest {
-	if m != nil && m.Lots != nil {
-		return m.Lots
-	}
-	return nil
+func (m *CreateHoldingRequest) IsDefault() bool {
+	return m.GetHoldingType() == uint32(entity.HoldingTypeDefault)
 }
 
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
-	return repo.NewAccountFilter(m.GetUserID(), repo.WithAccountID(m.AccountID))
+	return repo.NewAccountFilter(
+		m.GetUserID(),
+		repo.WithAccountID(m.AccountID),
+	)
 }
 
 func (m *CreateHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {
-	return &repo.SecurityFilter{
-		Symbol: m.Symbol,
-	}
+	return repo.NewSecurityFilter(
+		repo.WithSecuritySymbol(m.Symbol),
+	)
 }
 
-func (m *CreateHoldingRequest) ToQuoteFilter() *repo.QuoteFilter {
-	return &repo.QuoteFilter{
-		Symbol: m.Symbol,
-	}
-}
-
-func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
+func (m *CreateHoldingRequest) ToHoldingEntity(currency string) (*entity.Holding, error) {
 	return entity.NewHolding(
 		m.GetUserID(),
 		m.GetAccountID(),
@@ -270,14 +219,15 @@ func (m *CreateHoldingRequest) ToHoldingEntity() (*entity.Holding, error) {
 		entity.WithHoldingType(m.HoldingType),
 		entity.WithHoldingTotalCost(m.TotalCost),
 		entity.WithHoldingLatestValue(m.LatestValue),
-		entity.WithHoldingLots(m.ToLotEntities()),
+		entity.WithHoldingCurrency(goutil.String(currency)),
+		entity.WithHoldingLots(m.ToLotEntities(currency)),
 	)
 }
 
-func (m *CreateHoldingRequest) ToLotEntities() []*entity.Lot {
+func (m *CreateHoldingRequest) ToLotEntities(currency string) []*entity.Lot {
 	ls := make([]*entity.Lot, 0)
 	for _, r := range m.Lots {
-		ls = append(ls, r.ToLotEntity())
+		ls = append(ls, r.ToLotEntity(currency))
 	}
 	return ls
 }
