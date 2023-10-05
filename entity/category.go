@@ -14,25 +14,21 @@ const (
 	CategoryStatusDeleted
 )
 
-type CategoryUpdateOption func(c *Category) bool
+type CategoryUpdateOption func(c *Category)
 
 func WithUpdateCategoryName(categoryName *string) CategoryUpdateOption {
-	return func(c *Category) bool {
-		if categoryName != nil && c.GetCategoryName() != *categoryName {
+	return func(c *Category) {
+		if categoryName != nil {
 			c.SetCategoryName(categoryName)
-			return true
 		}
-		return false
 	}
 }
 
 func WithUpdateCategoryStatus(categoryStatus *uint32) CategoryUpdateOption {
-	return func(c *Category) bool {
-		if categoryStatus != nil && c.GetCategoryStatus() != *categoryStatus {
+	return func(c *Category) {
+		if categoryStatus != nil {
 			c.SetCategoryStatus(categoryStatus)
-			return true
 		}
-		return false
 	}
 }
 
@@ -86,6 +82,18 @@ func WithCategoryBudget(budget *Budget) CategoryOption {
 	}
 }
 
+func (c *Category) Clone() (*Category, error) {
+	return NewCategory(
+		c.GetUserID(),
+		c.GetCategoryName(),
+		WithCategoryID(goutil.String(c.GetCategoryID())),
+		WithCategoryType(c.CategoryType),
+		WithCategoryStatus(c.CategoryStatus),
+		WithCategoryCreateTime(c.CreateTime),
+		WithCategoryUpdateTime(c.UpdateTime),
+	)
+}
+
 func NewCategory(UserID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
@@ -122,12 +130,30 @@ type CategoryUpdate struct {
 	UpdateTime     *uint64
 }
 
-func (c *Category) ToCategoryUpdate() *CategoryUpdate {
-	return &CategoryUpdate{
-		CategoryName:   c.CategoryName,
-		CategoryStatus: c.CategoryStatus,
-		UpdateTime:     c.UpdateTime,
+func (c *Category) ToCategoryUpdate(old *Category) *CategoryUpdate {
+	var (
+		hasUpdate bool
+
+		cu = &CategoryUpdate{
+			UpdateTime: c.UpdateTime,
+		}
+	)
+
+	if old.GetCategoryName() != c.GetCategoryName() {
+		hasUpdate = true
+		cu.CategoryName = c.CategoryName
 	}
+
+	if old.GetCategoryStatus() != c.GetCategoryStatus() {
+		hasUpdate = true
+		cu.CategoryStatus = c.CategoryStatus
+	}
+
+	if hasUpdate {
+		return cu
+	}
+
+	return nil
 }
 
 func (c *Category) Update(cus ...CategoryUpdateOption) (*CategoryUpdate, error) {
@@ -135,15 +161,13 @@ func (c *Category) Update(cus ...CategoryUpdateOption) (*CategoryUpdate, error) 
 		return nil, nil
 	}
 
-	var hasUpdate bool
-	for _, cu := range cus {
-		if ok := cu(c); ok {
-			hasUpdate = true
-		}
+	old, err := c.Clone()
+	if err != nil {
+		return nil, err
 	}
 
-	if !hasUpdate {
-		return nil, nil
+	for _, cu := range cus {
+		cu(c)
 	}
 
 	// check
@@ -154,7 +178,7 @@ func (c *Category) Update(cus ...CategoryUpdateOption) (*CategoryUpdate, error) 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	c.SetUpdateTime(now)
 
-	return c.ToCategoryUpdate(), nil
+	return c.ToCategoryUpdate(old), nil
 }
 
 func (c *Category) GetUserID() string {

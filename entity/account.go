@@ -60,45 +60,37 @@ var ChildAccountTypes = map[uint32]string{
 	uint32(DebtMortgage):     "mortgage",
 }
 
-type AccountUpdateOption func(ac *Account) bool
+type AccountUpdateOption func(ac *Account)
 
 func WithUpdateAccountName(accountName *string) AccountUpdateOption {
-	return func(ac *Account) bool {
-		if accountName != nil && ac.GetAccountName() != *accountName {
+	return func(ac *Account) {
+		if accountName != nil {
 			ac.SetAccountName(accountName)
-			return true
 		}
-		return false
 	}
 }
 
 func WithUpdateAccountBalance(balance *float64) AccountUpdateOption {
-	return func(ac *Account) bool {
-		if balance != nil && ac.GetBalance() != *balance {
+	return func(ac *Account) {
+		if balance != nil {
 			ac.SetBalance(balance)
-			return true
 		}
-		return false
 	}
 }
 
 func WithUpdateAccountNote(note *string) AccountUpdateOption {
-	return func(ac *Account) bool {
-		if note != nil && ac.GetNote() != *note {
+	return func(ac *Account) {
+		if note != nil {
 			ac.SetNote(note)
-			return true
 		}
-		return false
 	}
 }
 
 func WithUpdateAccountStatus(accountStatus *uint32) AccountUpdateOption {
-	return func(ac *Account) bool {
-		if accountStatus != nil && ac.GetAccountStatus() != *accountStatus {
+	return func(ac *Account) {
+		if accountStatus != nil {
 			ac.SetAccountStatus(accountStatus)
-			return true
 		}
-		return false
 	}
 }
 
@@ -180,6 +172,21 @@ func WithAccountHoldings(holdings []*Holding) AccountOption {
 	return func(ac *Account) {
 		ac.SetHoldings(holdings)
 	}
+}
+
+func (ac *Account) Clone() (*Account, error) {
+	return NewAccount(
+		ac.GetUserID(),
+		WithAccountID(goutil.String(ac.GetAccountID())),
+		WithAccountName(ac.AccountName),
+		WithAccountBalance(ac.Balance),
+		WithAccountCurrency(ac.Currency),
+		WithAccountStatus(ac.AccountStatus),
+		WithAccountType(ac.AccountType),
+		WithAccountNote(ac.Note),
+		WithAccountCreateTime(ac.CreateTime),
+		WithAccountUpdateTime(ac.UpdateTime),
+	)
 }
 
 func NewAccount(userID string, opts ...AccountOption) (*Account, error) {
@@ -264,14 +271,40 @@ func (acu *AccountUpdate) GetNote() string {
 	return ""
 }
 
-func (ac *Account) ToAccountUpdate() *AccountUpdate {
-	return &AccountUpdate{
-		AccountName:   ac.AccountName,
-		Balance:       ac.Balance,
-		Note:          ac.Note,
-		AccountStatus: ac.AccountStatus,
-		UpdateTime:    ac.UpdateTime,
+func (ac *Account) ToAccountUpdate(old *Account) *AccountUpdate {
+	var (
+		hasUpdate bool
+
+		acu = &AccountUpdate{
+			UpdateTime: ac.UpdateTime,
+		}
+	)
+
+	if old.GetAccountName() != ac.GetAccountName() {
+		hasUpdate = true
+		acu.AccountName = ac.AccountName
 	}
+
+	if old.GetBalance() != ac.GetBalance() {
+		hasUpdate = true
+		acu.Balance = ac.Balance
+	}
+
+	if old.GetNote() != ac.GetNote() {
+		hasUpdate = true
+		acu.Note = ac.Note
+	}
+
+	if old.GetAccountStatus() != ac.GetAccountStatus() {
+		hasUpdate = true
+		acu.AccountStatus = ac.AccountStatus
+	}
+
+	if hasUpdate {
+		return acu
+	}
+
+	return nil
 }
 
 func (ac *Account) Update(acus ...AccountUpdateOption) (*AccountUpdate, error) {
@@ -279,15 +312,13 @@ func (ac *Account) Update(acus ...AccountUpdateOption) (*AccountUpdate, error) {
 		return nil, nil
 	}
 
-	var hasUpdate bool
-	for _, acu := range acus {
-		if ok := acu(ac); ok {
-			hasUpdate = true
-		}
+	old, err := ac.Clone()
+	if err != nil {
+		return nil, err
 	}
 
-	if !hasUpdate {
-		return nil, nil
+	for _, acu := range acus {
+		acu(ac)
 	}
 
 	// check
@@ -298,7 +329,7 @@ func (ac *Account) Update(acus ...AccountUpdateOption) (*AccountUpdate, error) {
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	ac.SetUpdateTime(now)
 
-	return ac.ToAccountUpdate(), nil
+	return ac.ToAccountUpdate(old), nil
 }
 
 func (ac *Account) GetUserID() string {

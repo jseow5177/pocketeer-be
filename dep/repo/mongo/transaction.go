@@ -60,13 +60,7 @@ func (m *transactionMongo) Get(ctx context.Context, tf *repo.TransactionFilter) 
 		return nil, err
 	}
 
-	return model.ToTransactionEntity(t), nil
-}
-
-func (m *transactionMongo) Delete(ctx context.Context, tf *repo.TransactionFilter) error {
-	return m.Update(ctx, tf, entity.NewTransactionUpdate(
-		entity.WithUpdateTransactionStatus(goutil.Uint32(uint32(entity.TransactionStatusDeleted))),
-	))
+	return model.ToTransactionEntity(t)
 }
 
 func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilter) ([]*entity.Transaction, error) {
@@ -79,7 +73,11 @@ func (m *transactionMongo) GetMany(ctx context.Context, tf *repo.TransactionFilt
 
 	ets := make([]*entity.Transaction, 0, len(res))
 	for _, r := range res {
-		ets = append(ets, model.ToTransactionEntity(r.(*model.Transaction)))
+		t, err := model.ToTransactionEntity(r.(*model.Transaction))
+		if err != nil {
+			return nil, err
+		}
+		ets = append(ets, t)
 	}
 
 	return ets, nil

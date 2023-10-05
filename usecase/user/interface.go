@@ -513,6 +513,7 @@ type SendOTPResponse struct {
 type UpdateUserMetaRequest struct {
 	UserID   *string
 	Currency *string
+	HideInfo *bool
 }
 
 func (m *UpdateUserMetaRequest) GetUserID() string {
@@ -529,6 +530,13 @@ func (m *UpdateUserMetaRequest) GetCurrency() string {
 	return ""
 }
 
+func (m *UpdateUserMetaRequest) GetHideInfo() bool {
+	if m != nil && m.HideInfo != nil {
+		return *m.HideInfo
+	}
+	return false
+}
+
 func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
 		UserID: m.UserID,
@@ -540,6 +548,7 @@ func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
 		entity.WithUpdateUserMeta(
 			entity.NewUserMetaUpdate(
 				entity.WithUpdateUserMetaCurrency(m.Currency),
+				entity.WithUpdateUserMetaHideInfo(m.HideInfo),
 			),
 		),
 	)

@@ -158,6 +158,7 @@ func toUserMeta(um *entity.UserMeta) *UserMeta {
 
 	return &UserMeta{
 		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 
@@ -401,11 +402,23 @@ func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
 		sum = goutil.String(fmt.Sprint(ts.GetSum()))
 	}
 
+	var totalExpense *string
+	if ts.TotalExpense != nil {
+		totalExpense = goutil.String(fmt.Sprint(ts.GetTotalExpense()))
+	}
+
+	var totalIncome *string
+	if ts.TotalIncome != nil {
+		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
+	}
+
 	return &TransactionSummary{
 		Date:            ts.Date,
 		Category:        toCategory(ts.Category),
 		TransactionType: ts.TransactionType,
 		Sum:             sum,
+		TotalExpense:    totalExpense,
+		TotalIncome:     totalIncome,
 		Currency:        ts.Currency,
 		Transactions:    toTransactions(ts.Transactions),
 	}

@@ -227,6 +227,7 @@ func (m *GetTransactionResponse) Set(useCaseRes *transaction.GetTransactionRespo
 
 type GetTransactionsRequest struct {
 	CategoryID      *string      `json:"category_id,omitempty"`
+	CategoryIDs     []string     `json:"category_ids,omitempty"`
 	AccountID       *string      `json:"account_id,omitempty"`
 	TransactionType *uint32      `json:"transaction_type,omitempty"`
 	TransactionTime *RangeFilter `json:"transaction_time,omitempty"`
@@ -245,6 +246,13 @@ func (m *GetTransactionsRequest) GetAccountID() string {
 		return *m.AccountID
 	}
 	return ""
+}
+
+func (m *GetTransactionsRequest) GetCategoryIDs() []string {
+	if m != nil && m.CategoryIDs != nil {
+		return m.CategoryIDs
+	}
+	return nil
 }
 
 func (m *GetTransactionsRequest) GetTransactionType() uint32 {
@@ -273,6 +281,7 @@ func (m *GetTransactionsRequest) ToUseCaseReq(userID string) *transaction.GetTra
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
+		CategoryIDs:     m.CategoryIDs,
 		TransactionType: m.TransactionType,
 		Paging:          m.Paging.toPaging(),
 		TransactionTime: m.TransactionTime.toRangeFilter(),
@@ -453,6 +462,8 @@ type TransactionSummary struct {
 	Category        *Category      `json:"category,omitempty"`
 	TransactionType *uint32        `json:"transaction_type,omitempty"`
 	Sum             *string        `json:"sum,omitempty"`
+	TotalExpense    *string        `json:"total_expense,omitempty"`
+	TotalIncome     *string        `json:"total_income,omitempty"`
 	Currency        *string        `json:"currency,omitempty"`
 	Transactions    []*Transaction `json:"transactions,omitempty"`
 }
@@ -474,6 +485,20 @@ func (m *TransactionSummary) GetCategory() *Category {
 func (m *TransactionSummary) GetSum() string {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTotalExpense() string {
+	if m != nil && m.TotalExpense != nil {
+		return *m.TotalExpense
+	}
+	return ""
+}
+
+func (m *TransactionSummary) GetTotalIncome() string {
+	if m != nil && m.TotalIncome != nil {
+		return *m.TotalIncome
 	}
 	return ""
 }
@@ -572,7 +597,7 @@ func (m *SumTransactionsRequest) ToUseCaseReq(userID string) *transaction.SumTra
 }
 
 type SumTransactionsResponse struct {
-	Sums []*TransactionSummary
+	Sums []*TransactionSummary `json:"sums,omitempty"`
 }
 
 func (m *SumTransactionsResponse) GetSums() []*TransactionSummary {
