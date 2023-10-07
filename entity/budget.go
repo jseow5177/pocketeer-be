@@ -318,10 +318,6 @@ func (b *Budget) Update(bu *BudgetUpdate) (*BudgetUpdate, error) {
 func (b *Budget) checkOpts() error {
 	b.Amount = goutil.Float64(math.Abs(b.GetAmount()))
 
-	if err := CheckCurrency(b.GetCurrency()); err != nil {
-		return err
-	}
-
 	return nil
 }
 

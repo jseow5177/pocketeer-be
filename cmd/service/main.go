@@ -20,6 +20,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
 	"github.com/jseow5177/pockteer-be/dep/mailer"
 	"github.com/jseow5177/pockteer-be/dep/mailer/brevo"
+	"github.com/jseow5177/pockteer-be/dep/mailer/gmail"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
@@ -178,9 +179,14 @@ func (s *server) Start() error {
 	}
 
 	// init mailer
-	s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
+	if s.cfg.Global.UseGmail {
+		s.mailer, err = gmail.NewGmailMgr(s.cfg.Gmail)
+	} else {
+		s.mailer, err = brevo.NewBrevoMgr(s.cfg.Brevo)
+	}
+	s.mailer, err = gmail.NewGmailMgr(s.cfg.Gmail)
 	if err != nil {
-		log.Ctx(s.ctx).Error().Msgf("fail to init brevo mailer, err: %v", err)
+		log.Ctx(s.ctx).Error().Msgf("fail to init gmail mailer, err: %v", err)
 		return err
 	}
 
@@ -251,6 +257,11 @@ func (s *server) Stop() error {
 	log.Ctx(ctx).Info().Msgf("closing Mongo client...")
 	if err := s.mongo.Close(ctx); err != nil {
 		log.Ctx(ctx).Error().Msgf("close mongo fail, err: %v", err)
+	}
+
+	log.Ctx(ctx).Info().Msgf("closing mailer...")
+	if err := s.mailer.Close(ctx); err != nil {
+		log.Ctx(ctx).Error().Msgf("close mailer fail, err: %v", err)
 	}
 
 	return nil

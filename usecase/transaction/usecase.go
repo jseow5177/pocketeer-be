@@ -614,7 +614,7 @@ func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *e
 
 	amount *= er.GetRate()
 
-	return amount, nil
+	return util.RoundFloatToStandardDP(amount), nil
 }
 
 func (uc *transactionUseCase) updateAccountBalance(ctx context.Context, t *entity.Transaction, ac *entity.Account, add bool) error {
