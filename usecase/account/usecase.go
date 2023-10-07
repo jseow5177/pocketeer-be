@@ -107,7 +107,6 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 			}
 
 			balance *= er.GetRate()
-			balance = util.RoundFloatToStandardDP(balance)
 		}
 
 		mu.Lock()
@@ -123,12 +122,12 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		return nil, err
 	}
 
-	netWorth := util.RoundFloatToStandardDP(assetValue + debtValue)
+	netWorth := assetValue + debtValue
 
 	return &GetAccountsResponse{
-		NetWorth:   goutil.Float64(netWorth),
-		AssetValue: goutil.Float64(assetValue),
-		DebtValue:  goutil.Float64(debtValue),
+		NetWorth:   goutil.Float64(util.RoundFloatToStandardDP(netWorth)),
+		AssetValue: goutil.Float64(util.RoundFloatToStandardDP(assetValue)),
+		DebtValue:  goutil.Float64(util.RoundFloatToStandardDP(debtValue)),
 		Currency:   u.Meta.Currency,
 		Accounts:   acs,
 	}, nil
