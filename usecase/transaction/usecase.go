@@ -139,7 +139,6 @@ func (uc *transactionUseCase) GetTransactionGroups(
 				log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
 				return nil, err
 			}
-			amount = util.RoundFloatToStandardDP(amount)
 		}
 
 		if t.IsExpense() {
@@ -148,7 +147,7 @@ func (uc *transactionUseCase) GetTransactionGroups(
 			transactionGroup.TotalIncome = goutil.Float64(transactionGroup.GetTotalIncome() + amount)
 		}
 
-		sum := util.RoundFloatToStandardDP(transactionGroup.GetSum() + amount)
+		sum := transactionGroup.GetSum() + amount
 		transactionGroup.Sum = goutil.Float64(sum)
 	}
 
