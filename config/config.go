@@ -158,7 +158,7 @@ func NewConfig() *Config {
 		},
 		Mongo: &Mongo{
 			Username:        "pocketeer-test",
-			Password:        "hi",
+			Password:        "",
 			Host:            "pocketeer-test.aepotln.mongodb.net",
 			Database:        "pocketeer",
 			ConnectTimeout:  "5s",
