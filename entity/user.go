@@ -29,84 +29,9 @@ func GetUserFromCtx(ctx context.Context) *User {
 	return nil
 }
 
-type UserMetaUpdate struct {
-	Currency *string
-	HideInfo *bool
-}
-
-func (umu *UserMetaUpdate) GetCurrency() string {
-	if umu != nil && umu.Currency != nil {
-		return *umu.Currency
-	}
-	return ""
-}
-
-func (umu *UserMetaUpdate) SetCurrency(currency *string) {
-	umu.Currency = currency
-}
-
-func (umu *UserMetaUpdate) GetHideInfo() bool {
-	if umu != nil && umu.HideInfo != nil {
-		return *umu.HideInfo
-	}
-	return false
-}
-
-func (umu *UserMetaUpdate) SetHideInfo(hideInfo *bool) {
-	umu.HideInfo = hideInfo
-}
-
-type UserMetaUpdateOption func(uu *UserMetaUpdate)
-
-func WithUpdateUserMetaCurrency(currency *string) UserMetaUpdateOption {
-	return func(umu *UserMetaUpdate) {
-		umu.SetCurrency(currency)
-	}
-}
-
-func WithUpdateUserMetaHideInfo(hideInfo *bool) UserMetaUpdateOption {
-	return func(umu *UserMetaUpdate) {
-		umu.SetHideInfo(hideInfo)
-	}
-}
-
-func NewUserMetaUpdate(opts ...UserMetaUpdateOption) *UserMetaUpdate {
-	umu := &UserMetaUpdate{
-		HideInfo: goutil.Bool(false),
-	}
-
-	for _, opt := range opts {
-		opt(umu)
-	}
-
-	return umu
-}
-
 type UserMeta struct {
 	Currency *string
 	HideInfo *bool
-}
-
-type UserMetaOption = func(um *UserMeta)
-
-func NewUserMeta(opts ...UserMetaOption) *UserMeta {
-	um := new(UserMeta)
-	for _, opt := range opts {
-		opt(um)
-	}
-	return um
-}
-
-func WithUserMetaCurrency(currency *string) UserMetaOption {
-	return func(um *UserMeta) {
-		um.SetCurrency(currency)
-	}
-}
-
-func WithUserMetaHideInfo(hideInfo *bool) UserMetaOption {
-	return func(um *UserMeta) {
-		um.SetHideInfo(hideInfo)
-	}
 }
 
 func (um *UserMeta) GetCurrency() string {
@@ -129,37 +54,6 @@ func (um *UserMeta) GetHideInfo() bool {
 
 func (um *UserMeta) SetHideInfo(hideInfo *bool) {
 	um.HideInfo = hideInfo
-}
-
-func (um *UserMeta) Update(umu *UserMetaUpdate) *UserMetaUpdate {
-	var (
-		hasUpdate      bool
-		userMetaUpdate = new(UserMetaUpdate)
-	)
-
-	if umu.Currency != nil && um.GetCurrency() != umu.GetCurrency() {
-		hasUpdate = true
-		um.SetCurrency(umu.Currency)
-
-		defer func() {
-			userMetaUpdate.SetCurrency(um.Currency)
-		}()
-	}
-
-	if umu.HideInfo != nil && um.GetHideInfo() != umu.GetHideInfo() {
-		hasUpdate = true
-		um.SetHideInfo(umu.HideInfo)
-
-		defer func() {
-			userMetaUpdate.SetHideInfo(um.HideInfo)
-		}()
-	}
-
-	if !hasUpdate {
-		return nil
-	}
-
-	return userMetaUpdate
 }
 
 type UserFlag uint32
@@ -187,32 +81,11 @@ var UserStatuses = map[uint32]string{
 type UserUpdate struct {
 	UserFlag   *uint32
 	UserStatus *uint32
-	Password   *string
-	Hash       *string
 	UpdateTime *uint64
-	Meta       *UserMetaUpdate
-}
-
-func (uu *UserUpdate) GetPassword() string {
-	if uu != nil && uu.Password != nil {
-		return *uu.Password
-	}
-	return ""
-}
-
-func (uu *UserUpdate) SetPassword(password *string) {
-	uu.Password = password
-}
-
-func (uu *UserUpdate) GetHash() string {
-	if uu != nil && uu.Hash != nil {
-		return *uu.Hash
-	}
-	return ""
-}
-
-func (uu *UserUpdate) SetHash(hash *string) {
-	uu.Hash = hash
+	Currency   *string
+	HideInfo   *bool
+	Hash       *string
+	Salt       *string
 }
 
 func (uu *UserUpdate) GetUserFlag() uint32 {
@@ -222,19 +95,11 @@ func (uu *UserUpdate) GetUserFlag() uint32 {
 	return 0
 }
 
-func (uu *UserUpdate) SetUserFlag(userFlag *uint32) {
-	uu.UserFlag = userFlag
-}
-
 func (uu *UserUpdate) GetUserStatus() uint32 {
 	if uu != nil && uu.UserStatus != nil {
 		return *uu.UserStatus
 	}
 	return 0
-}
-
-func (uu *UserUpdate) SetUserStatus(userStatus *uint32) {
-	uu.UserStatus = userStatus
 }
 
 func (uu *UserUpdate) GetUpdateTime() uint64 {
@@ -244,53 +109,74 @@ func (uu *UserUpdate) GetUpdateTime() uint64 {
 	return 0
 }
 
-func (uu *UserUpdate) SetUpdateTime(updateTime *uint64) {
-	uu.UpdateTime = updateTime
-}
-
-func (uu *UserUpdate) GetMeta() *UserMetaUpdate {
-	if uu != nil && uu.Meta != nil {
-		return nil
+func (uu *UserUpdate) GetCurrency() string {
+	if uu != nil && uu.Currency != nil {
+		return *uu.Currency
 	}
-	return uu.Meta
+	return ""
 }
 
-func (uu *UserUpdate) SetMeta(meta *UserMetaUpdate) {
-	uu.Meta = meta
-}
-
-type UserUpdateOption func(uu *UserUpdate)
-
-func WithUpdateUserPassword(password *string) UserUpdateOption {
-	return func(uu *UserUpdate) {
-		uu.SetPassword(password)
+func (uu *UserUpdate) GetHideInfo() bool {
+	if uu != nil && uu.HideInfo != nil {
+		return *uu.HideInfo
 	}
+	return false
 }
+
+func (uu *UserUpdate) GetHash() string {
+	if uu != nil && uu.Hash != nil {
+		return *uu.Hash
+	}
+	return ""
+}
+
+func (uu *UserUpdate) GetSalt() string {
+	if uu != nil && uu.Salt != nil {
+		return *uu.Salt
+	}
+	return ""
+}
+
+type UserUpdateOption func(u *User)
 
 func WithUpdateUserFlag(userFlag *uint32) UserUpdateOption {
-	return func(uu *UserUpdate) {
-		uu.SetUserFlag(userFlag)
+	return func(u *User) {
+		if userFlag != nil {
+			u.SetUserFlag(userFlag)
+		}
 	}
 }
 
 func WithUpdateUserStatus(userStatus *uint32) UserUpdateOption {
-	return func(uu *UserUpdate) {
-		uu.SetUserStatus(userStatus)
+	return func(u *User) {
+		if userStatus != nil {
+			u.SetUserStatus(userStatus)
+		}
 	}
 }
 
-func WithUpdateUserMeta(meta *UserMetaUpdate) UserUpdateOption {
-	return func(uu *UserUpdate) {
-		uu.SetMeta(meta)
+func WithUpdateUserPassword(password *string) UserUpdateOption {
+	return func(u *User) {
+		if password != nil {
+			u.SetPassword(password)
+		}
 	}
 }
 
-func NewUserUpdate(opts ...UserUpdateOption) *UserUpdate {
-	uu := new(UserUpdate)
-	for _, opt := range opts {
-		opt(uu)
+func WithUpdateUserCurrency(currency *string) UserUpdateOption {
+	return func(u *User) {
+		if u.Meta != nil && currency != nil {
+			u.Meta.SetCurrency(currency)
+		}
 	}
-	return uu
+}
+
+func WithUpdateUserHideInfo(hideInfo *bool) UserUpdateOption {
+	return func(u *User) {
+		if u.Meta != nil && hideInfo != nil {
+			u.Meta.SetHideInfo(hideInfo)
+		}
+	}
 }
 
 type User struct {
@@ -299,6 +185,7 @@ type User struct {
 	Username   *string
 	UserStatus *uint32
 	UserFlag   *uint32
+	Password   *string
 	Hash       *string
 	Salt       *string
 	CreateTime *uint64
@@ -306,7 +193,7 @@ type User struct {
 	Meta       *UserMeta
 }
 
-type UserOption = func(u *User)
+type UserOption func(u *User)
 
 func WithUserID(userID *string) UserOption {
 	return func(u *User) {
@@ -323,6 +210,12 @@ func WithUsername(username *string) UserOption {
 func WithUserEmail(email *string) UserOption {
 	return func(u *User) {
 		u.SetEmail(email)
+	}
+}
+
+func WithUserPassword(password *string) UserOption {
+	return func(u *User) {
+		u.SetPassword(password)
 	}
 }
 
@@ -362,60 +255,69 @@ func WithUserUpdateTime(updateTime *uint64) UserOption {
 	}
 }
 
-func WithUserMeta(userMeta *UserMeta) UserOption {
+func WithUserCurrency(currency *string) UserOption {
 	return func(u *User) {
-		u.Meta = userMeta
+		if u.Meta != nil {
+			u.Meta.Currency = currency
+		}
 	}
 }
 
-func NewUser(email, password string, opts ...UserOption) (*User, error) {
+func WithUserHideInfo(hideInfo *bool) UserOption {
+	return func(u *User) {
+		if u.Meta != nil {
+			u.Meta.HideInfo = hideInfo
+		}
+	}
+}
+
+func NewUser(email string, opts ...UserOption) (*User, error) {
 	now := uint64(time.Now().UnixMilli())
 	u := &User{
 		Email:      goutil.String(email),
 		UserFlag:   goutil.Uint32(uint32(UserFlagNewUser)),
 		UserStatus: goutil.Uint32(uint32(UserStatusPending)),
+		Password:   goutil.String(""),
 		Hash:       goutil.String(""),
 		Salt:       goutil.String(""),
 		CreateTime: goutil.Uint64(now),
 		UpdateTime: goutil.Uint64(now),
-		Meta: NewUserMeta(
-			WithUserMetaHideInfo(goutil.Bool(false)),
-		),
+		Meta: &UserMeta{
+			Currency: goutil.String(""),
+			HideInfo: goutil.Bool(false),
+		},
 	}
+
 	for _, opt := range opts {
 		opt(u)
 	}
 
-	if password != "" {
-		hash, err := u.getHash(password)
+	if u.GetPassword() != "" {
+		salt, err := u.createSalt()
+		if err != nil {
+			return nil, err
+		}
+		u.SetSalt(goutil.String(salt))
+
+		hash, err := u.createHash(u.GetPassword(), salt)
 		if err != nil {
 			return nil, err
 		}
 		u.SetHash(goutil.String(string(hash)))
 	}
 
-	if err := u.checkOpts(); err != nil {
+	if err := u.validate(); err != nil {
 		return nil, err
 	}
 
 	return u, nil
 }
 
-func (u *User) checkOpts() error {
+func (u *User) validate() error {
 	return nil
 }
 
-func (u *User) getHash(password string) (string, error) {
-	salt := u.GetSalt()
-	if salt == "" {
-		var err error
-		salt, err = u.createSalt()
-		if err != nil {
-			return "", err
-		}
-		u.SetSalt(goutil.String(salt))
-	}
-
+func (u *User) createHash(password, salt string) (string, error) {
 	hash, err := goutil.HMACSha256(password, []byte(salt))
 	if err != nil {
 		return "", err
@@ -432,89 +334,109 @@ func (u *User) createSalt() (string, error) {
 	return string(salt), nil
 }
 
-func (u *User) Update(uu *UserUpdate) (*UserUpdate, error) {
+func (u *User) Clone() (*User, error) {
+	return NewUser(
+		u.GetEmail(),
+		WithUserID(goutil.String(u.GetUserID())),
+		WithUserHash(u.Hash),
+		WithUserSalt(u.Salt),
+		WithUserStatus(u.UserStatus),
+		WithUserCreateTime(u.CreateTime),
+		WithUserUpdateTime(u.UpdateTime),
+		WithUsername(u.Username),
+		WithUserFlag(u.UserFlag),
+		WithUserCurrency(u.Meta.Currency),
+		WithUserHideInfo(u.Meta.HideInfo),
+	)
+}
+
+func (u *User) ToUserUpdate(old *User) *UserUpdate {
 	var (
-		hasUpdate  bool
-		userUpdate = new(UserUpdate)
+		hasUpdate bool
+
+		uu = &UserUpdate{
+			UpdateTime: u.UpdateTime,
+		}
 	)
 
-	if uu.UserStatus != nil && uu.GetUserStatus() != u.GetUserStatus() {
+	if old.GetUserStatus() != u.GetUserStatus() {
 		hasUpdate = true
-		u.SetUserStatus(uu.UserStatus)
-
-		defer func() {
-			userUpdate.SetUserStatus(u.UserStatus)
-		}()
+		uu.UserStatus = u.UserStatus
 	}
 
-	if uu.UserFlag != nil && uu.GetUserFlag() != u.GetUserFlag() {
+	if old.GetUserFlag() != u.GetUserFlag() {
 		hasUpdate = true
-		u.SetUserFlag(uu.UserFlag)
-
-		defer func() {
-			userUpdate.SetUserFlag(u.UserFlag)
-		}()
+		uu.UserFlag = u.UserFlag
 	}
 
-	if uu.Password != nil {
-		hash, err := u.getHash(uu.GetPassword())
+	if old.GetHash() != u.GetHash() {
+		hasUpdate = true
+		uu.Hash = u.Hash
+	}
+
+	if old.GetSalt() != u.GetSalt() {
+		hasUpdate = true
+		uu.Salt = u.Salt
+	}
+
+	if old.Meta.GetCurrency() != u.Meta.GetCurrency() {
+		hasUpdate = true
+		uu.Currency = u.Meta.Currency
+	}
+
+	if old.Meta.GetHideInfo() != u.Meta.GetHideInfo() {
+		hasUpdate = true
+		uu.HideInfo = u.Meta.HideInfo
+	}
+
+	if hasUpdate {
+		return uu
+	}
+
+	return nil
+}
+
+func (u *User) Update(uus ...UserUpdateOption) (*UserUpdate, error) {
+	if len(uus) == 0 {
+		return nil, nil
+	}
+
+	old, err := u.Clone()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, uu := range uus {
+		uu(u)
+	}
+
+	if u.GetPassword() != "" {
+		salt, err := u.createSalt()
 		if err != nil {
 			return nil, err
 		}
+		u.SetSalt(goutil.String(salt))
 
-		if u.GetHash() != hash {
-			hasUpdate = true
-			u.SetHash(goutil.String(hash))
-
-			defer func() {
-				userUpdate.SetHash(u.Hash)
-			}()
+		hash, err := u.createHash(u.GetPassword(), salt)
+		if err != nil {
+			return nil, err
 		}
+		u.SetHash(goutil.String(string(hash)))
 	}
 
-	if uu.Meta != nil {
-		umu := u.Meta.Update(uu.Meta)
-
-		if umu != nil {
-			hasUpdate = true
-			userUpdate.Meta = new(UserMetaUpdate)
-
-			if umu.Currency != nil {
-				u.Meta.SetCurrency(umu.Currency)
-
-				defer func() {
-					userUpdate.Meta.SetCurrency(u.Meta.Currency)
-				}()
-			}
-
-			if umu.HideInfo != nil {
-				u.Meta.SetHideInfo(umu.HideInfo)
-
-				defer func() {
-					userUpdate.Meta.SetHideInfo(u.Meta.HideInfo)
-				}()
-			}
-		}
-	}
-
-	if !hasUpdate {
-		return nil, nil
+	// check
+	if err := u.validate(); err != nil {
+		return nil, err
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	u.SetUpdateTime(now)
 
-	if err := u.checkOpts(); err != nil {
-		return nil, err
-	}
-
-	userUpdate.SetUpdateTime(now)
-
-	return userUpdate, nil
+	return u.ToUserUpdate(old), nil
 }
 
 func (u *User) IsSamePassword(password string) (bool, error) {
-	hash, err := u.getHash(password)
+	hash, err := u.createHash(password, u.GetSalt())
 	if err != nil {
 		return false, err
 	}
@@ -574,6 +496,17 @@ func (u *User) GetUserStatus() uint32 {
 
 func (u *User) SetUserStatus(userStatus *uint32) {
 	u.UserStatus = userStatus
+}
+
+func (u *User) GetPassword() string {
+	if u != nil && u.Password != nil {
+		return *u.Password
+	}
+	return ""
+}
+
+func (u *User) SetPassword(password *string) {
+	u.Password = password
 }
 
 func (u *User) GetHash() string {
