@@ -583,7 +583,7 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 	for tt, sum := range sumByTT {
 		sums = append(sums, &common.TransactionSummary{
 			TransactionType: goutil.Uint32(tt),
-			Sum:             goutil.Float64(util.RoundFloatToStandardDP(sum)),
+			Sum:             goutil.Float64(sum),
 			Currency:        u.Meta.Currency,
 		})
 	}
