@@ -86,8 +86,14 @@ func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
 	username := util.GetEmailPrefix(m.GetEmail())
 	return entity.NewUser(
 		m.GetEmail(),
-		entity.WithUserPassword(m.Password),
+		m.GetPassword(),
 		entity.WithUsername(goutil.String(username)),
+	)
+}
+
+func (m *SignUpRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserPassword(m.Password),
 	)
 }
 
@@ -177,6 +183,12 @@ func (m *VerifyEmailRequest) ToUserFilter(email string) *repo.UserFilter {
 		Email:      goutil.String(email),
 		UserStatus: goutil.Uint32(uint32(entity.UserStatusPending)),
 	}
+}
+
+func (m *VerifyEmailRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserStatus(goutil.Uint32(uint32(entity.UserStatusNormal))),
+	)
 }
 
 type VerifyEmailResponse struct {
@@ -457,6 +469,17 @@ func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
 	return cs, nil
 }
 
+func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+		entity.WithUpdateUserMeta(
+			entity.NewUserMetaUpdate(
+				entity.WithUpdateUserMetaCurrency(m.Currency),
+			),
+		),
+	)
+}
+
 func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
 		UserID:     m.UserID,
@@ -518,6 +541,17 @@ func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
 	return &repo.UserFilter{
 		UserID: m.UserID,
 	}
+}
+
+func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
+	return entity.NewUserUpdate(
+		entity.WithUpdateUserMeta(
+			entity.NewUserMetaUpdate(
+				entity.WithUpdateUserMetaCurrency(m.Currency),
+				entity.WithUpdateUserMetaHideInfo(m.HideInfo),
+			),
+		),
+	)
 }
 
 type UpdateUserMetaResponse struct {

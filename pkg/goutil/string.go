@@ -1,12 +1,10 @@
 package goutil
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"html/template"
 
 	"github.com/rs/xid"
 )
@@ -65,13 +63,4 @@ func RemoveDuplicateString(slice []string) []string {
 		}
 	}
 	return arr
-}
-
-func ParseTemplate(t *template.Template, data interface{}) (string, error) {
-	b := new(bytes.Buffer)
-	if err := t.Execute(b, data); err != nil {
-		return "", err
-	}
-
-	return b.String(), nil
 }
