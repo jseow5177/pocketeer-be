@@ -44,7 +44,7 @@ type Category struct {
 	Budget *Budget
 }
 
-type CategoryOption = func(c *Category)
+type CategoryOption func(c *Category)
 
 func WithCategoryID(categoryID *string) CategoryOption {
 	return func(c *Category) {
