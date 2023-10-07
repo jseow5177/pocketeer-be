@@ -331,6 +331,7 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 			}
 
 			amount *= er.GetRate()
+			amount = util.RoundFloatToStandardDP(amount)
 		}
 
 		if c := categoryMap[t.GetCategoryID()]; c.IsDeleted() {
@@ -349,7 +350,7 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 
 		sums = append(sums, &common.TransactionSummary{
 			Category: c,
-			Sum:      goutil.Float64(util.RoundFloatToStandardDP(sum)),
+			Sum:      goutil.Float64(sum),
 			Currency: u.Meta.Currency,
 		})
 	}
