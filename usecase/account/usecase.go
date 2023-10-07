@@ -106,7 +106,8 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 				return err
 			}
 
-			balance *= util.RoundFloatToStandardDP(er.GetRate())
+			balance *= er.GetRate()
+			balance = util.RoundFloatToStandardDP(balance)
 		}
 
 		mu.Lock()
