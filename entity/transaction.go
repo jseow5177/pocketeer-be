@@ -194,7 +194,7 @@ type Transaction struct {
 	Account  *Account
 }
 
-type TransactionOption = func(t *Transaction)
+type TransactionOption func(t *Transaction)
 
 func WithTransactionID(transactionID *string) TransactionOption {
 	return func(t *Transaction) {

@@ -112,7 +112,7 @@ type Account struct {
 	Holdings    []*Holding
 }
 
-type AccountOption = func(ac *Account)
+type AccountOption func(ac *Account)
 
 func WithAccountID(accountID *string) AccountOption {
 	return func(ac *Account) {
