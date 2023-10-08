@@ -197,67 +197,87 @@ type UserOption func(u *User)
 
 func WithUserID(userID *string) UserOption {
 	return func(u *User) {
-		u.SetUserID(userID)
+		if userID != nil {
+			u.SetUserID(userID)
+		}
 	}
 }
 
 func WithUsername(username *string) UserOption {
 	return func(u *User) {
-		u.SetUsername(username)
+		if username != nil {
+			u.SetUsername(username)
+		}
 	}
 }
 
 func WithUserEmail(email *string) UserOption {
 	return func(u *User) {
-		u.SetEmail(email)
+		if email != nil {
+			u.SetEmail(email)
+		}
 	}
 }
 
 func WithUserPassword(password *string) UserOption {
 	return func(u *User) {
-		u.SetPassword(password)
+		if password != nil {
+			u.SetPassword(password)
+		}
 	}
 }
 
 func WithUserHash(hash *string) UserOption {
 	return func(u *User) {
-		u.SetHash(hash)
+		if hash != nil {
+			u.SetHash(hash)
+		}
 	}
 }
 
 func WithUserSalt(salt *string) UserOption {
 	return func(u *User) {
-		u.SetSalt(salt)
+		if salt != nil {
+			u.SetSalt(salt)
+		}
 	}
 }
 
 func WithUserFlag(userFlag *uint32) UserOption {
 	return func(u *User) {
-		u.SetUserFlag(userFlag)
+		if userFlag != nil {
+			u.SetUserFlag(userFlag)
+		}
 	}
 }
 
 func WithUserStatus(userStatus *uint32) UserOption {
 	return func(u *User) {
-		u.SetUserStatus(userStatus)
+		if userStatus != nil {
+			u.SetUserStatus(userStatus)
+		}
 	}
 }
 
 func WithUserCreateTime(createTime *uint64) UserOption {
 	return func(u *User) {
-		u.SetCreateTime(createTime)
+		if createTime != nil {
+			u.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithUserUpdateTime(updateTime *uint64) UserOption {
 	return func(u *User) {
-		u.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			u.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithUserCurrency(currency *string) UserOption {
 	return func(u *User) {
-		if u.Meta != nil {
+		if u.Meta != nil && currency != nil {
 			u.Meta.Currency = currency
 		}
 	}
@@ -265,7 +285,7 @@ func WithUserCurrency(currency *string) UserOption {
 
 func WithUserHideInfo(hideInfo *bool) UserOption {
 	return func(u *User) {
-		if u.Meta != nil {
+		if u.Meta != nil && hideInfo != nil {
 			u.Meta.HideInfo = hideInfo
 		}
 	}
