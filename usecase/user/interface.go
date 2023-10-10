@@ -86,14 +86,8 @@ func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
 	username := util.GetEmailPrefix(m.GetEmail())
 	return entity.NewUser(
 		m.GetEmail(),
-		m.GetPassword(),
+		entity.WithUserPassword(m.Password),
 		entity.WithUsername(goutil.String(username)),
-	)
-}
-
-func (m *SignUpRequest) ToUserUpdate() *entity.UserUpdate {
-	return entity.NewUserUpdate(
-		entity.WithUpdateUserPassword(m.Password),
 	)
 }
 
@@ -181,12 +175,6 @@ func (m *VerifyEmailRequest) ToUserFilter(email string) *repo.UserFilter {
 	return repo.NewUserFilter(
 		repo.WithUserEmail(m.Email),
 		repo.WithUserStatus(goutil.Uint32(uint32(entity.UserStatusPending))),
-	)
-}
-
-func (m *VerifyEmailRequest) ToUserUpdate() *entity.UserUpdate {
-	return entity.NewUserUpdate(
-		entity.WithUpdateUserStatus(goutil.Uint32(uint32(entity.UserStatusNormal))),
 	)
 }
 
@@ -467,17 +455,6 @@ func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
 	return cs, nil
 }
 
-func (m *InitUserRequest) ToUserUpdate() *entity.UserUpdate {
-	return entity.NewUserUpdate(
-		entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
-		entity.WithUpdateUserMeta(
-			entity.NewUserMetaUpdate(
-				entity.WithUpdateUserMetaCurrency(m.Currency),
-			),
-		),
-	)
-}
-
 func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
 	return repo.NewUserFilter(
 		repo.WithUserID(m.UserID),
@@ -510,6 +487,7 @@ type SendOTPResponse struct {
 type UpdateUserMetaRequest struct {
 	UserID   *string
 	Currency *string
+	HideInfo *bool
 }
 
 func (m *UpdateUserMetaRequest) GetUserID() string {
@@ -526,19 +504,16 @@ func (m *UpdateUserMetaRequest) GetCurrency() string {
 	return ""
 }
 
+func (m *UpdateUserMetaRequest) GetHideInfo() bool {
+	if m != nil && m.HideInfo != nil {
+		return *m.HideInfo
+	}
+	return false
+}
+
 func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
 	return repo.NewUserFilter(
 		repo.WithUserID(m.UserID),
-	)
-}
-
-func (m *UpdateUserMetaRequest) ToUserUpdate() *entity.UserUpdate {
-	return entity.NewUserUpdate(
-		entity.WithUpdateUserMeta(
-			entity.NewUserMetaUpdate(
-				entity.WithUpdateUserMetaCurrency(m.Currency),
-			),
-		),
 	)
 }
 

@@ -159,3 +159,12 @@ func PagingValidator(optional bool) validator.Validator {
 		},
 	}
 }
+
+func AppMetaValidator() validator.Validator {
+	return validator.MustForm(map[string]validator.Validator{
+		"timezone": &validator.String{
+			Optional:   false,
+			Validators: []validator.StringFunc{CheckTimezone},
+		},
+	})
+}

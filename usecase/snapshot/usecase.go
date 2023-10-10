@@ -22,23 +22,5 @@ func NewSnapshotUseCase(
 }
 
 func (uc *snapshotUseCase) GetAccountSnapshots(ctx context.Context, req *GetAccountSnapshotsRequest) (*GetAccountSnapshotsResponse, error) {
-	// var (
-	// 	ac  *entity.Account
-	// 	err error
-	// )
-	// if req.AccountID != nil {
-	// 	ac, err = uc.accountRepo.Get(ctx, req.ToAccountFilter())
-	// 	if err != nil {
-	// 		log.Ctx(ctx).Error().Msgf("fail to get account from repo, err: %v", err)
-	// 		return nil, err
-	// 	}
-	// }
-
-	// sps, err := uc.snapshotRepo.GetMany(ctx, req.ToSnapshotFilter())
-	// if err != nil {
-	// 	log.Ctx(ctx).Error().Msgf("fail to get account snapshots from repo, err: %v", err)
-	// 	return nil, err
-	// }
-
 	return nil, nil
 }

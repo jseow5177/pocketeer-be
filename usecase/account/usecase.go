@@ -77,15 +77,13 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 	}
 
 	var (
-		erMu sync.RWMutex
-		bMu  sync.Mutex
-		now  = time.Now().UnixMilli()
-		u    = entity.GetUserFromCtx(ctx)
-		ers  = make(map[string]*entity.ExchangeRate)
+		mu  sync.Mutex
+		now = time.Now().UnixMilli()
+		u   = entity.GetUserFromCtx(ctx)
 
-		netWorth float64
+		assetValue, debtValue float64
 	)
-	if err := goutil.ParallelizeWork(ctx, len(acs), 5, func(ctx context.Context, workNum int) error {
+	if err := goutil.ParallelizeWork(ctx, len(acs), 10, func(ctx context.Context, workNum int) error {
 		ac := acs[workNum]
 
 		if ac.IsInvestment() {
@@ -97,42 +95,41 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 
 		balance := ac.GetBalance()
 		if u.Meta.GetCurrency() != ac.GetCurrency() {
-			erMu.RLock()
-			er := ers[ac.GetCurrency()]
-			erMu.RUnlock()
-
-			if er == nil {
-				er, err = uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
-					To:        u.Meta.Currency,
-					From:      ac.Currency,
-					Timestamp: goutil.Uint64(uint64(now)),
-				})
-				if err != nil {
-					log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
-					return err
-				}
-
-				erMu.Lock()
-				ers[ac.GetCurrency()] = er
-				erMu.Unlock()
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(ac.Currency),
+				repo.WithExchangeRateTo(u.Meta.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return err
 			}
+
 			balance *= er.GetRate()
 		}
 
-		bMu.Lock()
-		netWorth += balance
-		bMu.Unlock()
+		mu.Lock()
+		if ac.IsAsset() {
+			assetValue += balance
+		} else if ac.IsDebt() {
+			debtValue += balance
+		}
+		mu.Unlock()
 
 		return nil
 	}); err != nil {
 		return nil, err
 	}
 
-	netWorth = util.RoundFloatToStandardDP(netWorth)
+	netWorth := assetValue + debtValue
 
 	return &GetAccountsResponse{
-		NetWorth: goutil.Float64(netWorth),
-		Accounts: acs,
+		NetWorth:   goutil.Float64(util.RoundFloatToStandardDP(netWorth)),
+		AssetValue: goutil.Float64(util.RoundFloatToStandardDP(assetValue)),
+		DebtValue:  goutil.Float64(util.RoundFloatToStandardDP(debtValue)),
+		Currency:   u.Meta.Currency,
+		Accounts:   acs,
 	}, nil
 }
 
@@ -164,7 +161,11 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 	}
 	oldBalance := ac.GetBalance()
 
-	acu, err := ac.Update(req.ToAccountUpdate())
+	acu, err := ac.Update(
+		entity.WithUpdateAccountBalance(req.Balance),
+		entity.WithUpdateAccountName(req.AccountName),
+		entity.WithUpdateAccountNote(req.Note),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -176,17 +177,22 @@ func (uc *accountUseCase) UpdateAccount(ctx context.Context, req *UpdateAccountR
 		}, nil
 	}
 
-	if err = uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err = uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		if err := uc.accountRepo.Update(txCtx, req.ToAccountFilter(), acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to save account updates to repo, err: %v", err)
 			return err
 		}
 
 		if acu.Balance != nil && req.NeedOffsetTransaction() {
 			balanceChange := acu.GetBalance() - oldBalance
-			t := uc.newUnrecordedTransaction(balanceChange, ac.GetUserID(), ac.GetAccountID())
 
-			if _, err = uc.transactionRepo.Create(txCtx, t); err != nil {
+			t, err := uc.newUnrecordedTransaction(ac, balanceChange)
+			if err != nil {
+				log.Ctx(txCtx).Error().Msgf("fail to new unrecorded transaction, err: %v", err)
+				return err
+			}
+
+			if _, err := uc.transactionRepo.Create(txCtx, t); err != nil {
 				log.Ctx(txCtx).Error().Msgf("fail to create unrecorded transaction, err: %v", err)
 				return err
 			}
@@ -212,7 +218,14 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err := uc.accountRepo.Delete(txCtx, acf); err != nil {
+		acu, err := ac.Update(
+			entity.WithUpdateAccountStatus(goutil.Uint32(uint32(entity.AccountStatusDeleted))),
+		)
+		if err != nil {
+			return err
+		}
+
+		if err = uc.accountRepo.Update(txCtx, acf, acu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark account as deleted, err: %v", err)
 			return err
 		}
@@ -250,22 +263,21 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 	return new(DeleteAccountResponse), nil
 }
 
-func (uc *accountUseCase) newUnrecordedTransaction(amount float64, userID, accountID string) *entity.Transaction {
+func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amount float64) (*entity.Transaction, error) {
 	tt := uint32(entity.GetTransactionTypeByAmount(amount))
 
 	note := fmt.Sprintf("Unrecorded %s", entity.TransactionTypes[tt])
 
-	t := entity.NewTransaction(
-		userID,
-		accountID,
+	return entity.NewTransaction(
+		account.GetUserID(),
+		account.GetAccountID(),
 		"",
 		entity.WithTransactionAmount(goutil.Float64(amount)),
+		entity.WithTransactionCurrency(account.Currency),
 		entity.WithTransactionType(goutil.Uint32(tt)),
 		entity.WithTransactionNote(goutil.String(note)),
 		entity.WithTransactionTime(goutil.Uint64(uint64(time.Now().UnixMilli()))),
 	)
-
-	return t
 }
 
 func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *entity.Account) error {
@@ -315,7 +327,6 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 	}
 
 	now := time.Now().UnixMilli()
-	ers := make(map[string]*entity.ExchangeRate)
 
 	// compute latest value and gain
 	var totalBalance, totalGain float64
@@ -324,18 +335,14 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 		gain := h.GetGain()
 
 		if ac.GetCurrency() != h.GetCurrency() {
-			er := ers[h.GetCurrency()]
-			if er == nil {
-				var err error
-				er, err = uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
-					To:        ac.Currency,
-					From:      h.Currency,
-					Timestamp: goutil.Uint64(uint64(now)),
-				})
-				if err != nil {
-					return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
-				}
-				ers[h.GetCurrency()] = er
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(h.Currency),
+				repo.WithExchangeRateTo(ac.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
 			}
 
 			lv *= er.GetRate()
@@ -355,7 +362,14 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 			lv := h.GetLatestValue()
 
 			if ac.GetCurrency() != h.GetCurrency() {
-				er := ers[h.GetCurrency()]
+				er, err := uc.exchangeRateRepo.Get(ctx, repo.NewExchangeRateFilter(
+					repo.WithExchangeRateFrom(h.Currency),
+					repo.WithExchangeRateTo(ac.Currency),
+					repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(now))),
+				))
+				if err != nil {
+					return fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+				}
 				lv *= er.GetRate()
 			}
 

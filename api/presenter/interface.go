@@ -78,6 +78,27 @@ func (rf *RangeFilter) toRangeFilter() *common.RangeFilter {
 	}
 }
 
+type AppMeta struct {
+	Timezone *string `json:"timezone,omitempty"`
+}
+
+func (am *AppMeta) GetTimezone() string {
+	if am != nil && am.Timezone != nil {
+		return *am.Timezone
+	}
+	return ""
+}
+
+func (am *AppMeta) toAppMeta() *common.AppMeta {
+	if am == nil {
+		return nil
+	}
+
+	return &common.AppMeta{
+		Timezone: am.Timezone,
+	}
+}
+
 func toBudget(b *entity.Budget) *Budget {
 	if b == nil {
 		return nil
@@ -137,6 +158,7 @@ func toUserMeta(um *entity.UserMeta) *UserMeta {
 
 	return &UserMeta{
 		Currency: um.Currency,
+		HideInfo: um.HideInfo,
 	}
 }
 
@@ -380,11 +402,25 @@ func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
 		sum = goutil.String(fmt.Sprint(ts.GetSum()))
 	}
 
+	var totalExpense *string
+	if ts.TotalExpense != nil {
+		totalExpense = goutil.String(fmt.Sprint(ts.GetTotalExpense()))
+	}
+
+	var totalIncome *string
+	if ts.TotalIncome != nil {
+		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
+	}
+
 	return &TransactionSummary{
+		Date:            ts.Date,
 		Category:        toCategory(ts.Category),
 		TransactionType: ts.TransactionType,
 		Sum:             sum,
+		TotalExpense:    totalExpense,
+		TotalIncome:     totalIncome,
 		Currency:        ts.Currency,
+		Transactions:    toTransactions(ts.Transactions),
 	}
 }
 
@@ -449,14 +485,6 @@ func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
 		Timestamp:      er.Timestamp,
 		CreateTime:     er.CreateTime,
 	}
-}
-
-func toExchangeRates(ers []*entity.ExchangeRate) []*ExchangeRate {
-	exchangeRates := make([]*ExchangeRate, len(ers))
-	for idx, er := range ers {
-		exchangeRates[idx] = toExchangeRate(er)
-	}
-	return exchangeRates
 }
 
 func toSnapshot(sp *entity.Snapshot) *Snapshot {

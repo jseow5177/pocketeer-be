@@ -14,6 +14,7 @@ import (
 type UseCase interface {
 	GetTransaction(ctx context.Context, req *GetTransactionRequest) (*GetTransactionResponse, error)
 	GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error)
+	GetTransactionGroups(ctx context.Context, req *GetTransactionGroupsRequest) (*GetTransactionGroupsResponse, error)
 
 	CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error)
 	UpdateTransaction(ctx context.Context, req *UpdateTransactionRequest) (*UpdateTransactionResponse, error)
@@ -144,7 +145,7 @@ func (m *CreateTransactionRequest) GetTransactionTime() uint64 {
 	return 0
 }
 
-func (m *CreateTransactionRequest) ToTransactionEntity() *entity.Transaction {
+func (m *CreateTransactionRequest) ToTransactionEntity() (*entity.Transaction, error) {
 	return entity.NewTransaction(
 		m.GetUserID(),
 		m.GetAccountID(),
@@ -312,6 +313,37 @@ func (m *GetTransactionsResponse) GetPaging() *common.Paging {
 	return nil
 }
 
+type GetTransactionGroupsRequest struct {
+	AppMeta *common.AppMeta
+	*GetTransactionsRequest
+}
+
+func (m *GetTransactionGroupsRequest) GetAppMeta() *common.AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+type GetTransactionGroupsResponse struct {
+	TransactionGroups []*common.TransactionSummary
+	Paging            *common.Paging
+}
+
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*common.TransactionSummary {
+	if m != nil && m.TransactionGroups != nil {
+		return m.TransactionGroups
+	}
+	return nil
+}
+
+func (m *GetTransactionGroupsResponse) GetPaging() *common.Paging {
+	if m != nil && m.Paging != nil {
+		return m.Paging
+	}
+	return nil
+}
+
 type UpdateTransactionRequest struct {
 	UserID          *string
 	TransactionID   *string
@@ -401,18 +433,6 @@ func (m *UpdateTransactionRequest) ToAccountFilter(accountID string) *repo.Accou
 	)
 }
 
-func (m *UpdateTransactionRequest) ToTransactionUpdate() *entity.TransactionUpdate {
-	return entity.NewTransactionUpdate(
-		entity.WithUpdateTransactionAmount(m.Amount),
-		entity.WithUpdateTransactionTime(m.TransactionTime),
-		entity.WithUpdateTransactionNote(m.Note),
-		entity.WithUpdateTransactionAccountID(m.AccountID),
-		entity.WithUpdateTransactionCategoryID(m.CategoryID),
-		entity.WithUpdateTransactionType(m.TransactionType),
-		entity.WithUpdateTransactionCurrency(m.Currency),
-	)
-}
-
 type UpdateTransactionResponse struct {
 	Transaction *entity.Transaction
 }
@@ -462,27 +482,6 @@ func (m *SumTransactionsRequest) ToTransactionFilter() *repo.TransactionFilter {
 		repo.WithTransactionType(m.TransactionType),
 		repo.WithTransactionTimeGte(tt.Gte),
 		repo.WithTransactionTimeLte(tt.Lte),
-	)
-}
-
-func (m *SumTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.RangeFilter)
-	}
-
-	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithTimestampGte(tt.Gte),
-		repo.WithTimestampLte(tt.Lte),
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
 	)
 }
 

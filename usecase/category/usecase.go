@@ -82,29 +82,9 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 		return nil, err
 	}
 
-	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		_, err = uc.categoryRepo.Create(txCtx, c)
-		if err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to save new category to repo, err: %v", err)
-			return err
-		}
-
-		if c.Budget == nil {
-			return nil
-		}
-
-		b := c.Budget
-		b.SetCategoryID(c.CategoryID)
-
-		_, err := uc.budgetRepo.Create(txCtx, b)
-		if err != nil {
-			return err
-		}
-
-		c.SetBudget(b)
-
-		return nil
-	}); err != nil {
+	_, err = uc.categoryRepo.Create(ctx, c)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to save new category to repo, err: %v", err)
 		return nil, err
 	}
 
@@ -114,12 +94,15 @@ func (uc *categoryUseCase) CreateCategory(ctx context.Context, req *CreateCatego
 }
 
 func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCategoryRequest) (*UpdateCategoryResponse, error) {
-	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
+	cf := req.ToCategoryFilter()
+	c, err := uc.categoryRepo.Get(ctx, cf)
 	if err != nil {
 		return nil, err
 	}
 
-	cu, err := c.Update(req.ToCategoryUpdate())
+	cu, err := c.Update(
+		entity.WithUpdateCategoryName(req.CategoryName),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +114,7 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 		}, nil
 	}
 
-	if err = uc.categoryRepo.Update(ctx, req.ToCategoryFilter(), cu); err != nil {
+	if err := uc.categoryRepo.Update(ctx, cf, cu); err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to save category updates to repo, err: %v", err)
 		return nil, err
 	}
@@ -142,23 +125,31 @@ func (uc *categoryUseCase) UpdateCategory(ctx context.Context, req *UpdateCatego
 }
 
 func (uc *categoryUseCase) DeleteCategory(ctx context.Context, req *DeleteCategoryRequest) (*DeleteCategoryResponse, error) {
-	f := req.ToCategoryFilter()
+	cf := req.ToCategoryFilter()
 
-	_, err := uc.categoryRepo.Get(ctx, f)
+	c, err := uc.categoryRepo.Get(ctx, cf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 		return nil, err
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		cu, err := c.Update(
+			entity.WithUpdateCategoryStatus(goutil.Uint32(uint32(entity.CategoryStatusDeleted))),
+		)
+		if err != nil {
+			return err
+		}
+
 		// mark category as deleted
-		if err := uc.categoryRepo.Delete(txCtx, f); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to mark category as deleted, err: %v", err)
+		if err := uc.categoryRepo.Update(txCtx, cf, cu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save category updates to repo, err: %v", err)
 			return err
 		}
 
 		// hard delete budgets
-		if err := uc.budgetRepo.DeleteMany(ctx, req.ToBudgetFilter()); err != nil {
+		bf := req.ToBudgetFilter()
+		if err := uc.budgetRepo.DeleteMany(ctx, bf); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to delete category budgets, err: %v", err)
 			return err
 		}
@@ -212,7 +203,10 @@ func (uc *categoryUseCase) GetCategoriesBudget(ctx context.Context, req *GetCate
 	}
 
 	if err := goutil.ParallelizeWork(ctx, len(catIDs), 10, func(ctx context.Context, workNum int) error {
-		b, err := uc.getBudgetWithUsage(ctx, req.ToGetCategoryBudgetRequest(catIDs[workNum]))
+		catID := catIDs[workNum]
+		gReq := req.ToGetCategoryBudgetRequest(catID)
+
+		b, err := uc.getBudgetWithUsage(ctx, gReq)
 		if err != nil {
 			return err
 		}
@@ -230,9 +224,9 @@ func (uc *categoryUseCase) GetCategoriesBudget(ctx context.Context, req *GetCate
 }
 
 func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCategoryBudgetRequest) (*entity.Budget, error) {
-	f := req.ToGetBudgetFilter()
+	bf := req.ToGetBudgetFilter()
 
-	b, err := uc.budgetRepo.Get(ctx, f)
+	b, err := uc.budgetRepo.Get(ctx, bf)
 	if err != nil && err != repo.ErrBudgetNotFound {
 		return nil, err
 	}
@@ -245,9 +239,9 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 	// get budget date range
 	var start, end uint64
 	if b.IsMonth() {
-		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+		start, end, err = util.GetMonthRangeAsUnix(req.GetBudgetDate(), req.AppMeta.GetTimezone())
 	} else if b.IsYear() {
-		start, end, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.GetTimezone())
+		start, end, err = util.GetYearRangeAsUnix(req.GetBudgetDate(), req.AppMeta.GetTimezone())
 	} else {
 		return nil, fmt.Errorf("invalid budget type, budget ID: %v", b.GetBudgetID())
 	}
@@ -262,26 +256,22 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 		return nil, err
 	}
 
-	u := entity.GetUserFromCtx(ctx)
-
-	// get exchange rates
-	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency(), start, end)
-	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
-		return nil, err
-	}
-
 	var usedAmount float64
 	for _, t := range ts {
 		amount := t.GetAmount()
 
-		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
+		if t.GetCurrency() != b.GetCurrency() {
+			erf := req.ToExchangeRateFilter(
+				b.GetCurrency(),
+				t.GetCurrency(),
+				t.GetTransactionTime(),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return nil, err
 			}
+
 			amount *= er.GetRate()
 		}
 
@@ -325,23 +315,21 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 
 	u := entity.GetUserFromCtx(ctx)
 
-	// get exchange rates
-	erf := req.ToExchangeRateFilter(u.Meta.GetCurrency())
-	ers, err := uc.exchangeRateRepo.GetMany(ctx, erf)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
-		return nil, err
-	}
-
 	for _, t := range ts {
 		amount := t.GetAmount()
 
 		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
+			erf := req.ToExchangeRateFilter(
+				u.Meta.GetCurrency(),
+				t.GetCurrency(),
+				t.GetTransactionTime(),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to get exchange rate from repo, err: %v", err)
+				return nil, err
 			}
+
 			amount *= er.GetRate()
 		}
 
@@ -359,11 +347,11 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 			continue
 		}
 
-		sums = append(sums, &common.TransactionSummary{
-			Category: c,
-			Sum:      goutil.Float64(util.RoundFloatToStandardDP(sum)),
-			Currency: u.Meta.Currency,
-		})
+		sums = append(sums, common.NewTransactionSummary(
+			common.WithSummaryCategory(c),
+			common.WithSummaryCurrency(u.Meta.Currency),
+			common.WithSummarySum(goutil.Float64(sum)),
+		))
 	}
 
 	return &SumCategoryTransactionsResponse{

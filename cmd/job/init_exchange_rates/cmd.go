@@ -21,13 +21,11 @@ import (
 	exchangeratehost "github.com/jseow5177/pockteer-be/dep/api/exchange_rate_host"
 )
 
-const DefaultStartDate = config.MinCurrencyDate
-
 type JobConfig struct {
-	StartDate string
-	EndDate   string
-	From      string
-	To        string
+	Date string
+	From string
+	To   string
+	Unit string
 }
 
 type InitExchangeRates struct {
@@ -45,8 +43,7 @@ type InitExchangeRates struct {
 func (c *InitExchangeRates) initFlags() error {
 	flagSet := flag.NewFlagSet(fmt.Sprintf("%s %s", filepath.Base(os.Args[0]), os.Args[1]), flag.ExitOnError)
 
-	flagSet.StringVar(&c.cfg.StartDate, "startDate", DefaultStartDate, "start date of exchange rate, format: 20220202")
-	flagSet.StringVar(&c.cfg.EndDate, "endDate", "", "end date of exchange rate, format: 20220202")
+	flagSet.StringVar(&c.cfg.Date, "date", util.FormatDate(time.Now()), "date of exchange rate, format: 20220202")
 	flagSet.StringVar(&c.cfg.From, "from", "", "comma-separated currencies, eg: SGD,MYR")
 	flagSet.StringVar(&c.cfg.To, "to", "", "comma-separated currencies, eg: SGD,MYR")
 
@@ -104,67 +101,57 @@ func (c *InitExchangeRates) Init(ctx context.Context, cfg *config.Config) error 
 		}
 	}()
 
-	c.exchangeRateRepo = mongo.NewExchangeRateMongo(c.mongo)
+	c.exchangeRateRepo, err = mongo.NewExchangeRateMongo(ctx, c.mongo)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to init exchange rate repo, err: %v", err)
+		return err
+	}
+
 	c.exchangeRateAPI = exchangeratehost.NewExchangeRateHostMgr(cfg.ExchangeRateHost)
 
 	return nil
 }
 
 func (c *InitExchangeRates) Run(ctx context.Context) error {
-	startDate, err := util.ParseDate(c.cfg.StartDate)
+	date, err := util.ParseDate(c.cfg.Date)
 	if err != nil {
-		return fmt.Errorf("fail to parse start date, date: %v, err: %v", c.cfg.StartDate, err)
+		return fmt.Errorf("fail to parse date, date: %v, err: %v", c.cfg.Date, err)
 	}
 
-	endDate := time.Now()
-	if c.cfg.EndDate != "" {
-		endDate, err = util.ParseDate(c.cfg.EndDate)
+	exchangeRates := make([]*entity.ExchangeRate, 0)
+	for _, fromCurrency := range c.fromCurrencies {
+		symbols := make([]string, 0)
+		for _, toCurrency := range c.toCurrencies {
+			if toCurrency != fromCurrency { // redundant to store 1:1
+				symbols = append(symbols, toCurrency)
+			}
+		}
+
+		if len(symbols) == 0 {
+			continue
+		}
+
+		erf := api.NewExchangeRateFilter(
+			util.FormatDate(date),
+			api.WithExchangeRateBase(goutil.String(fromCurrency)),
+			api.WithExchangeRateCurrencies(symbols...),
+		)
+
+		ers, err := c.exchangeRateAPI.GetExchangeRates(ctx, erf)
 		if err != nil {
-			return fmt.Errorf("fail to parse end date, date: %v, err: %v", c.cfg.EndDate, err)
-		}
-	}
-
-	ers := make([]*entity.ExchangeRate, 0)
-	for startDate.Before(endDate) || startDate.Equal(endDate) {
-		for _, fromCurrency := range c.fromCurrencies {
-			symbols := make([]string, 0)
-			for _, toCurrency := range c.toCurrencies {
-				if toCurrency != fromCurrency { // redundant to store 1:1
-					symbols = append(symbols, toCurrency)
-				}
-			}
-
-			if len(symbols) == 0 {
-				continue
-			}
-
-			sd := util.FormatDate(startDate)
-
-			log.Ctx(ctx).Info().Msgf("date: %v, from: %v, to: %v", sd, fromCurrency, symbols)
-
-			subErs, err := c.exchangeRateAPI.GetExchangeRates(ctx, &api.ExchangeRateFilter{
-				Date:    goutil.String(sd),
-				Base:    goutil.String(fromCurrency),
-				Symbols: symbols,
-			})
-			if err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to get exchange rates, err: %v", err)
-				return err
-			}
-
-			ers = append(ers, subErs...)
+			log.Ctx(ctx).Error().Msgf("fail to get exchange rates, err: %v", err)
+			return err
 		}
 
-		// move forward one month
-		startDate = startDate.AddDate(0, 1, 0)
+		exchangeRates = append(exchangeRates, ers...)
 	}
 
-	if len(ers) == 0 {
+	if len(exchangeRates) == 0 {
 		log.Ctx(ctx).Info().Msg("no exchange rates created")
 		return nil
 	}
 
-	ids, err := c.exchangeRateRepo.CreateMany(ctx, ers)
+	ids, err := c.exchangeRateRepo.CreateMany(ctx, exchangeRates)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to create exchange rates in repo, err: %v", err)
 		return err

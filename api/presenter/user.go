@@ -10,6 +10,21 @@ import (
 
 type UserMeta struct {
 	Currency *string `json:"currency,omitempty"`
+	HideInfo *bool   `json:"hide_info,omitempty"`
+}
+
+func (um *UserMeta) GetHideInfo() bool {
+	if um != nil && um.HideInfo != nil {
+		return *um.HideInfo
+	}
+	return false
+}
+
+func (um *UserMeta) GetCurrency() string {
+	if um != nil && um.Currency != nil {
+		return *um.Currency
+	}
+	return ""
 }
 
 type User struct {
@@ -296,6 +311,7 @@ func (m *SendOTPResponse) Set(useCaseRes *user.SendOTPResponse) {}
 
 type UpdateUserMetaRequest struct {
 	Currency *string `json:"currency,omitempty"`
+	HideInfo *bool   `json:"hide_info,omitempty"`
 }
 
 func (m *UpdateUserMetaRequest) GetCurrency() string {
@@ -305,10 +321,18 @@ func (m *UpdateUserMetaRequest) GetCurrency() string {
 	return ""
 }
 
+func (m *UpdateUserMetaRequest) GetHideInfo() bool {
+	if m != nil && m.HideInfo != nil {
+		return *m.HideInfo
+	}
+	return false
+}
+
 func (m *UpdateUserMetaRequest) ToUseCaseReq(userID string) *user.UpdateUserMetaRequest {
 	return &user.UpdateUserMetaRequest{
 		UserID:   goutil.String(userID),
 		Currency: m.Currency,
+		HideInfo: m.HideInfo,
 	}
 }
 

@@ -3,10 +3,8 @@ package category
 import (
 	"context"
 
-	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
-	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -27,10 +25,10 @@ type UseCase interface {
 }
 
 type GetCategoryBudgetRequest struct {
+	AppMeta    *common.AppMeta
 	UserID     *string
 	CategoryID *string
 	BudgetDate *string
-	Timezone   *string
 }
 
 func (m *GetCategoryBudgetRequest) GetUserID() string {
@@ -54,27 +52,17 @@ func (m *GetCategoryBudgetRequest) GetCategoryID() string {
 	return ""
 }
 
-func (m *GetCategoryBudgetRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
+func (m *GetCategoryBudgetRequest) GetAppMeta() *common.AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
 	}
-	return ""
+	return nil
 }
 
 func (m *GetCategoryBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return repo.NewCategoryFilter(
 		m.GetUserID(),
 		repo.WithCategoryID(m.CategoryID),
-	)
-}
-
-func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end uint64) *repo.TransactionFilter {
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionCategoryID(m.CategoryID),
-		repo.WithTransactionTimeGte(goutil.Uint64(start)),
-		repo.WithTransactionTimeLte(goutil.Uint64(end)),
-		repo.WithTransactionType(goutil.Uint32(uint32(entity.TransactionTypeExpense))), // safeguard
 	)
 }
 
@@ -86,19 +74,20 @@ func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
 	}
 }
 
-func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to string, start, end uint64) *repo.ExchangeRateFilter {
+func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end uint64) *repo.TransactionFilter {
+	return repo.NewTransactionFilter(
+		m.GetUserID(),
+		repo.WithTransactionCategoryID(m.CategoryID),
+		repo.WithTransactionTimeGte(goutil.Uint64(start)),
+		repo.WithTransactionTimeLte(goutil.Uint64(end)),
+	)
+}
+
+func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to, from string, timestamp uint64) *repo.ExchangeRateFilter {
 	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithTimestampGte(goutil.Uint64(start)),
-		repo.WithTimestampLte(goutil.Uint64(end)),
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
+		repo.WithExchangeRateTo(goutil.String(to)),
+		repo.WithExchangeRateFrom(goutil.String(from)),
+		repo.WithExchangeRateTimestamp(goutil.Uint64(timestamp)),
 	)
 }
 
@@ -154,7 +143,8 @@ type CreateCategoryRequest struct {
 	UserID       *string
 	CategoryName *string
 	CategoryType *uint32
-	Budget       *budget.CreateBudgetRequest
+
+	Budget *budget.CreateBudgetRequest // only for InitUser
 }
 
 func (m *CreateCategoryRequest) GetUserID() string {
@@ -234,12 +224,6 @@ func (m *UpdateCategoryRequest) GetCategoryName() string {
 	return ""
 }
 
-func (m *UpdateCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
-	return entity.NewCategoryUpdate(
-		entity.WithUpdateCategoryName(m.CategoryName),
-	)
-}
-
 func (m *UpdateCategoryRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return repo.NewCategoryFilter(
 		m.GetUserID(),
@@ -305,10 +289,10 @@ func (m *GetCategoriesResponse) GetCategories() []*entity.Category {
 }
 
 type GetCategoriesBudgetRequest struct {
+	AppMeta     *common.AppMeta
 	UserID      *string
 	BudgetDate  *string
 	CategoryIDs []string
-	Timezone    *string
 }
 
 func (m *GetCategoriesBudgetRequest) GetUserID() string {
@@ -332,11 +316,11 @@ func (m *GetCategoriesBudgetRequest) GetCategoryIDs() []string {
 	return nil
 }
 
-func (m *GetCategoriesBudgetRequest) GetTimezone() string {
-	if m != nil && m.Timezone != nil {
-		return *m.Timezone
+func (m *GetCategoriesBudgetRequest) GetAppMeta() *common.AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
 	}
-	return ""
+	return nil
 }
 
 func (m *GetCategoriesBudgetRequest) ToCategoryFilter() *repo.CategoryFilter {
@@ -351,7 +335,7 @@ func (m *GetCategoriesBudgetRequest) ToGetCategoryBudgetRequest(categoryID strin
 		UserID:     m.UserID,
 		CategoryID: goutil.String(categoryID),
 		BudgetDate: m.BudgetDate,
-		Timezone:   m.Timezone,
+		AppMeta:    m.AppMeta,
 	}
 }
 
@@ -399,12 +383,6 @@ func (m *DeleteCategoryRequest) ToBudgetFilter() *repo.BudgetFilter {
 	}
 }
 
-func (m *DeleteCategoryRequest) ToCategoryUpdate() *entity.CategoryUpdate {
-	return entity.NewCategoryUpdate(
-		entity.WithUpdateCategoryStatus(goutil.Uint32(uint32(entity.CategoryStatusDeleted))),
-	)
-}
-
 type DeleteCategoryResponse struct{}
 
 type SumCategoryTransactionsRequest struct {
@@ -449,32 +427,19 @@ func (m *SumCategoryTransactionsRequest) ToTransactionFilter(categoryIDs []strin
 	)
 }
 
-func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to string) *repo.ExchangeRateFilter {
-	tt := m.TransactionTime
-	if tt == nil {
-		tt = new(common.RangeFilter)
-	}
-
-	return repo.NewExchangeRateFilter(
-		to,
-		repo.WithTimestampGte(tt.Gte),
-		repo.WithTimestampLte(tt.Lte),
-		repo.WithExchangeRatePaging(&repo.Paging{
-			Sorts: []filter.Sort{
-				&repo.Sort{
-					Field: goutil.String("timestamp"),
-					Order: goutil.String(config.OrderAsc),
-				},
-			},
-		}),
-	)
-}
-
 func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
 	return repo.NewCategoryFilter(
 		m.GetUserID(),
 		repo.WithCategoryType(m.TransactionType),
 		repo.WithCategoryStatus(nil),
+	)
+}
+
+func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to, from string, timestamp uint64) *repo.ExchangeRateFilter {
+	return repo.NewExchangeRateFilter(
+		repo.WithExchangeRateTo(goutil.String(to)),
+		repo.WithExchangeRateFrom(goutil.String(from)),
+		repo.WithExchangeRateTimestamp(goutil.Uint64(timestamp)),
 	)
 }
 

@@ -9,17 +9,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator{
+var GetTransactionGroupsValidator = validator.MustForm(map[string]validator.Validator{
+	"app_meta": entity.AppMetaValidator(),
 	"category_id": &validator.String{
 		Optional: true,
 	},
 	"account_id": &validator.String{
 		Optional:  true,
 		UnsetZero: true,
-	},
-	"category_ids": &validator.Slice{
-		Optional:  true,
-		Validator: new(validator.String),
 	},
 	"transaction_type": &validator.UInt32{
 		Optional:   true,
@@ -37,10 +34,14 @@ var GetTransactionsValidator = validator.MustForm(map[string]validator.Validator
 	"paging": entity.PagingValidator(true),
 })
 
-func (h *transactionHandler) GetTransactions(ctx context.Context, req *presenter.GetTransactionsRequest, res *presenter.GetTransactionsResponse) error {
+func (h *transactionHandler) GetTransactionGroups(
+	ctx context.Context,
+	req *presenter.GetTransactionGroupsRequest,
+	res *presenter.GetTransactionGroupsResponse,
+) error {
 	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.transactionUseCase.GetTransactions(ctx, req.ToUseCaseReq(user.GetUserID()))
+	useCaseRes, err := h.transactionUseCase.GetTransactionGroups(ctx, req.ToUseCaseReq(user.GetUserID()))
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transaction, err: %v", err)
 		return err

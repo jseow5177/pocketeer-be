@@ -31,6 +31,7 @@ const (
 	PathDeleteTransaction       = PathV1Prefix + "delete_transaction"
 	PathGetTransaction          = PathV1Prefix + "get_transaction"
 	PathGetTransactions         = PathV1Prefix + "get_transactions"
+	PathGetTransactionGroups    = PathV1Prefix + "get_transaction_groups"
 	PathSumTransactions         = PathV1Prefix + "sum_transactions"
 	PathAggrTransactions        = PathV1Prefix + "aggr_transactions"
 	PathGetBudget               = PathV1Prefix + "get_budget"
@@ -50,10 +51,10 @@ const (
 	PathGetLots                 = PathV1Prefix + "get_lots"
 	PathCreateFeedback          = PathV1Prefix + "create_feedback"
 	PathGetExchangeRate         = PathV1Prefix + "get_exchange_rate"
+	PathGetCurrencies           = PathV1Prefix + "get_currencies"
 
 	// Admin APIs
-	PathAdminV1Prefix       = "/api/admin/v1/"
-	PathCreateExchangeRates = PathAdminV1Prefix + "create_exchange_rates"
+	PathAdminV1Prefix = "/api/admin/v1/"
 )
 
 const (

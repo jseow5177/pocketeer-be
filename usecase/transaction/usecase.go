@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
@@ -77,7 +78,94 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 	}, nil
 }
 
-func (uc *transactionUseCase) GetTransactions(ctx context.Context, req *GetTransactionsRequest) (*GetTransactionsResponse, error) {
+func (uc *transactionUseCase) GetTransactionGroups(
+	ctx context.Context,
+	req *GetTransactionGroupsRequest,
+) (*GetTransactionGroupsResponse, error) {
+	res, err := uc.GetTransactions(ctx, req.GetTransactionsRequest)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions, err: %v", err)
+		return nil, err
+	}
+
+	loc, err := time.LoadLocation(req.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, entity.ErrInvalidTimezone
+	}
+
+	u := entity.GetUserFromCtx(ctx)
+
+	// intermediate state
+	type transactionSummary struct {
+		Date         string
+		Sum          float64
+		TotalExpense float64
+		TotalIncome  float64
+		Transactions []*entity.Transaction
+	}
+
+	var (
+		transactionGroups    = make([]*transactionSummary, 0)
+		transactionGroupsMap = make(map[string]*transactionSummary)
+	)
+	// transactions is already ordered in desc order of transaction_time
+	for _, t := range res.Transactions {
+		ts := time.UnixMilli(int64(t.GetTransactionTime())).In(loc)
+		date := util.FormatDate(ts)
+
+		if _, ok := transactionGroupsMap[date]; !ok {
+			ts := &transactionSummary{
+				Date:         date,
+				Sum:          0,
+				TotalExpense: 0,
+				TotalIncome:  0,
+				Transactions: make([]*entity.Transaction, 0),
+			}
+			transactionGroupsMap[date] = ts
+			transactionGroups = append(transactionGroups, ts)
+		}
+
+		transactionGroup := transactionGroupsMap[date]
+		transactionGroup.Transactions = append(transactionGroup.Transactions, t)
+
+		amount, err := uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
+			return nil, err
+		}
+
+		if t.IsExpense() {
+			transactionGroup.TotalExpense += amount
+		} else if t.IsIncome() {
+			transactionGroup.TotalIncome += amount
+		}
+
+		transactionGroup.Sum += amount
+	}
+
+	// round after sum
+	tgs := make([]*common.TransactionSummary, 0)
+	for _, transactionGroup := range transactionGroups {
+		tgs = append(tgs, common.NewTransactionSummary(
+			common.WithSummaryCurrency(u.Meta.Currency),
+			common.WithSummaryDate(goutil.String(transactionGroup.Date)),
+			common.WithSummaryTransactions(transactionGroup.Transactions),
+			common.WithSummarySum(goutil.Float64(transactionGroup.Sum)),
+			common.WithSummaryTotalExpense(goutil.Float64(transactionGroup.TotalExpense)),
+			common.WithSummaryTotalIncome(goutil.Float64(transactionGroup.TotalIncome)),
+		))
+	}
+
+	return &GetTransactionGroupsResponse{
+		TransactionGroups: tgs,
+		Paging:            req.Paging,
+	}, nil
+}
+
+func (uc *transactionUseCase) GetTransactions(
+	ctx context.Context,
+	req *GetTransactionsRequest,
+) (*GetTransactionsResponse, error) {
 	isDeletedCategory := make(map[string]bool)
 
 	// convert empty category ID to query of deleted categories
@@ -179,8 +267,16 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err := uc.transactionRepo.Delete(txCtx, tf); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to mark transaction as deleted, err: %v", err)
+		tu, err := t.Update(
+			entity.WithUpdateTransactionStatus(goutil.Uint32(uint32(entity.TransactionStatusDeleted))),
+		)
+		if err != nil {
+			return err
+		}
+
+		// mark transaction as deleted
+		if err := uc.transactionRepo.Update(txCtx, tf, tu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to save transaction updates to repo, err: %v", err)
 			return err
 		}
 
@@ -198,7 +294,7 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 			}
 
 			// make currency conversion if necessary
-			amount, err := uc.getAmountAfterConversion(txCtx, t, ac)
+			amount, err := uc.getAmountAfterConversion(txCtx, t, ac.GetCurrency())
 			if err != nil {
 				log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
 				return err
@@ -206,9 +302,9 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 
 			// reset account balance
 			newBalance := ac.GetBalance() - amount
-			nac, err := ac.Update(entity.NewAccountUpdate(
+			nac, err := ac.Update(
 				entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
-			))
+			)
 			if err != nil {
 				return err
 			}
@@ -230,7 +326,10 @@ func (uc *transactionUseCase) DeleteTransaction(ctx context.Context, req *Delete
 }
 
 func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *CreateTransactionRequest) (*CreateTransactionResponse, error) {
-	t := req.ToTransactionEntity()
+	t, err := req.ToTransactionEntity()
+	if err != nil {
+		return nil, err
+	}
 
 	c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter())
 	if err != nil {
@@ -261,7 +360,7 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 		}
 
 		// make currency conversion if necessary
-		amount, err := uc.getAmountAfterConversion(txCtx, t, ac)
+		amount, err := uc.getAmountAfterConversion(txCtx, t, ac.GetCurrency())
 		if err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
 			return err
@@ -269,9 +368,9 @@ func (uc *transactionUseCase) CreateTransaction(ctx context.Context, req *Create
 
 		// update account balance
 		newBalance := ac.GetBalance() + amount
-		nac, err := ac.Update(entity.NewAccountUpdate(
+		nac, err := ac.Update(
 			entity.WithUpdateAccountBalance(goutil.Float64(newBalance)),
-		))
+		)
 		if err != nil {
 			return err
 		}
@@ -301,9 +400,25 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 	if err != nil {
 		return nil, err
 	}
-	oldT := *t
 
-	tu := t.Update(req.ToTransactionUpdate())
+	oldT, err := t.Clone()
+	if err != nil {
+		return nil, err
+	}
+
+	tu, err := t.Update(
+		entity.WithUpdateTransactionAmount(req.Amount),
+		entity.WithUpdateTransactionTime(req.TransactionTime),
+		entity.WithUpdateTransactionNote(req.Note),
+		entity.WithUpdateTransactionAccountID(req.AccountID),
+		entity.WithUpdateTransactionCategoryID(req.CategoryID),
+		entity.WithUpdateTransactionType(req.TransactionType),
+		entity.WithUpdateTransactionCurrency(req.Currency),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	if tu == nil {
 		log.Ctx(ctx).Info().Msg("transaction has no updates")
 		return &UpdateTransactionResponse{
@@ -352,16 +467,16 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 		if tu.AccountID != nil || tu.Amount != nil {
 			// revert balance of old account
 			if oldAc != nil {
-				amount, err := uc.getAmountAfterConversion(txCtx, &oldT, oldAc)
+				amount, err := uc.getAmountAfterConversion(txCtx, oldT, oldAc.GetCurrency())
 				if err != nil {
 					log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
 					return err
 				}
 
 				oldAcBalance := oldAc.GetBalance() - amount
-				acu, err := oldAc.Update(entity.NewAccountUpdate(
+				acu, err := oldAc.Update(
 					entity.WithUpdateAccountBalance(goutil.Float64(oldAcBalance)),
-				))
+				)
 				if err != nil {
 					return err
 				}
@@ -376,16 +491,16 @@ func (uc *transactionUseCase) UpdateTransaction(ctx context.Context, req *Update
 
 			// update balance of new account
 			if newAc != nil {
-				amount, err := uc.getAmountAfterConversion(txCtx, t, newAc)
+				amount, err := uc.getAmountAfterConversion(txCtx, t, newAc.GetCurrency())
 				if err != nil {
 					log.Ctx(txCtx).Error().Msgf("fail convert transaction currency, err: %v", err)
 					return err
 				}
 
 				newAcBalance := newAc.GetBalance() + amount
-				acu, err := newAc.Update(entity.NewAccountUpdate(
+				acu, err := newAc.Update(
 					entity.WithUpdateAccountBalance(goutil.Float64(newAcBalance)),
-				))
+				)
 				if err != nil {
 					return err
 				}
@@ -416,14 +531,6 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 		return nil, err
 	}
 
-	u := entity.GetUserFromCtx(ctx)
-
-	ers, err := uc.exchangeRateRepo.GetMany(ctx, req.ToExchangeRateFilter(u.Meta.GetCurrency()))
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get exchange rates from repo, err: %v", err)
-		return nil, err
-	}
-
 	sumByTT := make(map[uint32]float64)
 	for tt := range entity.TransactionTypes {
 		if (req.TransactionType == nil) ||
@@ -432,16 +539,13 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 		}
 	}
 
-	for _, t := range ts {
-		amount := t.GetAmount()
+	u := entity.GetUserFromCtx(ctx)
 
-		if t.GetCurrency() != u.Meta.GetCurrency() {
-			er := entity.BinarySearchExchangeRates(t, ers)
-			if er == nil {
-				log.Ctx(ctx).Warn().Msgf("nil exchange rate, transaction_id: %v", t.GetTransactionID())
-				continue
-			}
-			amount *= er.GetRate()
+	for _, t := range ts {
+		amount, err := uc.getAmountAfterConversion(ctx, t, u.Meta.GetCurrency())
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
+			return nil, err
 		}
 
 		sumByTT[t.GetTransactionType()] += amount
@@ -449,11 +553,11 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 
 	sums := make([]*common.TransactionSummary, 0)
 	for tt, sum := range sumByTT {
-		sums = append(sums, &common.TransactionSummary{
-			TransactionType: goutil.Uint32(tt),
-			Sum:             goutil.Float64(util.RoundFloatToStandardDP(sum)),
-			Currency:        u.Meta.Currency,
-		})
+		sums = append(sums, common.NewTransactionSummary(
+			common.WithSummaryTransactionType(goutil.Uint32(tt)),
+			common.WithSummarySum(goutil.Float64(sum)),
+			common.WithSummaryCurrency(u.Meta.Currency),
+		))
 	}
 
 	return &SumTransactionsResponse{
@@ -499,21 +603,24 @@ func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTra
 	}, nil
 }
 
-func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *entity.Transaction, ac *entity.Account) (float64, error) {
+func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *entity.Transaction, currency string) (float64, error) {
 	amount := t.GetAmount()
 
-	if t.GetCurrency() == ac.GetCurrency() {
+	if t.GetCurrency() == currency {
 		return amount, nil
 	}
 
-	er, err := uc.exchangeRateRepo.Get(ctx, &repo.GetExchangeRateFilter{
-		Timestamp: t.TransactionTime,
-		From:      t.Currency,
-		To:        ac.Currency,
-	})
+	erf := repo.NewExchangeRateFilter(
+		repo.WithExchangeRateFrom(t.Currency),
+		repo.WithExchangeRateTo(goutil.String(currency)),
+		repo.WithExchangeRateTimestamp(t.TransactionTime),
+	)
+
+	er, err := uc.exchangeRateRepo.Get(ctx, erf)
 	if err != nil {
 		return 0, err
 	}
+
 	amount *= er.GetRate()
 
 	return amount, nil

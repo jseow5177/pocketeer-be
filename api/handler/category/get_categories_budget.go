@@ -10,6 +10,7 @@ import (
 )
 
 var GetCategoriesBudgetValidator = validator.MustForm(map[string]validator.Validator{
+	"app_meta": entity.AppMetaValidator(),
 	"category_ids": &validator.Slice{
 		Optional:  false,
 		Validator: &validator.String{},
@@ -17,10 +18,6 @@ var GetCategoriesBudgetValidator = validator.MustForm(map[string]validator.Valid
 	"budget_date": &validator.String{
 		Optional:   false,
 		Validators: []validator.StringFunc{entity.CheckDateStr},
-	},
-	"timezone": &validator.String{
-		Optional:   false,
-		Validators: []validator.StringFunc{entity.CheckTimezone},
 	},
 })
 

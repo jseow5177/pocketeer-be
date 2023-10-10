@@ -72,7 +72,10 @@ func (uc *userUseCase) UpdateUserMeta(ctx context.Context, req *UpdateUserMetaRe
 		return nil, err
 	}
 
-	uu, err := u.Update(req.ToUserUpdate())
+	uu, err := u.Update(
+		entity.WithUpdateUserCurrency(req.Currency),
+		entity.WithUpdateUserHideInfo(req.HideInfo),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +125,11 @@ func (uc *userUseCase) InitUser(ctx context.Context, req *InitUserRequest) (*Ini
 			return err
 		}
 
-		// change user flag
-		uu, err := u.Update(req.ToUserUpdate())
+		// change user flag & currency
+		uu, err := u.Update(
+			entity.WithUpdateUserFlag(goutil.Uint32(uint32(entity.UserFlagDefault))),
+			entity.WithUpdateUserCurrency(req.Currency),
+		)
 		if err != nil {
 			return err
 		}
@@ -163,7 +169,9 @@ func (uc *userUseCase) VerifyEmail(ctx context.Context, req *VerifyEmailRequest)
 	}
 
 	// Update user to status normal
-	uu, err := u.Update(req.ToUserUpdate())
+	uu, err := u.Update(
+		entity.WithUpdateUserStatus(goutil.Uint32(uint32(entity.UserStatusNormal))),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +274,9 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 		}
 	} else {
 		// check if user signed up with a different password
-		uu, err := u.Update(req.ToUserUpdate())
+		uu, err := u.Update(
+			entity.WithUpdateUserPassword(req.Password),
+		)
 		if err != nil {
 			return nil, err
 		}

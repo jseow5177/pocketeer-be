@@ -87,10 +87,16 @@ func (c *SaveSnapshot) Init(ctx context.Context, cfg *config.Config) error {
 	c.userRepo = mongo.NewUserMongo(c.mongo)
 	c.snapshotRepo = mongo.NewSnapshotMongo(c.mongo)
 
+	exchangeRateRepo, err := mongo.NewExchangeRateMongo(ctx, c.mongo)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to init exchange rate repo, err: %v", err)
+		return err
+	}
+
 	// init use cases
 	c.accountUseCase = acuc.NewAccountUseCase(
 		c.mongo, mongo.NewAccountMongo(c.mongo), mongo.NewTransactionMongo(c.mongo), mongo.NewHoldingMongo(c.mongo),
-		mongo.NewLotMongo(c.mongo), quoteRepo, mongo.NewSecurityMongo(c.mongo), mongo.NewExchangeRateMongo(c.mongo),
+		mongo.NewLotMongo(c.mongo), quoteRepo, mongo.NewSecurityMongo(c.mongo), exchangeRateRepo,
 	)
 
 	return nil

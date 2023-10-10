@@ -63,12 +63,6 @@ func (m *accountMongo) Update(ctx context.Context, acf *repo.AccountFilter, acu 
 	return nil
 }
 
-func (m *accountMongo) Delete(ctx context.Context, acf *repo.AccountFilter) error {
-	return m.Update(ctx, acf, entity.NewAccountUpdate(
-		entity.WithUpdateAccountStatus(goutil.Uint32(uint32(entity.AccountStatusDeleted))),
-	))
-}
-
 func (m *accountMongo) Get(ctx context.Context, acf *repo.AccountFilter) (*entity.Account, error) {
 	f := mongoutil.BuildFilter(acf)
 
