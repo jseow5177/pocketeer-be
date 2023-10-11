@@ -37,7 +37,6 @@ import (
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
-	sph "github.com/jseow5177/pockteer-be/api/handler/snapshot"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
@@ -49,7 +48,6 @@ import (
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	luc "github.com/jseow5177/pockteer-be/usecase/lot"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
-	spuc "github.com/jseow5177/pockteer-be/usecase/snapshot"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
 	uuc "github.com/jseow5177/pockteer-be/usecase/user"
@@ -93,7 +91,6 @@ type server struct {
 	lotUseCase          luc.UseCase
 	feedbackUseCase     fuc.UseCase
 	exchangeRateUseCase eruc.UseCase
-	snapshotUseCase     spuc.UseCase
 }
 
 func main() {
@@ -225,7 +222,7 @@ func (s *server) Start() error {
 	)
 	s.accountUseCase = acuc.NewAccountUseCase(
 		s.mongo, s.accountRepo, s.transactionRepo,
-		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo,
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo, s.snapshotRepo,
 	)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
@@ -233,7 +230,6 @@ func (s *server) Start() error {
 		s.categoryRepo, s.budgetRepo, s.accountRepo, s.securityRepo, s.holdingRepo, s.lotRepo,
 	)
 	s.exchangeRateUseCase = eruc.NewExchangeRateUseCase(s.exchangeRateAPI, s.exchangeRateRepo)
-	s.snapshotUseCase = spuc.NewSnapshotUseCase(s.snapshotRepo, s.accountRepo)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.opt.Port)
@@ -510,7 +506,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// gets accounts
+	// get accounts
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetAccounts,
 		Method: http.MethodPost,
@@ -520,6 +516,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: ach.GetAccountsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.GetAccounts(ctx, req.(*presenter.GetAccountsRequest), res.(*presenter.GetAccountsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get accounts summary
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAccountsSummary,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAccountsSummaryRequest),
+			Res:       new(presenter.GetAccountsSummaryResponse),
+			Validator: ach.GetAccountsSummaryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.GetAccountsSummary(ctx, req.(*presenter.GetAccountsSummaryRequest), res.(*presenter.GetAccountsSummaryResponse))
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},
@@ -535,25 +546,6 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: ach.DeleteAccountValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.DeleteAccount(ctx, req.(*presenter.DeleteAccountRequest), res.(*presenter.DeleteAccountResponse))
-			},
-		},
-		Middlewares: []router.Middleware{userAuthMiddleware},
-	})
-
-	// ========== Snapshot ========== //
-
-	snapshotHandler := sph.NewSnapshotHandler(s.snapshotUseCase)
-
-	// get account snapshots
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathGetAccountSnapshots,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.GetAccountSnapshotsRequest),
-			Res:       new(presenter.GetAccountSnapshotsResponse),
-			Validator: sph.GetAccountSnapshotsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return snapshotHandler.GetAccountSnapshots(ctx, req.(*presenter.GetAccountSnapshotsRequest), res.(*presenter.GetAccountSnapshotsResponse))
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},

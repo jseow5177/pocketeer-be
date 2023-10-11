@@ -96,7 +96,7 @@ func (c *SaveSnapshot) Init(ctx context.Context, cfg *config.Config) error {
 	// init use cases
 	c.accountUseCase = acuc.NewAccountUseCase(
 		c.mongo, mongo.NewAccountMongo(c.mongo), mongo.NewTransactionMongo(c.mongo), mongo.NewHoldingMongo(c.mongo),
-		mongo.NewLotMongo(c.mongo), quoteRepo, mongo.NewSecurityMongo(c.mongo), exchangeRateRepo,
+		mongo.NewLotMongo(c.mongo), quoteRepo, mongo.NewSecurityMongo(c.mongo), exchangeRateRepo, c.snapshotRepo,
 	)
 
 	return nil

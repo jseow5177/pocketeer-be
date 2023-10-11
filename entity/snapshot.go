@@ -9,7 +9,8 @@ import (
 type SnapshotUnit uint32
 
 const (
-	SnapshotUnitMonth SnapshotUnit = iota
+	SnapshotUnitInvalid SnapshotUnit = iota
+	SnapshotUnitMonth
 )
 
 var SnapshotUnits = map[uint32]string{
@@ -34,10 +35,6 @@ type Snapshot struct {
 	Record       *string
 	Timestamp    *uint64
 	CreateTime   *uint64
-
-	// Only `Period` and `Value` will be returned
-	Period *string
-	Value  *string
 }
 
 type SnapshotOption = func(sp *Snapshot)
@@ -138,24 +135,13 @@ func (sp *Snapshot) SetCreateTime(createTime *uint64) {
 	sp.CreateTime = createTime
 }
 
-func (sp *Snapshot) GetPeriod() string {
-	if sp != nil && sp.Period != nil {
-		return *sp.Period
+func (sp *Snapshot) GetRecord() string {
+	if sp != nil && sp.Record != nil {
+		return *sp.Record
 	}
 	return ""
 }
 
-func (sp *Snapshot) SetPeriod(period *string) {
-	sp.Period = period
-}
-
-func (sp *Snapshot) GetValue() string {
-	if sp != nil && sp.Value != nil {
-		return *sp.Value
-	}
-	return ""
-}
-
-func (sp *Snapshot) SetValue(value *string) {
-	sp.Value = value
+func (sp *Snapshot) SetRecord(record *string) {
+	sp.Record = record
 }

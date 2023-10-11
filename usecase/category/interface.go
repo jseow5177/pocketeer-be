@@ -444,10 +444,10 @@ func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to, from string, t
 }
 
 type SumCategoryTransactionsResponse struct {
-	Sums []*common.TransactionSummary
+	Sums []*common.Summary
 }
 
-func (m *SumCategoryTransactionsResponse) GetSums() []*common.TransactionSummary {
+func (m *SumCategoryTransactionsResponse) GetSums() []*common.Summary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}

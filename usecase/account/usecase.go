@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
@@ -22,6 +24,7 @@ type accountUseCase struct {
 	quoteRepo        repo.QuoteRepo
 	securityRepo     repo.SecurityRepo
 	exchangeRateRepo repo.ExchangeRateRepo
+	snapshotRepo     repo.SnapshotRepo
 }
 
 func NewAccountUseCase(
@@ -33,6 +36,7 @@ func NewAccountUseCase(
 	quoteRepo repo.QuoteRepo,
 	securityRepo repo.SecurityRepo,
 	exchangeRateRepo repo.ExchangeRateRepo,
+	snapshotRepo repo.SnapshotRepo,
 ) UseCase {
 	return &accountUseCase{
 		txMgr,
@@ -43,6 +47,7 @@ func NewAccountUseCase(
 		quoteRepo,
 		securityRepo,
 		exchangeRateRepo,
+		snapshotRepo,
 	}
 }
 
@@ -380,4 +385,105 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 	ac.SetPercentGain(goutil.Float64(percentGain))
 
 	return nil
+}
+
+func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccountsSummaryRequest) (*GetAccountsSummaryResponse, error) {
+	sps, err := uc.snapshotRepo.GetMany(ctx, req.ToSnapshotFilter())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account snapshots from repo, err: %v", err)
+		return nil, err
+	}
+
+	var (
+		latestTimestamps     = make(map[string]time.Time)            // group by unit
+		snapshotsByTimestamp = make(map[string]*GetAccountsResponse) // group by date
+	)
+	for _, sp := range sps {
+		var (
+			key string
+			t   = time.UnixMilli(int64(sp.GetTimestamp()))
+		)
+		switch req.GetUnit() {
+		case uint32(entity.SnapshotUnitMonth):
+			key = fmt.Sprintf("%d-%02d", t.Year(), t.Month()) // group by month
+		default:
+			log.Ctx(ctx).Error().Msgf("invalid snapshot unit: %v", req.GetUnit())
+			continue
+		}
+
+		// get the latest snapshot of the unit
+		if existing, ok := latestTimestamps[key]; !ok || t.After(existing) {
+			latestTimestamps[key] = t
+
+			getAccountsResp := new(GetAccountsResponse)
+			if err := json.Unmarshal([]byte(sp.GetRecord()), &getAccountsResp); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to unmarshal snapshot, snapshot: %v, err: %v",
+					sp.GetRecord(), err)
+				return nil, err
+			}
+
+			date := util.FormatDate(t)
+			snapshotsByTimestamp[date] = getAccountsResp
+		}
+	}
+
+	// fetch latest snapshot
+	latestGetAccounts, err := uc.GetAccounts(ctx, &GetAccountsRequest{
+		UserID: req.User.UserID,
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get latest accounts, err: %v", err)
+		return nil, err
+	}
+	snapshotsByTimestamp[""] = latestGetAccounts
+
+	var (
+		summaryByAccountID = make(map[string][]*common.Summary)
+		accounts           = make(map[string]*entity.Account)
+		resp               = new(GetAccountsSummaryResponse)
+	)
+	for date, snapshot := range snapshotsByTimestamp {
+		// net worth
+		resp.NetWorth = append(resp.NetWorth, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(snapshot.NetWorth),
+			common.WithSummaryCurrency(snapshot.Currency),
+		))
+
+		// asset value
+		resp.AssetValue = append(resp.AssetValue, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(snapshot.AssetValue),
+			common.WithSummaryCurrency(snapshot.Currency),
+		))
+
+		// debt value
+		resp.DebtValue = append(resp.DebtValue, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(snapshot.DebtValue),
+			common.WithSummaryCurrency(snapshot.Currency),
+		))
+
+		// individual account
+		for _, account := range snapshot.Accounts {
+			accountID := account.GetAccountID()
+			accounts[accountID] = account
+
+			summaryByAccountID[accountID] = append(summaryByAccountID[accountID], common.NewSummary(
+				common.WithSummaryDate(goutil.String(date)),
+				common.WithSummarySum(account.Balance),
+				common.WithSummaryCurrency(account.Currency),
+			))
+		}
+	}
+
+	for accountID, summary := range summaryByAccountID {
+		account := accounts[accountID]
+		resp.Accounts = append(resp.Accounts, &GetAccountSummaryResponse{
+			Account: account,
+			Summary: summary,
+		})
+	}
+
+	return resp, nil
 }

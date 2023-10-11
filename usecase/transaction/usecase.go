@@ -144,9 +144,9 @@ func (uc *transactionUseCase) GetTransactionGroups(
 	}
 
 	// round after sum
-	tgs := make([]*common.TransactionSummary, 0)
+	tgs := make([]*common.Summary, 0)
 	for _, transactionGroup := range transactionGroups {
-		tgs = append(tgs, common.NewTransactionSummary(
+		tgs = append(tgs, common.NewSummary(
 			common.WithSummaryCurrency(u.Meta.Currency),
 			common.WithSummaryDate(goutil.String(transactionGroup.Date)),
 			common.WithSummaryTransactions(transactionGroup.Transactions),
@@ -551,9 +551,9 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 		sumByTT[t.GetTransactionType()] += amount
 	}
 
-	sums := make([]*common.TransactionSummary, 0)
+	sums := make([]*common.Summary, 0)
 	for tt, sum := range sumByTT {
-		sums = append(sums, common.NewTransactionSummary(
+		sums = append(sums, common.NewSummary(
 			common.WithSummaryTransactionType(goutil.Uint32(tt)),
 			common.WithSummarySum(goutil.Float64(sum)),
 			common.WithSummaryCurrency(u.Meta.Currency),
