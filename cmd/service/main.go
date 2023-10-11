@@ -74,6 +74,7 @@ type server struct {
 	feedbackRepo     repo.FeedbackRepo
 	otpRepo          repo.OTPRepo
 	exchangeRateRepo repo.ExchangeRateRepo
+	snapshotRepo     repo.SnapshotRepo
 
 	securityAPI     api.SecurityAPI
 	exchangeRateAPI api.ExchangeRateAPI
@@ -164,6 +165,7 @@ func (s *server) Start() error {
 	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
+	s.snapshotRepo = mongo.NewSnapshotMongo(s.mongo)
 
 	s.exchangeRateRepo, err = mongo.NewExchangeRateMongo(s.ctx, s.mongo)
 	if err != nil {
@@ -216,10 +218,12 @@ func (s *server) Start() error {
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(
 		s.mongo, s.accountRepo, s.holdingRepo,
-		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo)
+		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo,
+	)
 	s.accountUseCase = acuc.NewAccountUseCase(
 		s.mongo, s.accountRepo, s.transactionRepo,
-		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo)
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo, s.snapshotRepo,
+	)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
 		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,
@@ -502,7 +506,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// gets accounts
+	// get accounts
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetAccounts,
 		Method: http.MethodPost,
@@ -512,6 +516,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: ach.GetAccountsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.GetAccounts(ctx, req.(*presenter.GetAccountsRequest), res.(*presenter.GetAccountsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get accounts summary
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAccountsSummary,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAccountsSummaryRequest),
+			Res:       new(presenter.GetAccountsSummaryResponse),
+			Validator: ach.GetAccountsSummaryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.GetAccountsSummary(ctx, req.(*presenter.GetAccountsSummaryRequest), res.(*presenter.GetAccountsSummaryResponse))
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},

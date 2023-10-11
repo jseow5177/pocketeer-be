@@ -55,85 +55,85 @@ func (m *AppMeta) GetTimezone() string {
 	return ""
 }
 
-type TransactionSummary struct {
+type Summary struct {
 	Date            *string
 	Category        *entity.Category
 	TransactionType *uint32
-	Sum             *float64 // TotalExpense + TotalIncome
+	Sum             *float64
 	TotalExpense    *float64
 	TotalIncome     *float64
 	Currency        *string
 	Transactions    []*entity.Transaction
 }
 
-type TransactionSummaryOption func(ts *TransactionSummary)
+type SummaryOption func(ts *Summary)
 
-func WithSummaryDate(date *string) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryDate(date *string) SummaryOption {
+	return func(ts *Summary) {
 		if date != nil {
 			ts.SetDate(date)
 		}
 	}
 }
 
-func WithSummaryCategory(c *entity.Category) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryCategory(c *entity.Category) SummaryOption {
+	return func(ts *Summary) {
 		if c != nil {
 			ts.SetCategory(c)
 		}
 	}
 }
 
-func WithSummarySum(sum *float64) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummarySum(sum *float64) SummaryOption {
+	return func(ts *Summary) {
 		if sum != nil {
 			ts.SetSum(sum)
 		}
 	}
 }
 
-func WithSummaryTotalExpense(totalExpense *float64) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryTotalExpense(totalExpense *float64) SummaryOption {
+	return func(ts *Summary) {
 		if totalExpense != nil {
 			ts.SetTotalExpense(totalExpense)
 		}
 	}
 }
 
-func WithSummaryTotalIncome(totalIncome *float64) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryTotalIncome(totalIncome *float64) SummaryOption {
+	return func(ts *Summary) {
 		if totalIncome != nil {
 			ts.SetTotalIncome(totalIncome)
 		}
 	}
 }
 
-func WithSummaryTransactionType(transactionType *uint32) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryTransactionType(transactionType *uint32) SummaryOption {
+	return func(ts *Summary) {
 		if transactionType != nil {
 			ts.SetTransactionType(transactionType)
 		}
 	}
 }
 
-func WithSummaryCurrency(currency *string) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryCurrency(currency *string) SummaryOption {
+	return func(ts *Summary) {
 		if currency != nil {
 			ts.SetCurrency(currency)
 		}
 	}
 }
 
-func WithSummaryTransactions(tss []*entity.Transaction) TransactionSummaryOption {
-	return func(ts *TransactionSummary) {
+func WithSummaryTransactions(tss []*entity.Transaction) SummaryOption {
+	return func(ts *Summary) {
 		if tss != nil {
 			ts.SetTransactions(tss)
 		}
 	}
 }
 
-func NewTransactionSummary(opts ...TransactionSummaryOption) *TransactionSummary {
-	ts := new(TransactionSummary)
+func NewSummary(opts ...SummaryOption) *Summary {
+	ts := new(Summary)
 
 	for _, opt := range opts {
 		opt(ts)
@@ -142,36 +142,36 @@ func NewTransactionSummary(opts ...TransactionSummaryOption) *TransactionSummary
 	return ts
 }
 
-func (m *TransactionSummary) GetDate() string {
+func (m *Summary) GetDate() string {
 	if m != nil && m.Date != nil {
 		return *m.Date
 	}
 	return ""
 }
 
-func (m *TransactionSummary) SetDate(date *string) {
+func (m *Summary) SetDate(date *string) {
 	m.Date = date
 }
 
-func (m *TransactionSummary) GetCategory() *entity.Category {
+func (m *Summary) GetCategory() *entity.Category {
 	if m != nil && m.Category != nil {
 		return m.Category
 	}
 	return nil
 }
 
-func (m *TransactionSummary) SetCategory(c *entity.Category) {
+func (m *Summary) SetCategory(c *entity.Category) {
 	m.Category = c
 }
 
-func (m *TransactionSummary) GetSum() float64 {
+func (m *Summary) GetSum() float64 {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
 	}
 	return 0
 }
 
-func (m *TransactionSummary) SetSum(sum *float64) {
+func (m *Summary) SetSum(sum *float64) {
 	m.Sum = sum
 
 	if sum != nil {
@@ -180,14 +180,14 @@ func (m *TransactionSummary) SetSum(sum *float64) {
 	}
 }
 
-func (m *TransactionSummary) GetTotalExpense() float64 {
+func (m *Summary) GetTotalExpense() float64 {
 	if m != nil && m.TotalExpense != nil {
 		return *m.TotalExpense
 	}
 	return 0
 }
 
-func (m *TransactionSummary) SetTotalExpense(totalExpense *float64) {
+func (m *Summary) SetTotalExpense(totalExpense *float64) {
 	m.TotalExpense = totalExpense
 
 	if totalExpense != nil {
@@ -196,14 +196,14 @@ func (m *TransactionSummary) SetTotalExpense(totalExpense *float64) {
 	}
 }
 
-func (m *TransactionSummary) GetTotalIncome() float64 {
+func (m *Summary) GetTotalIncome() float64 {
 	if m != nil && m.TotalIncome != nil {
 		return *m.TotalIncome
 	}
 	return 0
 }
 
-func (m *TransactionSummary) SetTotalIncome(totalIncome *float64) {
+func (m *Summary) SetTotalIncome(totalIncome *float64) {
 	m.TotalIncome = totalIncome
 
 	if totalIncome != nil {
@@ -212,35 +212,35 @@ func (m *TransactionSummary) SetTotalIncome(totalIncome *float64) {
 	}
 }
 
-func (m *TransactionSummary) GetTransactionType() uint32 {
+func (m *Summary) GetTransactionType() uint32 {
 	if m != nil && m.TransactionType != nil {
 		return *m.TransactionType
 	}
 	return 0
 }
 
-func (m *TransactionSummary) SetTransactionType(transactionType *uint32) {
+func (m *Summary) SetTransactionType(transactionType *uint32) {
 	m.TransactionType = transactionType
 }
 
-func (m *TransactionSummary) GetCurrency() string {
+func (m *Summary) GetCurrency() string {
 	if m != nil && m.Currency != nil {
 		return *m.Currency
 	}
 	return ""
 }
 
-func (m *TransactionSummary) SetCurrency(currency *string) {
+func (m *Summary) SetCurrency(currency *string) {
 	m.Currency = currency
 }
 
-func (m *TransactionSummary) GetTransactions() []*entity.Transaction {
+func (m *Summary) GetTransactions() []*entity.Transaction {
 	if m != nil && m.Transactions != nil {
 		return m.Transactions
 	}
 	return nil
 }
 
-func (m *TransactionSummary) SetTransactions(ts []*entity.Transaction) {
+func (m *Summary) SetTransactions(ts []*entity.Transaction) {
 	m.Transactions = ts
 }

@@ -340,14 +340,14 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		}
 	}
 
-	sums := make([]*common.TransactionSummary, 0)
+	sums := make([]*common.Summary, 0)
 	for c, sum := range sumByCategory {
 		// remove uncategorized if it has no sum
 		if c == nil && sum == 0 {
 			continue
 		}
 
-		sums = append(sums, common.NewTransactionSummary(
+		sums = append(sums, common.NewSummary(
 			common.WithSummaryCategory(c),
 			common.WithSummaryCurrency(u.Meta.Currency),
 			common.WithSummarySum(goutil.Float64(sum)),

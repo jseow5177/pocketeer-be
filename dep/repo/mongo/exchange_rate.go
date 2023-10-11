@@ -64,6 +64,7 @@ func NewExchangeRateMongo(ctx context.Context, mongo *Mongo) (repo.ExchangeRateR
 					erm.mu.Lock()
 					erm.exchangeRates = ers
 					erm.mu.Unlock()
+					log.Ctx(ctx).Info().Msgf("load exchange rate mem success")
 				}
 			}
 		}

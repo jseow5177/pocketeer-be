@@ -395,7 +395,7 @@ func toAccounts(acs []*entity.Account) []*Account {
 	return accounts
 }
 
-func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
+func toSummary(ts *common.Summary) *Summary {
 	if ts == nil {
 		return nil
 	}
@@ -415,7 +415,7 @@ func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
 		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
 	}
 
-	return &TransactionSummary{
+	return &Summary{
 		Date:            ts.Date,
 		Category:        toCategory(ts.Category),
 		TransactionType: ts.TransactionType,
@@ -427,10 +427,10 @@ func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
 	}
 }
 
-func toTransactionSummaries(tss []*common.TransactionSummary) []*TransactionSummary {
-	transactionSummaries := make([]*TransactionSummary, len(tss))
+func toSummaries(tss []*common.Summary) []*Summary {
+	transactionSummaries := make([]*Summary, len(tss))
 	for idx, ts := range tss {
-		transactionSummaries[idx] = toTransactionSummary(ts)
+		transactionSummaries[idx] = toSummary(ts)
 	}
 	return transactionSummaries
 }

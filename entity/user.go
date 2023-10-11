@@ -575,9 +575,9 @@ func (u *User) SetUpdateTime(updateTime *uint64) {
 
 func (u *User) GetMeta() *UserMeta {
 	if u != nil && u.Meta != nil {
-		return nil
+		return u.Meta
 	}
-	return u.Meta
+	return nil
 }
 
 func (u *User) SetMeta(meta *UserMeta) {
@@ -586,10 +586,6 @@ func (u *User) SetMeta(meta *UserMeta) {
 
 func (u *User) IsNormal() bool {
 	return u.GetUserStatus() == uint32(UserStatusNormal)
-}
-
-func (u *User) IsPendingVerification() bool {
-	return u.GetUserStatus() == uint32(UserStatusPending)
 }
 
 func (u *User) IsNew() bool {

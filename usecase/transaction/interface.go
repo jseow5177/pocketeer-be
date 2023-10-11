@@ -367,11 +367,11 @@ func (m *GetTransactionGroupsRequest) GetAppMeta() *common.AppMeta {
 }
 
 type GetTransactionGroupsResponse struct {
-	TransactionGroups []*common.TransactionSummary
+	TransactionGroups []*common.Summary
 	Paging            *common.Paging
 }
 
-func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*common.TransactionSummary {
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*common.Summary {
 	if m != nil && m.TransactionGroups != nil {
 		return m.TransactionGroups
 	}
@@ -548,10 +548,10 @@ func (m *SumTransactionsRequest) ToTransactionQuery() *repo.TransactionQuery {
 }
 
 type SumTransactionsResponse struct {
-	Sums []*common.TransactionSummary
+	Sums []*common.Summary
 }
 
-func (m *SumTransactionsResponse) GetSums() []*common.TransactionSummary {
+func (m *SumTransactionsResponse) GetSums() []*common.Summary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}

@@ -35,9 +35,9 @@ func (m *GetUserRequest) GetUserID() string {
 }
 
 func (m *GetUserRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		UserID: m.UserID,
-	}
+	return repo.NewUserFilter(
+		repo.WithUserID(m.UserID),
+	)
 }
 
 type GetUserResponse struct {
@@ -71,9 +71,9 @@ func (m *SignUpRequest) GetPassword() string {
 }
 
 func (m *SignUpRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		Email: m.Email,
-	}
+	return repo.NewUserFilter(
+		repo.WithUserEmail(m.Email),
+	)
 }
 
 func (m *SignUpRequest) ToOTPFilter() *repo.OTPFilter {
@@ -122,10 +122,9 @@ func (m *LogInRequest) GetPassword() string {
 }
 
 func (m *LogInRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		Email:      m.Email,
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
-	}
+	return repo.NewUserFilter(
+		repo.WithUserEmail(m.Email),
+	)
 }
 
 type LogInResponse struct {
@@ -173,10 +172,10 @@ func (m *VerifyEmailRequest) ToOTPFilter() *repo.OTPFilter {
 }
 
 func (m *VerifyEmailRequest) ToUserFilter(email string) *repo.UserFilter {
-	return &repo.UserFilter{
-		Email:      goutil.String(email),
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusPending)),
-	}
+	return repo.NewUserFilter(
+		repo.WithUserEmail(m.Email),
+		repo.WithUserStatus(goutil.Uint32(uint32(entity.UserStatusPending))),
+	)
 }
 
 type VerifyEmailResponse struct {
@@ -217,10 +216,9 @@ func (m *IsAuthenticatedRequest) ToValidateTokenRequest() *token.ValidateTokenRe
 }
 
 func (m *IsAuthenticatedRequest) ToUserFilter(userID string) *repo.UserFilter {
-	return &repo.UserFilter{
-		UserID:     goutil.String(userID),
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
-	}
+	return repo.NewUserFilter(
+		repo.WithUserID(goutil.String(userID)),
+	)
 }
 
 type IsAuthenticatedResponse struct {
@@ -458,10 +456,9 @@ func (m *InitUserRequest) ToCategoryEntities() ([]*entity.Category, error) {
 }
 
 func (m *InitUserRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		UserID:     m.UserID,
-		UserStatus: goutil.Uint32(uint32(entity.UserStatusNormal)),
-	}
+	return repo.NewUserFilter(
+		repo.WithUserID(m.UserID),
+	)
 }
 
 type InitUserResponse struct{}
@@ -478,9 +475,9 @@ func (m *SendOTPRequest) GetEmail() string {
 }
 
 func (m *SendOTPRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		Email: m.Email,
-	}
+	return repo.NewUserFilter(
+		repo.WithUserEmail(m.Email),
+	)
 }
 
 type SendOTPResponse struct {
@@ -515,9 +512,9 @@ func (m *UpdateUserMetaRequest) GetHideInfo() bool {
 }
 
 func (m *UpdateUserMetaRequest) ToUserFilter() *repo.UserFilter {
-	return &repo.UserFilter{
-		UserID: m.UserID,
-	}
+	return repo.NewUserFilter(
+		repo.WithUserID(m.UserID),
+	)
 }
 
 type UpdateUserMetaResponse struct {
