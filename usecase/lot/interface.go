@@ -249,7 +249,7 @@ func (m *CreateLotRequest) GetTradeDate() uint64 {
 
 func (m *CreateLotRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingID(m.HoldingID),
 	)
 }

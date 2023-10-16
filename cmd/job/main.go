@@ -13,6 +13,7 @@ import (
 
 	ier "github.com/jseow5177/pockteer-be/cmd/job/init_exchange_rates"
 	is "github.com/jseow5177/pockteer-be/cmd/job/init_symbols"
+	sq "github.com/jseow5177/pockteer-be/cmd/job/sync_quotes"
 )
 
 type Job interface {
@@ -28,6 +29,10 @@ var cmds = map[string]struct {
 	"init_symbols": {
 		desc: "scan symbols from third party API and save into mongo",
 		job:  new(is.InitSymbols),
+	},
+	"sync_quotes": {
+		desc: "sync holding quotes into mongo",
+		job:  new(sq.SyncQuotesCmd),
 	},
 	"init_exchange_rates": {
 		desc: "get exchange rates from third party API and save into mongo",
