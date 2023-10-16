@@ -64,8 +64,15 @@ func NewExchangeRateMongo(ctx context.Context, mongo *Mongo) (repo.ExchangeRateR
 					erm.mu.Lock()
 					erm.exchangeRates = ers
 					erm.mu.Unlock()
+
+					var total int
+					for _, rates := range ers {
+						total += len(rates)
+					}
+					log.Ctx(ctx).Info().Msgf("reload exchange rates mem, count: %v", total)
 				}
 			}
+			timer.Reset(interval)
 		}
 	}()
 
