@@ -12,7 +12,6 @@ import (
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/api/finnhub"
 	"github.com/jseow5177/pockteer-be/dep/repo"
-	"github.com/jseow5177/pockteer-be/dep/repo/mem"
 	"github.com/jseow5177/pockteer-be/dep/repo/mongo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
@@ -77,7 +76,7 @@ func (c *SaveSnapshot) Init(ctx context.Context, cfg *config.Config) error {
 	c.txMgr = c.mongo
 
 	securityAPI := finnhub.NewFinnHubMgr(cfg.FinnHub)
-	quoteRepo, err := mem.NewQuoteMemCache(cfg.QuoteMemCache, securityAPI)
+	quoteRepo, err := mongo.NewQuoteMongo(ctx, c.mongo, securityAPI)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to init quote repo, err: %v", err)
 		return err

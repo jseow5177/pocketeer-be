@@ -286,7 +286,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amou
 
 func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *entity.Account) error {
 	hs, err := uc.holdingRepo.GetMany(ctx, repo.NewHoldingFilter(
-		ac.GetUserID(),
+		repo.WithHoldingUserID(ac.UserID),
 		repo.WithHoldingAccountID(ac.AccountID),
 	))
 	if err != nil {
@@ -295,9 +295,9 @@ func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *ent
 
 	for _, h := range hs {
 		if h.IsDefault() {
-			q, err := uc.quoteRepo.Get(ctx, &repo.QuoteFilter{
-				Symbol: h.Symbol,
-			})
+			q, err := uc.quoteRepo.Get(ctx, repo.NewQuoteFilter(
+				repo.WithQuoteSymbol(h.Symbol),
+			))
 			if err != nil {
 				return fmt.Errorf("fail to get quote from repo, err: %v", err)
 			}
