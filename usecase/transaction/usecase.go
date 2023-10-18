@@ -565,6 +565,10 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 	}, nil
 }
 
+func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *GetTransactionsSummaryRequest) (*GetTransactionsSummaryResponse, error) {
+	return nil, nil
+}
+
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
 	tf := req.ToTransactionFilter(req.GetUserID())
 

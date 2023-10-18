@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
@@ -21,6 +22,7 @@ type UseCase interface {
 	DeleteTransaction(ctx context.Context, req *DeleteTransactionRequest) (*DeleteTransactionResponse, error)
 
 	SumTransactions(ctx context.Context, req *SumTransactionsRequest) (*SumTransactionsResponse, error)
+	GetTransactionsSummary(ctx context.Context, req *GetTransactionsSummaryRequest) (*GetTransactionsSummaryResponse, error)
 
 	// deprecated
 	AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error)
@@ -602,3 +604,58 @@ func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.
 }
 
 type DeleteTransactionResponse struct{}
+
+type GetTransactionsSummaryRequest struct {
+	User     *entity.User
+	Unit     *uint32
+	Interval *uint32
+}
+
+func (m *GetTransactionsSummaryRequest) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
+}
+
+func (m *GetTransactionsSummaryRequest) GetUnit() uint32 {
+	if m != nil && m.Unit != nil {
+		return *m.Unit
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
+	if m != nil && m.Interval != nil {
+		return *m.Interval
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) ToTransactionFilter() *repo.TransactionFilter {
+	now := time.Now()
+
+	t := now
+	switch m.GetUnit() {
+	case uint32(entity.SnapshotUnitMonth):
+		t = now.AddDate(0, -int(m.GetInterval()), 0)
+	}
+
+	return repo.NewTransactionFilter(
+		m.User.GetUserID(),
+		repo.WithTransactionTimeGte(goutil.Uint64(uint64(t.UnixMilli()))),
+		repo.WithTransactionTimeLte(goutil.Uint64(uint64(now.UnixMilli()))),
+		repo.WithTransactionPaging(&repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("transaction_time"),
+					Order: goutil.String(config.OrderDesc),
+				},
+			},
+		}),
+	)
+}
+
+type GetTransactionsSummaryResponse struct {
+	Summary []*common.Summary
+}
