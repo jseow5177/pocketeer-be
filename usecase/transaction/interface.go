@@ -633,13 +633,22 @@ func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
 	return 0
 }
 
-func (m *GetTransactionsSummaryRequest) ToTransactionFilter() *repo.TransactionFilter {
-	now := time.Now()
+func (m *GetTransactionsSummaryRequest) ToTransactionFilter() (*repo.TransactionFilter, error) {
+	loc, err := time.LoadLocation(m.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, err
+	}
 
-	t := now
+	var (
+		now = time.Now().In(loc)
+		t   = now
+	)
 	switch m.GetUnit() {
 	case uint32(entity.SnapshotUnitMonth):
-		t = now.AddDate(0, -int(m.GetInterval()), 0)
+		date := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		t = date.AddDate(0, -int(m.GetInterval()), 0)
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
 	}
 
 	return repo.NewTransactionFilter(
@@ -654,7 +663,7 @@ func (m *GetTransactionsSummaryRequest) ToTransactionFilter() *repo.TransactionF
 				},
 			},
 		}),
-	)
+	), nil
 }
 
 type GetTransactionsSummaryResponse struct {

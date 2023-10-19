@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
@@ -16,6 +17,15 @@ import (
 var (
 	ErrInvalidCategoryIDs = errors.New("invalid category_ids")
 )
+
+// intermediate state
+type transactionSummary struct {
+	Date         string
+	Sum          float64
+	TotalExpense float64
+	TotalIncome  float64
+	Transactions []*entity.Transaction
+}
 
 type transactionUseCase struct {
 	txMgr            repo.TxMgr
@@ -95,15 +105,6 @@ func (uc *transactionUseCase) GetTransactionGroups(
 
 	u := entity.GetUserFromCtx(ctx)
 
-	// intermediate state
-	type transactionSummary struct {
-		Date         string
-		Sum          float64
-		TotalExpense float64
-		TotalIncome  float64
-		Transactions []*entity.Transaction
-	}
-
 	var (
 		transactionGroups    = make([]*transactionSummary, 0)
 		transactionGroupsMap = make(map[string]*transactionSummary)
@@ -140,6 +141,7 @@ func (uc *transactionUseCase) GetTransactionGroups(
 			transactionGroup.TotalIncome += amount
 		}
 
+		// TODO: Do not add for transfer
 		transactionGroup.Sum += amount
 	}
 
@@ -566,8 +568,128 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 }
 
 func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *GetTransactionsSummaryRequest) (*GetTransactionsSummaryResponse, error) {
+	user := req.GetUser()
+
+	tf, err := req.ToTransactionFilter()
+	if err != nil {
+		return nil, err
+	}
+
 	// get transactions
-	return nil, nil
+	transactions, err := uc.transactionRepo.GetMany(ctx, tf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
+		return nil, err
+	}
+
+	loc, err := time.LoadLocation(req.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, entity.ErrInvalidTimezone
+	}
+
+	var (
+		now                 = time.Now().In(loc)
+		date                time.Time
+		monthDiff, yearDiff int
+	)
+
+	switch req.GetUnit() {
+	case uint32(entity.SnapshotUnitMonth):
+		date = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		monthDiff = -1
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
+	}
+
+	var (
+		i = req.GetInterval()
+		d = util.FormatDate(date)
+
+		transactionGroupsMap = map[string]*transactionSummary{
+			d: {
+				Date:         d,
+				Sum:          0,
+				TotalExpense: 0,
+				TotalIncome:  0,
+			},
+		}
+	)
+	for i > 0 {
+		date = date.AddDate(yearDiff, monthDiff, 0)
+		d := util.FormatDate(date)
+
+		transactionGroupsMap[d] = &transactionSummary{
+			Date:         d,
+			Sum:          0,
+			TotalExpense: 0,
+			TotalIncome:  0,
+		}
+
+		i--
+	}
+
+	for _, transaction := range transactions {
+		var (
+			date time.Time
+			t    = time.UnixMilli(int64(transaction.GetTransactionTime())).In(loc)
+		)
+
+		switch req.GetUnit() {
+		case uint32(entity.SnapshotUnitMonth):
+			date = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()) // start of month
+		}
+
+		d := util.FormatDate(date)
+
+		// shouldn't happen
+		if _, ok := transactionGroupsMap[d]; !ok {
+			transactionGroupsMap[d] = &transactionSummary{
+				Date:         d,
+				Sum:          0,
+				TotalExpense: 0,
+				TotalIncome:  0,
+			}
+		}
+
+		amount, err := uc.getAmountAfterConversion(ctx, transaction, user.Meta.GetCurrency())
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("fail convert transaction currency, err: %v", err)
+			return nil, err
+		}
+
+		transactionGroup := transactionGroupsMap[d]
+
+		if transaction.IsExpense() {
+			transactionGroup.TotalExpense += amount
+		} else if transaction.IsIncome() {
+			transactionGroup.TotalIncome += amount
+		}
+
+		// TODO: Do not add for transfer
+		transactionGroup.Sum += amount
+
+	}
+
+	// round after sum
+	tgs := make([]*common.Summary, 0)
+	for _, transactionGroup := range transactionGroupsMap {
+		tgs = append(tgs, common.NewSummary(
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryDate(goutil.String(transactionGroup.Date)),
+			common.WithSummarySum(goutil.Float64(transactionGroup.Sum)),
+			common.WithSummaryTotalExpense(goutil.Float64(transactionGroup.TotalExpense)),
+			common.WithSummaryTotalIncome(goutil.Float64(transactionGroup.TotalIncome)),
+		))
+	}
+
+	// sort in date ascending
+	sort.Slice(tgs, func(i, j int) bool {
+		return tgs[i].GetDate() < tgs[j].GetDate()
+	})
+
+	return &GetTransactionsSummaryResponse{
+		Summary: tgs,
+	}, nil
 }
 
 func (uc *transactionUseCase) AggrTransactions(ctx context.Context, req *AggrTransactionsRequest) (*AggrTransactionsResponse, error) {
