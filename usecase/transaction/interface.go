@@ -623,7 +623,7 @@ func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
 	return 0
 }
 
-func (m *GetTransactionsSummaryRequest) ToTransactionFilter() (*repo.TransactionFilter, error) {
+func (m *GetTransactionsSummaryRequest) ToTransactionQuery() (*repo.TransactionQuery, error) {
 	loc, err := time.LoadLocation(m.AppMeta.GetTimezone())
 	if err != nil {
 		return nil, err
@@ -641,19 +641,27 @@ func (m *GetTransactionsSummaryRequest) ToTransactionFilter() (*repo.Transaction
 		return nil, entity.ErrInvalidSnapshotUnit
 	}
 
-	return repo.NewTransactionFilter(
-		m.User.GetUserID(),
-		repo.WithTransactionTimeGte(goutil.Uint64(uint64(t.UnixMilli()))),
-		repo.WithTransactionTimeLte(goutil.Uint64(uint64(now.UnixMilli()))),
-		repo.WithTransactionPaging(&repo.Paging{
+	return &repo.TransactionQuery{
+		Queries: []*repo.TransactionQuery{
+			{
+				Filters: []*repo.TransactionFilter{
+					repo.NewTransactionFilter(
+						m.User.GetUserID(),
+						repo.WithTransactionTimeGte(goutil.Uint64(uint64(t.UnixMilli()))),
+						repo.WithTransactionTimeLte(goutil.Uint64(uint64(now.UnixMilli()))),
+					),
+				},
+			},
+		},
+		Paging: &repo.Paging{
 			Sorts: []filter.Sort{
 				&repo.Sort{
 					Field: goutil.String("transaction_time"),
 					Order: goutil.String(config.OrderAsc),
 				},
 			},
-		}),
-	), nil
+		},
+	}, nil
 }
 
 type GetTransactionsSummaryResponse struct {
