@@ -606,6 +606,7 @@ func (m *DeleteTransactionRequest) ToAccountFilter(t *entity.Transaction) *repo.
 type DeleteTransactionResponse struct{}
 
 type GetTransactionsSummaryRequest struct {
+	AppMeta  *common.AppMeta
 	User     *entity.User
 	Unit     *uint32
 	Interval *uint32
@@ -649,7 +650,7 @@ func (m *GetTransactionsSummaryRequest) ToTransactionFilter() *repo.TransactionF
 			Sorts: []filter.Sort{
 				&repo.Sort{
 					Field: goutil.String("transaction_time"),
-					Order: goutil.String(config.OrderDesc),
+					Order: goutil.String(config.OrderAsc),
 				},
 			},
 		}),

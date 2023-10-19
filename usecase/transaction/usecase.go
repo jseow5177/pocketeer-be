@@ -566,6 +566,7 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 }
 
 func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *GetTransactionsSummaryRequest) (*GetTransactionsSummaryResponse, error) {
+	// get transactions
 	return nil, nil
 }
 

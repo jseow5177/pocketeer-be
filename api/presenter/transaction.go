@@ -656,8 +656,16 @@ func (m *GetTransactionGroupsResponse) Set(useCaseRes *transaction.GetTransactio
 }
 
 type GetTransactionsSummaryRequest struct {
-	Unit     *uint32 `json:"unit,omitempty"`
-	Interval *uint32 `json:"interval,omitempty"`
+	AppMeta  *AppMeta `json:"app_meta,omitempty"`
+	Unit     *uint32  `json:"unit,omitempty"`
+	Interval *uint32  `json:"interval,omitempty"`
+}
+
+func (m *GetTransactionsSummaryRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
 }
 
 func (m *GetTransactionsSummaryRequest) GetUnit() uint32 {
@@ -676,6 +684,7 @@ func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
 
 func (m *GetTransactionsSummaryRequest) ToUseCaseReq(user *entity.User) *transaction.GetTransactionsSummaryRequest {
 	return &transaction.GetTransactionsSummaryRequest{
+		AppMeta:  m.AppMeta.toAppMeta(),
 		User:     user,
 		Unit:     m.Unit,
 		Interval: m.Interval,
