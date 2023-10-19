@@ -48,37 +48,49 @@ type CategoryOption func(c *Category)
 
 func WithCategoryID(categoryID *string) CategoryOption {
 	return func(c *Category) {
-		c.SetCategoryID(categoryID)
+		if categoryID != nil {
+			c.SetCategoryID(categoryID)
+		}
 	}
 }
 
 func WithCategoryType(categoryType *uint32) CategoryOption {
 	return func(c *Category) {
-		c.SetCategoryType(categoryType)
+		if categoryType != nil {
+			c.SetCategoryType(categoryType)
+		}
 	}
 }
 
 func WithCategoryStatus(categoryStatus *uint32) CategoryOption {
 	return func(c *Category) {
-		c.SetCategoryStatus(categoryStatus)
+		if categoryStatus != nil {
+			c.SetCategoryStatus(categoryStatus)
+		}
 	}
 }
 
 func WithCategoryCreateTime(createTime *uint64) CategoryOption {
 	return func(c *Category) {
-		c.SetCreateTime(createTime)
+		if createTime != nil {
+			c.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithCategoryUpdateTime(updateTime *uint64) CategoryOption {
 	return func(c *Category) {
-		c.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			c.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithCategoryBudget(budget *Budget) CategoryOption {
 	return func(c *Category) {
-		c.SetBudget(budget)
+		if budget != nil {
+			c.SetBudget(budget)
+		}
 	}
 }
 
@@ -97,6 +109,7 @@ func (c *Category) Clone() (*Category, error) {
 func NewCategory(UserID, categoryName string, opts ...CategoryOption) (*Category, error) {
 	now := uint64(time.Now().UnixMilli())
 	c := &Category{
+		CategoryID:     goutil.String(""),
 		UserID:         goutil.String(UserID),
 		CategoryName:   goutil.String(categoryName),
 		CategoryType:   goutil.Uint32(uint32(TransactionTypeExpense)),

@@ -228,7 +228,7 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 
 	return entity.NewAccount(
 		m.GetUserID(),
-		entity.WithAccountName(m.AccountName),
+		m.GetAccountName(),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),

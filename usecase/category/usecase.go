@@ -249,8 +249,8 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 		return nil, err
 	}
 
-	tf := req.ToTransactionFilter(req.GetUserID(), start, end)
-	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	tq := req.ToTransactionQuery(req.GetUserID(), start, end)
+	ts, err := uc.transactionRepo.GetMany(ctx, tq)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
@@ -306,8 +306,8 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		}
 	}
 
-	tf := req.ToTransactionFilter(categoryIDs)
-	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	tq := req.ToTransactionQuery(categoryIDs)
+	ts, err := uc.transactionRepo.GetMany(ctx, tq)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err

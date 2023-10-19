@@ -23,6 +23,14 @@ var UpdateTransactionValidator = validator.MustForm(map[string]validator.Validat
 		Optional:  true,
 		UnsetZero: true,
 	},
+	"from_account_id": &validator.String{
+		Optional:  true,
+		UnsetZero: true,
+	},
+	"to_account_id": &validator.String{
+		Optional:  true,
+		UnsetZero: true,
+	},
 	"transaction_time": &validator.UInt64{
 		Optional:  true,
 		UnsetZero: true,
