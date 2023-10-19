@@ -387,7 +387,7 @@ func (m *InitAccountRequest) GetHoldings() []*InitHoldingRequest {
 func (m *InitAccountRequest) ToAccountEntity(userID, currency string) (*entity.Account, error) {
 	return entity.NewAccount(
 		userID,
-		entity.WithAccountName(m.AccountName),
+		m.GetAccountName(),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),

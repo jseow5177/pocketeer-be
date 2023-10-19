@@ -13,6 +13,10 @@ type Transaction struct {
 	Category          *Category `json:"category,omitempty"`
 	AccountID         *string   `json:"account_id,omitempty"`
 	Account           *Account  `json:"account,omitempty"`
+	FromAccountID     *string   `json:"from_account_id,omitempty"`
+	FromAccount       *Account  `json:"from_account,omitempty"`
+	ToAccountID       *string   `json:"to_account_id,omitempty"`
+	ToAccount         *Account  `json:"to_account,omitempty"`
 	Currency          *string   `json:"currency,omitempty"`
 	Amount            *string   `json:"amount,omitempty"`
 	Note              *string   `json:"note,omitempty"`
@@ -33,6 +37,20 @@ func (t *Transaction) GetTransactionID() string {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *Transaction) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -100,9 +118,25 @@ func (t *Transaction) GetAccount() *Account {
 	return nil
 }
 
+func (t *Transaction) GetFromAccount() *Account {
+	if t != nil && t.FromAccount != nil {
+		return t.FromAccount
+	}
+	return nil
+}
+
+func (t *Transaction) GetToAccount() *Account {
+	if t != nil && t.ToAccount != nil {
+		return t.ToAccount
+	}
+	return nil
+}
+
 type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
+	FromAccountID   *string `json:"from_account_id,omitempty"`
+	ToAccountID     *string `json:"to_account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Currency        *string `json:"currency,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -113,6 +147,20 @@ type CreateTransactionRequest struct {
 func (m *CreateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -170,6 +218,8 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
+		FromAccountID:   m.FromAccountID,
+		ToAccountID:     m.ToAccountID,
 		Amount:          amount,
 		Currency:        m.Currency,
 		TransactionType: m.TransactionType,
@@ -317,6 +367,8 @@ type UpdateTransactionRequest struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
+	FromAccountID   *string `json:"from_account_id,omitempty"`
+	ToAccountID     *string `json:"to_account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -334,6 +386,20 @@ func (t *UpdateTransactionRequest) GetTransactionID() string {
 func (t *UpdateTransactionRequest) GetAccountID() string {
 	if t != nil && t.AccountID != nil {
 		return *t.AccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -389,6 +455,8 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		AccountID:       m.AccountID,
+		FromAccountID:   m.FromAccountID,
+		ToAccountID:     m.ToAccountID,
 		TransactionID:   m.TransactionID,
 		Note:            m.Note,
 		Amount:          amount,
@@ -412,50 +480,6 @@ func (m *UpdateTransactionResponse) GetTransaction() *Transaction {
 
 func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactionResponse) {
 	m.Transaction = toTransaction(useCaseRes.Transaction)
-}
-
-type AggrTransactionsRequest struct {
-	TransactionTime  *RangeFilter `json:"transaction_time,omitempty"`
-	CategoryIDs      []string     `json:"category_ids,omitempty"`
-	BudgetIDs        []string     `json:"budget_ids,omitempty"`
-	TransactionTypes []uint32     `json:"transaction_types,omitempty"`
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTime() *RangeFilter {
-	if m != nil && m.TransactionTime != nil {
-		return m.TransactionTime
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetBudgetIDs() []string {
-	if m != nil && m.BudgetIDs != nil {
-		return m.BudgetIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
-	if m != nil && m.TransactionTypes != nil {
-		return m.TransactionTypes
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
-	return &transaction.AggrTransactionsRequest{
-		UserID:           goutil.String(userID),
-		TransactionTypes: m.TransactionTypes,
-		CategoryIDs:      m.CategoryIDs,
-		TransactionTime:  m.TransactionTime.toRangeFilter(),
-	}
 }
 
 type Summary struct {
@@ -523,29 +547,6 @@ func (m *Summary) GetTransactions() []*Transaction {
 		return m.Transactions
 	}
 	return nil
-}
-
-type Aggr struct {
-	Sum *float64 `json:"sum,omitempty"`
-}
-
-type AggrTransactionsResponse struct {
-	Results map[string]*Aggr `json:"results,omitempty"`
-}
-
-func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
-	if m != nil && m.Results != nil {
-		return m.Results
-	}
-	return nil
-}
-
-func (m *AggrTransactionsResponse) Set(useCaseRes *transaction.AggrTransactionsResponse) {
-	res := make(map[string]*Aggr)
-	for k, v := range useCaseRes.Results {
-		res[k] = toAggr(v)
-	}
-	m.Results = res
 }
 
 type DeleteTransactionRequest struct {
