@@ -60,6 +60,7 @@ func (m *AppMeta) GetTimezone() string {
 type Summary struct {
 	Date            *string
 	Category        *entity.Category
+	Account         *entity.Account
 	TransactionType *uint32
 	Sum             *float64
 	TotalExpense    *float64
@@ -68,68 +69,76 @@ type Summary struct {
 	Transactions    []*entity.Transaction
 }
 
-type SummaryOption func(ts *Summary)
+type SummaryOption func(s *Summary)
 
 func WithSummaryDate(date *string) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if date != nil {
-			ts.SetDate(date)
+			s.SetDate(date)
 		}
 	}
 }
 
 func WithSummaryCategory(c *entity.Category) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if c != nil {
-			ts.SetCategory(c)
+			s.SetCategory(c)
+		}
+	}
+}
+
+func WithSummaryAccount(ac *entity.Account) SummaryOption {
+	return func(s *Summary) {
+		if ac != nil {
+			s.SetAccount(ac)
 		}
 	}
 }
 
 func WithSummarySum(sum *float64) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if sum != nil {
-			ts.SetSum(sum)
+			s.SetSum(sum)
 		}
 	}
 }
 
 func WithSummaryTotalExpense(totalExpense *float64) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if totalExpense != nil {
-			ts.SetTotalExpense(totalExpense)
+			s.SetTotalExpense(totalExpense)
 		}
 	}
 }
 
 func WithSummaryTotalIncome(totalIncome *float64) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if totalIncome != nil {
-			ts.SetTotalIncome(totalIncome)
+			s.SetTotalIncome(totalIncome)
 		}
 	}
 }
 
 func WithSummaryTransactionType(transactionType *uint32) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if transactionType != nil {
-			ts.SetTransactionType(transactionType)
+			s.SetTransactionType(transactionType)
 		}
 	}
 }
 
 func WithSummaryCurrency(currency *string) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if currency != nil {
-			ts.SetCurrency(currency)
+			s.SetCurrency(currency)
 		}
 	}
 }
 
 func WithSummaryTransactions(tss []*entity.Transaction) SummaryOption {
-	return func(ts *Summary) {
+	return func(s *Summary) {
 		if tss != nil {
-			ts.SetTransactions(tss)
+			s.SetTransactions(tss)
 		}
 	}
 }
@@ -159,6 +168,17 @@ func (m *Summary) GetDate() string {
 
 func (m *Summary) SetDate(date *string) {
 	m.Date = date
+}
+
+func (m *Summary) GetAccount() *entity.Account {
+	if m != nil && m.Account != nil {
+		return m.Account
+	}
+	return nil
+}
+
+func (m *Summary) SetAccount(ac *entity.Account) {
+	m.Account = ac
 }
 
 func (m *Summary) GetCategory() *entity.Category {

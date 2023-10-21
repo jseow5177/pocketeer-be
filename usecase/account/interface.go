@@ -461,14 +461,9 @@ func (m *GetAccountsSummaryRequest) ToSnapshotFilter() (*repo.SnapshotFilter, er
 	), nil
 }
 
-type GetAccountSummaryResponse struct {
-	Account *entity.Account
-	Summary []*common.Summary
-}
-
 type GetAccountsSummaryResponse struct {
 	NetWorth   []*common.Summary
 	AssetValue []*common.Summary
 	DebtValue  []*common.Summary
-	Accounts   []*GetAccountSummaryResponse
+	Accounts   [][]*common.Summary
 }

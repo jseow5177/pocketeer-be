@@ -484,6 +484,7 @@ func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactio
 
 type Summary struct {
 	Date            *string        `json:"date,omitempty"`
+	Account         *Account       `json:"account,omitempty"`
 	Category        *Category      `json:"category,omitempty"`
 	TransactionType *uint32        `json:"transaction_type,omitempty"`
 	Sum             *string        `json:"sum,omitempty"`
@@ -498,6 +499,13 @@ func (m *Summary) GetDate() string {
 		return *m.Date
 	}
 	return ""
+}
+
+func (m *Summary) GetAccount() *Account {
+	if m != nil && m.Account != nil {
+		return m.Account
+	}
+	return nil
 }
 
 func (m *Summary) GetCategory() *Category {
