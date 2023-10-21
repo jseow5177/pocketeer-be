@@ -391,8 +391,16 @@ type DeleteAccountResponse struct{}
 func (m *DeleteAccountResponse) Set(useCaseRes *account.DeleteAccountResponse) {}
 
 type GetAccountsSummaryRequest struct {
-	Unit     *uint32 `json:"unit,omitempty"`
-	Interval *uint32 `json:"interval,omitempty"`
+	AppMeta  *AppMeta `json:"app_meta,omitempty"`
+	Unit     *uint32  `json:"unit,omitempty"`
+	Interval *uint32  `json:"interval,omitempty"`
+}
+
+func (m *GetAccountsSummaryRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
 }
 
 func (m *GetAccountsSummaryRequest) GetUnit() uint32 {
@@ -411,6 +419,7 @@ func (m *GetAccountsSummaryRequest) GetInterval() uint32 {
 
 func (m *GetAccountsSummaryRequest) ToUseCaseReq(user *entity.User) *account.GetAccountsSummaryRequest {
 	return &account.GetAccountsSummaryRequest{
+		AppMeta:  m.AppMeta.toAppMeta(),
 		User:     user,
 		Unit:     m.Unit,
 		Interval: m.Interval,
