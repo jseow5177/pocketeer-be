@@ -495,8 +495,8 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 	var (
 		summaryByAccountIDAndDate = make(map[string]*common.Summary)
 
-		accounts = make(map[string]*entity.Account)
-		resp     = new(GetAccountsSummaryResponse)
+		accountIDs = make(map[string]struct{})
+		resp       = new(GetAccountsSummaryResponse)
 	)
 	for _, date := range dates {
 		snapshot, ok := snapshotsByDate[date]
@@ -528,38 +528,34 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 		// individual account
 		for _, account := range snapshot.Accounts {
 			accountID := account.GetAccountID()
-			accounts[accountID] = account
+			accountIDs[accountID] = struct{}{}
 
 			k := fmt.Sprintf("%s-%s", accountID, date)
 
 			summaryByAccountIDAndDate[k] = common.NewSummary(
 				common.WithSummaryDate(goutil.String(date)),
-				common.WithSummarySum(account.Balance),
-				common.WithSummaryCurrency(account.Currency),
+				common.WithSummaryAccount(account),
 			)
 		}
 	}
 
-	accountSummaries := make(map[*entity.Account][]*common.Summary)
+	accountSummaries := make(map[string][]*common.Summary)
 	for _, date := range dates {
-		for accountID, account := range accounts {
+		for accountID := range accountIDs {
 			k := fmt.Sprintf("%s-%s", accountID, date)
 
 			if summary, ok := summaryByAccountIDAndDate[k]; ok {
-				accountSummaries[account] = append(accountSummaries[account], summary)
+				accountSummaries[accountID] = append(accountSummaries[accountID], summary)
 			} else {
-				accountSummaries[account] = append(accountSummaries[account], common.NewSummary(
+				accountSummaries[accountID] = append(accountSummaries[accountID], common.NewSummary(
 					common.WithSummaryDate(goutil.String(date)), // empty summary
 				))
 			}
 		}
 	}
 
-	for account, summary := range accountSummaries {
-		resp.Accounts = append(resp.Accounts, &GetAccountSummaryResponse{
-			Account: account,
-			Summary: summary,
-		})
+	for _, summary := range accountSummaries {
+		resp.Accounts = append(resp.Accounts, summary)
 	}
 
 	return resp, nil
