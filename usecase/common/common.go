@@ -1,6 +1,8 @@
 package common
 
 import (
+	"sort"
+
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
@@ -130,6 +132,12 @@ func WithSummaryTransactions(tss []*entity.Transaction) SummaryOption {
 			ts.SetTransactions(tss)
 		}
 	}
+}
+
+func AscSortSummaryByDate(summary ...*Summary) {
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].GetDate() < summary[j].GetDate()
+	})
 }
 
 func NewSummary(opts ...SummaryOption) *Summary {
