@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -387,43 +388,22 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 }
 
 func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccountsSummaryRequest) (*GetAccountsSummaryResponse, error) {
-	sps, err := uc.snapshotRepo.GetMany(ctx, req.ToSnapshotFilter())
+	user := req.GetUser()
+
+	sf, err := req.ToSnapshotFilter()
+	if err != nil {
+		return nil, err
+	}
+
+	sps, err := uc.snapshotRepo.GetMany(ctx, sf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get account snapshots from repo, err: %v", err)
 		return nil, err
 	}
 
-	var (
-		latestTimestamps     = make(map[string]time.Time)            // group by unit
-		snapshotsByTimestamp = make(map[string]*GetAccountsResponse) // group by date
-	)
-	for _, sp := range sps {
-		var (
-			key string
-			t   = time.UnixMilli(int64(sp.GetTimestamp()))
-		)
-		switch req.GetUnit() {
-		case uint32(entity.SnapshotUnitMonth):
-			key = fmt.Sprintf("%d-%02d", t.Year(), t.Month()) // group by month
-		default:
-			log.Ctx(ctx).Error().Msgf("invalid snapshot unit: %v", req.GetUnit())
-			continue
-		}
-
-		// get the latest snapshot of the unit
-		if existing, ok := latestTimestamps[key]; !ok || t.After(existing) {
-			latestTimestamps[key] = t
-
-			getAccountsResp := new(GetAccountsResponse)
-			if err := json.Unmarshal([]byte(sp.GetRecord()), &getAccountsResp); err != nil {
-				log.Ctx(ctx).Error().Msgf("fail to unmarshal snapshot, snapshot: %v, err: %v",
-					sp.GetRecord(), err)
-				return nil, err
-			}
-
-			date := util.FormatDate(t)
-			snapshotsByTimestamp[date] = getAccountsResp
-		}
+	loc, err := time.LoadLocation(req.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, entity.ErrInvalidTimezone
 	}
 
 	// fetch latest snapshot
@@ -434,14 +414,96 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 		log.Ctx(ctx).Error().Msgf("fail to get latest accounts, err: %v", err)
 		return nil, err
 	}
-	snapshotsByTimestamp[""] = latestGetAccounts
+
+	b, err := json.Marshal(latestGetAccounts)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to marshal latest snapshot, err: %v", err)
+		return nil, err
+	}
+	latestSnapshot := string(b)
+
+	now := time.Now().In(loc)
+
+	sps = append(sps, entity.NewSnapshot(
+		user.GetUserID(),
+		uint32(entity.SnapshotTypeAccount),
+		entity.WithSnapshotRecord(goutil.String(latestSnapshot)),
+		entity.WithSnapshotTimestamp(goutil.Uint64(uint64(now.UnixMilli()))), // latest
+	))
 
 	var (
-		summaryByAccountID = make(map[string][]*common.Summary)
-		accounts           = make(map[string]*entity.Account)
-		resp               = new(GetAccountsSummaryResponse)
+		date                time.Time
+		monthDiff, yearDiff int
 	)
-	for date, snapshot := range snapshotsByTimestamp {
+	switch req.GetUnit() {
+	case uint32(entity.SnapshotUnitMonth):
+		date = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		monthDiff = -1
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
+	}
+
+	var (
+		i = req.GetInterval()
+
+		snapshotsByDate = make(map[string]*GetAccountsResponse)
+	)
+	for i > 0 {
+		date = date.AddDate(yearDiff, monthDiff, 0)
+		d := util.FormatDate(date)
+
+		snapshotsByDate[d] = new(GetAccountsResponse) // dummy placeholder
+
+		i--
+	}
+
+	var (
+		latestDates = make(map[string]time.Time)
+	)
+	for _, sp := range sps {
+		var (
+			date time.Time
+			t    = time.UnixMilli(int64(sp.GetTimestamp())).In(loc)
+		)
+		switch req.GetUnit() {
+		case uint32(entity.SnapshotUnitMonth):
+			date = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()) // start of month
+		}
+
+		d := util.FormatDate(date)
+
+		// in case there are multiple snapshots in the same unit, we get the latest snapshot
+		if existing, ok := latestDates[d]; !ok || t.After(existing) {
+			latestDates[d] = t
+
+			getAccountsResp := new(GetAccountsResponse)
+			if err := json.Unmarshal([]byte(sp.GetRecord()), &getAccountsResp); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to unmarshal snapshot, snapshot: %v, err: %v", sp.GetRecord(), err)
+				return nil, err
+			}
+
+			snapshotsByDate[d] = getAccountsResp
+		}
+	}
+
+	dates := make([]string, 0)
+	for date := range snapshotsByDate {
+		dates = append(dates, date)
+	}
+	sort.Strings(dates)
+
+	var (
+		summaryByAccountIDAndDate = make(map[string]*common.Summary)
+
+		accounts = make(map[string]*entity.Account)
+		resp     = new(GetAccountsSummaryResponse)
+	)
+	for _, date := range dates {
+		snapshot, ok := snapshotsByDate[date]
+		if !ok {
+			snapshot = new(GetAccountsResponse)
+		}
+
 		// net worth
 		resp.NetWorth = append(resp.NetWorth, common.NewSummary(
 			common.WithSummaryDate(goutil.String(date)),
@@ -468,16 +530,32 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			accountID := account.GetAccountID()
 			accounts[accountID] = account
 
-			summaryByAccountID[accountID] = append(summaryByAccountID[accountID], common.NewSummary(
+			k := fmt.Sprintf("%s-%s", accountID, date)
+
+			summaryByAccountIDAndDate[k] = common.NewSummary(
 				common.WithSummaryDate(goutil.String(date)),
 				common.WithSummarySum(account.Balance),
 				common.WithSummaryCurrency(account.Currency),
-			))
+			)
 		}
 	}
 
-	for accountID, summary := range summaryByAccountID {
-		account := accounts[accountID]
+	accountSummaries := make(map[*entity.Account][]*common.Summary)
+	for _, date := range dates {
+		for accountID, account := range accounts {
+			k := fmt.Sprintf("%s-%s", accountID, date)
+
+			if summary, ok := summaryByAccountIDAndDate[k]; ok {
+				accountSummaries[account] = append(accountSummaries[account], summary)
+			} else {
+				accountSummaries[account] = append(accountSummaries[account], common.NewSummary(
+					common.WithSummaryDate(goutil.String(date)), // empty summary
+				))
+			}
+		}
+	}
+
+	for account, summary := range accountSummaries {
 		resp.Accounts = append(resp.Accounts, &GetAccountSummaryResponse{
 			Account: account,
 			Summary: summary,

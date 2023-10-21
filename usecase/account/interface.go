@@ -400,6 +400,7 @@ func (m *DeleteAccountRequest) ToLotFilter(holdingIDs []string) *repo.LotFilter 
 type DeleteAccountResponse struct{}
 
 type GetAccountsSummaryRequest struct {
+	AppMeta  *common.AppMeta
 	User     *entity.User
 	Unit     *uint32
 	Interval *uint32
@@ -426,13 +427,22 @@ func (m *GetAccountsSummaryRequest) GetInterval() uint32 {
 	return 0
 }
 
-func (m *GetAccountsSummaryRequest) ToSnapshotFilter() *repo.SnapshotFilter {
-	now := time.Now()
+func (m *GetAccountsSummaryRequest) ToSnapshotFilter() (*repo.SnapshotFilter, error) {
+	loc, err := time.LoadLocation(m.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, err
+	}
 
-	t := now
+	var (
+		now = time.Now().In(loc)
+		t   = now
+	)
 	switch m.GetUnit() {
 	case uint32(entity.SnapshotUnitMonth):
-		t = now.AddDate(0, -int(m.GetInterval()), 0)
+		date := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		t = date.AddDate(0, -int(m.GetInterval()), 0)
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
 	}
 
 	return repo.NewSnapshotFilter(
@@ -448,7 +458,7 @@ func (m *GetAccountsSummaryRequest) ToSnapshotFilter() *repo.SnapshotFilter {
 				},
 			},
 		}),
-	)
+	), nil
 }
 
 type GetAccountSummaryResponse struct {

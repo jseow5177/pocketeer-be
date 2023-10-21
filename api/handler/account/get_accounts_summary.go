@@ -11,6 +11,7 @@ import (
 )
 
 var GetAccountsSummaryValidator = validator.MustForm(map[string]validator.Validator{
+	"app_meta": entity.AppMetaValidator(),
 	"unit": &validator.UInt32{
 		Optional:   false,
 		Validators: []validator.UInt32Func{entity.CheckSnapshotUnit},
