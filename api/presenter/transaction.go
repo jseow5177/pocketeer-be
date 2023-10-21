@@ -693,7 +693,7 @@ func (m *GetTransactionsSummaryRequest) ToUseCaseReq(user *entity.User) *transac
 }
 
 type GetTransactionsSummaryResponse struct {
-	Summary []*Summary `json:"net_worth,omitempty"`
+	Summary []*Summary `json:"summary,omitempty"`
 }
 
 func (m *GetTransactionsSummaryResponse) Set(useCaseRes *transaction.GetTransactionsSummaryResponse) {
