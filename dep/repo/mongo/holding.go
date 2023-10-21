@@ -96,7 +96,7 @@ func (m *holdingMongo) DeleteMany(ctx context.Context, hf *repo.HoldingFilter) e
 func (m *holdingMongo) GetMany(ctx context.Context, hf *repo.HoldingFilter) ([]*entity.Holding, error) {
 	f := mongoutil.BuildFilter(hf)
 
-	res, err := m.mColl.getMany(ctx, new(model.Holding), nil, f)
+	res, err := m.mColl.getMany(ctx, new(model.Holding), hf.Paging, f)
 	if err != nil {
 		return nil, err
 	}
