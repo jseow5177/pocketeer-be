@@ -32,16 +32,12 @@ var emailSubjects = map[uint32]string{
 type GmailMgr struct {
 	name   string
 	sender string
-	client gomail.SendCloser
+	dialer *gomail.Dialer
 	tmpls  map[uint32]*template.Template
 }
 
 func NewGmailMgr(cfg *config.Gmail) (*GmailMgr, error) {
 	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Email, cfg.Password)
-	sender, err := dialer.Dial()
-	if err != nil {
-		return nil, err
-	}
 
 	// init templates
 	tmpls := make(map[uint32]*template.Template)
@@ -56,7 +52,7 @@ func NewGmailMgr(cfg *config.Gmail) (*GmailMgr, error) {
 	return &GmailMgr{
 		name:   cfg.Name,
 		sender: cfg.Email,
-		client: sender,
+		dialer: dialer,
 		tmpls:  tmpls,
 	}, nil
 }
@@ -83,9 +79,9 @@ func (mgr *GmailMgr) SendEmail(ctx context.Context, template mailer.Template, re
 	}
 	msg.SetBody("text/html", body)
 
-	return gomail.Send(mgr.client, msg)
+	return mgr.dialer.DialAndSend(msg)
 }
 
 func (mgr *GmailMgr) Close(ctx context.Context) error {
-	return mgr.client.Close()
+	return nil
 }

@@ -52,7 +52,8 @@ const (
 	PathGetCurrencies           = PathV1Prefix + "get_currencies"
 
 	// Admin APIs
-	PathAdminV1Prefix = "/api/admin/v1/"
+	PathAdminV1Prefix   = "/api/admin/v1/"
+	PathAdminSyncQuotes = PathAdminV1Prefix + "sync_quotes"
 )
 
 const (

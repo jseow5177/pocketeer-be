@@ -1,6 +1,10 @@
 package common
 
-import "github.com/jseow5177/pockteer-be/entity"
+import (
+	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/util"
+)
 
 type Paging struct {
 	Limit *uint32
@@ -62,11 +66,91 @@ type TransactionSummary struct {
 	Transactions    []*entity.Transaction
 }
 
+type TransactionSummaryOption func(ts *TransactionSummary)
+
+func WithSummaryDate(date *string) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if date != nil {
+			ts.SetDate(date)
+		}
+	}
+}
+
+func WithSummaryCategory(c *entity.Category) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if c != nil {
+			ts.SetCategory(c)
+		}
+	}
+}
+
+func WithSummarySum(sum *float64) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if sum != nil {
+			ts.SetSum(sum)
+		}
+	}
+}
+
+func WithSummaryTotalExpense(totalExpense *float64) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if totalExpense != nil {
+			ts.SetTotalExpense(totalExpense)
+		}
+	}
+}
+
+func WithSummaryTotalIncome(totalIncome *float64) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if totalIncome != nil {
+			ts.SetTotalIncome(totalIncome)
+		}
+	}
+}
+
+func WithSummaryTransactionType(transactionType *uint32) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if transactionType != nil {
+			ts.SetTransactionType(transactionType)
+		}
+	}
+}
+
+func WithSummaryCurrency(currency *string) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if currency != nil {
+			ts.SetCurrency(currency)
+		}
+	}
+}
+
+func WithSummaryTransactions(tss []*entity.Transaction) TransactionSummaryOption {
+	return func(ts *TransactionSummary) {
+		if tss != nil {
+			ts.SetTransactions(tss)
+		}
+	}
+}
+
+func NewTransactionSummary(opts ...TransactionSummaryOption) *TransactionSummary {
+	ts := new(TransactionSummary)
+
+	for _, opt := range opts {
+		opt(ts)
+	}
+
+	return ts
+}
+
 func (m *TransactionSummary) GetDate() string {
 	if m != nil && m.Date != nil {
 		return *m.Date
 	}
 	return ""
+}
+
+func (m *TransactionSummary) SetDate(date *string) {
+	m.Date = date
 }
 
 func (m *TransactionSummary) GetCategory() *entity.Category {
@@ -76,11 +160,24 @@ func (m *TransactionSummary) GetCategory() *entity.Category {
 	return nil
 }
 
+func (m *TransactionSummary) SetCategory(c *entity.Category) {
+	m.Category = c
+}
+
 func (m *TransactionSummary) GetSum() float64 {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
 	}
 	return 0
+}
+
+func (m *TransactionSummary) SetSum(sum *float64) {
+	m.Sum = sum
+
+	if sum != nil {
+		s := util.RoundFloatToStandardDP(*sum)
+		m.Sum = goutil.Float64(s)
+	}
 }
 
 func (m *TransactionSummary) GetTotalExpense() float64 {
@@ -90,11 +187,29 @@ func (m *TransactionSummary) GetTotalExpense() float64 {
 	return 0
 }
 
+func (m *TransactionSummary) SetTotalExpense(totalExpense *float64) {
+	m.TotalExpense = totalExpense
+
+	if totalExpense != nil {
+		s := util.RoundFloatToStandardDP(*totalExpense)
+		m.TotalExpense = goutil.Float64(s)
+	}
+}
+
 func (m *TransactionSummary) GetTotalIncome() float64 {
 	if m != nil && m.TotalIncome != nil {
 		return *m.TotalIncome
 	}
 	return 0
+}
+
+func (m *TransactionSummary) SetTotalIncome(totalIncome *float64) {
+	m.TotalIncome = totalIncome
+
+	if totalIncome != nil {
+		s := util.RoundFloatToStandardDP(*totalIncome)
+		m.TotalIncome = goutil.Float64(s)
+	}
 }
 
 func (m *TransactionSummary) GetTransactionType() uint32 {
@@ -104,6 +219,10 @@ func (m *TransactionSummary) GetTransactionType() uint32 {
 	return 0
 }
 
+func (m *TransactionSummary) SetTransactionType(transactionType *uint32) {
+	m.TransactionType = transactionType
+}
+
 func (m *TransactionSummary) GetCurrency() string {
 	if m != nil && m.Currency != nil {
 		return *m.Currency
@@ -111,9 +230,17 @@ func (m *TransactionSummary) GetCurrency() string {
 	return ""
 }
 
+func (m *TransactionSummary) SetCurrency(currency *string) {
+	m.Currency = currency
+}
+
 func (m *TransactionSummary) GetTransactions() []*entity.Transaction {
 	if m != nil && m.Transactions != nil {
 		return m.Transactions
 	}
 	return nil
+}
+
+func (m *TransactionSummary) SetTransactions(ts []*entity.Transaction) {
+	m.Transactions = ts
 }

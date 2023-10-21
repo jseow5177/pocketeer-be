@@ -107,9 +107,18 @@ func (uc *transactionUseCase) GetTransactionGroups(
 
 	u := entity.GetUserFromCtx(ctx)
 
+	// intermediate state
+	type transactionSummary struct {
+		Date         string
+		Sum          float64
+		TotalExpense float64
+		TotalIncome  float64
+		Transactions []*entity.Transaction
+	}
+
 	var (
-		transactionGroups    = make([]*common.TransactionSummary, 0)
-		transactionGroupsMap = make(map[string]*common.TransactionSummary)
+		transactionGroups    = make([]*transactionSummary, 0)
+		transactionGroupsMap = make(map[string]*transactionSummary)
 	)
 	// transactions is already ordered in desc order of transaction_time
 	for _, t := range res.Transactions {
@@ -117,12 +126,11 @@ func (uc *transactionUseCase) GetTransactionGroups(
 		date := util.FormatDate(ts)
 
 		if _, ok := transactionGroupsMap[date]; !ok {
-			ts := &common.TransactionSummary{
-				Date:         goutil.String(date),
-				Currency:     u.Meta.Currency,
-				Sum:          goutil.Float64(0),
-				TotalExpense: goutil.Float64(0),
-				TotalIncome:  goutil.Float64(0),
+			ts := &transactionSummary{
+				Date:         date,
+				Sum:          0,
+				TotalExpense: 0,
+				TotalIncome:  0,
 				Transactions: make([]*entity.Transaction, 0),
 			}
 			transactionGroupsMap[date] = ts
@@ -142,17 +150,29 @@ func (uc *transactionUseCase) GetTransactionGroups(
 		}
 
 		if t.IsExpense() {
-			transactionGroup.TotalExpense = goutil.Float64(transactionGroup.GetTotalExpense() + amount)
+			transactionGroup.TotalExpense += amount
 		} else if t.IsIncome() {
-			transactionGroup.TotalIncome = goutil.Float64(transactionGroup.GetTotalIncome() + amount)
+			transactionGroup.TotalIncome += amount
 		}
 
-		sum := transactionGroup.GetSum() + amount
-		transactionGroup.Sum = goutil.Float64(sum)
+		transactionGroup.Sum += amount
+	}
+
+	// round after sum
+	tgs := make([]*common.TransactionSummary, 0)
+	for _, transactionGroup := range transactionGroups {
+		tgs = append(tgs, common.NewTransactionSummary(
+			common.WithSummaryCurrency(u.Meta.Currency),
+			common.WithSummaryDate(goutil.String(transactionGroup.Date)),
+			common.WithSummaryTransactions(transactionGroup.Transactions),
+			common.WithSummarySum(goutil.Float64(transactionGroup.Sum)),
+			common.WithSummaryTotalExpense(goutil.Float64(transactionGroup.TotalExpense)),
+			common.WithSummaryTotalIncome(goutil.Float64(transactionGroup.TotalIncome)),
+		))
 	}
 
 	return &GetTransactionGroupsResponse{
-		TransactionGroups: transactionGroups,
+		TransactionGroups: tgs,
 		Paging:            req.Paging,
 	}, nil
 }
@@ -581,11 +601,11 @@ func (uc *transactionUseCase) SumTransactions(ctx context.Context, req *SumTrans
 
 	sums := make([]*common.TransactionSummary, 0)
 	for tt, sum := range sumByTT {
-		sums = append(sums, &common.TransactionSummary{
-			TransactionType: goutil.Uint32(tt),
-			Sum:             goutil.Float64(sum),
-			Currency:        u.Meta.Currency,
-		})
+		sums = append(sums, common.NewTransactionSummary(
+			common.WithSummaryTransactionType(goutil.Uint32(tt)),
+			common.WithSummarySum(goutil.Float64(sum)),
+			common.WithSummaryCurrency(u.Meta.Currency),
+		))
 	}
 
 	return &SumTransactionsResponse{
@@ -613,7 +633,7 @@ func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *e
 
 	amount *= er.GetRate()
 
-	return util.RoundFloatToStandardDP(amount), nil
+	return amount, nil
 }
 
 func (uc *transactionUseCase) updateAccountBalance(ctx context.Context, t *entity.Transaction, ac *entity.Account, add bool) error {

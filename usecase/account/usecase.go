@@ -107,7 +107,6 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 			}
 
 			balance *= er.GetRate()
-			balance = util.RoundFloatToStandardDP(balance)
 		}
 
 		mu.Lock()
@@ -123,12 +122,12 @@ func (uc *accountUseCase) GetAccounts(ctx context.Context, req *GetAccountsReque
 		return nil, err
 	}
 
-	netWorth := util.RoundFloatToStandardDP(assetValue + debtValue)
+	netWorth := assetValue + debtValue
 
 	return &GetAccountsResponse{
-		NetWorth:   goutil.Float64(netWorth),
-		AssetValue: goutil.Float64(assetValue),
-		DebtValue:  goutil.Float64(debtValue),
+		NetWorth:   goutil.Float64(util.RoundFloatToStandardDP(netWorth)),
+		AssetValue: goutil.Float64(util.RoundFloatToStandardDP(assetValue)),
+		DebtValue:  goutil.Float64(util.RoundFloatToStandardDP(debtValue)),
 		Currency:   u.Meta.Currency,
 		Accounts:   acs,
 	}, nil
@@ -282,7 +281,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amou
 
 func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *entity.Account) error {
 	hs, err := uc.holdingRepo.GetMany(ctx, repo.NewHoldingFilter(
-		ac.GetUserID(),
+		repo.WithHoldingUserID(ac.UserID),
 		repo.WithHoldingAccountID(ac.AccountID),
 	))
 	if err != nil {
@@ -291,9 +290,9 @@ func (uc *accountUseCase) getAccountHoldingsAndLots(ctx context.Context, ac *ent
 
 	for _, h := range hs {
 		if h.IsDefault() {
-			q, err := uc.quoteRepo.Get(ctx, &repo.QuoteFilter{
-				Symbol: h.Symbol,
-			})
+			q, err := uc.quoteRepo.Get(ctx, repo.NewQuoteFilter(
+				repo.WithQuoteSymbol(h.Symbol),
+			))
 			if err != nil {
 				return fmt.Errorf("fail to get quote from repo, err: %v", err)
 			}

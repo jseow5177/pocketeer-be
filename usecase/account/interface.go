@@ -51,15 +51,15 @@ func (m *GetAccountRequest) ToAccountFilter() *repo.AccountFilter {
 
 func (m *GetAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingAccountID(m.AccountID),
 	)
 }
 
 func (m *GetAccountRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
-	return &repo.QuoteFilter{
-		Symbol: goutil.String(symbol),
-	}
+	return repo.NewQuoteFilter(
+		repo.WithQuoteSymbol(goutil.String(symbol)),
+	)
 }
 
 type GetAccountResponse struct {
@@ -101,15 +101,15 @@ func (m *GetAccountsRequest) ToAccountFilter() *repo.AccountFilter {
 
 func (m *GetAccountsRequest) ToHoldingFilter(accountID string) *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingAccountID(goutil.String(accountID)),
 	)
 }
 
 func (m *GetAccountsRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
-	return &repo.QuoteFilter{
-		Symbol: goutil.String(symbol),
-	}
+	return repo.NewQuoteFilter(
+		repo.WithQuoteSymbol(goutil.String(symbol)),
+	)
 }
 
 type GetAccountsResponse struct {
@@ -380,7 +380,7 @@ func (m *DeleteAccountRequest) ToAccountFilter() *repo.AccountFilter {
 
 func (m *DeleteAccountRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingAccountID(m.AccountID),
 	)
 }

@@ -137,6 +137,7 @@ func (mgr *finnhubMgr) GetLatestQuote(ctx context.Context, sf *api.SecurityFilte
 	t := q.GetT() * 1000
 
 	return entity.NewQuote(
+		sf.GetSymbol(),
 		entity.WithQuoteLatestPrice(q.C),
 		entity.WithQuoteChange(q.D),
 		entity.WithQuoteChangePercent(q.Dp),
