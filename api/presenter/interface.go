@@ -395,35 +395,36 @@ func toAccounts(acs []*entity.Account) []*Account {
 	return accounts
 }
 
-func toSummary(ts *common.Summary) *Summary {
-	if ts == nil {
+func toSummary(s *common.Summary) *Summary {
+	if s == nil {
 		return nil
 	}
 
 	var sum *string
-	if ts.Sum != nil {
-		sum = goutil.String(fmt.Sprint(ts.GetSum()))
+	if s.Sum != nil {
+		sum = goutil.String(fmt.Sprint(s.GetSum()))
 	}
 
 	var totalExpense *string
-	if ts.TotalExpense != nil {
-		totalExpense = goutil.String(fmt.Sprint(ts.GetTotalExpense()))
+	if s.TotalExpense != nil {
+		totalExpense = goutil.String(fmt.Sprint(s.GetTotalExpense()))
 	}
 
 	var totalIncome *string
-	if ts.TotalIncome != nil {
-		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
+	if s.TotalIncome != nil {
+		totalIncome = goutil.String(fmt.Sprint(s.GetTotalIncome()))
 	}
 
 	return &Summary{
-		Date:            ts.Date,
-		Category:        toCategory(ts.Category),
-		TransactionType: ts.TransactionType,
+		Date:            s.Date,
+		Category:        toCategory(s.Category),
+		Account:         toAccount(s.Account),
+		TransactionType: s.TransactionType,
 		Sum:             sum,
 		TotalExpense:    totalExpense,
 		TotalIncome:     totalIncome,
-		Currency:        ts.Currency,
-		Transactions:    toTransactions(ts.Transactions),
+		Currency:        s.Currency,
+		Transactions:    toTransactions(s.Transactions),
 	}
 }
 
