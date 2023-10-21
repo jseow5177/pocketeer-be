@@ -40,6 +40,8 @@ import (
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
 
+	sqjh "github.com/jseow5177/pockteer-be/cmd/job/sync_quotes"
+
 	acuc "github.com/jseow5177/pockteer-be/usecase/account"
 	buc "github.com/jseow5177/pockteer-be/usecase/budget"
 	cuc "github.com/jseow5177/pockteer-be/usecase/category"
@@ -173,6 +175,12 @@ func (s *server) Start() error {
 		return err
 	}
 
+	s.quoteRepo, err = mongo.NewQuoteMongo(s.ctx, s.mongo, s.securityAPI)
+	if err != nil {
+		log.Ctx(s.ctx).Error().Msgf("fail to init quote repo, err: %v", err)
+		return err
+	}
+
 	// init sheet repo
 	s.feedbackRepo, err = sheet.NewFeedbackSheet(s.ctx, s.cfg.FeedbackGoogleSheet)
 	if err != nil {
@@ -189,13 +197,6 @@ func (s *server) Start() error {
 	s.mailer, err = gmail.NewGmailMgr(s.cfg.Gmail)
 	if err != nil {
 		log.Ctx(s.ctx).Error().Msgf("fail to init gmail mailer, err: %v", err)
-		return err
-	}
-
-	// init mem repos
-	s.quoteRepo, err = mem.NewQuoteMemCache(s.cfg.QuoteMemCache, s.securityAPI)
-	if err != nil {
-		log.Ctx(s.ctx).Error().Msgf("fail to init quote repo, err: %v", err)
 		return err
 	}
 
@@ -304,7 +305,25 @@ func (s *server) registerRoutes() http.Handler {
 }
 
 func (s *server) initAdminRoutes(r *router.HttpRouter) {
-	_ = middleware.NewAdminAuthMiddleware(s.cfg.ServerAdmin)
+	adminAuthMiddleware := middleware.NewAdminAuthMiddleware(s.cfg.ServerAdmin)
+
+	// ========== Sync quotes ========== //
+
+	syncQuotesHandler := sqjh.NewSyncQuotesHandler(s.quoteRepo, s.holdingRepo, s.securityAPI)
+
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathAdminSyncQuotes,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(sqjh.SyncQuotesRequest),
+			Res:       new(sqjh.SyncQuotesResponse),
+			Validator: nil,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return syncQuotesHandler.SyncQuotes(ctx, req.(*sqjh.SyncQuotesRequest), res.(*sqjh.SyncQuotesResponse))
+			},
+		},
+		Middlewares: []router.Middleware{adminAuthMiddleware},
+	})
 }
 
 func (s *server) initUserRoutes(r *router.HttpRouter) {

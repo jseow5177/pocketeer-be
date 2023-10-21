@@ -22,9 +22,9 @@ type ExchangeRateRepo interface {
 }
 
 type ExchangeRateFilter struct {
-	From      *string
-	To        *string
-	Timestamp *uint64
+	From      *string `filter:"from"`
+	To        *string `filter:"to"`
+	Timestamp *uint64 `filter:"timestamp"`
 	Paging    *Paging `filter:"-"`
 }
 

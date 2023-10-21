@@ -38,15 +38,15 @@ func (m *GetHoldingRequest) GetHoldingID() string {
 
 func (m *GetHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingID(m.HoldingID),
 	)
 }
 
 func (m *GetHoldingRequest) ToQuoteFilter(symbol string) *repo.QuoteFilter {
-	return &repo.QuoteFilter{
-		Symbol: goutil.String(symbol),
-	}
+	return repo.NewQuoteFilter(
+		repo.WithQuoteSymbol(goutil.String(symbol)),
+	)
 }
 
 func (m *GetHoldingRequest) ToSecurityFilter(symbol string) *repo.SecurityFilter {
@@ -118,7 +118,7 @@ func (m *UpdateHoldingRequest) GetSymbol() string {
 
 func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingID(m.HoldingID),
 	)
 }
@@ -264,7 +264,7 @@ func (m *DeleteHoldingRequest) GetAccountID() string {
 
 func (m *DeleteHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	return repo.NewHoldingFilter(
-		m.GetUserID(),
+		repo.WithHoldingUserID(m.UserID),
 		repo.WithHoldingID(m.HoldingID),
 	)
 }

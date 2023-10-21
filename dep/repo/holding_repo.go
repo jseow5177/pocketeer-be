@@ -32,6 +32,7 @@ type HoldingFilter struct {
 	Symbol        *string  `filter:"symbol"`
 	HoldingType   *uint32  `filter:"holding_type"`
 	HoldingStatus *uint32  `filter:"holding_status"`
+	Paging        *Paging  `filter:"-"`
 }
 
 type HoldingFilterOption = func(hf *HoldingFilter)
@@ -39,6 +40,12 @@ type HoldingFilterOption = func(hf *HoldingFilter)
 func WithHoldingID(holdingID *string) HoldingFilterOption {
 	return func(hf *HoldingFilter) {
 		hf.HoldingID = holdingID
+	}
+}
+
+func WithHoldingUserID(userID *string) HoldingFilterOption {
+	return func(hf *HoldingFilter) {
+		hf.UserID = userID
 	}
 }
 
@@ -72,9 +79,14 @@ func WithHoldingIDs(holdingIDs []string) HoldingFilterOption {
 	}
 }
 
-func NewHoldingFilter(userID string, opts ...HoldingFilterOption) *HoldingFilter {
+func WithHoldingPaging(paging *Paging) HoldingFilterOption {
+	return func(hf *HoldingFilter) {
+		hf.Paging = paging
+	}
+}
+
+func NewHoldingFilter(opts ...HoldingFilterOption) *HoldingFilter {
 	hf := &HoldingFilter{
-		UserID:        goutil.String(userID),
 		HoldingStatus: goutil.Uint32(uint32(entity.HoldingStatusNormal)),
 	}
 	for _, opt := range opts {
