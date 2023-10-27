@@ -37,6 +37,7 @@ func (m *SearchSecuritiesRequest) ToSecurityFilter() *repo.SecurityFilter {
 					Order: goutil.String(config.OrderAsc),
 				},
 			},
+			Limit: goutil.Uint32(20),
 		}),
 	)
 }
