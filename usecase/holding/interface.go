@@ -79,6 +79,7 @@ type UpdateHoldingRequest struct {
 	TotalCost   *float64
 	LatestValue *float64
 	Symbol      *string
+	Lots        []*lot.UpdateLotRequest
 }
 
 func (m *UpdateHoldingRequest) GetUserID() string {
@@ -123,14 +124,6 @@ func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	)
 }
 
-func (m *UpdateHoldingRequest) ToHoldingUpdate() *entity.HoldingUpdate {
-	return entity.NewHoldingUpdate(
-		entity.WithUpdateHoldingSymbol(m.Symbol),
-		entity.WithUpdateHoldingTotalCost(m.TotalCost),
-		entity.WithUpdateHoldingLatestValue(m.LatestValue),
-	)
-}
-
 type UpdateHoldingResponse struct {
 	Holding *entity.Holding
 }
@@ -149,7 +142,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32
 	TotalCost   *float64
 	LatestValue *float64
-	Lots        []*lot.CreateLotRequest // only for InitUser
+	Lots        []*lot.CreateLotRequest
 }
 
 func (m *CreateHoldingRequest) GetUserID() string {
@@ -192,10 +185,6 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 		return *m.LatestValue
 	}
 	return 0
-}
-
-func (m *CreateHoldingRequest) IsDefault() bool {
-	return m.GetHoldingType() == uint32(entity.HoldingTypeDefault)
 }
 
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {

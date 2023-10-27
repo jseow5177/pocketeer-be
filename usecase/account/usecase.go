@@ -245,12 +245,20 @@ func (uc *accountUseCase) DeleteAccount(ctx context.Context, req *DeleteAccountR
 			holdingIDs = append(holdingIDs, h.GetHoldingID())
 		}
 
-		if err := uc.holdingRepo.DeleteMany(txCtx, req.ToHoldingFilter()); err != nil {
+		// mark holdings as deleted
+		hu := &entity.HoldingUpdate{
+			HoldingStatus: goutil.Uint32(uint32(entity.HoldingStatusDeleted)),
+		}
+		if err := uc.holdingRepo.UpdateMany(ctx, req.ToHoldingFilter(), hu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark account holdings as deleted, err: %v", err)
 			return err
 		}
 
-		if err := uc.lotRepo.DeleteMany(txCtx, req.ToLotFilter(holdingIDs)); err != nil {
+		// mark lots as deleted
+		lu := &entity.LotUpdate{
+			LotStatus: goutil.Uint32(uint32(entity.LotStatusDeleted)),
+		}
+		if err := uc.lotRepo.UpdateMany(ctx, req.ToLotFilter(holdingIDs), lu); err != nil {
 			log.Ctx(txCtx).Error().Msgf("fail to mark lots as deleted, err: %v", err)
 			return err
 		}

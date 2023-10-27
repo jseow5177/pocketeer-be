@@ -31,8 +31,8 @@ func NewCreateHoldingValidator(optionalAccountID bool) validator.Validator {
 			Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 		},
 		"lots": &validator.Slice{
-			Optional:  true,
-			MaxLen:    5,
+			Optional:  true, // TODO: Set to false
+			MaxLen:    5,    // TODO: Set to 1
 			Validator: lot.NewCreateLotValidator(true),
 		},
 	})

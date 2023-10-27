@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -52,7 +53,7 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 	// default to account currency
 	currency := ac.GetCurrency()
 
-	if req.IsDefault() {
+	if req.GetHoldingType() == uint32(entity.HoldingTypeDefault) {
 		s, err := uc.securityRepo.Get(ctx, req.ToSecurityFilter())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
@@ -68,8 +69,22 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		return nil, err
 	}
 
-	if _, err = uc.holdingRepo.Create(ctx, h); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
+	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
+		// create holding
+		if _, err = uc.holdingRepo.Create(txCtx, h); err != nil {
+			log.Ctx(ctx).Error().Msgf("fail to save new holding to repo, err: %v", err)
+			return err
+		}
+
+		// create lots
+		if len(h.Lots) > 0 {
+			if _, err = uc.lotRepo.CreateMany(txCtx, h.Lots); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to save new lots to repo, err: %v", err)
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
@@ -116,9 +131,17 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		return nil, err
 	}
 
-	hu, err := h.Update(req.ToHoldingUpdate())
+	hu, err := h.Update(
+		entity.WithUpdateHoldingSymbol(req.Symbol),
+		entity.WithUpdateHoldingLatestValue(req.LatestValue),
+		entity.WithUpdateHoldingTotalCost(req.TotalCost),
+	)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(req.Lots) > 1 {
+		// One lot only
 	}
 
 	if hu == nil {
@@ -150,20 +173,33 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 func (uc *holdingUseCase) DeleteHolding(ctx context.Context, req *DeleteHoldingRequest) (*DeleteHoldingResponse, error) {
 	hf := req.ToHoldingFilter()
 
-	_, err := uc.holdingRepo.Get(ctx, hf)
+	h, err := uc.holdingRepo.Get(ctx, hf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get holding from repo, err: %v", err)
 		return nil, err
 	}
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
-		if err := uc.holdingRepo.Delete(txCtx, hf); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to delete holding, err: %v", err)
+		hu, err := h.Update(
+			entity.WithUpdateHoldingStatus(goutil.Uint32(uint32(entity.HoldingStatusDeleted))),
+		)
+		if err != nil {
 			return err
 		}
 
-		if err := uc.lotRepo.Delete(txCtx, req.ToLotFilter()); err != nil {
-			log.Ctx(txCtx).Error().Msgf("fail to delete lots, err: %v", err)
+		// mark holding as deleted
+		if err := uc.holdingRepo.Update(txCtx, hf, hu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark holding as deleted, err: %v", err)
+			return err
+		}
+
+		lu := &entity.LotUpdate{
+			LotStatus: goutil.Uint32(uint32(entity.LotStatusDeleted)),
+		}
+
+		// mark lots as deleted
+		if err := uc.lotRepo.Update(txCtx, req.ToLotFilter(), lu); err != nil {
+			log.Ctx(txCtx).Error().Msgf("fail to mark lots as deleted, err: %v", err)
 			return err
 		}
 
