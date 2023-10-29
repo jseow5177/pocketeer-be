@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -54,7 +55,11 @@ func (uc *lotUseCase) UpdateLot(ctx context.Context, req *UpdateLotRequest) (*Up
 		return nil, err
 	}
 
-	lu := l.Update(req.ToLotUpdate())
+	lu := l.Update(
+		entity.WithUpdateLotCostPerShare(req.CostPerShare),
+		entity.WithUpdateLotShares(req.Shares),
+		entity.WithUpdateLotTradeDate(req.TradeDate),
+	)
 
 	if lu == nil {
 		log.Ctx(ctx).Info().Msg("lot has no updates")
@@ -100,14 +105,19 @@ func (uc *lotUseCase) GetLots(ctx context.Context, req *GetLotsRequest) (*GetLot
 func (uc *lotUseCase) DeleteLot(ctx context.Context, req *DeleteLotRequest) (*DeleteLotResponse, error) {
 	lf := req.ToLotFilter()
 
-	_, err := uc.lotRepo.Get(ctx, lf)
+	l, err := uc.lotRepo.Get(ctx, lf)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get lot from repo, err: %v", err)
 		return nil, err
 	}
 
-	if err := uc.lotRepo.Delete(ctx, lf); err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to delete lot, err: %v", err)
+	lu := l.Update(
+		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
+	)
+
+	// mark lot as deleted
+	if err := uc.lotRepo.Update(ctx, lf, lu); err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to mark lot as deleted, err: %v", err)
 		return nil, err
 	}
 

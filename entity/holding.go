@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	ErrSetCostValueSharesForbidden = errors.New("set total_cost or latest_value or total_shares forbidden")
-	ErrMustSetCostAndValue         = errors.New("total_cost and latest_value must be set")
-	ErrHoldingCannotHaveLots       = errors.New("holding cannot have lots")
+	ErrSetCostValueForbidden = errors.New("set total_cost or latest_value forbidden")
+	ErrMustSetCostAndValue   = errors.New("total_cost and latest_value must be set")
+	ErrHoldingCannotHaveLots = errors.New("holding cannot have lots")
+	ErrMismatchCurrency      = errors.New("mismatch currency")
+	ErrCannotChangeSymbol    = errors.New("cannot change symbol")
 )
 
 type HoldingStatus uint32
@@ -36,111 +38,38 @@ var HoldingTypes = map[uint32]string{
 	uint32(HoldingTypeCustom):  "custom",
 }
 
-type HoldingUpdate struct {
-	TotalCost     *float64
-	LatestValue   *float64
-	Symbol        *string
-	UpdateTime    *uint64
-	HoldingStatus *uint32
-}
-
-func (hu *HoldingUpdate) GetTotalCost() float64 {
-	if hu != nil && hu.TotalCost != nil {
-		return *hu.TotalCost
-	}
-	return 0
-}
-
-func (hu *HoldingUpdate) SetTotalCost(totalCost *float64) {
-	hu.TotalCost = totalCost
-
-	if totalCost != nil {
-		tc := util.RoundFloatToStandardDP(*totalCost)
-		hu.TotalCost = goutil.Float64(tc)
-	}
-}
-
-func (hu *HoldingUpdate) GetLatestValue() float64 {
-	if hu != nil && hu.LatestValue != nil {
-		return *hu.LatestValue
-	}
-	return 0
-}
-
-func (hu *HoldingUpdate) SetLatestValue(latestValue *float64) {
-	hu.LatestValue = latestValue
-
-	if latestValue != nil {
-		lv := util.RoundFloatToStandardDP(*latestValue)
-		hu.LatestValue = goutil.Float64(lv)
-	}
-}
-
-func (hu *HoldingUpdate) GetSymbol() string {
-	if hu != nil && hu.Symbol != nil {
-		return *hu.Symbol
-	}
-	return ""
-}
-
-func (hu *HoldingUpdate) SetSymbol(symbol *string) {
-	hu.Symbol = symbol
-}
-
-func (hu *HoldingUpdate) GetUpdateTime() uint64 {
-	if hu != nil && hu.UpdateTime != nil {
-		return *hu.UpdateTime
-	}
-	return 0
-}
-
-func (hu *HoldingUpdate) SetUpdateTime(updateTime *uint64) {
-	hu.UpdateTime = updateTime
-}
-
-func (hu *HoldingUpdate) GetHoldingStatus() uint32 {
-	if hu != nil && hu.HoldingStatus != nil {
-		return *hu.HoldingStatus
-	}
-	return 0
-}
-
-func (hu *HoldingUpdate) SetHoldingStatus(holdingStatus *uint32) {
-	hu.HoldingStatus = holdingStatus
-}
+type HoldingUpdateOption func(h *Holding)
 
 func WithUpdateHoldingTotalCost(totalCost *float64) HoldingUpdateOption {
-	return func(hu *HoldingUpdate) {
-		hu.SetTotalCost(totalCost)
+	return func(h *Holding) {
+		if totalCost != nil {
+			h.SetTotalCost(totalCost)
+		}
 	}
 }
 
 func WithUpdateHoldingLatestValue(latestValue *float64) HoldingUpdateOption {
-	return func(hu *HoldingUpdate) {
-		hu.SetLatestValue(latestValue)
+	return func(h *Holding) {
+		if latestValue != nil {
+			h.SetLatestValue(latestValue)
+		}
 	}
 }
 
 func WithUpdateHoldingSymbol(symbol *string) HoldingUpdateOption {
-	return func(hu *HoldingUpdate) {
-		hu.SetSymbol(symbol)
+	return func(h *Holding) {
+		if symbol != nil {
+			h.SetSymbol(symbol)
+		}
 	}
 }
 
 func WithUpdateHoldingStatus(holdingStatus *uint32) HoldingUpdateOption {
-	return func(hu *HoldingUpdate) {
-		hu.SetHoldingStatus(holdingStatus)
+	return func(h *Holding) {
+		if holdingStatus != nil {
+			h.SetHoldingStatus(holdingStatus)
+		}
 	}
-}
-
-type HoldingUpdateOption = func(hu *HoldingUpdate)
-
-func NewHoldingUpdate(opts ...HoldingUpdateOption) *HoldingUpdate {
-	hu := new(HoldingUpdate)
-	for _, opt := range opts {
-		opt(hu)
-	}
-	return hu
 }
 
 type Holding struct {
@@ -153,78 +82,114 @@ type Holding struct {
 	CreateTime    *uint64
 	UpdateTime    *uint64
 	Currency      *string
+	TotalCost     *float64 // stored for custom, computed for default
+	LatestValue   *float64 // stored for custom, computed for default
 
-	TotalShares     *float64 // no-op for customm, computed for default from lots
+	TotalShares     *float64 // no-op for custom, computed for default from lots
 	AvgCostPerShare *float64 // no-op for custom, computed for default from lots
 	Quote           *Quote   // no-op for custom, computed for default from external API
 	Gain            *float64 // no-op for customm, computed for default from lots
 	PercentGain     *float64 // no-op for customm, computed for default from lots
-	TotalCost       *float64 // stored for custom, computed for default
-	LatestValue     *float64 // stored for custom, computed for default
 
 	Lots []*Lot
 }
 
-type HoldingOption = func(h *Holding)
+type HoldingOption func(h *Holding)
 
 func WithHoldingID(holdingID *string) HoldingOption {
 	return func(h *Holding) {
-		h.SetHoldingID(holdingID)
+		if holdingID != nil {
+			h.SetHoldingID(holdingID)
+		}
 	}
 }
 
 func WithHoldingStatus(holdingStatus *uint32) HoldingOption {
 	return func(h *Holding) {
-		h.SetHoldingStatus(holdingStatus)
+		if holdingStatus != nil {
+			h.SetHoldingStatus(holdingStatus)
+		}
 	}
 }
 
 func WithHoldingType(holdingType *uint32) HoldingOption {
 	return func(h *Holding) {
-		h.SetHoldingType(holdingType)
+		if holdingType != nil {
+			h.SetHoldingType(holdingType)
+		}
 	}
 }
 
 func WithHoldingCreateTime(createTime *uint64) HoldingOption {
 	return func(h *Holding) {
-		h.SetCreateTime(createTime)
+		if createTime != nil {
+			h.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithHoldingUpdateTime(updateTime *uint64) HoldingOption {
 	return func(h *Holding) {
-		h.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			h.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithHoldingCurrency(currency *string) HoldingOption {
 	return func(h *Holding) {
-		h.SetCurrency(currency)
+		if currency != nil {
+			h.SetCurrency(currency)
+		}
 	}
 }
 
 func WithHoldingTotalCost(totalCost *float64) HoldingOption {
 	return func(h *Holding) {
-		h.SetTotalCost(totalCost)
+		if totalCost != nil {
+			h.SetTotalCost(totalCost)
+		}
 	}
 }
 
 func WithHoldingLatestValue(latestValue *float64) HoldingOption {
 	return func(h *Holding) {
-		h.SetLatestValue(latestValue)
+		if latestValue != nil {
+			h.SetLatestValue(latestValue)
+		}
 	}
 }
 
 func WithHoldingTotalShares(totalShares *float64) HoldingOption {
 	return func(h *Holding) {
-		h.SetTotalShares(totalShares)
+		if totalShares != nil {
+			h.SetTotalShares(totalShares)
+		}
 	}
 }
 
 func WithHoldingLots(lots []*Lot) HoldingOption {
 	return func(h *Holding) {
-		h.SetLots(lots)
+		if lots != nil {
+			h.SetLots(lots)
+		}
 	}
+}
+
+func (h *Holding) Clone() (*Holding, error) {
+	return NewHolding(
+		h.GetUserID(),
+		h.GetAccountID(),
+		h.GetSymbol(),
+		WithHoldingID(goutil.String(h.GetHoldingID())),
+		WithHoldingType(h.HoldingType),
+		WithHoldingStatus(h.HoldingStatus),
+		WithHoldingCreateTime(h.CreateTime),
+		WithHoldingUpdateTime(h.UpdateTime),
+		WithHoldingTotalCost(h.TotalCost),
+		WithHoldingLatestValue(h.LatestValue),
+		WithHoldingCurrency(h.Currency),
+	)
 }
 
 func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holding, error) {
@@ -239,22 +204,25 @@ func NewHolding(userID, accountID, symbol string, opts ...HoldingOption) (*Holdi
 		UpdateTime:    goutil.Uint64(now),
 		Currency:      goutil.String(string(CurrencySGD)),
 	}
+
 	for _, opt := range opts {
 		opt(h)
 	}
-	if err := h.checkOpts(); err != nil {
+
+	if err := h.validate(); err != nil {
 		return nil, err
 	}
+
 	return h, nil
 }
 
-func (h *Holding) checkOpts() error {
+func (h *Holding) validate() error {
 	if h.IsDefault() {
 		h.Symbol = goutil.String(strings.ToUpper(h.GetSymbol()))
 
 		// for non-custom type, set cannot cost, value, and shares
-		if h.TotalCost != nil || h.LatestValue != nil || h.TotalShares != nil {
-			return ErrSetCostValueSharesForbidden
+		if h.TotalCost != nil || h.LatestValue != nil {
+			return ErrSetCostValueForbidden
 		}
 	}
 
@@ -271,53 +239,73 @@ func (h *Holding) checkOpts() error {
 	return nil
 }
 
-func (h *Holding) Update(hu *HoldingUpdate) (*HoldingUpdate, error) {
+type HoldingUpdate struct {
+	TotalCost     *float64
+	LatestValue   *float64
+	Symbol        *string
+	UpdateTime    *uint64
+	HoldingStatus *uint32
+}
+
+func (h *Holding) ToHoldingUpdate(old *Holding) *HoldingUpdate {
 	var (
-		hasUpdate     bool
-		holdingUpdate = new(HoldingUpdate)
+		hasUpdate bool
+
+		hu = &HoldingUpdate{
+			UpdateTime: h.UpdateTime,
+		}
 	)
 
-	if hu.TotalCost != nil && hu.GetTotalCost() != h.GetTotalCost() {
+	if old.GetTotalCost() != h.GetTotalCost() {
 		hasUpdate = true
-		h.SetTotalCost(hu.TotalCost)
-
-		defer func() {
-			holdingUpdate.SetTotalCost(h.TotalCost)
-		}()
+		hu.TotalCost = h.TotalCost
 	}
 
-	if hu.LatestValue != nil && hu.GetLatestValue() != h.GetLatestValue() {
+	if old.GetLatestValue() != h.GetLatestValue() {
 		hasUpdate = true
-		h.SetLatestValue(hu.LatestValue)
-
-		defer func() {
-			holdingUpdate.SetLatestValue(h.LatestValue)
-		}()
+		hu.LatestValue = h.LatestValue
 	}
 
-	if hu.Symbol != nil && hu.GetSymbol() != h.GetSymbol() {
+	if old.GetSymbol() != h.GetSymbol() {
 		hasUpdate = true
-		h.SetSymbol(hu.Symbol)
-
-		defer func() {
-			holdingUpdate.SetSymbol(h.Symbol)
-		}()
+		hu.Symbol = h.Symbol
 	}
 
-	if !hasUpdate {
+	if old.GetHoldingStatus() != h.GetHoldingStatus() {
+		hasUpdate = true
+		hu.HoldingStatus = h.HoldingStatus
+	}
+
+	if hasUpdate {
+		return hu
+	}
+
+	return nil
+}
+
+func (h *Holding) Update(hus ...HoldingUpdateOption) (*HoldingUpdate, error) {
+	if len(hus) == 0 {
 		return nil, nil
+	}
+
+	old, err := h.Clone()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, hu := range hus {
+		hu(h)
+	}
+
+	// check
+	if err := h.validate(); err != nil {
+		return nil, err
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	h.SetUpdateTime(now)
 
-	if err := h.checkOpts(); err != nil {
-		return nil, err
-	}
-
-	holdingUpdate.SetUpdateTime(now)
-
-	return holdingUpdate, nil
+	return h.ToHoldingUpdate(old), nil
 }
 
 func (h *Holding) GetHoldingID() string {

@@ -20,8 +20,7 @@ type HoldingRepo interface {
 	Create(ctx context.Context, h *entity.Holding) (string, error)
 	CreateMany(ctx context.Context, hs []*entity.Holding) ([]string, error)
 	Update(ctx context.Context, hf *HoldingFilter, hu *entity.HoldingUpdate) error
-	DeleteMany(ctx context.Context, hf *HoldingFilter) error
-	Delete(ctx context.Context, hf *HoldingFilter) error
+	UpdateMany(ctx context.Context, hf *HoldingFilter, hu *entity.HoldingUpdate) error
 }
 
 type HoldingFilter struct {

@@ -79,6 +79,7 @@ type UpdateHoldingRequest struct {
 	TotalCost   *float64
 	LatestValue *float64
 	Symbol      *string
+	Lots        []*lot.UpdateLotRequest
 }
 
 func (m *UpdateHoldingRequest) GetUserID() string {
@@ -123,11 +124,15 @@ func (m *UpdateHoldingRequest) ToHoldingFilter() *repo.HoldingFilter {
 	)
 }
 
-func (m *UpdateHoldingRequest) ToHoldingUpdate() *entity.HoldingUpdate {
-	return entity.NewHoldingUpdate(
-		entity.WithUpdateHoldingSymbol(m.Symbol),
-		entity.WithUpdateHoldingTotalCost(m.TotalCost),
-		entity.WithUpdateHoldingLatestValue(m.LatestValue),
+func (m *UpdateHoldingRequest) ToLotFilters() *repo.LotFilter {
+	lotIDs := make([]string, 0)
+	for _, lot := range m.Lots {
+		lotIDs = append(lotIDs, lot.GetLotID())
+	}
+	return repo.NewLotFilter(
+		m.GetUserID(),
+		repo.WithLotHoldingID(m.HoldingID),
+		repo.WithLotIDs(lotIDs),
 	)
 }
 
@@ -146,10 +151,11 @@ type CreateHoldingRequest struct {
 	UserID      *string
 	AccountID   *string
 	Symbol      *string
+	Currency    *string
 	HoldingType *uint32
 	TotalCost   *float64
 	LatestValue *float64
-	Lots        []*lot.CreateLotRequest // only for InitUser
+	Lots        []*lot.CreateLotRequest
 }
 
 func (m *CreateHoldingRequest) GetUserID() string {
@@ -169,6 +175,13 @@ func (m *CreateHoldingRequest) GetAccountID() string {
 func (m *CreateHoldingRequest) GetSymbol() string {
 	if m != nil && m.Symbol != nil {
 		return *m.Symbol
+	}
+	return ""
+}
+
+func (m *CreateHoldingRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -194,10 +207,6 @@ func (m *CreateHoldingRequest) GetLatestValue() float64 {
 	return 0
 }
 
-func (m *CreateHoldingRequest) IsDefault() bool {
-	return m.GetHoldingType() == uint32(entity.HoldingTypeDefault)
-}
-
 func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
 	return repo.NewAccountFilter(
 		m.GetUserID(),
@@ -208,6 +217,12 @@ func (m *CreateHoldingRequest) ToAccountFilter() *repo.AccountFilter {
 func (m *CreateHoldingRequest) ToSecurityFilter() *repo.SecurityFilter {
 	return repo.NewSecurityFilter(
 		repo.WithSecuritySymbol(m.Symbol),
+	)
+}
+
+func (m *CreateHoldingRequest) ToQuoteFilter() *repo.QuoteFilter {
+	return repo.NewQuoteFilter(
+		repo.WithQuoteSymbol(m.Symbol),
 	)
 }
 

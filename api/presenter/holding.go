@@ -139,10 +139,11 @@ func (h *Holding) GetPercentGain() string {
 }
 
 type UpdateHoldingRequest struct {
-	HoldingID   *string `json:"holding_id,omitempty"`
-	TotalCost   *string `json:"total_cost,omitempty"`
-	LatestValue *string `json:"latest_value,omitempty"`
-	Symbol      *string `json:"symbol,omitempty"`
+	HoldingID   *string             `json:"holding_id,omitempty"`
+	TotalCost   *string             `json:"total_cost,omitempty"`
+	LatestValue *string             `json:"latest_value,omitempty"`
+	Symbol      *string             `json:"symbol,omitempty"`
+	Lots        []*UpdateLotRequest `json:"lots,omitempty"`
 }
 
 func (m *UpdateHoldingRequest) GetHoldingID() string {
@@ -186,12 +187,18 @@ func (m *UpdateHoldingRequest) ToUseCaseReq(userID string) *holding.UpdateHoldin
 		latestValue = goutil.Float64(lv)
 	}
 
+	ls := make([]*lot.UpdateLotRequest, 0)
+	for _, r := range m.Lots {
+		ls = append(ls, r.ToUseCaseReq(userID))
+	}
+
 	return &holding.UpdateHoldingRequest{
 		UserID:      goutil.String(userID),
 		HoldingID:   m.HoldingID,
 		TotalCost:   totalCost,
 		LatestValue: latestValue,
 		Symbol:      m.Symbol,
+		Lots:        ls,
 	}
 }
 
@@ -216,7 +223,8 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32             `json:"holding_type,omitempty"`
 	TotalCost   *string             `json:"total_cost,omitempty"`
 	LatestValue *string             `json:"latest_value,omitempty"`
-	Lots        []*CreateLotRequest `json:"lots,omitempty"` // only for InitUser
+	Currency    *string             `json:"currency,omitempty"`
+	Lots        []*CreateLotRequest `json:"lots,omitempty"`
 }
 
 func (m *CreateHoldingRequest) GetAccountID() string {
@@ -229,6 +237,13 @@ func (m *CreateHoldingRequest) GetAccountID() string {
 func (m *CreateHoldingRequest) GetSymbol() string {
 	if m != nil && m.Symbol != nil {
 		return *m.Symbol
+	}
+	return ""
+}
+
+func (m *CreateHoldingRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -277,6 +292,7 @@ func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldin
 		AccountID:   m.AccountID,
 		Symbol:      m.Symbol,
 		HoldingType: m.HoldingType,
+		Currency:    m.Currency,
 		TotalCost:   totalCost,
 		LatestValue: latestValue,
 		Lots:        ls,

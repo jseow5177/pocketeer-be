@@ -15,107 +15,38 @@ const (
 	LotStatusDeleted
 )
 
-type LotUpdate struct {
-	Shares       *float64
-	CostPerShare *float64
-	TradeDate    *uint64
-	LotStatus    *uint32
-	UpdateTime   *uint64
-}
-
-func (lu *LotUpdate) GetShares() float64 {
-	if lu != nil && lu.Shares != nil {
-		return *lu.Shares
-	}
-	return 0
-}
-
-func (lu *LotUpdate) SetShares(shares *float64) {
-	if shares != nil {
-		s := util.RoundFloatToPreciseDP(*shares)
-		lu.Shares = goutil.Float64(s)
-	}
-}
-
-func (lu *LotUpdate) GetCostPerShare() float64 {
-	if lu != nil && lu.CostPerShare != nil {
-		return *lu.CostPerShare
-	}
-	return 0
-}
-
-func (lu *LotUpdate) SetCostPerShare(costPerShare *float64) {
-	if costPerShare != nil {
-		cps := util.RoundFloatToPreciseDP(*costPerShare)
-		lu.CostPerShare = goutil.Float64(cps)
-	}
-}
-
-func (lu *LotUpdate) GetLotStatus() uint32 {
-	if lu != nil && lu.LotStatus != nil {
-		return *lu.LotStatus
-	}
-	return 0
-}
-
-func (lu *LotUpdate) SetLotStatus(lotStatus *uint32) {
-	lu.LotStatus = lotStatus
-}
-
-func (lu *LotUpdate) GetTradeDate() uint64 {
-	if lu != nil && lu.TradeDate != nil {
-		return *lu.TradeDate
-	}
-	return 0
-}
-
-func (lu *LotUpdate) SetTradeDate(tradeDate *uint64) {
-	lu.TradeDate = tradeDate
-}
-
-func (lu *LotUpdate) GetUpdateTime() uint64 {
-	if lu != nil && lu.UpdateTime != nil {
-		return *lu.UpdateTime
-	}
-	return 0
-}
-
-func (lu *LotUpdate) SetUpdateTime(updateTime *uint64) {
-	lu.UpdateTime = updateTime
-}
-
-type LotUpdateOption = func(lu *LotUpdate)
+type LotUpdateOption func(l *Lot)
 
 func WithUpdateLotShares(shares *float64) LotUpdateOption {
-	return func(lu *LotUpdate) {
-		lu.SetShares(shares)
+	return func(l *Lot) {
+		if shares != nil {
+			l.SetShares(shares)
+		}
 	}
 }
 
 func WithUpdateLotCostPerShare(costPerShare *float64) LotUpdateOption {
-	return func(lu *LotUpdate) {
-		lu.SetCostPerShare(costPerShare)
+	return func(l *Lot) {
+		if costPerShare != nil {
+			l.SetCostPerShare(costPerShare)
+		}
 	}
 }
 
 func WithUpdateLotTradeDate(tradeDate *uint64) LotUpdateOption {
-	return func(lu *LotUpdate) {
-		lu.SetTradeDate(tradeDate)
+	return func(l *Lot) {
+		if tradeDate != nil {
+			l.SetTradeDate(tradeDate)
+		}
 	}
 }
 
 func WithUpdateLotStatus(lotStatus *uint32) LotUpdateOption {
-	return func(lu *LotUpdate) {
-		lu.SetLotStatus(lotStatus)
+	return func(l *Lot) {
+		if lotStatus != nil {
+			l.SetLotStatus(lotStatus)
+		}
 	}
-}
-
-func NewLotUpdate(opts ...LotUpdateOption) *LotUpdate {
-	lu := new(LotUpdate)
-	for _, opt := range opts {
-		opt(lu)
-	}
-	return lu
 }
 
 type Lot struct {
@@ -131,53 +62,69 @@ type Lot struct {
 	Currency     *string
 }
 
-type LotOption = func(l *Lot)
+type LotOption func(l *Lot)
 
 func WithLotID(lotID *string) LotOption {
 	return func(l *Lot) {
-		l.SetLotID(lotID)
+		if lotID != nil {
+			l.SetLotID(lotID)
+		}
 	}
 }
 
 func WithLotShares(shares *float64) LotOption {
 	return func(l *Lot) {
-		l.SetShares(shares)
+		if shares != nil {
+			l.SetShares(shares)
+		}
 	}
 }
 
 func WithLotCostPerShare(costPerShare *float64) LotOption {
 	return func(l *Lot) {
-		l.SetCostPerShare(costPerShare)
+		if costPerShare != nil {
+			l.SetCostPerShare(costPerShare)
+		}
 	}
 }
 
 func WithLotStatus(lotStatus *uint32) LotOption {
 	return func(l *Lot) {
-		l.SetLotStatus(lotStatus)
+		if lotStatus != nil {
+			l.SetLotStatus(lotStatus)
+		}
 	}
 }
 
 func WithLotTradeDate(tradeDate *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetTradeDate(tradeDate)
+		if tradeDate != nil {
+			l.SetTradeDate(tradeDate)
+		}
 	}
 }
 
 func WithLotCreateTime(createTime *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetCreateTime(createTime)
+		if createTime != nil {
+			l.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithLotUpdateTime(updateTime *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			l.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithLotCurrency(currency *string) LotOption {
 	return func(l *Lot) {
-		l.SetCurrency(currency)
+		if currency != nil {
+			l.SetCurrency(currency)
+		}
 	}
 }
 
@@ -199,67 +146,87 @@ func NewLot(userID, holdingID string, opts ...LotOption) *Lot {
 		opt(l)
 	}
 
-	l.checkOpts()
+	l.validate()
 
 	return l
 }
 
-func (l *Lot) checkOpts() {}
+func (l *Lot) validate() {}
 
-func (l *Lot) Update(lu *LotUpdate) *LotUpdate {
+func (l *Lot) Clone() *Lot {
+	return NewLot(
+		l.GetUserID(),
+		l.GetHoldingID(),
+		WithLotID(goutil.String(l.GetLotID())),
+		WithLotShares(l.Shares),
+		WithLotStatus(l.LotStatus),
+		WithLotCostPerShare(l.CostPerShare),
+		WithLotTradeDate(l.TradeDate),
+		WithLotCreateTime(l.CreateTime),
+		WithLotUpdateTime(l.UpdateTime),
+		WithLotCurrency(l.Currency),
+	)
+}
+
+type LotUpdate struct {
+	Shares       *float64
+	CostPerShare *float64
+	TradeDate    *uint64
+	LotStatus    *uint32
+	UpdateTime   *uint64
+}
+
+func (l *Lot) ToLotUpdate(old *Lot) *LotUpdate {
 	var (
 		hasUpdate bool
-		lotUpdate = new(LotUpdate)
+
+		lu = &LotUpdate{
+			UpdateTime: l.UpdateTime,
+		}
 	)
 
-	if lu.Shares != nil && lu.GetShares() != l.GetShares() {
+	if old.GetShares() != l.GetShares() {
 		hasUpdate = true
-		l.SetShares(lu.Shares)
-
-		defer func() {
-			lotUpdate.SetShares(l.Shares)
-		}()
+		lu.Shares = l.Shares
 	}
 
-	if lu.CostPerShare != nil && lu.GetCostPerShare() != l.GetCostPerShare() {
+	if old.GetCostPerShare() != l.GetCostPerShare() {
 		hasUpdate = true
-		l.SetCostPerShare(lu.CostPerShare)
-
-		defer func() {
-			lotUpdate.SetCostPerShare(l.CostPerShare)
-		}()
+		lu.CostPerShare = l.CostPerShare
 	}
 
-	if lu.TradeDate != nil && lu.GetTradeDate() != l.GetTradeDate() {
+	if old.GetTradeDate() != l.GetTradeDate() {
 		hasUpdate = true
-		l.SetTradeDate(lu.TradeDate)
-
-		defer func() {
-			lotUpdate.SetTradeDate(l.TradeDate)
-		}()
+		lu.TradeDate = l.TradeDate
 	}
 
-	if lu.LotStatus != nil && lu.GetLotStatus() != l.GetLotStatus() {
+	if old.GetLotStatus() != l.GetLotStatus() {
 		hasUpdate = true
-		l.SetLotStatus(lu.LotStatus)
-
-		defer func() {
-			lotUpdate.SetLotStatus(l.LotStatus)
-		}()
+		lu.LotStatus = l.LotStatus
 	}
 
-	if !hasUpdate {
+	if hasUpdate {
+		return lu
+	}
+
+	return nil
+}
+
+func (l *Lot) Update(lus ...LotUpdateOption) *LotUpdate {
+	if len(lus) == 0 {
 		return nil
+	}
+
+	old := l.Clone()
+
+	for _, lu := range lus {
+		lu(l)
 	}
 
 	now := goutil.Uint64(uint64(time.Now().UnixMilli()))
 	l.SetUpdateTime(now)
 
-	l.checkOpts()
-
-	lotUpdate.SetUpdateTime(now)
-
-	return lotUpdate
+	return l.ToLotUpdate(old)
 }
 
 func (l *Lot) GetLotID() string {

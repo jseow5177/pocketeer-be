@@ -23,7 +23,7 @@ func NewCreateLotValidator(optionalHoldingID bool) validator.Validator {
 			Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 		},
 		"trade_date": &validator.UInt64{
-			Optional: false,
+			Optional: true,
 		},
 	})
 }

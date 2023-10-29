@@ -963,7 +963,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// ========== Lot ========== //
+	// ========== (DEPRECATED) Lot ========== //
 
 	lotHandler := lh.NewLotHandler(s.lotUseCase)
 
@@ -1004,7 +1004,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Handler: router.Handler{
 			Req:       new(presenter.UpdateLotRequest),
 			Res:       new(presenter.UpdateLotResponse),
-			Validator: lh.UpdateLotValidator,
+			Validator: lh.NewUpdateLotValidator(),
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return lotHandler.UpdateLot(ctx, req.(*presenter.UpdateLotRequest), res.(*presenter.UpdateLotResponse))
 			},

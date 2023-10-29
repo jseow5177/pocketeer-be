@@ -20,12 +20,12 @@ type LotRepo interface {
 	Create(ctx context.Context, l *entity.Lot) (string, error)
 	CreateMany(ctx context.Context, ls []*entity.Lot) ([]string, error)
 	Update(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
-	Delete(ctx context.Context, lf *LotFilter) error
-	DeleteMany(ctx context.Context, lf *LotFilter) error
+	UpdateMany(ctx context.Context, lf *LotFilter, lu *entity.LotUpdate) error
 }
 
 type LotFilter struct {
 	LotID      *string  `filter:"_id"`
+	LotIDs     []string `filter:"_id__in"`
 	UserID     *string  `filter:"user_id"`
 	HoldingID  *string  `filter:"holding_id"`
 	HoldingIDs []string `filter:"holding_id__in"`
@@ -56,6 +56,12 @@ func WithLotStatus(lotStatus *uint32) LotFilterOption {
 func WithLotPaging(paging *Paging) LotFilterOption {
 	return func(lf *LotFilter) {
 		lf.Paging = paging
+	}
+}
+
+func WithLotIDs(lotIDs []string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.LotIDs = lotIDs
 	}
 }
 
