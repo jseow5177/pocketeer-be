@@ -18,6 +18,10 @@ func NewCreateHoldingValidator(optionalAccountID bool) validator.Validator {
 		"symbol": &validator.String{
 			Optional: false,
 		},
+		"currency": &validator.String{
+			Optional:   false,
+			Validators: []validator.StringFunc{entity.CheckCurrency},
+		},
 		"holding_type": &validator.UInt32{
 			Optional:   false,
 			Validators: []validator.UInt32Func{entity.CheckHoldingType},
@@ -31,8 +35,7 @@ func NewCreateHoldingValidator(optionalAccountID bool) validator.Validator {
 			Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 		},
 		"lots": &validator.Slice{
-			Optional:  true, // TODO: Set to false
-			MaxLen:    5,    // TODO: Set to 1
+			Optional:  true,
 			Validator: lot.NewCreateLotValidator(true),
 		},
 	})

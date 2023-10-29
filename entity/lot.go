@@ -66,49 +66,65 @@ type LotOption func(l *Lot)
 
 func WithLotID(lotID *string) LotOption {
 	return func(l *Lot) {
-		l.SetLotID(lotID)
+		if lotID != nil {
+			l.SetLotID(lotID)
+		}
 	}
 }
 
 func WithLotShares(shares *float64) LotOption {
 	return func(l *Lot) {
-		l.SetShares(shares)
+		if shares != nil {
+			l.SetShares(shares)
+		}
 	}
 }
 
 func WithLotCostPerShare(costPerShare *float64) LotOption {
 	return func(l *Lot) {
-		l.SetCostPerShare(costPerShare)
+		if costPerShare != nil {
+			l.SetCostPerShare(costPerShare)
+		}
 	}
 }
 
 func WithLotStatus(lotStatus *uint32) LotOption {
 	return func(l *Lot) {
-		l.SetLotStatus(lotStatus)
+		if lotStatus != nil {
+			l.SetLotStatus(lotStatus)
+		}
 	}
 }
 
 func WithLotTradeDate(tradeDate *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetTradeDate(tradeDate)
+		if tradeDate != nil {
+			l.SetTradeDate(tradeDate)
+		}
 	}
 }
 
 func WithLotCreateTime(createTime *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetCreateTime(createTime)
+		if createTime != nil {
+			l.SetCreateTime(createTime)
+		}
 	}
 }
 
 func WithLotUpdateTime(updateTime *uint64) LotOption {
 	return func(l *Lot) {
-		l.SetUpdateTime(updateTime)
+		if updateTime != nil {
+			l.SetUpdateTime(updateTime)
+		}
 	}
 }
 
 func WithLotCurrency(currency *string) LotOption {
 	return func(l *Lot) {
-		l.SetCurrency(currency)
+		if currency != nil {
+			l.SetCurrency(currency)
+		}
 	}
 }
 

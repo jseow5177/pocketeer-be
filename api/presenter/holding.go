@@ -223,6 +223,7 @@ type CreateHoldingRequest struct {
 	HoldingType *uint32             `json:"holding_type,omitempty"`
 	TotalCost   *string             `json:"total_cost,omitempty"`
 	LatestValue *string             `json:"latest_value,omitempty"`
+	Currency    *string             `json:"currency,omitempty"`
 	Lots        []*CreateLotRequest `json:"lots,omitempty"`
 }
 
@@ -236,6 +237,13 @@ func (m *CreateHoldingRequest) GetAccountID() string {
 func (m *CreateHoldingRequest) GetSymbol() string {
 	if m != nil && m.Symbol != nil {
 		return *m.Symbol
+	}
+	return ""
+}
+
+func (m *CreateHoldingRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
 	}
 	return ""
 }
@@ -284,6 +292,7 @@ func (m *CreateHoldingRequest) ToUseCaseReq(userID string) *holding.CreateHoldin
 		AccountID:   m.AccountID,
 		Symbol:      m.Symbol,
 		HoldingType: m.HoldingType,
+		Currency:    m.Currency,
 		TotalCost:   totalCost,
 		LatestValue: latestValue,
 		Lots:        ls,

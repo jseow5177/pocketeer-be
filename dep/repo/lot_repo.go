@@ -25,6 +25,7 @@ type LotRepo interface {
 
 type LotFilter struct {
 	LotID      *string  `filter:"_id"`
+	LotIDs     []string `filter:"_id__in"`
 	UserID     *string  `filter:"user_id"`
 	HoldingID  *string  `filter:"holding_id"`
 	HoldingIDs []string `filter:"holding_id__in"`
@@ -55,6 +56,12 @@ func WithLotStatus(lotStatus *uint32) LotFilterOption {
 func WithLotPaging(paging *Paging) LotFilterOption {
 	return func(lf *LotFilter) {
 		lf.Paging = paging
+	}
+}
+
+func WithLotIDs(lotIDs []string) LotFilterOption {
+	return func(lf *LotFilter) {
+		lf.LotIDs = lotIDs
 	}
 }
 

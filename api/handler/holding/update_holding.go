@@ -26,8 +26,7 @@ var UpdateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 		UnsetZero: true,
 	},
 	"lots": &validator.Slice{
-		Optional:  false,
-		MaxLen:    1,
+		Optional:  true,
 		Validator: lot.NewUpdateLotValidator(),
 	},
 })
