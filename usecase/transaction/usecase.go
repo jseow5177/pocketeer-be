@@ -79,13 +79,13 @@ func (uc *transactionUseCase) GetTransaction(ctx context.Context, req *GetTransa
 		t.SetToAccount(toAc)
 	} else {
 		c, err := uc.categoryRepo.Get(ctx, req.ToCategoryFilter(t.GetCategoryID()))
-		if err != nil {
+		if err != nil && err != repo.ErrCategoryNotFound {
 			log.Ctx(ctx).Error().Msgf("fail to get category from repo, err: %v", err)
 			return nil, err
 		}
 
-		// hide deleted category
-		if c.IsDeleted() {
+		// hide deleted or empty category category
+		if c == nil || c.IsDeleted() {
 			t.SetCategoryID(goutil.String(""))
 		} else {
 			t.SetCategory(c)
