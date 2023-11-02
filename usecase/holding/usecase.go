@@ -200,7 +200,7 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		}, nil
 	}
 
-	if hu.Symbol != nil && !h.IsCustom() {
+	if hu != nil && hu.Symbol != nil && !h.IsCustom() {
 		return nil, entity.ErrCannotChangeSymbol
 	}
 
