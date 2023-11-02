@@ -64,20 +64,15 @@ func (m *lotMongo) Update(ctx context.Context, lf *repo.LotFilter, lu *entity.Lo
 	return nil
 }
 
-func (m *lotMongo) Delete(ctx context.Context, lf *repo.LotFilter) error {
-	return m.Update(ctx, lf, entity.NewLotUpdate(
-		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
-	))
-}
-
-func (m *lotMongo) DeleteMany(ctx context.Context, lf *repo.LotFilter) error {
-	lm := model.ToLotModelFromUpdate(entity.NewLotUpdate(
-		entity.WithUpdateLotStatus(goutil.Uint32(uint32(entity.LotStatusDeleted))),
-	))
-
+func (m *lotMongo) UpdateMany(ctx context.Context, lf *repo.LotFilter, lu *entity.LotUpdate) error {
 	f := mongoutil.BuildFilter(lf)
 
-	return m.mColl.updateMany(ctx, f, lm)
+	lm := model.ToLotModelFromUpdate(lu)
+	if err := m.mColl.updateMany(ctx, f, lm); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *lotMongo) Get(ctx context.Context, lf *repo.LotFilter) (*entity.Lot, error) {
