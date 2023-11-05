@@ -280,6 +280,9 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 
 	b.SetUsedAmount(goutil.Float64(usedAmount))
 
+	remain := b.GetAmount() + b.GetUsedAmount()
+	b.SetRemain(goutil.Float64(remain))
+
 	return b, nil
 }
 
