@@ -15,6 +15,7 @@ type Budget struct {
 	CreateTime   *uint64 `json:"create_time,omitempty"`
 	UpdateTime   *uint64 `json:"update_time,omitempty"`
 	UsedAmount   *string `json:"used_amount,omitempty"`
+	Remain       *string `json:"remain,omitempty"`
 	Currency     *string `json:"currency,omitempty"`
 }
 
@@ -63,6 +64,13 @@ func (b *Budget) GetAmount() string {
 func (b *Budget) GetUsedAmount() string {
 	if b != nil && b.UsedAmount != nil {
 		return *b.UsedAmount
+	}
+	return ""
+}
+
+func (b *Budget) GetRemain() string {
+	if b != nil && b.Remain != nil {
+		return *b.Remain
 	}
 	return ""
 }

@@ -113,6 +113,11 @@ func toBudget(b *entity.Budget) *Budget {
 		usedAmount = goutil.String(fmt.Sprint(b.GetUsedAmount()))
 	}
 
+	var remain *string
+	if b.Remain != nil {
+		remain = goutil.String(fmt.Sprint(b.GetRemain()))
+	}
+
 	return &Budget{
 		BudgetID:     b.BudgetID,
 		CategoryID:   b.CategoryID,
@@ -123,6 +128,7 @@ func toBudget(b *entity.Budget) *Budget {
 		CreateTime:   b.CreateTime,
 		UpdateTime:   b.UpdateTime,
 		UsedAmount:   usedAmount,
+		Remain:       remain,
 	}
 }
 

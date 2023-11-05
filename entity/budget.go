@@ -174,6 +174,7 @@ type Budget struct {
 	UpdateTime   *uint64
 
 	UsedAmount *float64
+	Remain     *float64
 }
 
 type BudgetOption = func(b *Budget)
@@ -431,6 +432,22 @@ func (b *Budget) SetUsedAmount(usedAmount *float64) {
 	if usedAmount != nil {
 		uam := util.RoundFloatToStandardDP(*usedAmount)
 		b.UsedAmount = goutil.Float64(uam)
+	}
+}
+
+func (b *Budget) GetRemain() float64 {
+	if b != nil && b.Remain != nil {
+		return *b.Remain
+	}
+	return 0
+}
+
+func (b *Budget) SetRemain(remain *float64) {
+	b.Remain = remain
+
+	if remain != nil {
+		r := util.RoundFloatToStandardDP(*remain)
+		b.Remain = goutil.Float64(r)
 	}
 }
 
