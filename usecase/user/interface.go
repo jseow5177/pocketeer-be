@@ -92,7 +92,15 @@ func (m *SignUpRequest) ToUserEntity() (*entity.User, error) {
 }
 
 type SignUpResponse struct {
-	User *entity.User
+	AccessToken *string
+	User        *entity.User
+}
+
+func (m *SignUpResponse) GetAccessToken() string {
+	if m != nil && m.AccessToken != nil {
+		return *m.AccessToken
+	}
+	return ""
 }
 
 func (m *SignUpResponse) GetUser() *entity.User {
