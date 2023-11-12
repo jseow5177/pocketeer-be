@@ -289,18 +289,31 @@ func (uc *userUseCase) SignUp(ctx context.Context, req *SignUpRequest) (*SignUpR
 		}
 	}
 
-	async := goutil.NewAsync(time.Second, 5)
-	async.Retry(ctx, func(ctx context.Context) error {
-		ctx = goutil.WithoutCancel(ctx)
-		if err := uc.sendOTP(ctx, req.GetEmail()); err != nil {
-			log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
-			return err
-		}
-		return nil
+	// Disable for now
+
+	// async := goutil.NewAsync(time.Second, 5)
+	// async.Retry(ctx, func(ctx context.Context) error {
+	// 	ctx = goutil.WithoutCancel(ctx)
+	// 	if err := uc.sendOTP(ctx, req.GetEmail()); err != nil {
+	// 		log.Ctx(ctx).Error().Msgf("fail to send otp, email: %v, err: %v", req.GetEmail(), err)
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
+
+	tokenRes, err := uc.tokenUseCase.CreateToken(ctx, &token.CreateTokenRequest{
+		TokenType: goutil.Uint32(uint32(entity.TokenTypeAccess)),
+		CustomClaims: &entity.CustomClaims{
+			UserID: u.UserID,
+		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &SignUpResponse{
-		User: u,
+		AccessToken: tokenRes.Token,
+		User:        u,
 	}, nil
 }
 
