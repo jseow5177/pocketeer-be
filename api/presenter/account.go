@@ -3,6 +3,7 @@ package presenter
 import (
 	"fmt"
 
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/account"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
@@ -388,3 +389,56 @@ func (m *DeleteAccountRequest) ToUseCaseReq(userID string) *account.DeleteAccoun
 type DeleteAccountResponse struct{}
 
 func (m *DeleteAccountResponse) Set(useCaseRes *account.DeleteAccountResponse) {}
+
+type GetAccountsSummaryRequest struct {
+	AppMeta  *AppMeta `json:"app_meta,omitempty"`
+	Unit     *uint32  `json:"unit,omitempty"`
+	Interval *uint32  `json:"interval,omitempty"`
+}
+
+func (m *GetAccountsSummaryRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+func (m *GetAccountsSummaryRequest) GetUnit() uint32 {
+	if m != nil && m.Unit != nil {
+		return *m.Unit
+	}
+	return 0
+}
+
+func (m *GetAccountsSummaryRequest) GetInterval() uint32 {
+	if m != nil && m.Interval != nil {
+		return *m.Interval
+	}
+	return 0
+}
+
+func (m *GetAccountsSummaryRequest) ToUseCaseReq(user *entity.User) *account.GetAccountsSummaryRequest {
+	return &account.GetAccountsSummaryRequest{
+		AppMeta:  m.AppMeta.toAppMeta(),
+		User:     user,
+		Unit:     m.Unit,
+		Interval: m.Interval,
+	}
+}
+
+type GetAccountsSummaryResponse struct {
+	NetWorth   []*Summary   `json:"net_worth,omitempty"`
+	AssetValue []*Summary   `json:"asset_value,omitempty"`
+	DebtValue  []*Summary   `json:"debt_value,omitempty"`
+	Accounts   [][]*Summary `json:"accounts,omitempty"`
+}
+
+func (m *GetAccountsSummaryResponse) Set(useCaseRes *account.GetAccountsSummaryResponse) {
+	m.NetWorth = toSummaries(useCaseRes.NetWorth)
+	m.AssetValue = toSummaries(useCaseRes.AssetValue)
+	m.DebtValue = toSummaries(useCaseRes.DebtValue)
+
+	for _, summaries := range useCaseRes.Accounts {
+		m.Accounts = append(m.Accounts, toSummaries(summaries))
+	}
+}

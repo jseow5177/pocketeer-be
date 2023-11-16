@@ -389,9 +389,9 @@ func (m *SumCategoryTransactionsRequest) ToUseCaseReq(userID string) *category.S
 }
 
 type SumCategoryTransactionsResponse struct {
-	Sums []*TransactionSummary `json:"sums,omitempty"`
+	Sums []*Summary `json:"sums,omitempty"`
 }
 
 func (m *SumCategoryTransactionsResponse) Set(useCaseRes *category.SumCategoryTransactionsResponse) {
-	m.Sums = toTransactionSummaries(useCaseRes.Sums)
+	m.Sums = toSummaries(useCaseRes.Sums)
 }

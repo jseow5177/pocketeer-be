@@ -89,9 +89,9 @@ func (u *User) GetUpdateTime() uint64 {
 
 func (u *User) GetMeta() *UserMeta {
 	if u != nil && u.Meta != nil {
-		return nil
+		return u.Meta
 	}
-	return u.Meta
+	return nil
 }
 
 type GetUserRequest struct{}

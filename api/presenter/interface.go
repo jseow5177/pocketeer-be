@@ -401,42 +401,43 @@ func toAccounts(acs []*entity.Account) []*Account {
 	return accounts
 }
 
-func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
-	if ts == nil {
+func toSummary(s *common.Summary) *Summary {
+	if s == nil {
 		return nil
 	}
 
 	var sum *string
-	if ts.Sum != nil {
-		sum = goutil.String(fmt.Sprint(ts.GetSum()))
+	if s.Sum != nil {
+		sum = goutil.String(fmt.Sprint(s.GetSum()))
 	}
 
 	var totalExpense *string
-	if ts.TotalExpense != nil {
-		totalExpense = goutil.String(fmt.Sprint(ts.GetTotalExpense()))
+	if s.TotalExpense != nil {
+		totalExpense = goutil.String(fmt.Sprint(s.GetTotalExpense()))
 	}
 
 	var totalIncome *string
-	if ts.TotalIncome != nil {
-		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
+	if s.TotalIncome != nil {
+		totalIncome = goutil.String(fmt.Sprint(s.GetTotalIncome()))
 	}
 
-	return &TransactionSummary{
-		Date:            ts.Date,
-		Category:        toCategory(ts.Category),
-		TransactionType: ts.TransactionType,
+	return &Summary{
+		Date:            s.Date,
+		Category:        toCategory(s.Category),
+		Account:         toAccount(s.Account),
+		TransactionType: s.TransactionType,
 		Sum:             sum,
 		TotalExpense:    totalExpense,
 		TotalIncome:     totalIncome,
-		Currency:        ts.Currency,
-		Transactions:    toTransactions(ts.Transactions),
+		Currency:        s.Currency,
+		Transactions:    toTransactions(s.Transactions),
 	}
 }
 
-func toTransactionSummaries(tss []*common.TransactionSummary) []*TransactionSummary {
-	transactionSummaries := make([]*TransactionSummary, len(tss))
+func toSummaries(tss []*common.Summary) []*Summary {
+	transactionSummaries := make([]*Summary, len(tss))
 	for idx, ts := range tss {
-		transactionSummaries[idx] = toTransactionSummary(ts)
+		transactionSummaries[idx] = toSummary(ts)
 	}
 	return transactionSummaries
 }
