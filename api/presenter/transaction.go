@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 	"github.com/jseow5177/pockteer-be/util"
@@ -661,4 +662,48 @@ func (m *GetTransactionGroupsResponse) GetPaging() *Paging {
 func (m *GetTransactionGroupsResponse) Set(useCaseRes *transaction.GetTransactionGroupsResponse) {
 	m.TransactionGroups = toSummaries(useCaseRes.TransactionGroups)
 	m.Paging = toPaging(useCaseRes.Paging)
+}
+
+type GetTransactionsSummaryRequest struct {
+	AppMeta  *AppMeta `json:"app_meta,omitempty"`
+	Unit     *uint32  `json:"unit,omitempty"`
+	Interval *uint32  `json:"interval,omitempty"`
+}
+
+func (m *GetTransactionsSummaryRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+func (m *GetTransactionsSummaryRequest) GetUnit() uint32 {
+	if m != nil && m.Unit != nil {
+		return *m.Unit
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
+	if m != nil && m.Interval != nil {
+		return *m.Interval
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) ToUseCaseReq(user *entity.User) *transaction.GetTransactionsSummaryRequest {
+	return &transaction.GetTransactionsSummaryRequest{
+		AppMeta:  m.AppMeta.toAppMeta(),
+		User:     user,
+		Unit:     m.Unit,
+		Interval: m.Interval,
+	}
+}
+
+type GetTransactionsSummaryResponse struct {
+	Summary []*Summary `json:"summary,omitempty"`
+}
+
+func (m *GetTransactionsSummaryResponse) Set(useCaseRes *transaction.GetTransactionsSummaryResponse) {
+	m.Summary = toSummaries(useCaseRes.Summary)
 }

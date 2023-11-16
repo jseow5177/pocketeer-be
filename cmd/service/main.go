@@ -681,6 +681,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
+	// get transactions summary
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransactionsSummary,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionsSummaryRequest),
+			Res:       new(presenter.GetTransactionsSummaryResponse),
+			Validator: th.GetTransactionsSummaryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransactionsSummary(ctx, req.(*presenter.GetTransactionsSummaryRequest), res.(*presenter.GetTransactionsSummaryResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
 	// ========== User ========== //
 
 	userHandler := uh.NewUserHandler(s.userUseCase)

@@ -1,4 +1,4 @@
-package account
+package transaction
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var GetAccountsSummaryValidator = validator.MustForm(map[string]validator.Validator{
+var GetTransactionsSummaryValidator = validator.MustForm(map[string]validator.Validator{
 	"app_meta": entity.AppMetaValidator(),
 	"unit": &validator.UInt32{
 		Optional:   false,
@@ -22,12 +22,12 @@ var GetAccountsSummaryValidator = validator.MustForm(map[string]validator.Valida
 	},
 })
 
-func (h *accountHandler) GetAccountsSummary(ctx context.Context, req *presenter.GetAccountsSummaryRequest, res *presenter.GetAccountsSummaryResponse) error {
+func (h *transactionHandler) GetTransactionsSummary(ctx context.Context, req *presenter.GetTransactionsSummaryRequest, res *presenter.GetTransactionsSummaryResponse) error {
 	user := entity.GetUserFromCtx(ctx)
 
-	useCaseRes, err := h.accountUseCase.GetAccountsSummary(ctx, req.ToUseCaseReq(user))
+	useCaseRes, err := h.transactionUseCase.GetTransactionsSummary(ctx, req.ToUseCaseReq(user))
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("fail to get accounts summary, err: %v", err)
+		log.Ctx(ctx).Error().Msgf("fail to get transactions summary, err: %v", err)
 		return err
 	}
 

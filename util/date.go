@@ -130,9 +130,3 @@ func ParseDateToInt(s string) (uint64, error) {
 
 	return di, nil
 }
-
-func ToUnixStartOfMonth(ts uint64) uint64 {
-	t := time.UnixMilli(int64(ts))
-	start := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
-	return uint64(start.UnixMilli())
-}
