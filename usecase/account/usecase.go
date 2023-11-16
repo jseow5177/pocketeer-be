@@ -278,8 +278,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amou
 
 	return entity.NewTransaction(
 		account.GetUserID(),
-		account.GetAccountID(),
-		"",
+		entity.WithTransactionAccountID(account.AccountID),
 		entity.WithTransactionAmount(goutil.Float64(amount)),
 		entity.WithTransactionCurrency(account.Currency),
 		entity.WithTransactionType(goutil.Uint32(tt)),
