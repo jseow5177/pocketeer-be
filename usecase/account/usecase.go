@@ -466,7 +466,8 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 	}
 
 	var (
-		latestDates = make(map[string]time.Time)
+		latestDates      = make(map[string]time.Time)
+		latestTimestamps = make(map[string]uint64)
 	)
 	for _, sp := range sps {
 		var (
@@ -483,6 +484,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 		// in case there are multiple snapshots in the same unit, we get the latest snapshot
 		if existing, ok := latestDates[d]; !ok || t.After(existing) {
 			latestDates[d] = t
+			latestTimestamps[d] = sp.GetTimestamp()
 
 			getAccountsResp := new(GetAccountsResponse)
 			if err := json.Unmarshal([]byte(sp.GetRecord()), &getAccountsResp); err != nil {
@@ -500,70 +502,59 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 	}
 	sort.Strings(dates)
 
-	var (
-		summaryByAccountIDAndDate = make(map[string]*common.Summary)
-
-		accountIDs = make(map[string]struct{})
-		resp       = new(GetAccountsSummaryResponse)
-	)
+	resp := new(GetAccountsSummaryResponse)
 	for _, date := range dates {
 		snapshot, ok := snapshotsByDate[date]
 		if !ok {
-			snapshot = new(GetAccountsResponse)
+			snapshot = &GetAccountsResponse{
+				NetWorth:   goutil.Float64(0),
+				AssetValue: goutil.Float64(0),
+				DebtValue:  goutil.Float64(0),
+				Currency:   goutil.String(""),
+			}
+		}
+
+		var (
+			netWorth   = snapshot.GetNetWorth()
+			assetValue = snapshot.GetAssetValue()
+			debtValue  = snapshot.GetDebtValue()
+		)
+		if snapshot.GetCurrency() != "" && user.Meta.GetCurrency() != snapshot.GetCurrency() {
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(snapshot.Currency),
+				repo.WithExchangeRateTo(user.Meta.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(latestTimestamps[date]))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				return nil, fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+			}
+
+			netWorth *= er.GetRate()
+			assetValue *= er.GetRate()
+			debtValue *= er.GetRate()
 		}
 
 		// net worth
 		resp.NetWorth = append(resp.NetWorth, common.NewSummary(
 			common.WithSummaryDate(goutil.String(date)),
-			common.WithSummarySum(snapshot.NetWorth),
-			common.WithSummaryCurrency(snapshot.Currency),
+			common.WithSummarySum(goutil.Float64(netWorth)),
+			common.WithSummaryCurrency(user.Meta.Currency),
 		))
 
 		// asset value
 		resp.AssetValue = append(resp.AssetValue, common.NewSummary(
 			common.WithSummaryDate(goutil.String(date)),
-			common.WithSummarySum(snapshot.AssetValue),
-			common.WithSummaryCurrency(snapshot.Currency),
+			common.WithSummarySum(goutil.Float64(assetValue)),
+			common.WithSummaryCurrency(user.Meta.Currency),
 		))
 
 		// debt value
 		resp.DebtValue = append(resp.DebtValue, common.NewSummary(
 			common.WithSummaryDate(goutil.String(date)),
-			common.WithSummarySum(snapshot.DebtValue),
-			common.WithSummaryCurrency(snapshot.Currency),
+			common.WithSummarySum(goutil.Float64(debtValue)),
+			common.WithSummaryCurrency(user.Meta.Currency),
 		))
-
-		// individual account
-		for _, account := range snapshot.Accounts {
-			accountID := account.GetAccountID()
-			accountIDs[accountID] = struct{}{}
-
-			k := fmt.Sprintf("%s-%s", accountID, date)
-
-			summaryByAccountIDAndDate[k] = common.NewSummary(
-				common.WithSummaryDate(goutil.String(date)),
-				common.WithSummaryAccount(account),
-			)
-		}
-	}
-
-	accountSummaries := make(map[string][]*common.Summary)
-	for _, date := range dates {
-		for accountID := range accountIDs {
-			k := fmt.Sprintf("%s-%s", accountID, date)
-
-			if summary, ok := summaryByAccountIDAndDate[k]; ok {
-				accountSummaries[accountID] = append(accountSummaries[accountID], summary)
-			} else {
-				accountSummaries[accountID] = append(accountSummaries[accountID], common.NewSummary(
-					common.WithSummaryDate(goutil.String(date)), // empty summary
-				))
-			}
-		}
-	}
-
-	for _, summary := range accountSummaries {
-		resp.Accounts = append(resp.Accounts, summary)
 	}
 
 	return resp, nil

@@ -52,6 +52,7 @@ const (
 	PathCreateFeedback          = PathV1Prefix + "create_feedback"
 	PathGetExchangeRate         = PathV1Prefix + "get_exchange_rate"
 	PathGetCurrencies           = PathV1Prefix + "get_currencies"
+	PathGetMetrics              = PathV1Prefix + "get_metrics"
 
 	// Admin APIs
 	PathAdminV1Prefix   = "/api/admin/v1/"

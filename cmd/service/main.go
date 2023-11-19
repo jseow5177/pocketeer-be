@@ -36,6 +36,7 @@ import (
 	fh "github.com/jseow5177/pockteer-be/api/handler/feedback"
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
+	mth "github.com/jseow5177/pockteer-be/api/handler/metric"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
@@ -49,6 +50,7 @@ import (
 	fuc "github.com/jseow5177/pockteer-be/usecase/feedback"
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	luc "github.com/jseow5177/pockteer-be/usecase/lot"
+	mtuc "github.com/jseow5177/pockteer-be/usecase/metric"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
@@ -93,6 +95,7 @@ type server struct {
 	lotUseCase          luc.UseCase
 	feedbackUseCase     fuc.UseCase
 	exchangeRateUseCase eruc.UseCase
+	metricUseCase       mtuc.UseCase
 }
 
 func main() {
@@ -231,6 +234,7 @@ func (s *server) Start() error {
 		s.categoryRepo, s.budgetRepo, s.accountRepo, s.securityRepo, s.holdingRepo, s.lotRepo,
 	)
 	s.exchangeRateUseCase = eruc.NewExchangeRateUseCase(s.exchangeRateAPI, s.exchangeRateRepo)
+	s.metricUseCase = mtuc.NewMetricUseCase(s.accountUseCase, s.transactionUseCase)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.opt.Port)
@@ -1078,6 +1082,28 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 					ctx,
 					req.(*presenter.GetCurrenciesRequest),
 					res.(*presenter.GetCurrenciesResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// ========== Metric ========== //
+
+	metricHandler := mth.NewMetricHandler(s.metricUseCase)
+
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetMetrics,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetMetricsRequest),
+			Res:       new(presenter.GetMetricsResponse),
+			Validator: mth.GetMetricsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return metricHandler.GetMetrics(
+					ctx,
+					req.(*presenter.GetMetricsRequest),
+					res.(*presenter.GetMetricsResponse),
 				)
 			},
 		},
