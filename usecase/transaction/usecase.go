@@ -627,7 +627,7 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 		return nil, err
 	}
 
-	// get transactions
+	// get latest transactions
 	transactions, err := uc.transactionRepo.GetMany(ctx, tq)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)

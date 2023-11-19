@@ -427,18 +427,13 @@ func (m *GetAccountsSummaryRequest) ToUseCaseReq(user *entity.User) *account.Get
 }
 
 type GetAccountsSummaryResponse struct {
-	NetWorth   []*Summary   `json:"net_worth,omitempty"`
-	AssetValue []*Summary   `json:"asset_value,omitempty"`
-	DebtValue  []*Summary   `json:"debt_value,omitempty"`
-	Accounts   [][]*Summary `json:"accounts,omitempty"`
+	NetWorth   []*Summary `json:"net_worth,omitempty"`
+	AssetValue []*Summary `json:"asset_value,omitempty"`
+	DebtValue  []*Summary `json:"debt_value,omitempty"`
 }
 
 func (m *GetAccountsSummaryResponse) Set(useCaseRes *account.GetAccountsSummaryResponse) {
 	m.NetWorth = toSummaries(useCaseRes.NetWorth)
 	m.AssetValue = toSummaries(useCaseRes.AssetValue)
 	m.DebtValue = toSummaries(useCaseRes.DebtValue)
-
-	for _, summaries := range useCaseRes.Accounts {
-		m.Accounts = append(m.Accounts, toSummaries(summaries))
-	}
 }

@@ -486,3 +486,30 @@ func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
 		CreateTime:     er.CreateTime,
 	}
 }
+
+func toMetric(mt *entity.Metric) *Metric {
+	if mt == nil {
+		return nil
+	}
+
+	var value *string
+	if mt.Value != nil {
+		value = goutil.String(fmt.Sprint(mt.GetValue()))
+	}
+
+	return &Metric{
+		ID:    mt.ID,
+		Name:  mt.Name,
+		Type:  mt.Type,
+		Value: value,
+		Unit:  mt.Unit,
+	}
+}
+
+func toMetrics(mts []*entity.Metric) []*Metric {
+	metrics := make([]*Metric, len(mts))
+	for idx, mt := range mts {
+		metrics[idx] = toMetric(mt)
+	}
+	return metrics
+}

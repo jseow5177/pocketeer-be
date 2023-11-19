@@ -12,6 +12,7 @@ import (
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -144,6 +145,28 @@ func (m *GetAccountsResponse) GetDebtValue() float64 {
 		return *m.DebtValue
 	}
 	return 0
+}
+
+func (m *GetAccountsResponse) GetDebtRatio() float64 {
+	var debtRatio float64
+	if m.GetAssetValue() > 0 {
+		debtRatio = m.GetDebtValue() / m.GetAssetValue()
+	}
+	return util.RoundFloatToStandardDP(debtRatio * 100)
+}
+
+func (m *GetAccountsResponse) GetInvestmentsToNetWorthRatio() float64 {
+	var ratio float64
+	if m.GetNetWorth() > 0 {
+		var totalInvestment float64
+		for _, account := range m.Accounts {
+			if account.IsInvestment() {
+				totalInvestment += account.GetBalance()
+			}
+		}
+		ratio = totalInvestment / m.GetNetWorth()
+	}
+	return util.RoundFloatToStandardDP(ratio * 100)
 }
 
 func (m *GetAccountsResponse) GetCurrency() string {
@@ -465,5 +488,4 @@ type GetAccountsSummaryResponse struct {
 	NetWorth   []*common.Summary
 	AssetValue []*common.Summary
 	DebtValue  []*common.Summary
-	Accounts   [][]*common.Summary
 }
