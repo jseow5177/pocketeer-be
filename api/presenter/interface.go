@@ -421,6 +421,11 @@ func toSummary(s *common.Summary) *Summary {
 		totalIncome = goutil.String(fmt.Sprint(s.GetTotalIncome()))
 	}
 
+	var percentChange *string
+	if s.PercentChange != nil {
+		percentChange = goutil.String(fmt.Sprint(s.GetPercentChange()))
+	}
+
 	return &Summary{
 		Date:            s.Date,
 		Category:        toCategory(s.Category),
@@ -431,6 +436,7 @@ func toSummary(s *common.Summary) *Summary {
 		TotalIncome:     totalIncome,
 		Currency:        s.Currency,
 		Transactions:    toTransactions(s.Transactions),
+		PercentChange:   percentChange,
 	}
 }
 

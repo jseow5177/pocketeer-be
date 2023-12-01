@@ -1,8 +1,6 @@
 package common
 
 import (
-	"sort"
-
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/util"
@@ -67,6 +65,7 @@ type Summary struct {
 	TotalIncome     *float64
 	Currency        *string
 	Transactions    []*entity.Transaction
+	PercentChange   *float64
 }
 
 type SummaryOption func(s *Summary)
@@ -91,6 +90,14 @@ func WithSummaryAccount(ac *entity.Account) SummaryOption {
 	return func(s *Summary) {
 		if ac != nil {
 			s.SetAccount(ac)
+		}
+	}
+}
+
+func WithSummaryPercentChange(percentChange *float64) SummaryOption {
+	return func(s *Summary) {
+		if percentChange != nil {
+			s.SetPercentChange(percentChange)
 		}
 	}
 }
@@ -141,12 +148,6 @@ func WithSummaryTransactions(tss []*entity.Transaction) SummaryOption {
 			s.SetTransactions(tss)
 		}
 	}
-}
-
-func AscSortSummaryByDate(summary ...*Summary) {
-	sort.Slice(summary, func(i, j int) bool {
-		return summary[i].GetDate() < summary[j].GetDate()
-	})
 }
 
 func NewSummary(opts ...SummaryOption) *Summary {
@@ -271,4 +272,20 @@ func (m *Summary) GetTransactions() []*entity.Transaction {
 
 func (m *Summary) SetTransactions(ts []*entity.Transaction) {
 	m.Transactions = ts
+}
+
+func (m *Summary) GetPercentChange() float64 {
+	if m != nil && m.PercentChange != nil {
+		return *m.PercentChange
+	}
+	return 0
+}
+
+func (m *Summary) SetPercentChange(percentChange *float64) {
+	m.PercentChange = percentChange
+
+	if percentChange != nil {
+		s := util.RoundFloatToStandardDP(*percentChange)
+		m.PercentChange = goutil.Float64(s)
+	}
 }

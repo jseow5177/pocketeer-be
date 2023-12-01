@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"sync"
 	"time"
@@ -503,7 +504,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 	sort.Strings(dates)
 
 	resp := new(GetAccountsSummaryResponse)
-	for _, date := range dates {
+	for i, date := range dates {
 		snapshot, ok := snapshotsByDate[date]
 		if !ok {
 			snapshot = &GetAccountsResponse{
@@ -535,11 +536,34 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			debtValue *= er.GetRate()
 		}
 
+		var (
+			percentNetWorthChange float64
+			percentAssetChange    float64
+			percentDebtChange     float64
+		)
+		if i > 0 {
+			var (
+				oldNetWorth   = resp.NetWorth[i-1].GetSum()
+				oldAssetValue = resp.AssetValue[i-1].GetSum()
+				oldDebtValue  = resp.DebtValue[i-1].GetSum()
+			)
+			if oldNetWorth != 0 {
+				percentNetWorthChange = (netWorth - oldNetWorth) * 100 / math.Abs(oldNetWorth)
+			}
+			if oldAssetValue != 0 {
+				percentAssetChange = (assetValue - oldAssetValue) * 100 / math.Abs(oldAssetValue)
+			}
+			if oldDebtValue != 0 {
+				percentDebtChange = (debtValue - oldDebtValue) * 100 / math.Abs(oldDebtValue)
+			}
+		}
+
 		// net worth
 		resp.NetWorth = append(resp.NetWorth, common.NewSummary(
 			common.WithSummaryDate(goutil.String(date)),
 			common.WithSummarySum(goutil.Float64(netWorth)),
 			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(goutil.Float64(percentNetWorthChange)),
 		))
 
 		// asset value
@@ -547,6 +571,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			common.WithSummaryDate(goutil.String(date)),
 			common.WithSummarySum(goutil.Float64(assetValue)),
 			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(goutil.Float64(percentAssetChange)),
 		))
 
 		// debt value
@@ -554,6 +579,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			common.WithSummaryDate(goutil.String(date)),
 			common.WithSummarySum(goutil.Float64(debtValue)),
 			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(goutil.Float64(percentDebtChange)),
 		))
 	}
 
