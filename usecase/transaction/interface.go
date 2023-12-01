@@ -632,11 +632,13 @@ func (m *GetTransactionsSummaryRequest) ToTransactionQuery() (*repo.TransactionQ
 	var (
 		now = time.Now().In(loc)
 		t   = now
+
+		startOfMonth = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		endOfMonth   = time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Add(-time.Second)
 	)
 	switch m.GetUnit() {
 	case uint32(entity.SnapshotUnitMonth):
-		date := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
-		t = date.AddDate(0, -int(m.GetInterval()), 0)
+		t = startOfMonth.AddDate(0, -int(m.GetInterval()), 0)
 	default:
 		return nil, entity.ErrInvalidSnapshotUnit
 	}
@@ -648,7 +650,7 @@ func (m *GetTransactionsSummaryRequest) ToTransactionQuery() (*repo.TransactionQ
 					repo.NewTransactionFilter(
 						m.User.GetUserID(),
 						repo.WithTransactionTimeGte(goutil.Uint64(uint64(t.UnixMilli()))),
-						repo.WithTransactionTimeLte(goutil.Uint64(uint64(now.UnixMilli()))),
+						repo.WithTransactionTimeLte(goutil.Uint64(uint64(endOfMonth.UnixMilli()))),
 					),
 				},
 			},
@@ -665,5 +667,7 @@ func (m *GetTransactionsSummaryRequest) ToTransactionQuery() (*repo.TransactionQ
 }
 
 type GetTransactionsSummaryResponse struct {
-	Summary []*common.Summary
+	Savings      []*common.Summary
+	TotalExpense []*common.Summary
+	TotalIncome  []*common.Summary
 }

@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/config"
@@ -150,7 +151,7 @@ func (m *GetAccountsResponse) GetDebtValue() float64 {
 func (m *GetAccountsResponse) GetDebtRatio() float64 {
 	var debtRatio float64
 	if m.GetAssetValue() > 0 {
-		debtRatio = m.GetDebtValue() / m.GetAssetValue()
+		debtRatio = math.Abs(m.GetDebtValue()) / m.GetAssetValue()
 	}
 	return util.RoundFloatToStandardDP(debtRatio * 100)
 }

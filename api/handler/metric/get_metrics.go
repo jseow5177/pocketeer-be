@@ -10,6 +10,7 @@ import (
 )
 
 var GetMetricsValidator = validator.MustForm(map[string]validator.Validator{
+	"app_meta": entity.AppMetaValidator(),
 	"metric_type": &validator.UInt32{
 		Optional:   true,
 		Validators: []validator.UInt32Func{entity.CheckMetricType},

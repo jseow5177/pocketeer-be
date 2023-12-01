@@ -65,19 +65,22 @@ func (uc *metricUseCase) GetMetrics(ctx context.Context, req *GetMetricsRequest)
 			return nil, err
 		}
 
-		if len(getTransactionsSummaryRes.Summary) != 1 {
+		if len(getTransactionsSummaryRes.Savings) != 1 {
 			log.Ctx(ctx).Error().Msg("wrong number of transactions summary")
 			return nil, ErrInvalidTransactionsSummary
 		}
 
-		summary := getTransactionsSummaryRes.Summary[0]
+		var (
+			savingSummary = getTransactionsSummaryRes.Savings[0]
+			incomeSummary = getTransactionsSummaryRes.TotalIncome[0]
+		)
 
 		// only calculate savings ratio if
 		// 1. Income is more than 0
 		// 2. Savings is more than 0
 		var savingsRatio float64
-		if summary.GetTotalIncome() > 0 && summary.GetSum() > 0 {
-			savingsRatio = summary.GetSum() / summary.GetTotalIncome()
+		if incomeSummary.GetSum() > 0 && savingSummary.GetSum() > 0 {
+			savingsRatio = savingSummary.GetSum() / incomeSummary.GetSum()
 		}
 		savingsRatio = util.RoundFloatToStandardDP(savingsRatio * 100)
 

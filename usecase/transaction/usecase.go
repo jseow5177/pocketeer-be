@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"time"
 
@@ -723,26 +724,68 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 		transactionGroup.Sum += amount
 	}
 
-	// round after sum
-	tgs := make([]*common.Summary, 0)
-	for _, transactionGroup := range transactionGroupsMap {
-		tgs = append(tgs, common.NewSummary(
+	dates := make([]string, 0)
+	for date := range transactionGroupsMap {
+		dates = append(dates, date)
+	}
+	sort.Strings(dates)
+
+	resp := new(GetTransactionsSummaryResponse)
+	for i, date := range dates {
+		tg := transactionGroupsMap[date]
+
+		var (
+			savings      = tg.Sum
+			totalExpense = tg.TotalExpense
+			totalIncome  = tg.TotalIncome
+
+			percentSavingsChange float64
+			percentTotalExpense  float64
+			percentTotalIncome   float64
+		)
+		if i > 0 {
+			var (
+				oldSavings      = resp.Savings[i-1].GetSum()
+				oldTotalExpense = resp.TotalExpense[i-1].GetSum()
+				oldTotalIncome  = resp.TotalIncome[i-1].GetSum()
+			)
+			if oldSavings != 0 {
+				percentSavingsChange = (savings - oldSavings) * 100 / math.Abs(oldSavings)
+			}
+			if oldTotalExpense != 0 {
+				percentTotalExpense = (totalExpense - oldTotalExpense) * 100 / math.Abs(oldTotalExpense)
+			}
+			if oldTotalIncome != 0 {
+				percentTotalIncome = (totalIncome - oldTotalIncome) * 100 / math.Abs(oldTotalIncome)
+			}
+		}
+
+		// savings
+		resp.Savings = append(resp.Savings, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(savings)),
 			common.WithSummaryCurrency(user.Meta.Currency),
-			common.WithSummaryDate(goutil.String(transactionGroup.Date)),
-			common.WithSummarySum(goutil.Float64(transactionGroup.Sum)),
-			common.WithSummaryTotalExpense(goutil.Float64(transactionGroup.TotalExpense)),
-			common.WithSummaryTotalIncome(goutil.Float64(transactionGroup.TotalIncome)),
+			common.WithSummaryPercentChange(goutil.Float64(percentSavingsChange)),
+		))
+
+		// total expense
+		resp.TotalExpense = append(resp.TotalExpense, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(totalExpense)),
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(goutil.Float64(percentTotalExpense)),
+		))
+
+		// total income
+		resp.TotalIncome = append(resp.TotalIncome, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(totalIncome)),
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(goutil.Float64(percentTotalIncome)),
 		))
 	}
 
-	// sort in date ascending
-	sort.Slice(tgs, func(i, j int) bool {
-		return tgs[i].GetDate() < tgs[j].GetDate()
-	})
-
-	return &GetTransactionsSummaryResponse{
-		Summary: tgs,
-	}, nil
+	return resp, nil
 }
 
 func (uc *transactionUseCase) getAmountAfterConversion(ctx context.Context, t *entity.Transaction, currency string) (float64, error) {

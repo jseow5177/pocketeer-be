@@ -492,6 +492,7 @@ type Summary struct {
 	TotalIncome     *string        `json:"total_income,omitempty"`
 	Currency        *string        `json:"currency,omitempty"`
 	Transactions    []*Transaction `json:"transactions,omitempty"`
+	PercentChange   *string        `json:"percent_change,omitempty"`
 }
 
 func (m *Summary) GetDate() string {
@@ -532,6 +533,13 @@ func (m *Summary) GetTotalExpense() string {
 func (m *Summary) GetTotalIncome() string {
 	if m != nil && m.TotalIncome != nil {
 		return *m.TotalIncome
+	}
+	return ""
+}
+
+func (m *Summary) GetPercentChange() string {
+	if m != nil && m.PercentChange != nil {
+		return *m.PercentChange
 	}
 	return ""
 }
@@ -701,9 +709,13 @@ func (m *GetTransactionsSummaryRequest) ToUseCaseReq(user *entity.User) *transac
 }
 
 type GetTransactionsSummaryResponse struct {
-	Summary []*Summary `json:"summary,omitempty"`
+	Savings      []*Summary `json:"savings,omitempty"`
+	TotalExpense []*Summary `json:"total_expense,omitempty"`
+	TotalIncome  []*Summary `json:"total_income,omitempty"`
 }
 
 func (m *GetTransactionsSummaryResponse) Set(useCaseRes *transaction.GetTransactionsSummaryResponse) {
-	m.Summary = toSummaries(useCaseRes.Summary)
+	m.Savings = toSummaries(useCaseRes.Savings)
+	m.TotalExpense = toSummaries(useCaseRes.TotalExpense)
+	m.TotalIncome = toSummaries(useCaseRes.TotalIncome)
 }
