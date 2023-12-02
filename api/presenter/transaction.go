@@ -493,6 +493,7 @@ type Summary struct {
 	Currency        *string        `json:"currency,omitempty"`
 	Transactions    []*Transaction `json:"transactions,omitempty"`
 	PercentChange   *string        `json:"percent_change,omitempty"`
+	AbsoluteChange  *string        `json:"absolute_change,omitempty"`
 }
 
 func (m *Summary) GetDate() string {
