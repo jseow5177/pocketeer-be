@@ -426,6 +426,11 @@ func toSummary(s *common.Summary) *Summary {
 		percentChange = goutil.String(fmt.Sprint(s.GetPercentChange()))
 	}
 
+	var absoluteChange *string
+	if s.AbsoluteChange != nil {
+		absoluteChange = goutil.String(fmt.Sprint(s.GetAbsoluteChange()))
+	}
+
 	return &Summary{
 		Date:            s.Date,
 		Category:        toCategory(s.Category),
@@ -437,6 +442,7 @@ func toSummary(s *common.Summary) *Summary {
 		Currency:        s.Currency,
 		Transactions:    toTransactions(s.Transactions),
 		PercentChange:   percentChange,
+		AbsoluteChange:  absoluteChange,
 	}
 }
 

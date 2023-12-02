@@ -66,6 +66,7 @@ type Summary struct {
 	Currency        *string
 	Transactions    []*entity.Transaction
 	PercentChange   *float64
+	AbsoluteChange  *float64
 }
 
 type SummaryOption func(s *Summary)
@@ -98,6 +99,14 @@ func WithSummaryPercentChange(percentChange *float64) SummaryOption {
 	return func(s *Summary) {
 		if percentChange != nil {
 			s.SetPercentChange(percentChange)
+		}
+	}
+}
+
+func WithSummaryAbsoluteChange(absoluteChange *float64) SummaryOption {
+	return func(s *Summary) {
+		if absoluteChange != nil {
+			s.SetAbsoluteChange(absoluteChange)
 		}
 	}
 }
@@ -287,5 +296,21 @@ func (m *Summary) SetPercentChange(percentChange *float64) {
 	if percentChange != nil {
 		s := util.RoundFloatToStandardDP(*percentChange)
 		m.PercentChange = goutil.Float64(s)
+	}
+}
+
+func (m *Summary) GetAbsoluteChange() float64 {
+	if m != nil && m.AbsoluteChange != nil {
+		return *m.AbsoluteChange
+	}
+	return 0
+}
+
+func (m *Summary) SetAbsoluteChange(absoluteChange *float64) {
+	m.AbsoluteChange = absoluteChange
+
+	if absoluteChange != nil {
+		s := util.RoundFloatToStandardDP(*absoluteChange)
+		m.AbsoluteChange = goutil.Float64(s)
 	}
 }
