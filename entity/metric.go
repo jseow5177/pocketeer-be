@@ -39,12 +39,39 @@ var MetricIDs = map[uint32]string{
 	uint32(MetricIDInvestmentsToNetWorthRatio): "Investments to Net Worth Ratio",
 }
 
+type MetricStatus uint32
+
+const (
+	MetricStatusHealthy MetricStatus = iota
+	MetricStatusUnhealthy
+)
+
+var MetricThresholds = map[uint32]string{
+	uint32(MetricIDDebtRatio):                  "50% or less",
+	uint32(MetricIDSavingsRatio):               "20% or more",
+	uint32(MetricIDInvestmentsToNetWorthRatio): "50% or more",
+}
+
+var MetricHealthChecks = map[uint32]func(value float64) bool{
+	uint32(MetricIDDebtRatio): func(value float64) bool {
+		return value < float64(50)
+	},
+	uint32(MetricIDSavingsRatio): func(value float64) bool {
+		return value > float64(20)
+	},
+	uint32(MetricIDInvestmentsToNetWorthRatio): func(value float64) bool {
+		return value > float64(50)
+	},
+}
+
 type Metric struct {
-	ID    *uint32
-	Name  *string
-	Value *float64
-	Type  *uint32
-	Unit  *string
+	ID        *uint32
+	Name      *string
+	Value     *float64
+	Type      *uint32
+	Unit      *string
+	Status    *uint32
+	Threshold *string
 }
 
 type MetricOption func(mt *Metric)
@@ -81,6 +108,14 @@ func NewMetric(id, metricType uint32, opts ...MetricOption) *Metric {
 	for _, opt := range opts {
 		opt(mt)
 	}
+
+	status := uint32(MetricStatusHealthy)
+	if !MetricHealthChecks[id](mt.GetValue()) {
+		status = uint32(MetricStatusUnhealthy)
+	}
+	mt.SetStatus(goutil.Uint32(status))
+
+	mt.SetThreshold(goutil.String(MetricThresholds[id]))
 
 	return mt
 }
@@ -143,4 +178,26 @@ func (m *Metric) GetUnit() string {
 
 func (m *Metric) SetUnit(unit *string) {
 	m.Unit = unit
+}
+
+func (m *Metric) GetStatus() uint32 {
+	if m != nil && m.Status != nil {
+		return *m.Status
+	}
+	return 0
+}
+
+func (m *Metric) SetStatus(status *uint32) {
+	m.Status = status
+}
+
+func (m *Metric) GetThreshold() string {
+	if m != nil && m.Threshold != nil {
+		return *m.Threshold
+	}
+	return ""
+}
+
+func (m *Metric) SetThreshold(threshold *string) {
+	m.Threshold = threshold
 }

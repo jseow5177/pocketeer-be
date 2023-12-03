@@ -6,11 +6,13 @@ import (
 )
 
 type Metric struct {
-	ID    *uint32 `json:"id,omitempty"`
-	Name  *string `json:"name,omitempty"`
-	Value *string `json:"value,omitempty"`
-	Type  *uint32 `json:"type,omitempty"`
-	Unit  *string `json:"unit,omitempty"`
+	ID        *uint32 `json:"id,omitempty"`
+	Name      *string `json:"name,omitempty"`
+	Value     *string `json:"value,omitempty"`
+	Type      *uint32 `json:"type,omitempty"`
+	Unit      *string `json:"unit,omitempty"`
+	Status    *uint32 `json:"status,omitempty"`
+	Threshold *string `json:"threshold,omitempty"`
 }
 
 func (m *Metric) GetID() uint32 {
@@ -44,6 +46,20 @@ func (m *Metric) GetType() uint32 {
 func (m *Metric) GetUnit() string {
 	if m != nil && m.Unit != nil {
 		return *m.Unit
+	}
+	return ""
+}
+
+func (m *Metric) GetStatus() uint32 {
+	if m != nil && m.Status != nil {
+		return *m.Status
+	}
+	return 0
+}
+
+func (m *Metric) GetThreshold() string {
+	if m != nil && m.Threshold != nil {
+		return *m.Threshold
 	}
 	return ""
 }
