@@ -510,11 +510,13 @@ func toMetric(mt *entity.Metric) *Metric {
 	}
 
 	return &Metric{
-		ID:    mt.ID,
-		Name:  mt.Name,
-		Type:  mt.Type,
-		Value: value,
-		Unit:  mt.Unit,
+		ID:        mt.ID,
+		Name:      mt.Name,
+		Type:      mt.Type,
+		Value:     value,
+		Unit:      mt.Unit,
+		Status:    mt.Status,
+		Threshold: mt.Threshold,
 	}
 }
 
