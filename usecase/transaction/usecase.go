@@ -743,7 +743,7 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 			absoluteSavingsChange, absoluteTotalExpenseChange, absoluteTotalIncomeChange *float64
 		)
 		// only calculate change between first and last
-		if i == len(dates)-1 {
+		if i > 0 && i == len(dates)-1 {
 			var (
 				firstSavings      = resp.Savings[0].GetSum()
 				firstTotalExpense = resp.TotalExpense[0].GetSum()

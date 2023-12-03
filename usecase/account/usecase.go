@@ -540,7 +540,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			percentNetWorthChange, percentAssetChange, percentDebtChange    *float64
 			absoluteNetWorthChange, absoluteAssetChange, absoluteDebtChange *float64
 		)
-		if i == len(dates)-1 {
+		if i > 0 && i == len(dates)-1 {
 			var (
 				firstNetWorth   = resp.NetWorth[0].GetSum()
 				firstAssetValue = resp.AssetValue[0].GetSum()
