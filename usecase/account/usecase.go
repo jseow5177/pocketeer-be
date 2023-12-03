@@ -538,33 +538,33 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 
 		var (
 			percentNetWorthChange, percentAssetChange, percentDebtChange    *float64
-			absoluteNetWorthChange, absoluteAssetChange, absoluteDebtChange float64
+			absoluteNetWorthChange, absoluteAssetChange, absoluteDebtChange *float64
 		)
-		if i > 0 {
+		if i == len(dates)-1 {
 			var (
-				oldNetWorth   = resp.NetWorth[i-1].GetSum()
-				oldAssetValue = resp.AssetValue[i-1].GetSum()
-				oldDebtValue  = resp.DebtValue[i-1].GetSum()
+				firstNetWorth   = resp.NetWorth[0].GetSum()
+				firstAssetValue = resp.AssetValue[0].GetSum()
+				firstDebtValue  = resp.DebtValue[0].GetSum()
 			)
-			absoluteNetWorthChange = netWorth - oldNetWorth
-			if absoluteNetWorthChange == 0 {
+			absoluteNetWorthChange = goutil.Float64(netWorth - firstNetWorth)
+			if *absoluteNetWorthChange == 0 {
 				percentNetWorthChange = goutil.Float64(0)
-			} else if oldNetWorth != 0 {
-				percentNetWorthChange = goutil.Float64(absoluteNetWorthChange * 100 / math.Abs(oldNetWorth))
+			} else if firstNetWorth != 0 {
+				percentNetWorthChange = goutil.Float64(*absoluteNetWorthChange * 100 / math.Abs(firstNetWorth))
 			}
 
-			absoluteAssetChange = assetValue - oldAssetValue
-			if absoluteAssetChange == 0 {
+			absoluteAssetChange = goutil.Float64(assetValue - firstAssetValue)
+			if *absoluteAssetChange == 0 {
 				percentAssetChange = goutil.Float64(0)
-			} else if oldAssetValue != 0 {
-				percentAssetChange = goutil.Float64(absoluteAssetChange * 100 / math.Abs(oldAssetValue))
+			} else if firstAssetValue != 0 {
+				percentAssetChange = goutil.Float64(*absoluteAssetChange * 100 / math.Abs(firstAssetValue))
 			}
 
-			absoluteDebtChange = debtValue - oldDebtValue
-			if absoluteDebtChange == 0 {
+			absoluteDebtChange = goutil.Float64(debtValue - firstDebtValue)
+			if *absoluteDebtChange == 0 {
 				percentDebtChange = goutil.Float64(0)
-			} else if oldDebtValue != 0 {
-				percentDebtChange = goutil.Float64(absoluteDebtChange * 100 / math.Abs(oldDebtValue))
+			} else if firstDebtValue != 0 {
+				percentDebtChange = goutil.Float64(*absoluteDebtChange * 100 / math.Abs(firstDebtValue))
 			}
 		}
 
@@ -574,7 +574,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			common.WithSummarySum(goutil.Float64(netWorth)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentNetWorthChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteNetWorthChange)),
+			common.WithSummaryAbsoluteChange(absoluteNetWorthChange),
 		))
 
 		// asset value
@@ -583,7 +583,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			common.WithSummarySum(goutil.Float64(assetValue)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentAssetChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteAssetChange)),
+			common.WithSummaryAbsoluteChange(absoluteAssetChange),
 		))
 
 		// debt value
@@ -592,7 +592,7 @@ func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccoun
 			common.WithSummarySum(goutil.Float64(debtValue)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentDebtChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteDebtChange)),
+			common.WithSummaryAbsoluteChange(absoluteDebtChange),
 		))
 	}
 

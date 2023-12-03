@@ -740,33 +740,34 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 			totalIncome  = tg.TotalIncome
 
 			percentSavingsChange, percentTotalExpenseChange, percentTotalIncomeChange    *float64
-			absoluteSavingsChange, absoluteTotalExpenseChange, absoluteTotalIncomeChange float64
+			absoluteSavingsChange, absoluteTotalExpenseChange, absoluteTotalIncomeChange *float64
 		)
-		if i > 0 {
+		// only calculate change between first and last
+		if i == len(dates)-1 {
 			var (
-				oldSavings      = resp.Savings[i-1].GetSum()
-				oldTotalExpense = resp.TotalExpense[i-1].GetSum()
-				oldTotalIncome  = resp.TotalIncome[i-1].GetSum()
+				firstSavings      = resp.Savings[0].GetSum()
+				firstTotalExpense = resp.TotalExpense[0].GetSum()
+				firstTotalIncome  = resp.TotalIncome[0].GetSum()
 			)
-			absoluteSavingsChange = savings - oldSavings
-			if absoluteSavingsChange == 0 {
+			absoluteSavingsChange = goutil.Float64(savings - firstSavings)
+			if *absoluteSavingsChange == 0 {
 				percentSavingsChange = goutil.Float64(0)
-			} else if oldSavings != 0 {
-				percentSavingsChange = goutil.Float64(absoluteSavingsChange * 100 / math.Abs(oldSavings))
+			} else if firstSavings != 0 {
+				percentSavingsChange = goutil.Float64(*absoluteSavingsChange * 100 / math.Abs(firstSavings))
 			}
 
-			absoluteTotalExpenseChange = totalExpense - oldTotalExpense
-			if absoluteTotalExpenseChange == 0 {
+			absoluteTotalExpenseChange = goutil.Float64(totalExpense - firstTotalExpense)
+			if *absoluteTotalExpenseChange == 0 {
 				percentTotalExpenseChange = goutil.Float64(0)
-			} else if oldTotalExpense != 0 {
-				percentTotalExpenseChange = goutil.Float64(absoluteTotalExpenseChange * 100 / math.Abs(oldTotalExpense))
+			} else if firstTotalExpense != 0 {
+				percentTotalExpenseChange = goutil.Float64(*absoluteTotalExpenseChange * 100 / math.Abs(firstTotalExpense))
 			}
 
-			absoluteTotalIncomeChange = totalIncome - oldTotalIncome
-			if absoluteTotalIncomeChange == 0 {
+			absoluteTotalIncomeChange = goutil.Float64(totalIncome - firstTotalIncome)
+			if *absoluteTotalIncomeChange == 0 {
 				percentTotalIncomeChange = goutil.Float64(0)
-			} else if oldTotalIncome != 0 {
-				percentTotalIncomeChange = goutil.Float64(absoluteTotalIncomeChange * 100 / math.Abs(oldTotalIncome))
+			} else if firstTotalIncome != 0 {
+				percentTotalIncomeChange = goutil.Float64(*absoluteTotalIncomeChange * 100 / math.Abs(firstTotalIncome))
 			}
 		}
 
@@ -776,7 +777,7 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 			common.WithSummarySum(goutil.Float64(savings)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentSavingsChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteSavingsChange)),
+			common.WithSummaryAbsoluteChange(absoluteSavingsChange),
 		))
 
 		// total expense
@@ -785,7 +786,7 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 			common.WithSummarySum(goutil.Float64(totalExpense)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentTotalExpenseChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteTotalExpenseChange)),
+			common.WithSummaryAbsoluteChange(absoluteTotalExpenseChange),
 		))
 
 		// total income
@@ -794,7 +795,7 @@ func (uc *transactionUseCase) GetTransactionsSummary(ctx context.Context, req *G
 			common.WithSummarySum(goutil.Float64(totalIncome)),
 			common.WithSummaryCurrency(user.Meta.Currency),
 			common.WithSummaryPercentChange(percentTotalIncomeChange),
-			common.WithSummaryAbsoluteChange(goutil.Float64(absoluteTotalIncomeChange)),
+			common.WithSummaryAbsoluteChange(absoluteTotalIncomeChange),
 		))
 	}
 
