@@ -36,6 +36,7 @@ import (
 	fh "github.com/jseow5177/pockteer-be/api/handler/feedback"
 	hh "github.com/jseow5177/pockteer-be/api/handler/holding"
 	lh "github.com/jseow5177/pockteer-be/api/handler/lot"
+	mth "github.com/jseow5177/pockteer-be/api/handler/metric"
 	sh "github.com/jseow5177/pockteer-be/api/handler/security"
 	th "github.com/jseow5177/pockteer-be/api/handler/transaction"
 	uh "github.com/jseow5177/pockteer-be/api/handler/user"
@@ -49,6 +50,7 @@ import (
 	fuc "github.com/jseow5177/pockteer-be/usecase/feedback"
 	huc "github.com/jseow5177/pockteer-be/usecase/holding"
 	luc "github.com/jseow5177/pockteer-be/usecase/lot"
+	mtuc "github.com/jseow5177/pockteer-be/usecase/metric"
 	suc "github.com/jseow5177/pockteer-be/usecase/security"
 	ttuc "github.com/jseow5177/pockteer-be/usecase/token"
 	tuc "github.com/jseow5177/pockteer-be/usecase/transaction"
@@ -76,6 +78,7 @@ type server struct {
 	feedbackRepo     repo.FeedbackRepo
 	otpRepo          repo.OTPRepo
 	exchangeRateRepo repo.ExchangeRateRepo
+	snapshotRepo     repo.SnapshotRepo
 
 	securityAPI     api.SecurityAPI
 	exchangeRateAPI api.ExchangeRateAPI
@@ -92,6 +95,7 @@ type server struct {
 	lotUseCase          luc.UseCase
 	feedbackUseCase     fuc.UseCase
 	exchangeRateUseCase eruc.UseCase
+	metricUseCase       mtuc.UseCase
 }
 
 func main() {
@@ -166,6 +170,7 @@ func (s *server) Start() error {
 	s.holdingRepo = mongo.NewHoldingMongo(s.mongo)
 	s.lotRepo = mongo.NewLotMongo(s.mongo)
 	s.securityRepo = mongo.NewSecurityMongo(s.mongo)
+	s.snapshotRepo = mongo.NewSnapshotMongo(s.mongo)
 
 	s.exchangeRateRepo, err = mongo.NewExchangeRateMongo(s.ctx, s.mongo)
 	if err != nil {
@@ -217,16 +222,19 @@ func (s *server) Start() error {
 	s.lotUseCase = luc.NewLotUseCase(s.lotRepo, s.holdingRepo)
 	s.holdingUseCase = huc.NewHoldingUseCase(
 		s.mongo, s.accountRepo, s.holdingRepo,
-		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo)
+		s.lotRepo, s.securityRepo, s.quoteRepo, s.exchangeRateRepo,
+	)
 	s.accountUseCase = acuc.NewAccountUseCase(
 		s.mongo, s.accountRepo, s.transactionRepo,
-		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo)
+		s.holdingRepo, s.lotRepo, s.quoteRepo, s.securityRepo, s.exchangeRateRepo, s.snapshotRepo,
+	)
 	s.feedbackUseCase = fuc.NewFeedbackUseCase(s.feedbackRepo)
 	s.userUseCase = uuc.NewUserUseCase(
 		s.mongo, s.userRepo, s.otpRepo, s.tokenUseCase, s.mailer,
 		s.categoryRepo, s.budgetRepo, s.accountRepo, s.securityRepo, s.holdingRepo, s.lotRepo,
 	)
 	s.exchangeRateUseCase = eruc.NewExchangeRateUseCase(s.exchangeRateAPI, s.exchangeRateRepo)
+	s.metricUseCase = mtuc.NewMetricUseCase(s.accountUseCase, s.transactionUseCase)
 
 	// start server
 	addr := fmt.Sprintf(":%d", s.opt.Port)
@@ -521,7 +529,7 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// gets accounts
+	// get accounts
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetAccounts,
 		Method: http.MethodPost,
@@ -531,6 +539,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: ach.GetAccountsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return accountHandler.GetAccounts(ctx, req.(*presenter.GetAccountsRequest), res.(*presenter.GetAccountsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get accounts summary
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetAccountsSummary,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetAccountsSummaryRequest),
+			Res:       new(presenter.GetAccountsSummaryResponse),
+			Validator: ach.GetAccountsSummaryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return accountHandler.GetAccountsSummary(ctx, req.(*presenter.GetAccountsSummaryRequest), res.(*presenter.GetAccountsSummaryResponse))
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},
@@ -600,21 +623,6 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 		Middlewares: []router.Middleware{userAuthMiddleware},
 	})
 
-	// aggr transactions
-	r.RegisterHttpRoute(&router.HttpRoute{
-		Path:   config.PathAggrTransactions,
-		Method: http.MethodPost,
-		Handler: router.Handler{
-			Req:       new(presenter.AggrTransactionsRequest),
-			Res:       new(presenter.AggrTransactionsResponse),
-			Validator: th.AggrTransactionsValidator,
-			HandleFunc: func(ctx context.Context, req, res interface{}) error {
-				return transactionHandler.AggrTransactions(ctx, req.(*presenter.AggrTransactionsRequest), res.(*presenter.AggrTransactionsResponse))
-			},
-		},
-		Middlewares: []router.Middleware{userAuthMiddleware},
-	})
-
 	// get transactions
 	r.RegisterHttpRoute(&router.HttpRoute{
 		Path:   config.PathGetTransactions,
@@ -672,6 +680,21 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 			Validator: th.SumTransactionsValidator,
 			HandleFunc: func(ctx context.Context, req, res interface{}) error {
 				return transactionHandler.SumTransactions(ctx, req.(*presenter.SumTransactionsRequest), res.(*presenter.SumTransactionsResponse))
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// get transactions summary
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetTransactionsSummary,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetTransactionsSummaryRequest),
+			Res:       new(presenter.GetTransactionsSummaryResponse),
+			Validator: th.GetTransactionsSummaryValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return transactionHandler.GetTransactionsSummary(ctx, req.(*presenter.GetTransactionsSummaryRequest), res.(*presenter.GetTransactionsSummaryResponse))
 			},
 		},
 		Middlewares: []router.Middleware{userAuthMiddleware},
@@ -1059,6 +1082,28 @@ func (s *server) initUserRoutes(r *router.HttpRouter) {
 					ctx,
 					req.(*presenter.GetCurrenciesRequest),
 					res.(*presenter.GetCurrenciesResponse),
+				)
+			},
+		},
+		Middlewares: []router.Middleware{userAuthMiddleware},
+	})
+
+	// ========== Metric ========== //
+
+	metricHandler := mth.NewMetricHandler(s.metricUseCase)
+
+	r.RegisterHttpRoute(&router.HttpRoute{
+		Path:   config.PathGetMetrics,
+		Method: http.MethodPost,
+		Handler: router.Handler{
+			Req:       new(presenter.GetMetricsRequest),
+			Res:       new(presenter.GetMetricsResponse),
+			Validator: mth.GetMetricsValidator,
+			HandleFunc: func(ctx context.Context, req, res interface{}) error {
+				return metricHandler.GetMetrics(
+					ctx,
+					req.(*presenter.GetMetricsRequest),
+					res.(*presenter.GetMetricsResponse),
 				)
 			},
 		},

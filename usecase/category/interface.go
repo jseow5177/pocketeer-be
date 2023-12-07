@@ -5,6 +5,7 @@ import (
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/budget"
 	"github.com/jseow5177/pockteer-be/usecase/common"
@@ -74,13 +75,18 @@ func (m *GetCategoryBudgetRequest) ToGetBudgetFilter() *repo.GetBudgetFilter {
 	}
 }
 
-func (m *GetCategoryBudgetRequest) ToTransactionFilter(userID string, start, end uint64) *repo.TransactionFilter {
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionCategoryID(m.CategoryID),
-		repo.WithTransactionTimeGte(goutil.Uint64(start)),
-		repo.WithTransactionTimeLte(goutil.Uint64(end)),
-	)
+func (m *GetCategoryBudgetRequest) ToTransactionQuery(userID string, start, end uint64) *repo.TransactionQuery {
+	return &repo.TransactionQuery{
+		Filters: []*repo.TransactionFilter{
+			repo.NewTransactionFilter(
+				m.GetUserID(),
+				repo.WithTransactionCategoryID(m.CategoryID),
+				repo.WithTransactionTimeGte(goutil.Uint64(start)),
+				repo.WithTransactionTimeLte(goutil.Uint64(end)),
+			),
+		},
+		Op: filter.And,
+	}
 }
 
 func (m *GetCategoryBudgetRequest) ToExchangeRateFilter(to, from string, timestamp uint64) *repo.ExchangeRateFilter {
@@ -412,19 +418,24 @@ func (m *SumCategoryTransactionsRequest) GetTransactionType() uint32 {
 	return 0
 }
 
-func (m *SumCategoryTransactionsRequest) ToTransactionFilter(categoryIDs []string) *repo.TransactionFilter {
+func (m *SumCategoryTransactionsRequest) ToTransactionQuery(categoryIDs []string) *repo.TransactionQuery {
 	tt := m.TransactionTime
 	if tt == nil {
 		tt = new(common.RangeFilter)
 	}
 
-	return repo.NewTransactionFilter(
-		m.GetUserID(),
-		repo.WithTransactionTimeGte(tt.Gte),
-		repo.WithTransactionTimeLte(tt.Lte),
-		repo.WithTransactionType(m.TransactionType),
-		repo.WithTransactionCategoryIDs(categoryIDs),
-	)
+	return &repo.TransactionQuery{
+		Filters: []*repo.TransactionFilter{
+			repo.NewTransactionFilter(
+				m.GetUserID(),
+				repo.WithTransactionTimeGte(tt.Gte),
+				repo.WithTransactionTimeLte(tt.Lte),
+				repo.WithTransactionType(m.TransactionType),
+				repo.WithTransactionCategoryIDs(categoryIDs),
+			),
+		},
+		Op: filter.And,
+	}
 }
 
 func (m *SumCategoryTransactionsRequest) ToCategoryFilter() *repo.CategoryFilter {
@@ -444,10 +455,10 @@ func (m *SumCategoryTransactionsRequest) ToExchangeRateFilter(to, from string, t
 }
 
 type SumCategoryTransactionsResponse struct {
-	Sums []*common.TransactionSummary
+	Sums []*common.Summary
 }
 
-func (m *SumCategoryTransactionsResponse) GetSums() []*common.TransactionSummary {
+func (m *SumCategoryTransactionsResponse) GetSums() []*common.Summary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}

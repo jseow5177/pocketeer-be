@@ -3,11 +3,17 @@ package account
 import (
 	"context"
 	"errors"
+	"math"
+	"time"
 
+	"github.com/jseow5177/pockteer-be/config"
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
+	"github.com/jseow5177/pockteer-be/pkg/filter"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/usecase/holding"
+	"github.com/jseow5177/pockteer-be/util"
 )
 
 var (
@@ -17,6 +23,7 @@ var (
 type UseCase interface {
 	GetAccount(ctx context.Context, req *GetAccountRequest) (*GetAccountResponse, error)
 	GetAccounts(ctx context.Context, req *GetAccountsRequest) (*GetAccountsResponse, error)
+	GetAccountsSummary(ctx context.Context, req *GetAccountsSummaryRequest) (*GetAccountsSummaryResponse, error)
 
 	CreateAccount(ctx context.Context, req *CreateAccountRequest) (*CreateAccountResponse, error)
 	UpdateAccount(ctx context.Context, req *UpdateAccountRequest) (*UpdateAccountResponse, error)
@@ -141,6 +148,28 @@ func (m *GetAccountsResponse) GetDebtValue() float64 {
 	return 0
 }
 
+func (m *GetAccountsResponse) GetDebtRatio() float64 {
+	var debtRatio float64
+	if m.GetAssetValue() > 0 {
+		debtRatio = math.Abs(m.GetDebtValue()) / m.GetAssetValue()
+	}
+	return util.RoundFloatToStandardDP(debtRatio * 100)
+}
+
+func (m *GetAccountsResponse) GetInvestmentsToNetWorthRatio() float64 {
+	var ratio float64
+	if m.GetNetWorth() > 0 {
+		var totalInvestment float64
+		for _, account := range m.Accounts {
+			if account.IsInvestment() {
+				totalInvestment += account.GetBalance()
+			}
+		}
+		ratio = totalInvestment / m.GetNetWorth()
+	}
+	return util.RoundFloatToStandardDP(ratio * 100)
+}
+
 func (m *GetAccountsResponse) GetCurrency() string {
 	if m != nil && m.Currency != nil {
 		return *m.Currency
@@ -223,7 +252,7 @@ func (m *CreateAccountRequest) ToAccountEntity() (*entity.Account, error) {
 
 	return entity.NewAccount(
 		m.GetUserID(),
-		entity.WithAccountName(m.AccountName),
+		m.GetAccountName(),
 		entity.WithAccountBalance(m.Balance),
 		entity.WithAccountType(m.AccountType),
 		entity.WithAccountNote(m.Note),
@@ -393,3 +422,71 @@ func (m *DeleteAccountRequest) ToLotFilter(holdingIDs []string) *repo.LotFilter 
 }
 
 type DeleteAccountResponse struct{}
+
+type GetAccountsSummaryRequest struct {
+	AppMeta  *common.AppMeta
+	User     *entity.User
+	Unit     *uint32
+	Interval *uint32
+}
+
+func (m *GetAccountsSummaryRequest) GetUser() *entity.User {
+	if m != nil && m.User != nil {
+		return m.User
+	}
+	return nil
+}
+
+func (m *GetAccountsSummaryRequest) GetUnit() uint32 {
+	if m != nil && m.Unit != nil {
+		return *m.Unit
+	}
+	return 0
+}
+
+func (m *GetAccountsSummaryRequest) GetInterval() uint32 {
+	if m != nil && m.Interval != nil {
+		return *m.Interval
+	}
+	return 0
+}
+
+func (m *GetAccountsSummaryRequest) ToSnapshotFilter() (*repo.SnapshotFilter, error) {
+	loc, err := time.LoadLocation(m.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		now = time.Now().In(loc)
+		t   = now
+	)
+	switch m.GetUnit() {
+	case uint32(entity.SnapshotUnitMonth):
+		date := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		t = date.AddDate(0, -int(m.GetInterval()), 0)
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
+	}
+
+	return repo.NewSnapshotFilter(
+		m.User.GetUserID(),
+		repo.WithSnapshotType(goutil.Uint32(uint32(entity.SnapshotTypeAccount))),
+		repo.WithSnapshotTimestampGte(goutil.Uint64(uint64(t.UnixMilli()))),
+		repo.WithSnapshotTimestampLte(goutil.Uint64(uint64(now.UnixMilli()))),
+		repo.WithSnapshotPaging(&repo.Paging{
+			Sorts: []filter.Sort{
+				&repo.Sort{
+					Field: goutil.String("timestamp"),
+					Order: goutil.String(config.OrderAsc),
+				},
+			},
+		}),
+	), nil
+}
+
+type GetAccountsSummaryResponse struct {
+	NetWorth   []*common.Summary
+	AssetValue []*common.Summary
+	DebtValue  []*common.Summary
+}

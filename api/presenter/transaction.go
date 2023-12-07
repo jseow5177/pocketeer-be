@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/transaction"
 	"github.com/jseow5177/pockteer-be/util"
@@ -12,6 +13,10 @@ type Transaction struct {
 	Category          *Category `json:"category,omitempty"`
 	AccountID         *string   `json:"account_id,omitempty"`
 	Account           *Account  `json:"account,omitempty"`
+	FromAccountID     *string   `json:"from_account_id,omitempty"`
+	FromAccount       *Account  `json:"from_account,omitempty"`
+	ToAccountID       *string   `json:"to_account_id,omitempty"`
+	ToAccount         *Account  `json:"to_account,omitempty"`
 	Currency          *string   `json:"currency,omitempty"`
 	Amount            *string   `json:"amount,omitempty"`
 	Note              *string   `json:"note,omitempty"`
@@ -32,6 +37,20 @@ func (t *Transaction) GetTransactionID() string {
 func (t *Transaction) GetAmount() string {
 	if t != nil && t.Amount != nil {
 		return *t.Amount
+	}
+	return ""
+}
+
+func (t *Transaction) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *Transaction) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -99,9 +118,25 @@ func (t *Transaction) GetAccount() *Account {
 	return nil
 }
 
+func (t *Transaction) GetFromAccount() *Account {
+	if t != nil && t.FromAccount != nil {
+		return t.FromAccount
+	}
+	return nil
+}
+
+func (t *Transaction) GetToAccount() *Account {
+	if t != nil && t.ToAccount != nil {
+		return t.ToAccount
+	}
+	return nil
+}
+
 type CreateTransactionRequest struct {
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
+	FromAccountID   *string `json:"from_account_id,omitempty"`
+	ToAccountID     *string `json:"to_account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Currency        *string `json:"currency,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -112,6 +147,20 @@ type CreateTransactionRequest struct {
 func (m *CreateTransactionRequest) GetAccountID() string {
 	if m != nil && m.AccountID != nil {
 		return *m.AccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *CreateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -169,6 +218,8 @@ func (m *CreateTransactionRequest) ToUseCaseReq(userID string) *transaction.Crea
 		UserID:          goutil.String(userID),
 		CategoryID:      m.CategoryID,
 		AccountID:       m.AccountID,
+		FromAccountID:   m.FromAccountID,
+		ToAccountID:     m.ToAccountID,
 		Amount:          amount,
 		Currency:        m.Currency,
 		TransactionType: m.TransactionType,
@@ -316,6 +367,8 @@ type UpdateTransactionRequest struct {
 	TransactionID   *string `json:"transaction_id,omitempty"`
 	CategoryID      *string `json:"category_id,omitempty"`
 	AccountID       *string `json:"account_id,omitempty"`
+	FromAccountID   *string `json:"from_account_id,omitempty"`
+	ToAccountID     *string `json:"to_account_id,omitempty"`
 	Amount          *string `json:"amount,omitempty"`
 	Note            *string `json:"note,omitempty"`
 	TransactionType *uint32 `json:"transaction_type,omitempty"`
@@ -333,6 +386,20 @@ func (t *UpdateTransactionRequest) GetTransactionID() string {
 func (t *UpdateTransactionRequest) GetAccountID() string {
 	if t != nil && t.AccountID != nil {
 		return *t.AccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *UpdateTransactionRequest) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }
@@ -388,6 +455,8 @@ func (m *UpdateTransactionRequest) ToUseCaseReq(userID string) *transaction.Upda
 	return &transaction.UpdateTransactionRequest{
 		UserID:          goutil.String(userID),
 		AccountID:       m.AccountID,
+		FromAccountID:   m.FromAccountID,
+		ToAccountID:     m.ToAccountID,
 		TransactionID:   m.TransactionID,
 		Note:            m.Note,
 		Amount:          amount,
@@ -413,52 +482,9 @@ func (m *UpdateTransactionResponse) Set(useCaseRes *transaction.UpdateTransactio
 	m.Transaction = toTransaction(useCaseRes.Transaction)
 }
 
-type AggrTransactionsRequest struct {
-	TransactionTime  *RangeFilter `json:"transaction_time,omitempty"`
-	CategoryIDs      []string     `json:"category_ids,omitempty"`
-	BudgetIDs        []string     `json:"budget_ids,omitempty"`
-	TransactionTypes []uint32     `json:"transaction_types,omitempty"`
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTime() *RangeFilter {
-	if m != nil && m.TransactionTime != nil {
-		return m.TransactionTime
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetCategoryIDs() []string {
-	if m != nil && m.CategoryIDs != nil {
-		return m.CategoryIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetBudgetIDs() []string {
-	if m != nil && m.BudgetIDs != nil {
-		return m.BudgetIDs
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) GetTransactionTypes() []uint32 {
-	if m != nil && m.TransactionTypes != nil {
-		return m.TransactionTypes
-	}
-	return nil
-}
-
-func (m *AggrTransactionsRequest) ToUseCaseReq(userID string) *transaction.AggrTransactionsRequest {
-	return &transaction.AggrTransactionsRequest{
-		UserID:           goutil.String(userID),
-		TransactionTypes: m.TransactionTypes,
-		CategoryIDs:      m.CategoryIDs,
-		TransactionTime:  m.TransactionTime.toRangeFilter(),
-	}
-}
-
-type TransactionSummary struct {
+type Summary struct {
 	Date            *string        `json:"date,omitempty"`
+	Account         *Account       `json:"account,omitempty"`
 	Category        *Category      `json:"category,omitempty"`
 	TransactionType *uint32        `json:"transaction_type,omitempty"`
 	Sum             *string        `json:"sum,omitempty"`
@@ -466,85 +492,78 @@ type TransactionSummary struct {
 	TotalIncome     *string        `json:"total_income,omitempty"`
 	Currency        *string        `json:"currency,omitempty"`
 	Transactions    []*Transaction `json:"transactions,omitempty"`
+	PercentChange   *string        `json:"percent_change,omitempty"`
+	AbsoluteChange  *string        `json:"absolute_change,omitempty"`
 }
 
-func (m *TransactionSummary) GetDate() string {
+func (m *Summary) GetDate() string {
 	if m != nil && m.Date != nil {
 		return *m.Date
 	}
 	return ""
 }
 
-func (m *TransactionSummary) GetCategory() *Category {
+func (m *Summary) GetAccount() *Account {
+	if m != nil && m.Account != nil {
+		return m.Account
+	}
+	return nil
+}
+
+func (m *Summary) GetCategory() *Category {
 	if m != nil && m.Category != nil {
 		return m.Category
 	}
 	return nil
 }
 
-func (m *TransactionSummary) GetSum() string {
+func (m *Summary) GetSum() string {
 	if m != nil && m.Sum != nil {
 		return *m.Sum
 	}
 	return ""
 }
 
-func (m *TransactionSummary) GetTotalExpense() string {
+func (m *Summary) GetTotalExpense() string {
 	if m != nil && m.TotalExpense != nil {
 		return *m.TotalExpense
 	}
 	return ""
 }
 
-func (m *TransactionSummary) GetTotalIncome() string {
+func (m *Summary) GetTotalIncome() string {
 	if m != nil && m.TotalIncome != nil {
 		return *m.TotalIncome
 	}
 	return ""
 }
 
-func (m *TransactionSummary) GetTransactionType() uint32 {
+func (m *Summary) GetPercentChange() string {
+	if m != nil && m.PercentChange != nil {
+		return *m.PercentChange
+	}
+	return ""
+}
+
+func (m *Summary) GetTransactionType() uint32 {
 	if m != nil && m.TransactionType != nil {
 		return *m.TransactionType
 	}
 	return 0
 }
 
-func (m *TransactionSummary) GetCurrency() string {
+func (m *Summary) GetCurrency() string {
 	if m != nil && m.Currency != nil {
 		return *m.Currency
 	}
 	return ""
 }
 
-func (m *TransactionSummary) GetTransactions() []*Transaction {
+func (m *Summary) GetTransactions() []*Transaction {
 	if m != nil && m.Transactions != nil {
 		return m.Transactions
 	}
 	return nil
-}
-
-type Aggr struct {
-	Sum *float64 `json:"sum,omitempty"`
-}
-
-type AggrTransactionsResponse struct {
-	Results map[string]*Aggr `json:"results,omitempty"`
-}
-
-func (m *AggrTransactionsResponse) GetResults() map[string]*Aggr {
-	if m != nil && m.Results != nil {
-		return m.Results
-	}
-	return nil
-}
-
-func (m *AggrTransactionsResponse) Set(useCaseRes *transaction.AggrTransactionsResponse) {
-	res := make(map[string]*Aggr)
-	for k, v := range useCaseRes.Results {
-		res[k] = toAggr(v)
-	}
-	m.Results = res
 }
 
 type DeleteTransactionRequest struct {
@@ -597,10 +616,10 @@ func (m *SumTransactionsRequest) ToUseCaseReq(userID string) *transaction.SumTra
 }
 
 type SumTransactionsResponse struct {
-	Sums []*TransactionSummary `json:"sums,omitempty"`
+	Sums []*Summary `json:"sums,omitempty"`
 }
 
-func (m *SumTransactionsResponse) GetSums() []*TransactionSummary {
+func (m *SumTransactionsResponse) GetSums() []*Summary {
 	if m != nil && m.Sums != nil {
 		return m.Sums
 	}
@@ -608,7 +627,7 @@ func (m *SumTransactionsResponse) GetSums() []*TransactionSummary {
 }
 
 func (m *SumTransactionsResponse) Set(useCaseRes *transaction.SumTransactionsResponse) {
-	m.Sums = toTransactionSummaries(useCaseRes.Sums)
+	m.Sums = toSummaries(useCaseRes.Sums)
 }
 
 type GetTransactionGroupsRequest struct {
@@ -631,11 +650,11 @@ func (m *GetTransactionGroupsRequest) ToUseCaseReq(userID string) *transaction.G
 }
 
 type GetTransactionGroupsResponse struct {
-	TransactionGroups []*TransactionSummary `json:"transaction_groups,omitempty"`
-	Paging            *Paging               `json:"paging,omitempty"`
+	TransactionGroups []*Summary `json:"transaction_groups,omitempty"`
+	Paging            *Paging    `json:"paging,omitempty"`
 }
 
-func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*TransactionSummary {
+func (m *GetTransactionGroupsResponse) GetTransactionGroups() []*Summary {
 	if m != nil && m.TransactionGroups != nil {
 		return m.TransactionGroups
 	}
@@ -650,6 +669,54 @@ func (m *GetTransactionGroupsResponse) GetPaging() *Paging {
 }
 
 func (m *GetTransactionGroupsResponse) Set(useCaseRes *transaction.GetTransactionGroupsResponse) {
-	m.TransactionGroups = toTransactionSummaries(useCaseRes.TransactionGroups)
+	m.TransactionGroups = toSummaries(useCaseRes.TransactionGroups)
 	m.Paging = toPaging(useCaseRes.Paging)
+}
+
+type GetTransactionsSummaryRequest struct {
+	AppMeta  *AppMeta `json:"app_meta,omitempty"`
+	Unit     *uint32  `json:"unit,omitempty"`
+	Interval *uint32  `json:"interval,omitempty"`
+}
+
+func (m *GetTransactionsSummaryRequest) GetAppMeta() *AppMeta {
+	if m != nil && m.AppMeta != nil {
+		return m.AppMeta
+	}
+	return nil
+}
+
+func (m *GetTransactionsSummaryRequest) GetUnit() uint32 {
+	if m != nil && m.Unit != nil {
+		return *m.Unit
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) GetInterval() uint32 {
+	if m != nil && m.Interval != nil {
+		return *m.Interval
+	}
+	return 0
+}
+
+func (m *GetTransactionsSummaryRequest) ToUseCaseReq(user *entity.User) *transaction.GetTransactionsSummaryRequest {
+	return &transaction.GetTransactionsSummaryRequest{
+		AppMeta:  m.AppMeta.toAppMeta(),
+		User:     user,
+		Unit:     m.Unit,
+		Interval: m.Interval,
+	}
+}
+
+type GetTransactionsSummaryResponse struct {
+	Savings      []*Summary `json:"savings,omitempty"`
+	TotalExpense []*Summary `json:"total_expense,omitempty"`
+	TotalIncome  []*Summary `json:"total_income,omitempty"`
+}
+
+func (m *GetTransactionsSummaryResponse) Set(useCaseRes *transaction.GetTransactionsSummaryResponse) {
+	m.Savings = toSummaries(useCaseRes.Savings)
+	m.TotalExpense = toSummaries(useCaseRes.TotalExpense)
+	m.TotalIncome = toSummaries(useCaseRes.TotalIncome)
 }

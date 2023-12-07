@@ -7,7 +7,6 @@ import (
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
 	"github.com/jseow5177/pockteer-be/usecase/common"
-	"github.com/jseow5177/pockteer-be/usecase/transaction"
 )
 
 type Paging struct {
@@ -114,6 +113,11 @@ func toBudget(b *entity.Budget) *Budget {
 		usedAmount = goutil.String(fmt.Sprint(b.GetUsedAmount()))
 	}
 
+	var remain *string
+	if b.Remain != nil {
+		remain = goutil.String(fmt.Sprint(b.GetRemain()))
+	}
+
 	return &Budget{
 		BudgetID:     b.BudgetID,
 		CategoryID:   b.CategoryID,
@@ -124,6 +128,7 @@ func toBudget(b *entity.Budget) *Budget {
 		CreateTime:   b.CreateTime,
 		UpdateTime:   b.UpdateTime,
 		UsedAmount:   usedAmount,
+		Remain:       remain,
 	}
 }
 
@@ -196,6 +201,10 @@ func toTransaction(t *entity.Transaction) *Transaction {
 		Category:          toCategory(t.Category),
 		AccountID:         t.AccountID,
 		Account:           toAccount(t.Account),
+		FromAccountID:     t.FromAccountID,
+		FromAccount:       toAccount(t.FromAccount),
+		ToAccountID:       t.ToAccountID,
+		ToAccount:         toAccount(t.ToAccount),
 		Currency:          t.Currency,
 		Note:              t.Note,
 		TransactionStatus: t.TransactionStatus,
@@ -392,42 +401,55 @@ func toAccounts(acs []*entity.Account) []*Account {
 	return accounts
 }
 
-func toTransactionSummary(ts *common.TransactionSummary) *TransactionSummary {
-	if ts == nil {
+func toSummary(s *common.Summary) *Summary {
+	if s == nil {
 		return nil
 	}
 
 	var sum *string
-	if ts.Sum != nil {
-		sum = goutil.String(fmt.Sprint(ts.GetSum()))
+	if s.Sum != nil {
+		sum = goutil.String(fmt.Sprint(s.GetSum()))
 	}
 
 	var totalExpense *string
-	if ts.TotalExpense != nil {
-		totalExpense = goutil.String(fmt.Sprint(ts.GetTotalExpense()))
+	if s.TotalExpense != nil {
+		totalExpense = goutil.String(fmt.Sprint(s.GetTotalExpense()))
 	}
 
 	var totalIncome *string
-	if ts.TotalIncome != nil {
-		totalIncome = goutil.String(fmt.Sprint(ts.GetTotalIncome()))
+	if s.TotalIncome != nil {
+		totalIncome = goutil.String(fmt.Sprint(s.GetTotalIncome()))
 	}
 
-	return &TransactionSummary{
-		Date:            ts.Date,
-		Category:        toCategory(ts.Category),
-		TransactionType: ts.TransactionType,
+	var percentChange *string
+	if s.PercentChange != nil {
+		percentChange = goutil.String(fmt.Sprint(s.GetPercentChange()))
+	}
+
+	var absoluteChange *string
+	if s.AbsoluteChange != nil {
+		absoluteChange = goutil.String(fmt.Sprint(s.GetAbsoluteChange()))
+	}
+
+	return &Summary{
+		Date:            s.Date,
+		Category:        toCategory(s.Category),
+		Account:         toAccount(s.Account),
+		TransactionType: s.TransactionType,
 		Sum:             sum,
 		TotalExpense:    totalExpense,
 		TotalIncome:     totalIncome,
-		Currency:        ts.Currency,
-		Transactions:    toTransactions(ts.Transactions),
+		Currency:        s.Currency,
+		Transactions:    toTransactions(s.Transactions),
+		PercentChange:   percentChange,
+		AbsoluteChange:  absoluteChange,
 	}
 }
 
-func toTransactionSummaries(tss []*common.TransactionSummary) []*TransactionSummary {
-	transactionSummaries := make([]*TransactionSummary, len(tss))
+func toSummaries(tss []*common.Summary) []*Summary {
+	transactionSummaries := make([]*Summary, len(tss))
 	for idx, ts := range tss {
-		transactionSummaries[idx] = toTransactionSummary(ts)
+		transactionSummaries[idx] = toSummary(ts)
 	}
 	return transactionSummaries
 }
@@ -440,16 +462,6 @@ func toPaging(p *common.Paging) *Paging {
 	return &Paging{
 		Limit: p.Limit,
 		Page:  p.Page,
-	}
-}
-
-func toAggr(aggr *transaction.Aggr) *Aggr {
-	if aggr == nil {
-		return nil
-	}
-
-	return &Aggr{
-		Sum: aggr.Sum,
 	}
 }
 
@@ -485,4 +497,33 @@ func toExchangeRate(er *entity.ExchangeRate) *ExchangeRate {
 		Timestamp:      er.Timestamp,
 		CreateTime:     er.CreateTime,
 	}
+}
+
+func toMetric(mt *entity.Metric) *Metric {
+	if mt == nil {
+		return nil
+	}
+
+	var value *string
+	if mt.Value != nil {
+		value = goutil.String(fmt.Sprint(mt.GetValue()))
+	}
+
+	return &Metric{
+		ID:        mt.ID,
+		Name:      mt.Name,
+		Type:      mt.Type,
+		Value:     value,
+		Unit:      mt.Unit,
+		Status:    mt.Status,
+		Threshold: mt.Threshold,
+	}
+}
+
+func toMetrics(mts []*entity.Metric) []*Metric {
+	metrics := make([]*Metric, len(mts))
+	for idx, mt := range mts {
+		metrics[idx] = toMetric(mt)
+	}
+	return metrics
 }

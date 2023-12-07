@@ -64,8 +64,8 @@ func ToAccountEntity(ac *Account) (*entity.Account, error) {
 
 	return entity.NewAccount(
 		ac.GetUserID(),
+		ac.GetAccountName(),
 		entity.WithAccountID(goutil.String(ac.GetAccountID())),
-		entity.WithAccountName(ac.AccountName),
 		entity.WithAccountBalance(ac.Balance),
 		entity.WithAccountCurrency(ac.Currency),
 		entity.WithAccountStatus(ac.AccountStatus),

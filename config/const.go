@@ -17,6 +17,7 @@ const (
 	PathUpdateAccount           = PathV1Prefix + "update_account"
 	PathGetAccounts             = PathV1Prefix + "get_accounts"
 	PathDeleteAccount           = PathV1Prefix + "delete_account"
+	PathGetAccountsSummary      = PathV1Prefix + "get_accounts_summary"
 	PathCreateCategory          = PathV1Prefix + "create_category"
 	PathUpdateCategory          = PathV1Prefix + "update_category"
 	PathGetCategory             = PathV1Prefix + "get_category"
@@ -32,7 +33,7 @@ const (
 	PathGetTransactions         = PathV1Prefix + "get_transactions"
 	PathGetTransactionGroups    = PathV1Prefix + "get_transaction_groups"
 	PathSumTransactions         = PathV1Prefix + "sum_transactions"
-	PathAggrTransactions        = PathV1Prefix + "aggr_transactions"
+	PathGetTransactionsSummary  = PathV1Prefix + "get_transactions_summary"
 	PathGetBudget               = PathV1Prefix + "get_budget"
 	PathUpdateBudget            = PathV1Prefix + "update_budget"
 	PathGetBudgets              = PathV1Prefix + "get_budgets"
@@ -51,6 +52,7 @@ const (
 	PathCreateFeedback          = PathV1Prefix + "create_feedback"
 	PathGetExchangeRate         = PathV1Prefix + "get_exchange_rate"
 	PathGetCurrencies           = PathV1Prefix + "get_currencies"
+	PathGetMetrics              = PathV1Prefix + "get_metrics"
 
 	// Admin APIs
 	PathAdminV1Prefix   = "/api/admin/v1/"

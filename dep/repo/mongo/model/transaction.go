@@ -11,6 +11,8 @@ type Transaction struct {
 	UserID            *string            `bson:"user_id,omitempty"`
 	CategoryID        *string            `bson:"category_id,omitempty"`
 	AccountID         *string            `bson:"account_id,omitempty"`
+	FromAccountID     *string            `bson:"from_account_id,omitempty"`
+	ToAccountID       *string            `bson:"to_account_id,omitempty"`
 	Currency          *string            `bson:"currency,omitempty"`
 	Amount            *float64           `bson:"amount,omitempty"`
 	Note              *string            `bson:"note,omitempty"`
@@ -36,6 +38,8 @@ func ToTransactionModelFromEntity(t *entity.Transaction) *Transaction {
 		UserID:            t.UserID,
 		CategoryID:        t.CategoryID,
 		AccountID:         t.AccountID,
+		FromAccountID:     t.FromAccountID,
+		ToAccountID:       t.ToAccountID,
 		Currency:          t.Currency,
 		Amount:            t.Amount,
 		Note:              t.Note,
@@ -60,6 +64,8 @@ func ToTransactionModelFromUpdate(tu *entity.TransactionUpdate) *Transaction {
 		UpdateTime:        tu.UpdateTime,
 		AccountID:         tu.AccountID,
 		CategoryID:        tu.CategoryID,
+		FromAccountID:     tu.FromAccountID,
+		ToAccountID:       tu.ToAccountID,
 		TransactionType:   tu.TransactionType,
 		Currency:          tu.Currency,
 	}
@@ -72,9 +78,11 @@ func ToTransactionEntity(t *Transaction) (*entity.Transaction, error) {
 
 	return entity.NewTransaction(
 		t.GetUserID(),
-		t.GetAccountID(),
-		t.GetCategoryID(),
 		entity.WithTransactionID(goutil.String(t.GetTransactionID())),
+		entity.WithTransactionAccountID(t.AccountID),
+		entity.WithTransactionCategoryID(t.CategoryID),
+		entity.WithTransactionFromAccountID(t.FromAccountID),
+		entity.WithTransactionToAccountID(t.ToAccountID),
 		entity.WithTransactionAmount(t.Amount),
 		entity.WithTransactionNote(t.Note),
 		entity.WithTransactionType(t.TransactionType),
@@ -103,6 +111,20 @@ func (t *Transaction) GetUserID() string {
 func (t *Transaction) GetAccountID() string {
 	if t != nil && t.AccountID != nil {
 		return *t.AccountID
+	}
+	return ""
+}
+
+func (t *Transaction) GetFromAccountID() string {
+	if t != nil && t.FromAccountID != nil {
+		return *t.FromAccountID
+	}
+	return ""
+}
+
+func (t *Transaction) GetToAccountID() string {
+	if t != nil && t.ToAccountID != nil {
+		return *t.ToAccountID
 	}
 	return ""
 }

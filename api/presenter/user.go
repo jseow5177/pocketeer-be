@@ -89,9 +89,9 @@ func (u *User) GetUpdateTime() uint64 {
 
 func (u *User) GetMeta() *UserMeta {
 	if u != nil && u.Meta != nil {
-		return nil
+		return u.Meta
 	}
-	return u.Meta
+	return nil
 }
 
 type GetUserRequest struct{}
@@ -144,7 +144,15 @@ func (m *SignUpRequest) ToUseCaseReq() *user.SignUpRequest {
 }
 
 type SignUpResponse struct {
-	User *User `json:"user,omitempty"`
+	AccessToken *string `json:"access_token,omitempty"`
+	User        *User   `json:"user,omitempty"`
+}
+
+func (m *SignUpResponse) GetAccessToken() string {
+	if m != nil && m.AccessToken != nil {
+		return *m.AccessToken
+	}
+	return ""
 }
 
 func (m *SignUpResponse) GetUser() *User {
@@ -155,6 +163,7 @@ func (m *SignUpResponse) GetUser() *User {
 }
 
 func (m *SignUpResponse) Set(useCaseRes *user.SignUpResponse) {
+	m.AccessToken = useCaseRes.AccessToken
 	m.User = toUser(useCaseRes.User)
 }
 

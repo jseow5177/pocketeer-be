@@ -2,13 +2,17 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/jseow5177/pockteer-be/dep/repo"
 	"github.com/jseow5177/pockteer-be/entity"
 	"github.com/jseow5177/pockteer-be/pkg/goutil"
+	"github.com/jseow5177/pockteer-be/usecase/common"
 	"github.com/jseow5177/pockteer-be/util"
 	"github.com/rs/zerolog/log"
 )
@@ -22,6 +26,7 @@ type accountUseCase struct {
 	quoteRepo        repo.QuoteRepo
 	securityRepo     repo.SecurityRepo
 	exchangeRateRepo repo.ExchangeRateRepo
+	snapshotRepo     repo.SnapshotRepo
 }
 
 func NewAccountUseCase(
@@ -33,6 +38,7 @@ func NewAccountUseCase(
 	quoteRepo repo.QuoteRepo,
 	securityRepo repo.SecurityRepo,
 	exchangeRateRepo repo.ExchangeRateRepo,
+	snapshotRepo repo.SnapshotRepo,
 ) UseCase {
 	return &accountUseCase{
 		txMgr,
@@ -43,6 +49,7 @@ func NewAccountUseCase(
 		quoteRepo,
 		securityRepo,
 		exchangeRateRepo,
+		snapshotRepo,
 	}
 }
 
@@ -278,8 +285,7 @@ func (uc *accountUseCase) newUnrecordedTransaction(account *entity.Account, amou
 
 	return entity.NewTransaction(
 		account.GetUserID(),
-		account.GetAccountID(),
-		"",
+		entity.WithTransactionAccountID(account.AccountID),
 		entity.WithTransactionAmount(goutil.Float64(amount)),
 		entity.WithTransactionCurrency(account.Currency),
 		entity.WithTransactionType(goutil.Uint32(tt)),
@@ -364,7 +370,7 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 	ac.SetGain(goutil.Float64(totalGain))
 
 	// compute weighted average percent gain
-	var percentGain float64
+	var percentGain *float64
 	if totalBalance > 0 {
 		for _, h := range ac.Holdings {
 			lv := h.GetLatestValue()
@@ -382,10 +388,218 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 			}
 
 			weight := lv / totalBalance
-			percentGain += weight * h.GetPercentGain()
+			if h.PercentGain != nil {
+				if percentGain == nil {
+					percentGain = goutil.Float64(0)
+				}
+				percentGain = goutil.Float64(*percentGain + weight*h.GetPercentGain())
+			}
 		}
 	}
-	ac.SetPercentGain(goutil.Float64(percentGain))
+	ac.SetPercentGain(percentGain)
 
 	return nil
+}
+
+func (uc *accountUseCase) GetAccountsSummary(ctx context.Context, req *GetAccountsSummaryRequest) (*GetAccountsSummaryResponse, error) {
+	user := req.GetUser()
+
+	sf, err := req.ToSnapshotFilter()
+	if err != nil {
+		return nil, err
+	}
+
+	sps, err := uc.snapshotRepo.GetMany(ctx, sf)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get account snapshots from repo, err: %v", err)
+		return nil, err
+	}
+
+	loc, err := time.LoadLocation(req.AppMeta.GetTimezone())
+	if err != nil {
+		return nil, entity.ErrInvalidTimezone
+	}
+
+	// fetch latest snapshot
+	latestGetAccounts, err := uc.GetAccounts(ctx, &GetAccountsRequest{
+		UserID: req.User.UserID,
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to get latest accounts, err: %v", err)
+		return nil, err
+	}
+
+	b, err := json.Marshal(latestGetAccounts)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("fail to marshal latest snapshot, err: %v", err)
+		return nil, err
+	}
+	latestSnapshot := string(b)
+
+	now := time.Now().In(loc)
+
+	sps = append(sps, entity.NewSnapshot(
+		user.GetUserID(),
+		uint32(entity.SnapshotTypeAccount),
+		entity.WithSnapshotRecord(goutil.String(latestSnapshot)),
+		entity.WithSnapshotTimestamp(goutil.Uint64(uint64(now.UnixMilli()))), // latest
+	))
+
+	var (
+		date                time.Time
+		monthDiff, yearDiff int
+	)
+	switch req.GetUnit() {
+	case uint32(entity.SnapshotUnitMonth):
+		date = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()) // start of month
+		monthDiff = -1
+	default:
+		return nil, entity.ErrInvalidSnapshotUnit
+	}
+
+	var (
+		i = req.GetInterval()
+
+		snapshotsByDate = make(map[string]*GetAccountsResponse)
+	)
+	for i > 0 {
+		date = date.AddDate(yearDiff, monthDiff, 0)
+		d := util.FormatDate(date)
+
+		snapshotsByDate[d] = new(GetAccountsResponse) // dummy placeholder
+
+		i--
+	}
+
+	var (
+		latestDates      = make(map[string]time.Time)
+		latestTimestamps = make(map[string]uint64)
+	)
+	for _, sp := range sps {
+		var (
+			date time.Time
+			t    = time.UnixMilli(int64(sp.GetTimestamp())).In(loc)
+		)
+		switch req.GetUnit() {
+		case uint32(entity.SnapshotUnitMonth):
+			date = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()) // start of month
+		}
+
+		d := util.FormatDate(date)
+
+		// in case there are multiple snapshots in the same unit, we get the latest snapshot
+		if existing, ok := latestDates[d]; !ok || t.After(existing) {
+			latestDates[d] = t
+			latestTimestamps[d] = sp.GetTimestamp()
+
+			getAccountsResp := new(GetAccountsResponse)
+			if err := json.Unmarshal([]byte(sp.GetRecord()), &getAccountsResp); err != nil {
+				log.Ctx(ctx).Error().Msgf("fail to unmarshal snapshot, snapshot: %v, err: %v", sp.GetRecord(), err)
+				return nil, err
+			}
+
+			snapshotsByDate[d] = getAccountsResp
+		}
+	}
+
+	dates := make([]string, 0)
+	for date := range snapshotsByDate {
+		dates = append(dates, date)
+	}
+	sort.Strings(dates)
+
+	resp := new(GetAccountsSummaryResponse)
+	for i, date := range dates {
+		snapshot, ok := snapshotsByDate[date]
+		if !ok {
+			snapshot = &GetAccountsResponse{
+				NetWorth:   goutil.Float64(0),
+				AssetValue: goutil.Float64(0),
+				DebtValue:  goutil.Float64(0),
+				Currency:   goutil.String(""),
+			}
+		}
+
+		var (
+			netWorth   = snapshot.GetNetWorth()
+			assetValue = snapshot.GetAssetValue()
+			debtValue  = snapshot.GetDebtValue()
+		)
+		if snapshot.GetCurrency() != "" && user.Meta.GetCurrency() != snapshot.GetCurrency() {
+			erf := repo.NewExchangeRateFilter(
+				repo.WithExchangeRateFrom(snapshot.Currency),
+				repo.WithExchangeRateTo(user.Meta.Currency),
+				repo.WithExchangeRateTimestamp(goutil.Uint64(uint64(latestTimestamps[date]))),
+			)
+			er, err := uc.exchangeRateRepo.Get(ctx, erf)
+			if err != nil {
+				return nil, fmt.Errorf("fail to get exchange rate from repo, err: %v", err)
+			}
+
+			netWorth *= er.GetRate()
+			assetValue *= er.GetRate()
+			debtValue *= er.GetRate()
+		}
+
+		var (
+			percentNetWorthChange, percentAssetChange, percentDebtChange    *float64
+			absoluteNetWorthChange, absoluteAssetChange, absoluteDebtChange *float64
+		)
+		if i > 0 && i == len(dates)-1 {
+			var (
+				firstNetWorth   = resp.NetWorth[0].GetSum()
+				firstAssetValue = resp.AssetValue[0].GetSum()
+				firstDebtValue  = resp.DebtValue[0].GetSum()
+			)
+			absoluteNetWorthChange = goutil.Float64(netWorth - firstNetWorth)
+			if *absoluteNetWorthChange == 0 {
+				percentNetWorthChange = goutil.Float64(0)
+			} else if firstNetWorth != 0 {
+				percentNetWorthChange = goutil.Float64(*absoluteNetWorthChange * 100 / math.Abs(firstNetWorth))
+			}
+
+			absoluteAssetChange = goutil.Float64(assetValue - firstAssetValue)
+			if *absoluteAssetChange == 0 {
+				percentAssetChange = goutil.Float64(0)
+			} else if firstAssetValue != 0 {
+				percentAssetChange = goutil.Float64(*absoluteAssetChange * 100 / math.Abs(firstAssetValue))
+			}
+
+			absoluteDebtChange = goutil.Float64(debtValue - firstDebtValue)
+			if *absoluteDebtChange == 0 {
+				percentDebtChange = goutil.Float64(0)
+			} else if firstDebtValue != 0 {
+				percentDebtChange = goutil.Float64(*absoluteDebtChange * 100 / math.Abs(firstDebtValue))
+			}
+		}
+
+		// net worth
+		resp.NetWorth = append(resp.NetWorth, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(netWorth)),
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(percentNetWorthChange),
+			common.WithSummaryAbsoluteChange(absoluteNetWorthChange),
+		))
+
+		// asset value
+		resp.AssetValue = append(resp.AssetValue, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(assetValue)),
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(percentAssetChange),
+			common.WithSummaryAbsoluteChange(absoluteAssetChange),
+		))
+
+		// debt value
+		resp.DebtValue = append(resp.DebtValue, common.NewSummary(
+			common.WithSummaryDate(goutil.String(date)),
+			common.WithSummarySum(goutil.Float64(debtValue)),
+			common.WithSummaryCurrency(user.Meta.Currency),
+			common.WithSummaryPercentChange(percentDebtChange),
+			common.WithSummaryAbsoluteChange(absoluteDebtChange),
+		))
+	}
+
+	return resp, nil
 }

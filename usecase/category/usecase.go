@@ -249,8 +249,8 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 		return nil, err
 	}
 
-	tf := req.ToTransactionFilter(req.GetUserID(), start, end)
-	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	tq := req.ToTransactionQuery(req.GetUserID(), start, end)
+	ts, err := uc.transactionRepo.GetMany(ctx, tq)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
@@ -280,6 +280,9 @@ func (uc *categoryUseCase) getBudgetWithUsage(ctx context.Context, req *GetCateg
 
 	b.SetUsedAmount(goutil.Float64(usedAmount))
 
+	remain := b.GetAmount() + b.GetUsedAmount()
+	b.SetRemain(goutil.Float64(remain))
+
 	return b, nil
 }
 
@@ -306,8 +309,8 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		}
 	}
 
-	tf := req.ToTransactionFilter(categoryIDs)
-	ts, err := uc.transactionRepo.GetMany(ctx, tf)
+	tq := req.ToTransactionQuery(categoryIDs)
+	ts, err := uc.transactionRepo.GetMany(ctx, tq)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("fail to get transactions from repo, err: %v", err)
 		return nil, err
@@ -340,14 +343,14 @@ func (uc *categoryUseCase) SumCategoryTransactions(ctx context.Context, req *Sum
 		}
 	}
 
-	sums := make([]*common.TransactionSummary, 0)
+	sums := make([]*common.Summary, 0)
 	for c, sum := range sumByCategory {
 		// remove uncategorized if it has no sum
 		if c == nil && sum == 0 {
 			continue
 		}
 
-		sums = append(sums, common.NewTransactionSummary(
+		sums = append(sums, common.NewSummary(
 			common.WithSummaryCategory(c),
 			common.WithSummaryCurrency(u.Meta.Currency),
 			common.WithSummarySum(goutil.Float64(sum)),
