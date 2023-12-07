@@ -15,6 +15,7 @@ var (
 	ErrHoldingCannotHaveLots = errors.New("holding cannot have lots")
 	ErrMismatchCurrency      = errors.New("mismatch currency")
 	ErrCannotChangeSymbol    = errors.New("cannot change symbol")
+	ErrCannotChangeCurrency  = errors.New("cannot change currency")
 )
 
 type HoldingStatus uint32
@@ -39,6 +40,14 @@ var HoldingTypes = map[uint32]string{
 }
 
 type HoldingUpdateOption func(h *Holding)
+
+func WithUpdateHoldingCurrency(currency *string) HoldingUpdateOption {
+	return func(h *Holding) {
+		if currency != nil {
+			h.SetCurrency(currency)
+		}
+	}
+}
 
 func WithUpdateHoldingTotalCost(totalCost *float64) HoldingUpdateOption {
 	return func(h *Holding) {
@@ -245,6 +254,7 @@ type HoldingUpdate struct {
 	Symbol        *string
 	UpdateTime    *uint64
 	HoldingStatus *uint32
+	Currency      *string
 }
 
 func (h *Holding) ToHoldingUpdate(old *Holding) *HoldingUpdate {
@@ -274,6 +284,11 @@ func (h *Holding) ToHoldingUpdate(old *Holding) *HoldingUpdate {
 	if old.GetHoldingStatus() != h.GetHoldingStatus() {
 		hasUpdate = true
 		hu.HoldingStatus = h.HoldingStatus
+	}
+
+	if old.GetCurrency() != h.GetCurrency() {
+		hasUpdate = true
+		hu.Currency = h.Currency
 	}
 
 	if hasUpdate {

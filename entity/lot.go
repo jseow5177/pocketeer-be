@@ -49,6 +49,14 @@ func WithUpdateLotStatus(lotStatus *uint32) LotUpdateOption {
 	}
 }
 
+func WithUpdateLotCurrency(currency *string) LotUpdateOption {
+	return func(l *Lot) {
+		if currency != nil {
+			l.SetCurrency(currency)
+		}
+	}
+}
+
 type Lot struct {
 	UserID       *string
 	LotID        *string
@@ -174,6 +182,7 @@ type LotUpdate struct {
 	TradeDate    *uint64
 	LotStatus    *uint32
 	UpdateTime   *uint64
+	Currency     *string
 }
 
 func (l *Lot) ToLotUpdate(old *Lot) *LotUpdate {
@@ -203,6 +212,11 @@ func (l *Lot) ToLotUpdate(old *Lot) *LotUpdate {
 	if old.GetLotStatus() != l.GetLotStatus() {
 		hasUpdate = true
 		lu.LotStatus = l.LotStatus
+	}
+
+	if old.GetCurrency() != l.GetCurrency() {
+		hasUpdate = true
+		lu.Currency = l.Currency
 	}
 
 	if hasUpdate {

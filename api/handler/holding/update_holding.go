@@ -21,6 +21,11 @@ var UpdateHoldingValidator = validator.MustForm(map[string]validator.Validator{
 		UnsetZero:  true,
 		Validators: []validator.StringFunc{entity.CheckPositiveMonetaryStr},
 	},
+	"currency": &validator.String{
+		Optional:   true,
+		UnsetZero:  true,
+		Validators: []validator.StringFunc{entity.CheckCurrency},
+	},
 	"symbol": &validator.String{
 		Optional:  true,
 		UnsetZero: true,
