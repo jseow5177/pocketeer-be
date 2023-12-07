@@ -370,7 +370,7 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 	ac.SetGain(goutil.Float64(totalGain))
 
 	// compute weighted average percent gain
-	var percentGain float64
+	var percentGain *float64
 	if totalBalance > 0 {
 		for _, h := range ac.Holdings {
 			lv := h.GetLatestValue()
@@ -388,10 +388,15 @@ func (uc *accountUseCase) computeAccountCostGainAndBalance(ctx context.Context, 
 			}
 
 			weight := lv / totalBalance
-			percentGain += weight * h.GetPercentGain()
+			if h.PercentGain != nil {
+				if percentGain == nil {
+					percentGain = goutil.Float64(0)
+				}
+				percentGain = goutil.Float64(*percentGain + weight*h.GetPercentGain())
+			}
 		}
 	}
-	ac.SetPercentGain(goutil.Float64(percentGain))
+	ac.SetPercentGain(percentGain)
 
 	return nil
 }
