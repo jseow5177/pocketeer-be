@@ -577,9 +577,9 @@ func (h *Holding) ComputeCostGainAndValue() {
 	gain := latestValue - totalCost
 	h.SetGain(goutil.Float64(gain))
 
-	var percentGain float64
+	var percentGain *float64
 	if totalCost > 0 {
-		percentGain = gain * 100 / totalCost
+		percentGain = goutil.Float64(gain * 100 / totalCost)
 	}
-	h.SetPercentGain(goutil.Float64(percentGain))
+	h.SetPercentGain(percentGain)
 }
