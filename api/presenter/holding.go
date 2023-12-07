@@ -143,6 +143,7 @@ type UpdateHoldingRequest struct {
 	TotalCost   *string             `json:"total_cost,omitempty"`
 	LatestValue *string             `json:"latest_value,omitempty"`
 	Symbol      *string             `json:"symbol,omitempty"`
+	Currency    *string             `json:"currency,omitempty"`
 	Lots        []*UpdateLotRequest `json:"lots,omitempty"`
 }
 
@@ -174,6 +175,13 @@ func (m *UpdateHoldingRequest) GetSymbol() string {
 	return ""
 }
 
+func (m *UpdateHoldingRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
+}
+
 func (m *UpdateHoldingRequest) ToUseCaseReq(userID string) *holding.UpdateHoldingRequest {
 	var totalCost *float64
 	if m.TotalCost != nil {
@@ -198,6 +206,7 @@ func (m *UpdateHoldingRequest) ToUseCaseReq(userID string) *holding.UpdateHoldin
 		TotalCost:   totalCost,
 		LatestValue: latestValue,
 		Symbol:      m.Symbol,
+		Currency:    m.Currency,
 		Lots:        ls,
 	}
 }

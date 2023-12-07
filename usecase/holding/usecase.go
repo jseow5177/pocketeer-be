@@ -56,8 +56,13 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		currency = ac.GetCurrency()
 	}
 
+	h, err := req.ToHoldingEntity(currency)
+	if err != nil {
+		return nil, err
+	}
+
 	var q *entity.Quote
-	if req.GetHoldingType() == uint32(entity.HoldingTypeDefault) {
+	if h.IsDefault() {
 		s, err := uc.securityRepo.Get(ctx, req.ToSecurityFilter())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("fail to get security from repo, err: %v", err)
@@ -75,10 +80,6 @@ func (uc *holdingUseCase) CreateHolding(ctx context.Context, req *CreateHoldingR
 		}
 	}
 
-	h, err := req.ToHoldingEntity(currency)
-	if err != nil {
-		return nil, err
-	}
 	h.SetQuote(q)
 
 	if err := uc.txMgr.WithTx(ctx, func(txCtx context.Context) error {
@@ -152,6 +153,7 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		entity.WithUpdateHoldingSymbol(req.Symbol),
 		entity.WithUpdateHoldingLatestValue(req.LatestValue),
 		entity.WithUpdateHoldingTotalCost(req.TotalCost),
+		entity.WithUpdateHoldingCurrency(req.Currency),
 	)
 	if err != nil {
 		return nil, err
@@ -161,6 +163,7 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		lotMap       = make(map[string]*entity.Lot)
 		lotUpdateMap = make(map[string]*entity.LotUpdate)
 	)
+	// only default holding has lots
 	if len(req.Lots) > 0 {
 		ls, err := uc.lotRepo.GetMany(ctx, req.ToLotFilters())
 		if err != nil {
@@ -200,8 +203,14 @@ func (uc *holdingUseCase) UpdateHolding(ctx context.Context, req *UpdateHoldingR
 		}, nil
 	}
 
-	if hu != nil && hu.Symbol != nil && !h.IsCustom() {
-		return nil, entity.ErrCannotChangeSymbol
+	if hu != nil && !h.IsCustom() {
+		if hu.Symbol != nil {
+			return nil, entity.ErrCannotChangeSymbol
+		}
+
+		if hu.Currency != nil {
+			return nil, entity.ErrCannotChangeCurrency
+		}
 	}
 
 	var q *entity.Quote

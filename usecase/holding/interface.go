@@ -79,6 +79,7 @@ type UpdateHoldingRequest struct {
 	TotalCost   *float64
 	LatestValue *float64
 	Symbol      *string
+	Currency    *string
 	Lots        []*lot.UpdateLotRequest
 }
 
@@ -101,6 +102,13 @@ func (m *UpdateHoldingRequest) GetTotalCost() float64 {
 		return *m.TotalCost
 	}
 	return 0
+}
+
+func (m *UpdateHoldingRequest) GetCurrency() string {
+	if m != nil && m.Currency != nil {
+		return *m.Currency
+	}
+	return ""
 }
 
 func (m *UpdateHoldingRequest) GetLatestValue() float64 {

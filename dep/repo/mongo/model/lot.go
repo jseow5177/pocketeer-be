@@ -54,6 +54,7 @@ func ToLotModelFromUpdate(lu *entity.LotUpdate) *Lot {
 		TradeDate:    lu.TradeDate,
 		UpdateTime:   lu.UpdateTime,
 		LotStatus:    lu.LotStatus,
+		Currency:     lu.Currency,
 	}
 }
 

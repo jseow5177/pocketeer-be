@@ -57,6 +57,7 @@ func ToHoldingModelFromUpdate(hu *entity.HoldingUpdate) *Holding {
 		LatestValue:   hu.LatestValue,
 		Symbol:        hu.Symbol,
 		HoldingStatus: hu.HoldingStatus,
+		Currency:      hu.Currency,
 	}
 }
 
