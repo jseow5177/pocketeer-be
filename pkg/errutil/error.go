@@ -1,6 +1,7 @@
 package errutil
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -63,7 +64,8 @@ func NotFoundError(err error) error {
 }
 
 func ParseHttpError(err error) (int, string) {
-	if httpErr, ok := err.(HttpError); ok {
+	var httpErr HttpError
+	if errors.As(err, &httpErr) {
 		return httpErr.Code, httpErr.Error()
 	}
 	if err == nil {
